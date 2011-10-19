@@ -1,0 +1,238 @@
+# must precede anything except #comments, including the docstring
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future_builtins import *
+
+'''
+Define an interface to store and search through two types of word-lists:
+First are simple lists of words stored as Python u'strings':
+goodwords, badwords, and scannos. In each of these, the source is a
+text file with one word per line, not necessarily ordered.
+The lists are read in and sorted so we can provide fast lookup
+using the bisect module. A separate object is instantiated for
+each list, offering these methods:
+  * clear() - empty the list
+  * load(stream) - read a text stream and populate the list
+  * bool active() - a nonempty list exists and can be used
+  * bool check(w) - look up one word in the list
+  * insert(w) - insert a word into the list
+
+The other lists are the character and word censuses of the entire file.
+In each case there is a three-column table held as three lists. The first
+is an ordered list of QStrings, searched and inserted-to using a version of
+the bisect_left function modified to compare QStrings. The second is an
+integer count and the third, an integer flag value: the unicode property of
+a character, or a set of flags for a word.
+The words and chars are stored as QStrings so as to get Unicode comparisons,
+so for example a word composed of all-uppercase Greek or Cyrillic is
+correctly seen as an all-cap word. The methods are:
+
+  * clear() - empty the list
+  * int count(qs,flag)  - insert or increment the count of a word or char
+                     and store its flags. Returns the new count;
+                     if it is 1, the word/char was new.
+  * int lookup(qs) - find word in list and return index or None if not there
+  * int census(qs) - return the number of occurrences of a word
+  * int flags(qs)  - return the category flags of a word, or 0x0 if not known
+  * int size() - return the number of words in the list
+  * (qs, int, int) get(n) - return the word, count, and flags of the word at
+                     index n
+  
+The word list is built by the editor while loading a document, and again
+by the refresh function of the word- and char- views. It is queried by the
+word- and char views and by the the syntax highligher (for misspelt flags).
+
+'''
+
+__version__ = "0.1.0" # refer to PEP-0008
+__author__  = "David Cortesi"
+__copyright__ = "Copyright 2011, David Cortesi"
+__maintainer__ = "?"
+__email__ = "nobody@pgdp.net"
+__status__ = "first-draft"
+__license__ = '''
+Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
+http://creativecommons.org/licenses/by-nc-sa/3.0/
+'''
+
+import bisect
+
+from PyQt4.QtCore import (QFile, QTextStream, QString, QChar)
+
+# Class for simple one-column unicode (usually just Latin-1) word lists
+# This class is used for the good_words and bad_words lists.
+class wordList():
+    def __init__(self):
+        self.wordlist = []
+        self.len = 0
+        
+    def clear(self):
+        self.wordlist = []
+        self.len = 0
+    
+    def active(self):
+        return (self.len > 0)
+
+    def check(self,word):
+    	if self.len :
+	    i = bisect.bisect_left(self.wordlist,word)
+	    if (i != self.len) and (self.wordlist[i] == word):
+		return True
+        return False
+
+    # Load up a file of words, assumed one per line. We store them as
+    # Python strings, not QStrings, so as to use the bisect module. We do not
+    # assume they are in sequence, although likely they are.
+    def load(self,stream,endsec=None):
+	if endsec is not None : # reading our part of a metadata file
+	    while True:
+		word = unicode(stream.readLine().trimmed())
+		if (word == endsec) or stream.atEnd() : break
+		self.wordlist.append(word)
+	else : # reading e.g. a good_words.txt file
+	    while (not stream.atEnd()):
+		word = unicode(stream.readLine().trimmed())
+		self.wordlist.append(word)
+        self.wordlist.sort()
+        self.len = len(self.wordlist)
+
+    def save(self,stream):
+	for i in range(self.len):
+	    stream << (self.wordlist[i]+"\n")
+
+    # Provide for inserting a word to the list. Bisect_left returns the
+    # index of word or the highest item < word. If word is higher than
+    # anything in the list, the return is the length of the list.
+    def insert(self,word):
+	i = bisect.bisect_left(self.wordlist,word)
+	if (i != self.len) and (self.wordlist[i] == word):
+	    return
+	self.wordlist.insert(i,word)
+	self.len += 1
+
+# Class for the character census and word census of a document. 
+# Basically a 3-column table with keys are stored as QStrings
+# and a count and a flag value.
+class vocabList():
+    def __init__(self):
+        self.clear()
+
+    def clear(self):
+        self.words = []
+        self.counts = []
+        self.flags = []
+        self._size = 0 # can't be same as name of accessor function?
+        self.lastword = QString()
+        self.lastindex = -1
+
+    def size(self):
+        return self._size
+
+    # This is called when a table widget is populating itself, reading out
+    # the list by row number.
+    def get(self,index):
+        if (index >= 0) and (index < self.size):
+            return (self.words[index], self.counts[index], self.flags[index])
+        else:
+            raise ValueError # naughty naughty
+
+    # This is called from load, where we learn the word and its count
+    # and its flags from the metadata file. We assume this is going to
+    # come in sorted order, else we will be in big trouble.
+    def append(self, qs, cc, ff):
+	self.words.append(qs)
+	self.counts.append(cc)
+	self.flags.append(ff)
+	self._size += 1
+
+    def setflags(self, index, newflag):
+        if (index >= 0) and (index < self.size):
+            self.flags[index] = newflag
+        else:
+            raise ValueError # naughty naughty
+
+    # find a word in our vocabulary and return its index, or None if not there
+    # use the bisect_left algorithm. Short-circuit the lookup if coming back
+    # for the same word as last time.
+    def lookup(self,qs):
+        if self.lastword.compare(qs) == 0: return self.lastindex
+        lo = 0
+        hi = self._size
+        while lo < hi:
+            mid = (lo+hi)//2
+            if self.words[mid].compare(qs) < 0 : # words[mid] < qs
+                lo = mid+1
+            else:
+                hi = mid
+        self.lastindex = lo
+        self.lastword = qs
+        if (lo < self._size) : # not empty list
+            if (self.words[lo].compare(qs) == 0) : # matched at words[lo]
+                return lo
+	self.lastword = QString() 
+        return None # not there
+
+    def census(self, qs):
+        i = self.lookup(qs)
+        if i is not None :
+            return self.counts[i]
+        else:
+            return 0
+    
+    def getFlag(self, qs):
+        i = self.lookup(qs)
+        if i >= 0 :
+            return self.flags[i]
+        else:
+            return 0
+
+    def count(self,qs,flag):
+        i = self.lookup(qs)
+        if i is not None :
+            self.counts[i] += 1
+        else:
+	    # new list key - must make a copy to prevent side-effects if the
+	    # caller is re-using his qstring.
+	    i = self.lastindex
+            self.words.insert(i,QString(qs))
+            self.counts.insert(i,1)
+            self.flags.insert(i,int(flag))
+            self._size += 1
+        return self.counts[i]
+
+if __name__ == "__main__":
+    import sys
+    from PyQt4.QtGui import (QApplication,QFileDialog)
+    from PyQt4.QtCore import (QFile, QTextStream, QString)
+    wl = wordList()
+    app = QApplication(sys.argv) # create the app
+    fn = QFileDialog.getOpenFileName(None,"Select a Unit Test File")
+    print(fn)
+    fh = QFile(fn)
+    if not fh.open(QFile.ReadOnly):
+        raise IOError, unicode(fh.errorString())
+    stream = QTextStream(fh)
+    stream.setCodec("UTF-8")
+    print('before active? {0}'.format(wl.active()))
+    wl.load(stream)
+    print('loaded active? {0}'.format(wl.active()))
+    for w in ['frog','cheese','banana','hasaspace', 'notinfile']:
+        print('{0}: {1}'.format(w,wl.check(w)))
+    vl = vocabList()
+    print('vl size {0}'.format(vl.size()) )
+    stream.seek(0)
+    while (not stream.atEnd()):
+        word = stream.readLine().trimmed()
+        j = vl.count(word, 9)
+    for w in ['frog','cheese','banana','hasaspace', 'notinfile']:
+        i = vl.lookup(QString(w))
+        if i is not None:
+            (ww,cc,ff) = vl.get(i)
+            print('{0}: {1} {2} {3} {4}'.format(w, i, ww, cc, ff))
+        else:
+            print('{0}: not found'.format(w))
+    for i in range(vl.size()):
+	(ww,cc,ff) = vl.get(i)
+	print(i, ww,cc,ff)
+    

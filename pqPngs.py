@@ -1,0 +1,207 @@
+# These imports move Python 2.x almost to Python 3.
+# They must precede anything except #comments, including even the docstring
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future_builtins import *
+
+'''
+Display the pngs to match the page being edited.
+
+The object consists of a vertical box layout containing above,
+a label widget initialized with a 700x1000 pixmap with fill(QColor("gray")),
+and below, a small label that will display the current page number
+initialized with "No page"
+
+Also contains a QPixmapCache initialized to clear()
+
+Reimplements keyPressEvent() copied from the editor, trapping ctl-plus/minus
+to zoom the image when an image exists. Zooming should be, just changing
+the size hint of the image larger, it will scale and parent will scroll.
+
+has member cursorMoved() which is connect to the cursorPositionChanged
+signal of the editor. Gets the current position, looks it up in IMC.pageTable,
+gets the filename and IMC.bookPath  - use QFileInfo? - add pngs, filename.
+
+Looks for page number in pixmapcache, else tests FileInfo.exists, 
+and creates pixmap with filepath.
+
+    
+        if (!QPixmapCache::find(key, pixmap)) {
+            pixmap = generatePixmap();
+            QPixmapCache::insert(key, pixmap);
+        }
+         scaleFactor *= factor; 1.25 or 0.8
+     imageLabel->resize(scaleFactor * imageLabel->pixmap()->size());
+
+'''
+
+from PyQt4.QtCore import ( Qt, QFileInfo, QString, QSettings, QVariant )
+from PyQt4.QtGui import (
+    QColor,
+    QFrame, QLabel, QPalette, QPixmap,
+    QScrollArea, QSizePolicy,
+    QVBoxLayout, QWidget)
+
+class pngDisplay(QWidget):
+    def __init__(self, parent=None):
+        super(pngDisplay, self).__init__(parent)
+        # create the label that displays the image - cribbing from the Image
+        # Viewer example in the Qt docs.
+        self.imLabel = QLabel()
+        self.imLabel.setBackgroundRole(QPalette.Base)
+        self.imLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.imLabel.setScaledContents(True)
+        self.defaultPM = QPixmap(700,900)
+        self.defaultPM.fill(QColor("gray"))
+        self.scarea = QScrollArea()
+        self.scarea.setBackgroundRole(QPalette.Dark)
+        self.scarea.setWidget(self.imLabel)
+        # create the text label that will have the page number in it
+        self.txLabel = QLabel(u"No image")
+        self.txLabel.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
+        self.txLabel.setFrameStyle(QFrame.Sunken | QFrame.StyledPanel)
+        # create our layout
+        vbox = QVBoxLayout()
+        # the image gets a high stretch and default alignment, the text
+        # label hugs the bottom and doesn't stretch at all.
+        vbox.addWidget(self.scarea,10)
+        vbox.addWidget(self.txLabel,0,Qt.AlignBottom)
+        self.setLayout(vbox)
+        qv = IMC.settings.value("pngs/zoomFactor",QVariant(1.0))
+        self.zoomFactor = qv.toFloat()[0]
+        self.clear()
+        
+    # local subroutine to initialize our contents for an empty edit.
+    # called from _init_ and from newPosition when we discover the file
+    # has been cleared on us. Don't reset the zoomFactor, leave it as
+    # the user las set it.
+    def clear(self):
+        self.imLabel.setPixmap(self.defaultPM)
+        self.txLabel.setText(u"No image")
+        # Variables to speed up our position look-up
+        IMC.currentPageNumber = QString() # last page e.g. "002"
+        self.lastPage = QString() # last file name e.g. "002.png"
+        self.bookName = QString() # name of book we are in
+        self.pngPath = QString() # path to the pngs folder
+        self.lastIndex = -1 # index of last page in pageTable or -1
+        self.ready = False
+    
+    # this slot gets the main window's signal shuttingDown.
+    # we write our current zoom factor into IMC.settings.
+    def shuttingDown(self):
+        IMC.settings.setValue("pngs/zoomFactor",QVariant(self.zoomFactor))
+        
+    # This slot gets the main window's signal docHasChanged(QString).
+    # The full bookPath is passed and we convert that into the path to
+    # the pngs folder, and see if that is a directory. When that is all
+    # good we set ready to true. The next thing to happen will be the
+    # cursorPositionChanged signal from the editor.
+    def newFile(self, bookPath):
+        finf = QFileInfo(bookPath)
+        if not bookPath.isNull(): # this was File>Open
+            self.bookName = finf.fileName() # for cache tags
+            self.pngPath = finf.path()
+            self.pngPath.append(u"/pngs/")
+            finf = QFileInfo(self.pngPath)
+            if finf.exists() and finf.isDir(): # looking good
+                self.ready = True
+            else:
+                # we could inform the user we couldn't find the pngs folder,
+                # but you know -- the user is probably already aware of that.
+                self.clear() # just put up the gray default image
+        else: # It was a File>New
+            self.clear()
+
+    # This function is the slot that is connected to the editor's 
+    # cursorPositionChanged signal.
+    def newPosition(self):
+        if not self.ready : return # no file loaded or no pngs folder
+        if 0 == len(IMC.pageTable): # no book open, or no pngs with it
+            # this could happen on the first call at startup, the first
+            # call after a document has been loaded but before the metadata
+            # has been built, or after a File>New. Just bail.
+            return
+        else:
+            # find our most advanced position in the text
+            pos = IMC.editWidget.textCursor().selectionEnd()
+            # here we go with bisect_right to find the last page table entry
+            # <= to our present position. We know the table is not empty, but
+            # after pseps are removed, there can be multiple pages with the
+            # same starting offset.
+            hi = len(IMC.pageTable)
+            lo = 0
+            while lo < hi:
+                mid = (lo + hi)//2
+                if pos < IMC.pageTable[mid][0].position(): hi = mid
+                else: lo = mid+1
+            # the page at lo-1 is the greatest <= pos. If it is the same as
+            # we already displayed then bail out.
+            lo -= 1
+            if self.lastIndex == (lo) :
+                return # nothing to do, we are there
+            # On another page, save its index as IMC.currentPageIndex for use
+            # by pqNotes. Get its filename Qstring, e.g. "025", add ".png"
+            # and save as self.lastPage. Make full path to the image and load it.
+            # --- N.B. there is a cryptic comment in the QPixmap doc
+            # page that "QPixmaps are automatically added to the QPixmapCache
+            # when loaded from a file" -- does this mean they will avoid a
+            # second disk load when we revisit a page? We could make a cache
+            # key string from the bookName and lastPage strings and use it
+            # to get the image from the cache -- but for now we assume that
+            # Qt is doing it for us. Revisit if large book performance is bad.
+            self.lastIndex = lo
+            IMC.currentPageIndex = lo
+            self.lastPage = QString(IMC.pageTable[self.lastIndex][1]+u".png")
+            png = self.pngPath + self.lastPage
+            pxmap = QPixmap(png)
+            if not pxmap.isNull(): # successfully got a pixmap from a file
+                self.imLabel.setPixmap(pxmap)
+                self.imLabel.resize( self.zoomFactor * pxmap.size() )
+                self.txLabel.setText(
+                u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
+                    )
+            else: # no file - it's ok if pages are missing
+                self.imLabel.setPixmap(self.defaultPM)
+                self.txLabel.setText(u"No image")
+
+    # Re-implement the parent's keyPressEvent in order to provide zoom:
+    # ctrl-plus increases the image size by 1.25
+    # ctrl-minus decreases the image size by 0.8
+    # TODO: also trap pageup/dn and use to walk through images. Query: when
+    # should we reposition the editor?
+    def keyPressEvent(self, event):
+        # If not a ctl/cmd key or we are not displaying, just pass it on.
+        if (int(event.modifiers()) & Qt.ControlModifier) and self.ready:
+            code = event.key()
+            if (code == Qt.Key_Equal) \
+                or (code == Qt.Key_Plus) or (code == Qt.Key_Minus):
+                event.accept()
+                fac = (0.8) if (code == Qt.Key_Minus) else (1.25)
+                fac *= self.zoomFactor # target zoom factor
+                if (fac > 0.2) and (fac < 3.0): # keep in bounds
+                    self.imLabel.resize( fac * self.imLabel.pixmap().size() )
+                    self.zoomFactor = fac
+                    self.txLabel.setText(
+                u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
+                    )
+            else: # control-something but not one of ours
+                event.ignore()
+        else: # not control/command modifier
+            event.ignore()
+        # ignored or accepted, pass the event along.
+        super(pngDisplay, self).keyPressEvent(event)
+
+
+if __name__ == "__main__":
+    import sys
+    from PyQt4.QtGui import (QApplication,QFileDialog)
+    app = QApplication(sys.argv) # create an app
+    widj = pngDisplay()
+    apng = QFileDialog.getOpenFileName(widj,"Pick a Png",".","page files (*.png)")
+    pm = QPixmap(apng)
+    widj.imLabel.setPixmap(pm)
+    widj.imLabel.adjustSize()
+    widj.show()
+    app.exec_()
+
