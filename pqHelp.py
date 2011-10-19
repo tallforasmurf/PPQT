@@ -355,18 +355,25 @@ as to center on the 75-char line, with at least a 2-space indent.</td></tr>
 <tr><td><b>/L..L/<br />/$..$/<br />/X..X/</b></td><td>These sections are
 skipped entirely.</td></tr>
 </table>
+<p>Set the switches on the left center to skip over special sections.</p>
 <p>The top row of controls set the default indents for block quotes.
-The First indent is applied to the first line of each paragraph;
-Left to the other lines.</p>
-<p>The second row of controls set the indents for poetry. The First
-indent applies to every line; the Left indent is used only if a line
-is too long to fit in 75 chars and is "folded."</p>
-<p>TBS: For Centered text, setting the "longest line+2" button adjusts
+The <i>First</i> indent applies to the first line of a paragraph;
+<i>Left</i> to the other lines.
+The second row of controls set the indents for poetry, in which the <i>First</i>
+indent applies to every line; the <i>Left</i> indent is used only if a line
+is too long to fit in 75 chars and is "folded."
+As in guiguts, you can set the indents for a particular section by
+putting one to three numbers in brackets on the top markup. For
+example <b>/#[6]</b> starts a blockquote with a <i>Left</i> indent of 6.
+The syntax is <b>[</b><i>first</i><b>.</b><i>right</i><b>,</b><i>left</i><b>]</b>. 
+PPQT also supports this on <b>/P</b> poetry markup.</p>
+<p>For Centered text, setting the "longest line+2" button adjusts
 the section as far to the left as possible leaving a 2-space indent.</p>
-<p>Set the switches on the left center to avoid reflowing special sections.</p>
 <p>Normally you reflow after removing &lt;i>, &lt;b>, and &lt;sc> markup.
 However you can preview reflow while these are still in place by setting
-the controls on the right center.</p>
+the controls on the right center. For example if &lt;sc> markup will
+be converted to uppercase, set the control to treat this markup as 0 length.</p>
+<p>TBS: controls for removing line separators interactively.</p>
 <h2>The Footnote Panel</h2>
 <p>TBS Mucho! Controls for validating and formatting footnotes.</p>
 <h2>The HTML Panel</h2>
