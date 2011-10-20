@@ -5,8 +5,7 @@ from __future__ import unicode_literals
 from future_builtins import *
 
 '''
-Define our editor, which acts as the Model in a Model-view-controller design.
-The editor (of necessity) holds the document and (for convenience) all its
+Define our editor, which holds the document and (for convenience) all its
 related metadata, and provides it to the various other views.
 
 The editor is a small modification of QPlainTextEdit, because QTextEdit is
@@ -17,16 +16,13 @@ undo/redo stacks, and graceful vertical and horizontal scrolling as the
 window changes size.
 
 The following properties are accessible to other code:
-     .document()        QTextDocument being edited and its props, e.g.
-         .document().isModified, .document().isEmpty, .document().lineCount
-     .pageTable       table of pages, png#s, and folio controls
-     .bookMarks       list of positions (textCursors) of user bookmarks
-     .wordCensus      all words and their counts (can be stale)
-     .charCensus      all characters and their counts (ditto)
+    .document()     QTextDocument being edited and its methods including:
+                        .document().isModified() - dirty flag
+                        .document().isEmpty()
+                        .document().lineCount()
+                        .document().findBlockByLineNumber() and others
 
-In initializing the editor we make sure it is using a monospaced font,
-preferably DPCustomMono2, which any of our users should have installed.
-We also add with keystroke commands as follows:
+We monitor keyEvents and add keystroke commands as follows:
   control-plus increases the display font size 1 point
   control-minus decreases it 1 point
   control-1..9 goes to bookmark 1..9
@@ -80,8 +76,11 @@ class wordHighLighter(QSyntaxHighlighter):
         self.misspeltFormat.setUnderlineColor(QColor("red"))
     
     # The linked QPlainTextEdit calls this function for each text line before
-    # displaying it. (It is highly economical, only calling with small bits of
-    # text actually modified.) Still it behoovesus to be as quick as possible.
+    # displaying it. It appears to call here with every text line in the document
+    # when highlighting is turned on via the View menu -- to judge by the hang
+    # time. Later it only calls us to look at a line as it changes. Anyway
+    # it behooves us to be as quick as possible. We don't actually check spelling
+    # now, we use the flag set when the metadata was last refreshed.
     def highlightBlock(self, text):
         # quickly bail when nothing to do
         if text.length() == 0 : return
@@ -90,16 +89,11 @@ class wordHighLighter(QSyntaxHighlighter):
             i = self.wordMatch.indexIn(text,0) # first word if any
             while i >= 0:
                 l = self.wordMatch.matchedLength()
-                w = self.wordMatch.capturedTexts()[0] # word as qstring
-                # In this we assume that all words in the scanno file are valid
-                # words. Only non-scannos can be flagged as spelling errors.
+                w = self.wordMatch.cap(0) # word as qstring
                 if IMC.scannoHiliteSwitch: # we are checking for scannos:
                     if IMC.scannoList.check(unicode(w)):
                         self.setFormat(i,l,self.scannoFormat)
                 if IMC.spellingHiliteSwitch: # we are checking spelling:
-                    # words in the bad_words are automatically misspelt, also
-                    # words that were seen as misspelt by Aspell when the file
-                    # was loaded or the word-census was refreshed.
                     if (IMC.badWordList.check(unicode(w))) \
                     or (IMC.wordCensus.getFlag(w) & IMC.WordMisspelt):
                         self.setFormat(i,l,self.misspeltFormat)
@@ -117,10 +111,9 @@ class PPTextEditor(QPlainTextEdit):
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
         # make sure when we jump to a line, it goes to the window center
         self.setCenterOnScroll(True)
-        # Get specifically DPCustomMono2 if we can, and if not, ensure
-        # that we have a genuine monospaced font.
+        # Get a monospaced font as selected by the user with View>Font
         self.setFont(pqMsgs.getMonoFont(fontsize,True))
-        # establish our "syntax" highlighter object, but link it to an empty
+        # instantiate our "syntax" highlighter object, but link it to an empty
         # QTextDocument. We will redirect it to our actual document after we 
         # have loaded it and the metadata, as it relies on metadata.
         self.nulDoc = QTextDocument()
@@ -129,7 +122,8 @@ class PPTextEditor(QPlainTextEdit):
 
     # switch on or off our text-highlighting. By switching the highlighter
     # to a null document we remove highlighting; by switching it back to
-    # the real document, we cause re-highlighting of everything.
+    # the real document, we cause re-highlighting of everything (and a 
+    # significant delay for a large document).
     def setHighlight(self, onoff):
         self.hiliter.setDocument(self.nulDoc) # turn off hiliting always
         if onoff:
@@ -161,7 +155,7 @@ class PPTextEditor(QPlainTextEdit):
     def keyPressEvent(self, event):
         # add as little overhead as possible: if it isn't ours, pass it on.
         kkey = int(event.modifiers())+int(event.key())
-        print('key {0:x} mod {1:x}'.format(int(event.key()),int(event.modifiers())))
+        #print('key {0:x} mod {1:x}'.format(int(event.key()),int(event.modifiers())))
         if kkey in IMC.keysOfInterest : # trusting python to do this quickly
             event.accept() # we handle this one
             if kkey in IMC.findKeys: # ^f, ^g, etc.
@@ -238,7 +232,7 @@ class PPTextEditor(QPlainTextEdit):
             metaStream << u"{{GOODWORDS}}\n"
             IMC.goodWordList.save(metaStream)
             metaStream << u"{{/GOODWORDS}}\n"
-        if IMC.badWordList.active() : # have some good words
+        if IMC.badWordList.active() : # have some bad words
             metaStream << u"{{GOODWORDS}}\n"
             IMC.badWordList.save(metaStream)
             metaStream << u"{{/GOODWORDS}}\n"
@@ -293,7 +287,7 @@ class PPTextEditor(QPlainTextEdit):
                     qline = metaStream.readLine()
                     while (not qline.startsWith(endsec)) and (not qline.isEmpty()):
                         # can't just .split the char census, the first
-                        # char is the char and it can be a space.
+                        # char is the char being counted and it can be a space.
                         str = unicode(qline)
                         parts = str[2:].split(' ')
                         IMC.charCensus.append(QString(str[0]),int(parts[0]),int(parts[1]))
@@ -332,13 +326,12 @@ class PPTextEditor(QPlainTextEdit):
                 elif section == u"BADWORDS" :
                     w = IMC.badWordList.load(metaStream,endsec)
                 else:
-                    pqMsgs.infoMsg(
-                        "Unknown metadata section: {0}".format(section),
-                        "Metadata may be incomplete, suggest quit")
-                    break
+                    # this can't happen; section is text captured by the RE
+                    # and we have accounted for all possibilities
+                    raise AssertionError, "impossible metadata"
             else:
                 pqMsgs.infoMsg(
-                    "Unexpected line in metadata: {0}".format(qline.left(20)),
+                    "Unexpected line in metadata: {0}".format(pqMsgs.trunc(qline,20)),
                         "Metadata may be incomplete, suggest quit")
                 break
 
@@ -347,7 +340,7 @@ class PPTextEditor(QPlainTextEdit):
     # to see if it is a page separator. If we are opening a file having no
     # metadata, the Page argument is True and we build a page table entry.
     # Other times we are called from e.g. the word census panel to refresh
-    # metadata and we just skip over page separator lines. For any other line
+    # metadata, and we just skip over page separator lines. For any other line
     # we scan by characters, parsing out words and taking the char and word
     # counts. Note that the word and char census lists should be cleared
     # before this method is called.
@@ -365,14 +358,13 @@ class PPTextEditor(QPlainTextEdit):
     # Harder is (a) recognizing [oe] and [OE] ligatures, and skipping <i>
     # and other html-like markups. For these we use the QString::indexIn method
     # to see if they are coming.
-    # The first version of this used nested if logic but in an attempt to
-    # simplify and speed up we use a modified finite-state system in which 
-    # we have a two-row table. Each column represents one of the 30 Unicode
-    # categories returned by QChar::category(). The two rows represent inWord
-    # state true/false. Each cell contains a tuple (func,[arg[,arg]]). We pick
-    # up a tuple and push it on a stack; then we execute the top tuple on the
-    # stack as tup[0](*tup[1:]) (very "pythonic"). The executed function does
-    # something and pushes another function on the stack. The functions are
+    # The first version of this code used nested if-logic, but in an attempt to
+    # simplify and speed up we now use a modified finite-state system driven by
+    # a two-row table. Each column represents one of the 30 Unicode categories
+    # returned by QChar::category(). The two rows represent the inWord
+    # state true/false. Each cell contains a tuple (func,[arg[,arg]]). We do
+    # the next action as tup[0](*tup[1:]) (ooh, very "pythonic"). The executed
+    # function does something and sets the next action-tuple. The functions are
     # all local to the main function, which makes for a long piece of code.
 
     def rebuildMetaData(self,page=False):
@@ -394,7 +386,7 @@ class PPTextEditor(QPlainTextEdit):
             IMC.charCensus.count(QString(qcThis),uiCat)
             i += 1
             # since most letters end up here, save one cycle by doing GET now
-            # if i is off the end, it doesn't matter as QString.at returns 0.
+            # if i is off the end, it's ok: QString.at(toobig) returns 0.
             qcThis = qsLine.at(i)
             uiCat = qcThis.category()
             nextAction = parseArray[inWord][uiCat]

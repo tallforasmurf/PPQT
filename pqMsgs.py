@@ -13,7 +13,7 @@ __version__ = "0.1.0" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, David Cortesi"
 __maintainer__ = "?"
-__email__ = "nobody@pgdp.net"
+__email__ = "tallforasmurf@yahoo.com"
 __status__ = "first-draft"
 __license__ = '''
 Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
@@ -29,8 +29,10 @@ from PyQt4.QtGui import (QApplication,
     QStatusBar,
     QMessageBox)
 
-# Subroutine to get a QFont for a monospaced font, with the caller's preferred
-# font family specified.
+# Subroutine to get a QFont for a monospaced font, preferably using the font
+# family named in IMC.fontFamily -- set from the View menu in pqMain. If the
+# msg parm is True and we don't get the requested font, we notify the user.
+# (Only happens when pqEdit is setting up.)
 def getMonoFont(fontsize=12, msg=False):
     monofont = QFont()
     monofont.setStyleStrategy(QFont.PreferAntialias+QFont.PreferMatch)
@@ -55,41 +57,38 @@ def trunc(qs,maxl):
     return q2
 
 # Display a modal info message, blocking until the user clicks OK
-# No return value.
+# No return value. The first line of text is required. The second
+# line, displayed in a smaller size, is optional.
+
+def makeMsg ( text, icon, info = None):
+    mb = QMessageBox( )
+    mb.setText( text )
+    mb.setIcon( icon )
+    if info is not None:
+	mb.setInformativeText( info )
+    return mb
 
 def infoMsg ( text, info = None ):
-    mb = QMessageBox( )
-    mb.setText(text)
-    mb.setIcon(QMessageBox.Information)
-    if info is not None:
-        mb.setInformativeText(info)
+    mb = makeMsg(text,QMessageBox.Information,info)
     mb.exec_()
 
 # Display a modal warning message, blocking until the user clicks OK
 # No return value.
 
 def warningMsg ( text, info = None ):
-    mb = QMessageBox( )
-    mb.setText(text)
-    mb.setIcon(QMessageBox.Warning)
-    if info is not None:
-        mb.setInformativeText(info)
+    mb = makeMsg(text, QMessageBox.Warning, info)
     mb.exec_()
 
 # Display a modal query message, blocking until the user clicks OK/Cancel
 # Return True for OK
 
 def okCancelMsg ( text, info = None ):
-    mb = QMessageBox( )
-    mb.setIcon(QMessageBox.Question)
-    mb.setText(text)
-    if info is not None:
-        mb.setInformativeText(info)
+    mb = makeMsg ( text, QMessageBox.Question, info)
     mb.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
     return QMessageBox.Ok == mb.exec_()
 
 # Display a modal request for string input, blocking until the user
-# clicks Ok/Cancel. The parameters to getText are in order,
+# clicks Ok/Cancel. The parameters to QInputDialog.getText are:
 # * the parent widget over which it will center,
 # * title string for the dialog
 # * label for the input field and the rest are defaulted.
@@ -100,6 +99,8 @@ def getStringMsg( title, text ):
     return (ans, ok)
 
 # Functions to create and manage a progress bar in our status bar
+# makeBar is called from pqMain to initialize the bar, on the right in
+# the status area.
 def makeBarIn(status):
     IMC.statusBar = status # keep global ref to status bar
     IMC.progressBar = QProgressBar() # Keep a global ref to progress bar too
@@ -108,24 +109,29 @@ def makeBarIn(status):
     IMC.progressBar.setMinimumWidth(25)
     IMC.progressBar.setMaximumWidth(300)
     status.addPermanentWidget(IMC.progressBar)
-    #IMC.progressBar.hide()
 
+# Initialize the bar at the beginning of some lengthy task, maxval is the
+# number the lengthy task is working toward (e.g. count of lines) and msg
+# goes in the status area to say what we're doing.
 def startBar(maxval,msg):
     IMC.progressBar.reset()
     IMC.progressBar.setMaximum(maxval)
-    #IMC.progressBar.show()
     IMC.statusBar.showMessage(QString(msg))
     QApplication.processEvents() # force graphic update
 
+# Move the progress bar presumably higher, and force a round of app processing
+# otherwise we never see the bar move.
 def rollBar(newval):
     IMC.progressBar.setValue(newval)
     QApplication.processEvents() # force graphic update
 
+# The big job is finished, clear the bar and its message.
 def endBar():
     IMC.progressBar.reset()
     IMC.statusBar.clearMessage()
     QApplication.processEvents() # force graphic update
 
+# Make a noise of some kind.
 def beep():
     QApplication.beep()
 

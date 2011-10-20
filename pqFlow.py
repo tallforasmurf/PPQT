@@ -18,11 +18,12 @@ for guiguts and one developed by us specifically:
 /# .. #/   Reflow within block-quote margins which have a settable default but
            can be given in /#[first.left,right] markup
 
-/P .. P/   Indent by 4 spaces, reflow on a single-line basis as poetry
+/P .. P/   Indent by 4 spaces, reflow on a single-line basis as poetry. We add
+           support for /P[first.left,right] markup too
 
-/C .. C/   Guiguts does not reflow or indent; supposedly HTML makes it
-           text-align:center. Typically used for title pages etc. We do not
-           reflow but do indent the whole by 2 spaces minimum, and center each
+/C .. C/   Like the Guiguts /f..f/, which guiguts does not reflow or indent;
+           supposedly HTML makes it text-align:center. Typically used for title
+           pages etc. We indent the whole by 2 spaces minimum, and center each
            line on col 36 by default, but optionally on the center of the
            longest line, minimizing the width of the centered block.
 
@@ -38,15 +39,16 @@ done multiple times.
 
 /T .. T/   Multi-line table markup TBS
 
-/t .. t/   Single-line table markup TBS.
-It is the intent to do with a static markup what guiguts did with the awesome
+/t .. t/   Single-line table markup TBS
+
+The plan is to do with a static markup what guiguts did with the awesome
 but difficult-to-use ascii table special effects dialog.
 
 The general algorithm of reflow is two-pass. On the first pass we examine the
 document (or selection, no difference) line-by-line from top to bottom. In this
 pass we identify each reflow unit, that is, each block of text to be treated.
 In open text or block quote, a unit is a paragraph delimited by blank lines.
-In poetry and centered text, a unit is each single non-empty line.
+In poetry, noflow, and centered text, a unit is each single non-empty line.
 
 For each unit we note five items: the first and last text block numbers, the
 first-line indent, the left indent, and the right indent (relative to a 75-char
@@ -57,13 +59,12 @@ of tuples, one for each unit/paragraph.
 The second pass operates on single units, working from the bottom of the
 document or selection, up. This is so changes in the text will not alter
 the block numbers of text still to be done. For each unit we form a QTextCursor
-for the unit and make it the cursor for the document (displaying it). We pull
-tokens from the unit text and form a new text as a QString with the specified
-indents. Then we assign the reflowed text string as the text of the cursor,
-replacing the unflowed text with flowed.
+for the unit. We pull tokens from the unit text and form a new text as a
+QString with the specified indents. Then we assign the reflowed text string
+as the text of the cursor, replacing the unflowed text with flowed.
 
-In a "pythonic" move we subclass the QString to turn a QString into a Python
-"generator" (co-routine) that produces a new token on each call.
+In a "pythonic" move we use a "generator" (co-routine) to produce tokens from
+the old text.
 
 '''
 import pqMsgs
@@ -376,16 +377,14 @@ class flowPanel(QWidget):
                             Z = QString("P/")
                             P = False # collect single lines
                             C = False # not centering
-                            (L, F, R) = self.getIndents(self.poIndent,qs,F,L,R)
+                            (F, L, R) = self.getIndents(self.poIndent,qs,F,L,R)
                         elif M == "*" and (not self.skipNfCheck.isChecked()) : # noflow
                             stack.append( (S, Z, C, P, F, L, R) )
                             # S is already True
                             Z = QString("*/")
                             C = False # not centering
                             P = False # collect by lines
-                            F += self.nfLeftIndent.value() # indent more?
-                            L = F
-                            R = 0 # no right indent in /*
+                            (F, L, R) = self.getIndents(self.nfLeftIndent,qs,F,F,0)
                         elif M == "C" and (not self.skipCeCheck.isChecked()): # center
                             stack.append( (S, Z, C, P, F, L, R) )
                             # S is already True
@@ -409,7 +408,7 @@ class flowPanel(QWidget):
                                 fbn = tbn # first line of a para
                                 S = False # now collecting
                             else : # single-line mode, line is a unit
-                                if not C : # /* or /P, and for these, the
+                                if not C : # /* or /P -- for these, the
                                     # leading spaces count! Add them to F.
                                     txt = unicode(tb.text()).rstrip()
                                     ldgspaces = len(txt) - qs.size()
@@ -548,7 +547,6 @@ def tokGen(tc, itbosc):
                 tok.append(qs.at(i))
                 i += 1
         # back to spaces, return this token
-        dbg = unicode(tok)
         yield( (tok, ll) )
 
 if __name__ == "__main__":

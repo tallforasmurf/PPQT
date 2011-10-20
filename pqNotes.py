@@ -7,7 +7,9 @@ from future_builtins import *
 
 '''
 Create a plain-text editor for the user's personal notes, saved with the
-file metadata.
+file metadata. Implement extra keystrokes to allow easy storing of the
+current line- or page-number of the main document or navigation to a
+noted line or page.
 '''
 
 __version__ = "0.1.0" # refer to PEP-0008
@@ -80,13 +82,16 @@ class notesEditor(QPlainTextEdit):
             event.ignore()
         # ignored or accepted, pass the event along.
         super(notesEditor, self).keyPressEvent(event)
-    # insert current edit line number in notes as {nnn}
+
+    # on ctl-alt-l (mac: opt-cmd-l), insert the current edit line number in
+    # notes as {nnn}
     def insertLine(self):
 	tc = self.textCursor() 
 	bn = IMC.editWidget.textCursor().blockNumber() # line num
 	tc.insertText(u"{{{0}}}".format(bn))
-    # Look for a {nnn} line number "near" our cursor in the notes.
-    # Strategy: find-backwards for '{', the forward for regex (\d+)\}
+
+    # on ctl-l (mac: cmd-l) look for a {nnn} line number "near" our cursor in
+    # the notes. Strategy: find-backwards for '{', the forward for regex (\d+)\}
     def goToLine(self):
 	tc = self.document().find(QString(u'{'),
 	                self.textCursor(), QTextDocument.FindBackward)
@@ -116,13 +121,15 @@ class notesEditor(QPlainTextEdit):
 	    pqMsgs.beep()
     # Insert current page number as [ppp]. Conveniently, pqPngs saves the
     # index of the current page in the page table whenever the cursor moves.
+    # (BUG: if there is no pngs folder, that won't happen)
     def insertPage(self):
 	tc = self.textCursor()
-	qspn = IMC.pageTable[IMC.currentPageIndex][1]
-	tc.insertText("[{0}]".format(unicode(qspn)))
+	if IMC.currentPageIndex is not None:
+	    qspn = IMC.pageTable[IMC.currentPageIndex][1]
+	    tc.insertText("[{0}]".format(unicode(qspn)))
 
-    # Look for [ppp] "near" our cursor in notes, and if found, tell
-    # editor to go to that page text
+    # on ^p, look for [ppp] "near" our cursor in notes, and if found, tell
+    # editor to go to that page text. See above for strategy.
     def goToPage(self):
 	tc = self.document().find(QString(u'['),
 	                self.textCursor(), QTextDocument.FindBackward)
@@ -135,10 +142,6 @@ class notesEditor(QPlainTextEdit):
 		qs = tc.selectedText() # "[nnn]"
 		qs.remove(0,1) # "nnn]"
 		qs.chop(1) # "nnn"
-		# toInt returns a tuple, (int, flag) where flag is false
-		# if the conversion fails. In this case it cannot fail
-		# since we found \d+ in the first place. However, the
-		# number might be invalid as a line number.
 		(pn,flg) = qs.toInt() # page number as int 
 		pn -= 1 # index to that page in the page table
 		if (pn >= 0) and (pn < len(IMC.pageTable)) :

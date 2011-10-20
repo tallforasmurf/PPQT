@@ -7,9 +7,9 @@ from future_builtins import *
 
 '''
 Implement the Page table, based on IMC.pageTable.
-The latter is a simple Python list of tuples, each tuple having:
+The latter is a simple Python list of lists, each tuple having:
 0: a QTextCursor positioned to the first character of the page
-     -- text cursors are updated by their document as the text changes
+    -- text cursors are updated by their document as the text changes
 1: the file number (digits preceding ".png") as a QString
 2: the proofer-name section as a QString, possibly with extra hyphens
 3: the current folio rule or action, one of:
@@ -33,12 +33,13 @@ Columns are presented as follows:
 
 The AbstractTableModel is subclassed to provide user interactions:
 * Doubleclicking any row causes the editor to reposition to that page
-* A context menu on col. 1 offers a choice of formats
-* A context menu on col. 2 offers a choice of commands
-* Column 3 is editable and allows only numeric integer entries
+* A custom data delegate on col. 1 allows the user to change formats
+* A custom data delegate on col. 2 allows the user to change commands
+* A custom data delegate on col. 3 allows setting the folio as a spinbox
+  -- setting the folio changes col. 2 to "set @" command
 
-When any change is made in cols 1-3, the folios from that row to the
-end are recalculated and the IMC.pageTable values are updated.
+An update button on the top row triggers a recalculation of the folios
+based on the current formats, commands and values.
 
 The main windows DocWillChange and DocHasChanged signals are accepted
 and used to warn the model of impending changes in metadata.
@@ -213,6 +214,14 @@ class formatDelegate(QItemDelegate):
         cb.setCurrentIndex(v)
     def setModelData(self,cb,model,index):
         IMC.pageTable[index.row()][4] = cb.currentIndex()
+
+# A quick summary of WTF a custom delegate is: an object that represents a
+# type of data when it needs to be displayed or edited. The delegate must
+# implement 3 methods: createEditor() returns a widget that the table view
+# will position in the table cell to act as an editor; setEditorData()
+# is called to initialize the editor widget with data to display; and
+# setModelData() is called when editing is complete, to store possibly
+# changed data back to the model.
 
 # Implement a custom delegate for column 2, folio action.
 # The editor is a combobox with the three choices in it.

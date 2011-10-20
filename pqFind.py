@@ -9,15 +9,15 @@ from future_builtins import *
 Implement the find/replace panel. The findPanel class constructor has
 the very lengthy task of building and laying out the panel. (The initial
 look was worked out using Qt Designer, but we implement the widgets and
-layouts manually rather than using the designer output.)
+layouts manually rather than using the designer's unreadable output.)
 
 Interactions between this and the Edit widget are as follows: To
 implement Find (through the Next and Prior buttons) we just reach into
-the editor and get its document and call its find method. When we get a
-hit we change the editor's cursor to display it. To replace, we use the
-editor's cursor's textInsert method. However, for a regex replace we
-have to get the selection out of the editor, prime the regex by
-repeating the match, then use a QString replace method, finally put the
+the editor and get its document and either call its find() method for simple
+strings, or grab its text contents and apply a regex to them. When we get a
+hit we change the editor's cursor to display it. For simple replace, we use the
+editor's cursor's textInsert() method. For a regex replace we get the selection
+text out of the editor, then use a QString replace method, finally put the
 altered text back.
 
 The editor traps keyevents and when it sees the search special keys
@@ -53,11 +53,11 @@ by First/Last. Also the presence of First/Last pretty well eliminates the need
 for a wrap-mode switch or wrap-around search.
 
 The five switches, find text, and four buttons comprise the find area. Below are
-three Replace lineEdits and two checkboxes for replace behavior: and-find
+three Replace lineEdits and three checkboxes for replace behavior: &Next, &Prior
 and ALL! Despite the dramatic checkbox name, on a replace with ALL we first
-search the whole document and make a list of found cursors, then pop up a 
-confirmation query saying how many replacements will be done. This also is 
-original; most editors show you the count of replacments after the fact, but
+search the whole document or selection and make a list of found cursors. Then
+pop up a confirmation query saying how many replacements will be done. This also
+is original; most editors show you the count of replacments after the fact, but
 not before. Replace all is a single undo-redo event.
 
 Beside each Find and Rep lineEdit we have a combo box that pops up a list
@@ -77,13 +77,33 @@ in the Settings at shutdown and reloaded at startup. The array contents can
 also be saved to a file or loaded from a file. The format for a settings string
 or for a file is one __repr__ string of a python dict, per line. Within the
 string the "find" and "rep1/2/3" keys are uuencoded strings, so as not
-to have to fret escaping the regex special characters.
+to have to fret about escaping the regex special characters.
 TODO: save/load user buttons
     main add menu items and pass methods
     add buttonSave method to find
     implement save
     add buttonLoad method to find
     implement load
+
+To implement an adequate regex find we have to word around a crippling
+restriction in the QTextDocument.find() method: it will not search across a
+textblock (line) boundary. Hence it can never match to \n, which kills all 
+sorts of important uses, like finding <i> markup that crosses a line. It also
+has the problem that it takes a regex as a "const" argument, meaning it never
+updates the regex's captured-text properties!
+
+To get around this we get the span of text to be searched as a QString, gaining
+read access to that span of the edit document in place. We apply
+QRegExp.indexIn(qstring) to it. On a match, our regex is updated, and the 
+search can span any number of lines. We translate the match back to a text
+cursor selection.
+
+While this gets around the restrictions, it introduces two new issues. One, in
+the edit document, there is no actual \n; end of line is \u2029, paragraph sep.
+We do this substitution invisibly on the user's regex string. Worse, this
+also means that the ^ and $ assertions only match at the start and end of the
+document (or selection), never at actual line-end. A partial workaround is to
+use literal \n searches, but they don't match at the start/end of the document!
 '''
 
 __version__ = "0.1.0" # refer to PEP-0008
@@ -345,11 +365,7 @@ class findPanel(QWidget):
                 flags |= QTextDocument.FindWholeWords
             findTc = doc.find(self.findText.text(),startTc,flags)
         else:
-            # Regex search! We do NOT use QTextDocument.find because it has
-            # a cripping restriction that it will not search over a block (line)
-            # boundary. Instead we get the span of text to be searched as a
-            # QString and apply QRegExp.indexIn() to it, and translate that 
-            # back into a findTc selection.
+            # Regex search! See notes in prologue.
             findTc = QTextCursor() # null cursor says no-match
             if self.regexp.isValid() :
                 # valid regex: if it contains \n replace with \u2029
@@ -386,10 +402,9 @@ class findPanel(QWidget):
                                         QTextCursor.KeepAnchor,
                                         self.regexp.matchedLength())
         return findTc
-    # called with a find-match cursor to see if it is valid. There is no
-    # neat way to do a bounds check, because there is no promise that the
-    # the anchor of a cursor will always be less (or greater) than position.
-    
+
+    # called with a find-match cursor to see if it is valid, i.e. if it
+    # is in the selection bounds.
     def validHit(self,findTc):
         if not findTc.isNull(): # found something
             if self.inSelSwitch.isChecked() : # gotta check the bounds
@@ -457,22 +472,22 @@ class findPanel(QWidget):
         self.popups[repno].noteString() # any use gets pushed on the popup list
         if not self.allSwitch.isChecked() : # one-shot replace
             tc = IMC.editWidget.textCursor()
-            if self.regexSwitch.isChecked() :
-                # on a regex find, the document does not update our regex
-                # with captured text pointers etc. So we have to re-do the
-                # search to prime the regex. Presuming the current cursor was
-                # set by a search with the same regex, it will succeed quickly.
-                # However there is no requirement that replace immediately
-                # follows find so the regex might not match.
-                qs = tc.selectedText() # get selection as QString
-                if self.regexp.indexIn(qs) > -1 : # yes, regex matches selection
+            if tc.hasSelection() : # not a null selection
+                if self.regexSwitch.isChecked() :
+                    # the way Qt supports regex replace is through QString::replace()
+                    # which performs a match followed by a replace. Altho we presumably
+                    # set the current selection by doing a regex search, the
+                    # qs.replace() call will repeat the search. Presumably it will
+                    # match very quickly as is started out as a match to the same
+                    # regex. However nothing stops you from doing a regex find, then
+                    # ten minutes later with a different selection, clicking Replace.
+                    # Don't really know what will happen. Depends on where (and if)
+                    # the old regex matches in the new selection.
+                    qs = tc.selectedText() # get current selection as QString
                     qs.replace(self.regexp, self.repEdits[repno].text())
                     tc.insertText(qs)
-                # regex didn't match, do nothing
-            else:
-                if tc.hasSelection() : # not a null selection
+                else: # plain replace, just update the selection with new text
                     tc.insertText(self.repEdits[repno].text())
-                # do not replace on a null selection
             if andNext : 
                 self.doSearch(0) # Next button
             if andPrior :
@@ -487,8 +502,8 @@ class findPanel(QWidget):
             # all the replaces on the found text cursors. The edit cursor is not 
             # updated so none of this shows on the edit panel.
             # Note: we apply the replacements in reverse order, from bottom to
-            # top, in order that changes in length will not affect the position
-            # or the textcursors. Apparently cursors aren't updated during a
+            # top, so that changes in document length will not affect the position
+            # of the textcursors. Apparently cursors aren't updated during a
             # single edit block.
             hits = []
             doc = IMC.editWidget.document()

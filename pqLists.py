@@ -6,42 +6,43 @@ from future_builtins import *
 
 '''
 Define an interface to store and search through two types of word-lists:
-First are simple lists of words stored as Python u'strings':
-goodwords, badwords, and scannos. In each of these, the source is a
-text file with one word per line, not necessarily ordered.
-The lists are read in and sorted so we can provide fast lookup
-using the bisect module. A separate object is instantiated for
-each list, offering these methods:
+First are simple lists of words stored as Python u'strings', used for
+goodwords, badwords, and scannos. The lists are read in and sorted so we can
+provide fast lookup using the bisect module of the Python standard lib.
+A separate object is instantiated for each list, offering these methods:
   * clear() - empty the list
-  * load(stream) - read a text stream and populate the list
+  * load(stream) - read a QTextStream and populate the list
   * bool active() - a nonempty list exists and can be used
   * bool check(w) - look up one word in the list
   * insert(w) - insert a word into the list
 
 The other lists are the character and word censuses of the entire file.
 In each case there is a three-column table held as three lists. The first
-is an ordered list of QStrings, searched and inserted-to using a version of
-the bisect_left function modified to compare QStrings. The second is an
-integer count and the third, an integer flag value: the unicode property of
-a character, or a set of flags for a word.
-The words and chars are stored as QStrings so as to get Unicode comparisons,
+is an ordered list of QStrings (not Python u'strings'), searched and inserted-to
+using a version of the bisect_left function modified to compare QStrings.
+The second is an integer count and the third, an integer flag value, the unicode
+property of a character, or a set of flags for a word.
+  
+The word lists are built by the editor while loading a document, and again
+by the refresh function of the word- and char- views. It is queried by the
+word- and char views and by the the syntax highligher (for misspelt flags).
+
+The words and chars are stored as QStrings so as to get Unicode comparisons
+(we don't trust Python's Unicode support as well as we do Qt's),
 so for example a word composed of all-uppercase Greek or Cyrillic is
 correctly seen as an all-cap word. The methods are:
 
   * clear() - empty the list
-  * int count(qs,flag)  - insert or increment the count of a word or char
-                     and store its flags. Returns the new count;
-                     if it is 1, the word/char was new.
-  * int lookup(qs) - find word in list and return index or None if not there
+  * int count(qs,flag)  - insert, or increment the count of, a word or char
+                        and store its flags. Returns the new count;
+                        if it is 1, the word/char was new.
+  * int lookup(qs) - find word in list and return index, or None if not there
   * int census(qs) - return the number of occurrences of a word
   * int flags(qs)  - return the category flags of a word, or 0x0 if not known
   * int size() - return the number of words in the list
   * (qs, int, int) get(n) - return the word, count, and flags of the word at
-                     index n
-  
-The word list is built by the editor while loading a document, and again
-by the refresh function of the word- and char- views. It is queried by the
-word- and char views and by the the syntax highligher (for misspelt flags).
+                     index n as a tuple, used by pqChar and pqWord to populate
+		     their tables.
 
 '''
 
@@ -61,7 +62,7 @@ import bisect
 from PyQt4.QtCore import (QFile, QTextStream, QString, QChar)
 
 # Class for simple one-column unicode (usually just Latin-1) word lists
-# This class is used for the good_words and bad_words lists.
+# This class is used for the good_words, bad_words and scanno lists.
 class wordList():
     def __init__(self):
         self.wordlist = []
@@ -83,7 +84,11 @@ class wordList():
 
     # Load up a file of words, assumed one per line. We store them as
     # Python strings, not QStrings, so as to use the bisect module. We do not
-    # assume they are in sequence, although likely they are.
+    # assume they are in sequence, although likely they are. If this is the
+    # first time a file is opened (no metadata) the stream is e.g. good_words.txt
+    # and we read it all. Or, it could be a .meta file where we are supposed to
+    # read just the part up to the end of our section.
+    
     def load(self,stream,endsec=None):
 	if endsec is not None : # reading our part of a metadata file
 	    while True:
@@ -97,6 +102,7 @@ class wordList():
         self.wordlist.sort()
         self.len = len(self.wordlist)
 
+    # Write all our words to an open .meta text stream.
     def save(self,stream):
 	for i in range(self.len):
 	    stream << (self.wordlist[i]+"\n")
@@ -146,11 +152,12 @@ class vocabList():
 	self.flags.append(ff)
 	self._size += 1
 
+    # Set or change the flags value of an existing word
     def setflags(self, index, newflag):
         if (index >= 0) and (index < self.size):
             self.flags[index] = newflag
         else:
-            raise ValueError # naughty naughty
+            raise ValueError # tsk tsk
 
     # find a word in our vocabulary and return its index, or None if not there
     # use the bisect_left algorithm. Short-circuit the lookup if coming back
@@ -173,20 +180,21 @@ class vocabList():
 	self.lastword = QString() 
         return None # not there
 
+    # return the count value of a word
     def census(self, qs):
         i = self.lookup(qs)
         if i is not None :
             return self.counts[i]
         else:
             return 0
-    
+    # return the flag value of a word
     def getFlag(self, qs):
         i = self.lookup(qs)
         if i >= 0 :
             return self.flags[i]
         else:
             return 0
-
+    # tabulate one use of a word and set its flag on first seeing it
     def count(self,qs,flag):
         i = self.lookup(qs)
         if i is not None :

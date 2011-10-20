@@ -6,10 +6,9 @@ from __future__ import unicode_literals
 from future_builtins import *
 
 '''
-Implement the Word Census panel. At the top a row with a Refresh
-button on the left, a case-sensitivity checkbox next,
-and a filter combobox on the right. Below, a table
-with three columns:
+Implement the Word Census panel. At the top a row with a Refresh button on
+the left, a case-sensitivity checkbox next, and a filter combobox on the right.
+Below, a table with three columns:
 * Word, the text of the word 
 * Count, the number times it appears in the document
 * Features, the various flag values translated to letters:
@@ -74,7 +73,7 @@ class myTableModel(QAbstractTableModel):
         self.tipDict = { 0: "Word text",
                          1: "Number of occurrences",
         2: "A:uppercase a:lowercase 9:digit h:hyphen p:apostrophe X:misspelt" }
-        # The strings that interpret a QChar.category value
+
     def columnCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
         return 3 # word, count, features

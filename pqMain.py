@@ -67,6 +67,7 @@ class MainWindow(QMainWindow):
         self.bookPath = QString()
         IMC.bookPath = self.bookPath # for use in other modules
         # Recall a scannoPath if we had one, else get a default empty QString
+        # See closeEvent() below for how these settings are saved.
         self.scannoPath = IMC.settings.value("main/scannoPath",
                                              QString()).toString()
         # If we had a scannoPath, try to load it.
@@ -77,7 +78,7 @@ class MainWindow(QMainWindow):
                         False).toBool() and (not self.scannoPath.isEmpty())
         # n.b. we leave the spellcheck switch initialized False because we
         # have no file loaded.
-        # Recall a favored font if any:
+        # Recall a user-preferred font if any:
         IMC.fontFamily = IMC.settings.value("main/fontFamily",
                                       QString("DejaVu Sans Mono")).toString()
         # create the editor for the left-hand pane
@@ -87,12 +88,11 @@ class MainWindow(QMainWindow):
         self.tabSet = QTabWidget()
         # format our window as a split between editor and tab array
         self.hSplitter = QSplitter(Qt.Horizontal)
-        #self.hSplitter.setSizePolicy(QSizePolicy(QSizePolicy.MinimumExpanding))
         self.hSplitter.addWidget(IMC.editWidget)
         self.hSplitter.addWidget(self.tabSet)
         self.setCentralWidget(self.hSplitter)
-        # Populate the tab set with the different view objects, e.g.
-        # - the png display and connect it to the editors cursor-move signal
+        # Populate the tab set with the different panel objects
+        # the png display and connect it to the editors cursor-move signal
         IMC.pngPanel = pngDisplay()
         self.connect(self.editor, SIGNAL("cursorPositionChanged()"),
                      IMC.pngPanel.newPosition)
@@ -144,13 +144,12 @@ class MainWindow(QMainWindow):
         self.connect(lnum, SIGNAL("returnPressed()"), lnum.moveCursor)
         status.insertPermanentWidget(0,lnum)
         # Get our window geometry from the settings file and set it.
-        # See closeEvent() below for how these are saved.
         self.resize(IMC.settings.value("main/size",
                                        QVariant(QSize(800,600))).toSize() )
         self.move(IMC.settings.value("main/position",
-                                     QPoint(200, 200)).toPoint() )
+                                       QPoint(200, 200)).toPoint() )
         self.hSplitter.restoreState(
-            IMC.settings.value("main/splitter").toByteArray() )
+                            IMC.settings.value("main/splitter").toByteArray() )
         # Tell the editor to clear itself
         self.editor.clear()
         # put a message in our status bar for 5 seconds
@@ -247,6 +246,7 @@ class MainWindow(QMainWindow):
         if checkable:
             action.setCheckable(True)
         return action
+
     # Another Summerfield convenience: populate a given menu (target) with 
     # a list of QActions. None in the list means, "separator here".
     def addActions(self, target, actions):
@@ -529,8 +529,6 @@ class MainWindow(QMainWindow):
 
     # Called from the View menu, these functions set the hilighting switches
     # The state of the menu toggle is passed as a parameter.
-    # TODO: this is dorky, find a way to just disable these actions until
-    # their settings can be used.
     def viewSetScannos(self, toggle):
         if toggle : # switch is going on,
             # Do we have a scanno file? If not, remind the user to give one.
@@ -553,6 +551,11 @@ class MainWindow(QMainWindow):
         self.editor.setHighlight(
             IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
     
+    # Initially we set DPCustomMono2 as the font, period, but later realized
+    # it has very limited Unicode coverage, while other monos are just as
+    # distinct for proofing and have full Unicode. So added View>Font and just
+    # throw up a QFontDialog and let the user pick something. That gets saved
+    # at shutdown and reloaded next time.
     def viewFont(self):
         defont = QFont(IMC.fontFamily)
         (refont,ok) = QFontDialog.getFont(defont, self,
@@ -563,7 +566,7 @@ class MainWindow(QMainWindow):
             IMC.editWidget.setFont(refont)
             IMC.notesEditor.setFont(refont)
             
-    # reimplement QWidget::closeEvent to check for a dirty file and save it.
+    # reimplement QWidget::closeEvent() to check for a dirty file and save it.
     # Also save our current geometry, recent files, etc., and emit the
     # shuttingDown signal so that other widgets can do the same.
     def closeEvent(self, event):
@@ -587,8 +590,7 @@ class lineLabel(QLineEdit):
     def __init__(self, parent=None):
         super(QLineEdit, self).__init__(parent)
         self.setAlignment(Qt.AlignRight)
-        # allow up to 5 digits. Editing a doc with > 100K lines? Good luck.
-        #self.setInputMask(QString("00009"))
+        # allow up to 5 digits. Editing a doc with > 99K lines? Good luck.
         val = QIntValidator()
         val.setRange(0,99999)
         self.setValidator(val)

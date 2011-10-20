@@ -8,32 +8,23 @@ from future_builtins import *
 '''
 Display the pngs to match the page being edited.
 
-The object consists of a vertical box layout containing above,
-a label widget initialized with a 700x1000 pixmap with fill(QColor("gray")),
-and below, a small label that will display the current page number
-initialized with "No page"
-
-Also contains a QPixmapCache initialized to clear()
+The object consists of a vertical box layout containing, above,
+a QLabel widget initialized with a 700x1000 QPixmap with fill(QColor("gray"))
+and enclosed in a QScrollArea, and below, a small label to display the current
+page number initialized with "No page"
 
 Reimplements keyPressEvent() copied from the editor, trapping ctl-plus/minus
-to zoom the image when an image exists. Zooming should be, just changing
-the size hint of the image larger, it will scale and parent will scroll.
+to zoom the image when an image exists. Zooming is done by just changing
+the size hint of the pixmap; it scales, and the parent scrollarea scrolls.
 
-has member cursorMoved() which is connect to the cursorPositionChanged
-signal of the editor. Gets the current position, looks it up in IMC.pageTable,
-gets the filename and IMC.bookPath  - use QFileInfo? - add pngs, filename.
+The method cursorMoved() is connect to the cursorPositionChanged signal emitted
+by the editor. It gets the current position, looks it up in IMC.pageTable,
+gets the filename and IMC.bookPath to give to the load method of QPixMap.
 
-Looks for page number in pixmapcache, else tests FileInfo.exists, 
-and creates pixmap with filepath.
-
-    
-        if (!QPixmapCache::find(key, pixmap)) {
-            pixmap = generatePixmap();
-            QPixmapCache::insert(key, pixmap);
-        }
-         scaleFactor *= factor; 1.25 or 0.8
-     imageLabel->resize(scaleFactor * imageLabel->pixmap()->size());
-
+N.B. there is a cryptic comment in the QPixmap doc page that "QPixmaps are
+automatically added to the QPixmapCache when loaded from a file." This seems
+to mean that it will avoid a second disk load when we revisit a page, and
+the performance would indicate this is so.
 '''
 
 from PyQt4.QtCore import ( Qt, QFileInfo, QString, QSettings, QVariant )
@@ -85,6 +76,7 @@ class pngDisplay(QWidget):
         self.bookName = QString() # name of book we are in
         self.pngPath = QString() # path to the pngs folder
         self.lastIndex = -1 # index of last page in pageTable or -1
+        IMC.currentPageIndex = None
         self.ready = False
     
     # this slot gets the main window's signal shuttingDown.
@@ -143,13 +135,6 @@ class pngDisplay(QWidget):
             # On another page, save its index as IMC.currentPageIndex for use
             # by pqNotes. Get its filename Qstring, e.g. "025", add ".png"
             # and save as self.lastPage. Make full path to the image and load it.
-            # --- N.B. there is a cryptic comment in the QPixmap doc
-            # page that "QPixmaps are automatically added to the QPixmapCache
-            # when loaded from a file" -- does this mean they will avoid a
-            # second disk load when we revisit a page? We could make a cache
-            # key string from the bookName and lastPage strings and use it
-            # to get the image from the cache -- but for now we assume that
-            # Qt is doing it for us. Revisit if large book performance is bad.
             self.lastIndex = lo
             IMC.currentPageIndex = lo
             self.lastPage = QString(IMC.pageTable[self.lastIndex][1]+u".png")
@@ -179,7 +164,7 @@ class pngDisplay(QWidget):
                 event.accept()
                 fac = (0.8) if (code == Qt.Key_Minus) else (1.25)
                 fac *= self.zoomFactor # target zoom factor
-                if (fac > 0.2) and (fac < 3.0): # keep in bounds
+                if (fac >= 0.2) and (fac <= 3.0): # keep in bounds
                     self.imLabel.resize( fac * self.imLabel.pixmap().size() )
                     self.zoomFactor = fac
                     self.txLabel.setText(
@@ -195,7 +180,13 @@ class pngDisplay(QWidget):
 
 if __name__ == "__main__":
     import sys
+    from PyQt4.QtCore import (QSettings)
     from PyQt4.QtGui import (QApplication,QFileDialog)
+    class tricorder():
+        def __init__(self):
+            pass
+    IMC = tricorder() # set up a fake IMC for unit test
+    IMC.settings = QSettings()
     app = QApplication(sys.argv) # create an app
     widj = pngDisplay()
     apng = QFileDialog.getOpenFileName(widj,"Pick a Png",".","page files (*.png)")

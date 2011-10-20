@@ -11,49 +11,45 @@ from future_builtins import *
  A single document file, bookname.suffix, is edited. A variety of metadata
  is collected the first time a file is opened and is saved in a metadata file,
  bookname.suffix.metadata. Also expected to exist at the same file path
- as the document:
-     bookname.suffix
+ as bookname.suffix:
      bookname.suffix.meta (created on first save)
      good_words.txt (optional)
      bad_words.txt (optional)
      pngs, a folder containing scan images named nnn.png
-     regexes.txt, optional file of predefined regexes for this book
 
- The main window is has two panes divided by a splitter. The left pane has
- the text for editing (QTextEdit). The right pane is tabbed and offers a
- variety of views:
+ The main window has two panes divided by a splitter. The left pane has
+ the text for editing (QPlainTextEdit). The right pane is tabbed and offers a
+ variety of panels, each with a specific function:
  
-    Pngs :   a tab showing the image (nnn.png) for the text where the 
-             user is editing (insertion point) from the pngs folder.
+    Pngs :   Shows the scan image (nnn.png) for the text at the insertion point
+	     from the pngs folder.
     
-    Find :   a panel with a variety of search/replace controls including
-             predefined regex searches (e.g. find poetry markup) and buttons
-             that the user can program with regexes (from regexes.txt)
+    Find :   A variety of search/replace controls including predefined regex
+             searches in a user-programmable button array.
     
-    Notes :  a QSimpleTextEdit where the user can keep notes that
-             are saved as part of the metadata.
+    Notes :  A QPlainTextEdit where the user can keep notes that are saved as
+	     part of the metadata.
 
-    Pages :  a table of all pages with their scan (.png) numbers, folio
-             (pagination) controls, and proofer ids. Maintained from metadata
-             after page delimiters are purged.
+    Pages :  A table of all pages with their scan (.png) numbers, folio
+             (pagination) controls, and proofer ids. Page boundaries are kept
+	     in the metadata after page delimiters are purged.
     
-    Chars :  a table of the character census, showing for each its glyph,
-             hex value, count, and class (e.g. ascii, utf, windows etc),
-             sortable on any column.
+    Chars :  A table of the character census, showing for each its glyph,
+             hex value, count, and Unicode class, sortable on any column.
     
-    Words :  a table of the word census, showing for each its text, count,
-             and class info (e.g. all-cap, fails spellcheck, etc), sortable
+    Words :  A table of the word census, showing for each its text, count,
+             and class info (all-cap, fails spellcheck, etc), sortable
              by text and count, and filterable on class.
     
-    Flow :   a tab offering various controls for text reflow, page delimiter
-             removal, and ascii table processing.
+    Flow :   Various controls for text reflow, page delimiter removal, and
+	     ascii table processing.
 
-    FNote :  a panel with controls related to footnote processing and a table
-             of footnotes found with errors indicated.
+    FNote :  Controls related to footnote processing and a table of the
+             footnotes found, with errors indicated.
     
-    Html :   a tab offering controls related to Html conversion.
+    Html :   Controls related to Html conversion.
     
-    View :   live preview of the (html) document (QWebView)
+    View :   Live preview of the (html) document (QWebView)
 '''
 
 '''
@@ -62,27 +58,32 @@ Acknowledgements and Credits
 First to Steve Shulz (Thundergnat) who created and maintained Guiguts,
 the program from which we have taken inspiration and lots of methods.
 
-Second to Mark Summerfield for the book "Rapid GUI Developement with PyQt"
+Second to Mark Summerfield for the book "Rapid GUI Development with PyQt"
 without which we couldn't have done this.
-
 '''
 
 __version__ = "0.1.0" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, David Cortesi"
 __maintainer__ = "?"
-__email__ = "nobody@pgdp.net"
+__email__ = "tallforasmurf@yahoo.com"
 __status__ = "first-draft"
 __license__ = '''
 Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
 http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
+
 import sys # for argv, passed to QApplication
 import platform # for mac detection
 
 from PyQt4.QtCore import (Qt, QSettings )
 from PyQt4.QtGui import ( QApplication )
 
+# A note on variable names: since we started working from Summerfield's code
+# we adopted his use of camelCase names. Later we found out that Python coders
+# generally prefer lots_o_under_bars. Too late. CamelCase rules. Global names
+# only are initial-cap, others lowerCase.
+#
 # Program structure:
 # This module imports a series of other modules, one for each major UI widget
 # and some for general utility, as follows:
@@ -95,7 +96,8 @@ from PyQt4.QtGui import ( QApplication )
 #  pqEdit.py  defines the text editor object including all its user
 #             interactions and metadata storage.
 #
-#  pqMain.py  defines the Main window in which everything else is shown.
+#  pqMain.py  defines the Main window in which everything else is shown, and
+#             instantiates all the other widgets.
 #
 #  pqPngs.py  defines the pngs widget for viewing scanned page images.
 #
@@ -111,20 +113,22 @@ from PyQt4.QtGui import ( QApplication )
 #
 #  pqFlow.py  defines the reflow controls widget
 #
-#  pqFoots.py defines the footnote manager widget
+#  pqFoot.py defines the footnote manager widget
 #
 #  pqHtml.py  defines the html conversion manager
 #
 #  pqView.py  defines the live html preview widget
+#
+#  pgHelp.py  displays the program manual (whose text is in pqHelp.html).
 #
 # Some modules have unit-test code that runs if they are executed stand-alone.
 # Each module imports whatever classes of PyQt.Qtxx it needs. This causes
 # some duplication; we trust Python to not import duplicate code.
 #
 # Modules need access to each other and to global constants, and this
-# is provided by assigning values to an object named IMC, a reference to
-# which is stored into each object when it is imported. IMC should be treated
-# as read-only by all modules (but there is no enforcement of this).
+# is provided by assigning values to an object named IMC, (Inter-Module
+# Communicator), a reference to which is stored into each object after it is
+# imported, see below.
 #
 class tricorder():
 	def __init__(self):
@@ -153,14 +157,14 @@ IMC.FolioRuleSet = 0x01
 IMC.FolioRuleSkip = 0x02
 
 # Controls on the edit word hiliter, queried in the editor and
-# set by the Main window menu actions:
+# set by the Main window View menu actions:
 
 IMC.scannoHiliteSwitch = False
 IMC.spellingHiliteSwitch = False
 
-# Keystrokes checked by editor and other panels
+# Keystrokes checked by editor and other panels that monitor KeyEvent signals.
 
-# In rough order of frequency of use we support:
+# In rough order of frequency of use, we support:
 # ^g and ^G, search again forward/backward,
 # ^f start search,
 # ^t and ^T replace and search forward/backward,
@@ -170,6 +174,8 @@ IMC.spellingHiliteSwitch = False
 # ^-alt-1-9 set bookmarks
 # ^+/- zoom also ctrl-shift-equal which is how plus comes in usually
 # ^l and ^-alt-l, ^p and ^-alt-p for the Notes panel
+# Define these in a way easy to check in a keyEvent slot, and also put
+# them in python lists for quick lookup.
 
 IMC.ctl_G = Qt.ControlModifier | Qt.Key_G
 IMC.ctl_shft_G = Qt.ShiftModifier | IMC.ctl_G
@@ -219,19 +225,16 @@ IMC.markKeys = [IMC.ctl_1, IMC.ctl_2, IMC.ctl_3, IMC.ctl_4, IMC.ctl_5,
 IMC.markSetKeys = [IMC.ctl_alt_1, IMC.ctl_alt_2, IMC.ctl_alt_3,
         IMC.ctl_alt_4,  IMC.ctl_alt_5,  IMC.ctl_alt_6,  IMC.ctl_alt_7,
         IMC.ctl_alt_8,  IMC.ctl_alt_9]
-import pqMsgs
-pqMsgs.IMC = IMC
-# Import the spell-check code and create an object the represents
-# the gateway to Aspell:
 
-import pqSpell
+# Import each submodule and stick a reference to IMC in it.
+import pqMsgs # misc message and font routines
+pqMsgs.IMC = IMC
+
+import pqSpell # Spell-check routines and gateway to Aspell
 pqSpell.IMC = IMC
 IMC.aspell = pqSpell.makeAspell()
 
-# pqLists.py implements the badwords, goodwords, and scannos lists
-# and provides quick lookup in them.
-
-import pqLists
+import pqLists # ordered lists of words for quick lookup
 pqLists.IMC = IMC
 IMC.scannoList = pqLists.wordList()
 IMC.goodWordList = pqLists.wordList()
@@ -240,36 +243,44 @@ IMC.wordCensus = pqLists.vocabList()
 IMC.charCensus = pqLists.vocabList()
 IMC.pageTable = []
 
-import pqEdit
+import pqEdit # the main edit widget plus save and load metadata
 pqEdit.IMC = IMC
-IMC.editWidget = None # created in pqMain
+IMC.editWidget = None # instantiated in pqMain
 
-import pqPngs
+import pqPngs # scan image display
 pqPngs.IMC = IMC
 
-import pqNotes
+import pqNotes # notes
 pqNotes.IMC = IMC
 
-import pqFind
+import pqFind # find/replace
 pqFind.IMC = IMC
 
-import pqChars
+import pqChars # character census table
 pqChars.IMC = IMC
 
-import pqWords
+import pqWords # word census table
 pqWords.IMC = IMC
 
-import pqPages
+import pqPages # page and folio table
 pqPages.IMC = IMC
 
-import pqFlow
+import pqFlow # text reflow
 pqFlow.IMC = IMC
 
-import pqMain
+#import pqFoot # footnote management
+# pqFoot.IMC = IMC
+
+#import pqHtml # html conversion
+# pqHtml.IMC = IMC
+
+# import pqView # html preview
+# pqView.IMC = IMC
+
+import pqMain # code for the main window and all menus
 pqMain.IMC = IMC
 
-#
-# and awayyyyyy we go
+# and awayyyyyy we go:
 # Create the application and sign it with our names so that
 # saved settings go in reasonable places
 app = QApplication(sys.argv)
@@ -283,6 +294,6 @@ app.setApplicationName("PPQT")
 # ~/.config/PGDP; on Windows, in the Registry under /Software/PGDP.
 IMC.settings = QSettings()
 
-IMC.mainWindow = pqMain.MainWindow() # create the main window (creates all tabs)
+IMC.mainWindow = pqMain.MainWindow() # create the main window and all tabs
 IMC.mainWindow.show()
 app.exec_()

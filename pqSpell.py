@@ -7,7 +7,7 @@ from future_builtins import *
 '''
  Define a class that represents an interface to Aspell.
  One object is instantiated in the main program and used for
- spell-checking of single words at several places in the program.
+ spell-checking of single words.
  
  At present we are attaching aspell via a pipe, using the subprocess
  module of the Python standard library. Thus to check a word means
@@ -15,12 +15,21 @@ from future_builtins import *
  (or turns out not to work for UTF-8!) 
  we will have to obtain a python wrapper for the C api to Aspell.
  
- The main module instantiates one object of this class. It offers:
-     .isUp() true/false if spelling is working
-     .check(w) where w can be a python string or a QString, returns true
-       if aspell approves of the word
-     .checkLine(w) passes the line to aspell and returns zero or more
-       characters of response, * for a good word, # for a bad one.
+ The makeAspell class offers these methods:
+    .isUp() true/false if spelling is working
+    .check(w) where w can be a python string or a QString, returns True
+        if aspell approves of the word
+    .checkLine(w) passes the line to aspell and returns zero or more
+        characters of response, * for a good word, # for a bad one.
+    .terminate() which actually isn't called, but could be e.g. from
+        a shuttingDown signal from pqMain.
+
+ Aspell commands can be sent over the pipe, as follows:
+    *word	Add a word to the personal dictionary 
+    @word	Accept the word, but leave it out of the dictionary 
+    $$cs option,value e.g. $$cs master en_GB
+ We could use these features to provide an add-word method or a
+ change-dict method but have not done so.
  '''
 
 __version__ = "0.1.0" # refer to PEP-0008
@@ -58,22 +67,27 @@ class makeAspell():
         self.ap.terminate()
 
     # Attached as a pipe, Aspell expects a line with zero or more words,
-    # and returns a separate line of output for each word it sees
-    # ('*\n' for correct, '#\n' for not-found), followed by a null line.
+    # and returns a separate LINE of output for each WORD it sees, with
+    # '*\n' for correct, '#\n' for not-found, followed by a null line.
     # We assume that we are checking a single word and will get just the two
-    # two lines ('*\n\n'), but trust no-one: Our caller might send in an
+    # two lines '*\n\n', but trust no-one: Our caller might send in an
     # all-blank line, or a hyphenated string like mother-in-law, so we
     # might see just '\n' or '*\n*\n*\n\n', '*\n#\n*\n\n'. So we read until we
     # see the null line, and return the and-product over asterisks.
+    #
+    # If Aspell has a problem of any kind, it just goes away and we find out
+    # when a pipe read gets an OSError for broken pipe. If that happens we
+    # just set our ok flag and .isUp returns false thereafter.
+    #
     def check(self,aword):
-        if aword.trimmed().size() :
+        if aword.trimmed().size() : # nonempty text
             try:
                 self.ap.stdin.write( aword.toUtf8() + '\n')
                 ans = self.ap.stdout.readline()
             except: # guard against broken pipe?
-                ans = '' # this check failed
-                self.ok = False # and no more will work
-            ok = (len(ans) > 1) # all-blank is not a word
+                ans = '' # this spell check failed..
+                self.ok = False # ..and no more will work
+            ok = (len(ans) > 1) # initialize &-reduction of stars
             while len(ans) > 1:
                 ok = ok and ('*' == ans[0])
                 ans = self.ap.stdout.readline()
@@ -81,22 +95,17 @@ class makeAspell():
         return False
 
     def checkLine(self,aline):
-        ret = ''
         try:
             self.ap.stdin.write(aline+'\n')
             ans = self.ap.stdout.readline()
         except:
             ans = ''
             self.ok = False
+        ret = ''
         while len(ans) > 1:
-            ret = ret+ans[0]
+            ret = ret+ans[0] # collect successive * and # 
             ans = self.ap.stdout.readline()
         return ret
-
-    # Aspell commands can be sent over the pipe, as follows:
-    #*word	Add a word to the personal dictionary 
-    #@word	Accept the word, but leave it out of the dictionary 
-    #$$cs option,value e.g. $$cs master en_GB
 
 if __name__ == "__main__":
     aspell = makeAspell()

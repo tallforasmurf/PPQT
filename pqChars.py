@@ -22,7 +22,7 @@ lambda expressions on the QChar from column 0. When the user selects a
 row in the popup, we change the filter lambda and reset the model, forcing
 all rows to be re-fetched.
 
-The main windows DocWillChange and DocHasChanged signals are accepted
+The main window's DocWillChange and DocHasChanged signals are accepted
 and used to warn the model of impending changes in metadata.
 '''
 
