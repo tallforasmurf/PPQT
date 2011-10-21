@@ -42,6 +42,7 @@ __license__ = '''
 Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
 http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
+import pqMsgs
 
 from PyQt4.QtCore import (Qt,
                           QAbstractTableModel,QModelIndex,
@@ -51,7 +52,9 @@ from PyQt4.QtCore import (Qt,
 from PyQt4.QtGui import (
     QCheckBox,
     QComboBox,
+    QContextMenuEvent,
     QHBoxLayout,
+    QMenu,
     QPushButton,
     QSortFilterProxyModel,
     QSpacerItem,
@@ -79,7 +82,10 @@ class myTableModel(QAbstractTableModel):
         return 3 # word, count, features
     
     def flags(self,index):
-        return Qt.ItemIsEnabled
+        ret = Qt.ItemIsEnabled
+        if 0 == index.column():
+            ret |= Qt.ItemIsSelectable
+        return ret
     
     def rowCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
@@ -112,8 +118,23 @@ class myTableModel(QAbstractTableModel):
             return self.alignDict[index.column()]
         elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
             return QString(self.tipDict[index.column()])
+        elif (role == Qt.UserRole) and (2 == index.column()):
+            # context menu wants the flag bits as int
+            (qs,count,flag) = IMC.wordCensus.get(index.row())
+            return flag
         # don't support other roles
         return QVariant()
+    
+    # The data in this table isn't normally editable but if the word is
+    # added to goodwords, the flags may be changed -- see the context menu
+    # in the view following. In which case the flag field gets changed.
+    def setData(self,index,value,role):
+        if (role == Qt.UserRole) and (index.column() == 2):
+            (flag, b) = value.toInt() # damned qvariants...
+            IMC.wordCensus.setflags(index.row(),flag)
+            self.emit(SIGNAL("dataChanged(QModelIndex,QModelIndex)"),index,index)
+            return True
+        return False # dunno about other roles or columns
 
 # Customize a sort/filter proxy by making its filterAcceptsRow method
 # test the character in that row against a filter function in the parent.
@@ -132,7 +153,69 @@ class mySortFilterProxy(QSortFilterProxyModel):
         qmi = self.parent.model.index(row, 2, parent_index)
         dat = self.parent.model.data(qmi,Qt.DisplayRole)
         return self.parent.filterLambda(unicode(dat))
-   
+
+# subclass QTableView just so we can install a custom context menu
+# for column 0, and (TBS) intercept ^c to copy a word.
+class myTableView(QTableView):
+    def __init__(self, parent=None):
+        super(myTableView, self).__init__(parent)
+        # set up stuff used in our context menu
+        self.contextIndex = QModelIndex()
+        self.contextMenu = QMenu(self)
+        addAction = self.contextMenu.addAction("&Add to goodwords")
+        simAction = self.contextMenu.addAction("&Similar words")
+        harAction = self.contextMenu.addAction("&First harmonic")
+        self.connect(addAction, SIGNAL("triggered()"), self.addToGW)
+        self.connect(simAction, SIGNAL("triggered()"), self.simWords) 
+        self.connect(harAction, SIGNAL("triggered()"), self.firstHarmonic)
+       
+    # A context menu event means a right-click anywhere, ctrl-click (Mac)
+    # or Menu button (Windows). We ignore any such except on column 0,
+    # the word. There we pop up our menu.
+    def contextMenuEvent(self,event):
+        if 0 == self.columnAt(event.x()) :
+            # get the index for the datum under the widget-relative position
+            self.contextIndex = self.indexAt(event.pos())
+            # display the popup menu which needs the global click position
+            self.contextMenu.exec_(event.globalPos())
+
+    # This is the slot to receive the context menu choice "Add to goodwords".
+    # We are going to play nice with Qt's abstract table model/view. Although
+    # we could just reach into IMC.wordCensus, we will get the word and its
+    # flags by calling our model's data() method, and if we change the flag,
+    # set it by calling our model's setData(). The point is to cause the right
+    # signal to be emitted so that the flag column display changes right now.
+    # Or maybe just because we like to wrap ourselves up in snuggy layers of
+    # abstractions because it makes us feel all ... programmer-y.
+    # Oh, a little syntax note. When in this AbstractTableView object we need
+    # to call our AbstractTableModel we have to use our inherited method,
+    # self.model() -- note the parens. That actually gets us the sort filter
+    # proxy but it behaves like a table model and we're all fat and happy.
+    # Below, the wordsPanel widget has a simple property named self.model with
+    # no parens which happens to refer to something else. Sorry.
+    def addToGW(self):
+        qs = self.model().data(self.contextIndex, Qt.DisplayRole).toString()
+        word = unicode(qs) # get python string
+        b = pqMsgs.okCancelMsg(
+            "Add {0} to good-words list?".format(word),
+            "This action cannot be undone.")
+        if b : # user says do it
+            IMC.goodWordList.insert(word)
+            # fabricate an index to the flags field of this row
+            findex = self.model().index(self.contextIndex.row(), 2)
+            # get flag as an int instead of a fancy char string
+            (flag, b) = self.model().data(findex, Qt.UserRole).toInt()
+            if flag & IMC.WordMisspelt :
+                flag ^= IMC.WordMisspelt
+                self.model().setData(findex,flag,Qt.UserRole)
+
+    # The slot to receive the context menu choice Similar Words
+    def simWords(self):
+        pass
+    # The slot to receive the context menu choice First Harmonic
+    def firstHarmonic(self):
+        pass
+    
 class wordsPanel(QWidget):
     def __init__(self, parent=None):
         super(wordsPanel, self).__init__(parent)
@@ -150,7 +233,7 @@ class wordsPanel(QWidget):
         topLayout.addWidget(self.caseSwitch,0)
         topLayout.addStretch(1)
         topLayout.addWidget(self.filterMenu,0)
-        self.view = QTableView()
+        self.view = myTableView()
         self.view.setCornerButtonEnabled(False)
         self.view.setWordWrap(False)
         self.view.setAlternatingRowColors(True)
