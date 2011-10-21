@@ -32,8 +32,7 @@ from PyQt4.QtGui import (
     QAction,
     QFileDialog,
     QFont, QFontDialog, QFontInfo,
-    QFrame, QIntValidator,
-    QLineEdit,
+    QFrame,
     QKeySequence,
     QMainWindow,
     QSizePolicy,
@@ -138,7 +137,7 @@ class MainWindow(QMainWindow):
         # Create a progress bar in our status bar
         pqMsgs.makeBarIn(status)
         # Add the line number widget
-        lnum = lineLabel()
+        lnum = pqMsgs.lineLabel()
         self.connect(self.editor, SIGNAL("cursorPositionChanged()"),
                      lnum.cursorMoved)
         self.connect(lnum, SIGNAL("returnPressed()"), lnum.moveCursor)
@@ -585,32 +584,4 @@ class MainWindow(QMainWindow):
         # shut down Aspell in orderly fashion
         IMC.aspell.terminate()
         event.accept() # pass it up the line
-
-# Subclass label to make our line-number widget for the status bar.
-
-class lineLabel(QLineEdit):
-    def __init__(self, parent=None):
-        super(QLineEdit, self).__init__(parent)
-        self.setAlignment(Qt.AlignRight)
-        # allow up to 5 digits. Editing a doc with > 99K lines? Good luck.
-        val = QIntValidator()
-        val.setRange(0,99999)
-        self.setValidator(val)
-        pxs = self.fontInfo().pixelSize()
-        self.setMaximumWidth(6*pxs)
-
-    def moveCursor(self):
-        doc = IMC.editWidget.document()
-        (bn, flag) = self.text().toInt()
-        tb = doc.findBlockByLineNumber(bn)
-        if not tb.isValid():
-            tb = doc.end()
-        tc = IMC.editWidget.textCursor()
-        tc.setPosition(tb.position())
-        IMC.editWidget.setTextCursor(tc)
-
-    # this slot is connected to the editor's cursorPositionChanged signal
-    def cursorMoved(self):
-        bn = IMC.editWidget.textCursor().blockNumber()
-        self.setText(QString(repr(bn)))
     

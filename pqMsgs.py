@@ -23,6 +23,7 @@ from PyQt4.QtCore import (Qt, QString )
 from PyQt4.QtGui import (QApplication, 
     QFont,QFontInfo,
     QInputDialog,
+    QIntValidator,
     QLineEdit,
     QProgressBar,
     QSizePolicy,
@@ -134,6 +135,38 @@ def endBar():
 # Make a noise of some kind.
 def beep():
     QApplication.beep()
+
+# Subclass of QLineEdit to make our line-number widget for the status bar.
+# Instantiated and hooked up to signals in pqMain.
+
+class lineLabel(QLineEdit):
+    def __init__(self, parent=None):
+        super(QLineEdit, self).__init__(parent)
+        self.setAlignment(Qt.AlignRight)
+        # allow up to 5 digits. Editing a doc with > 99K lines? Good luck.
+        val = QIntValidator()
+        val.setRange(0,99999)
+        self.setValidator(val)
+        pxs = self.fontInfo().pixelSize()
+        self.setMaximumWidth(6*pxs)
+    # This slot receives the ReturnPressed signal from our widget, meaning
+    # the user has finished editing the number. Move the editor's cursor
+    # to the start of that line, or to the end of the document.
+    def moveCursor(self):
+        doc = IMC.editWidget.document()
+        (bn, flag) = self.text().toInt()
+        tb = doc.findBlockByLineNumber(bn)
+        if not tb.isValid():
+            tb = doc.end()
+        tc = IMC.editWidget.textCursor()
+        tc.setPosition(tb.position())
+        IMC.editWidget.setTextCursor(tc)
+
+    # This slot is connected to the editor's cursorPositionChanged signal.
+    # Change the contents of the line number display to match the new position.
+    def cursorMoved(self):
+        bn = IMC.editWidget.textCursor().blockNumber()
+        self.setText(QString(repr(bn)))
 
 if __name__ == "__main__":
     import sys
