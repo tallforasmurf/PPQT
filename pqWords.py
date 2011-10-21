@@ -211,10 +211,11 @@ class myTableView(QTableView):
 
     # The slot to receive the context menu choice Similar Words
     def simWords(self):
-        pass
+        pqMsgs.infoMsg("Similar words filter has not been implemented.")
+        
     # The slot to receive the context menu choice First Harmonic
     def firstHarmonic(self):
-        pass
+        pqMsgs.infoMsg("First Harmonic words filter has not been implemented.")
     
 class wordsPanel(QWidget):
     def __init__(self, parent=None):
