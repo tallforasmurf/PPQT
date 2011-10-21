@@ -582,6 +582,8 @@ class MainWindow(QMainWindow):
         IMC.settings.setValue("main/scannoPath", self.scannoPath)
         IMC.settings.setValue("main/scannoSwitch",IMC.scannoHiliteSwitch)
         IMC.settings.setValue("main/fontFamily",IMC.fontFamily)
+        # shut down Aspell in orderly fashion
+        IMC.aspell.terminate()
         event.accept() # pass it up the line
 
 # Subclass label to make our line-number widget for the status bar.
