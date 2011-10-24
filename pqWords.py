@@ -150,24 +150,32 @@ class mySortFilterProxy(QSortFilterProxyModel):
     # the parent for the data for the display role for that index. Which is
     # supposed to come as a qvariant, but actually comes as a QString.
     def filterAcceptsRow(self, row, parent_index):
-        qmi = self.parent.model.index(row, 2, parent_index)
-        dat = self.parent.model.data(qmi,Qt.DisplayRole)
-        return self.parent.filterLambda(unicode(dat))
+        if self.parent.listFilter is None:
+            qmi = self.parent.model.index(row, 2, parent_index)
+            dat = self.parent.model.data(qmi,Qt.DisplayRole)
+            return self.parent.filterLambda(unicode(dat))
+        else: # filtering on first harmonic or similar
+            qmi = self.parent.model.index(row, 0, parent_index)
+            dat = self.parent.model.data(qmi,Qt.DisplayRole)
+            return ( unicode(dat) in self.parent.listFilter )
 
 # subclass QTableView just so we can install a custom context menu
 # for column 0, and (TBS) intercept ^c to copy a word.
 class myTableView(QTableView):
     def __init__(self, parent=None):
         super(myTableView, self).__init__(parent)
+        self.parent = parent # save ref to panel widget
         # set up stuff used in our context menu
         self.contextIndex = QModelIndex()
         self.contextMenu = QMenu(self)
         addAction = self.contextMenu.addAction("&Add to goodwords")
-        simAction = self.contextMenu.addAction("&Similar words")
-        harAction = self.contextMenu.addAction("&First harmonic")
+        simAction = self.contextMenu.addAction("S&imilar words")
+        har1Action = self.contextMenu.addAction("&First harmonic")
+        har2Action = self.contextMenu.addAction("&Second harmonic")
         self.connect(addAction, SIGNAL("triggered()"), self.addToGW)
-        self.connect(simAction, SIGNAL("triggered()"), self.simWords) 
-        self.connect(harAction, SIGNAL("triggered()"), self.firstHarmonic)
+        self.connect(simAction, SIGNAL("triggered()"), self.similarWords) 
+        self.connect(har1Action, SIGNAL("triggered()"), self.firstHarmonic)
+        self.connect(har2Action, SIGNAL("triggered()"), self.secondHarmonic)
        
     # A context menu event means a right-click anywhere, ctrl-click (Mac)
     # or Menu button (Windows). We ignore any such except on column 0,
@@ -187,12 +195,12 @@ class myTableView(QTableView):
     # signal to be emitted so that the flag column display changes right now.
     # Or maybe just because we like to wrap ourselves up in snuggy layers of
     # abstractions because it makes us feel all ... programmer-y.
-    # Oh, a little syntax note. When in this AbstractTableView object we need
-    # to call our AbstractTableModel we have to use our inherited method,
-    # self.model() -- note the parens. That actually gets us the sort filter
-    # proxy but it behaves like a table model and we're all fat and happy.
-    # Below, the wordsPanel widget has a simple property named self.model with
-    # no parens which happens to refer to something else. Sorry.
+    # Oh, a little syntax note. When, in this AbstractTableView object, we need
+    # to call our AbstractTableModel, we have to use our inherited method,
+    # self.model(). Note the parens. That actually gets us the sort filter
+    # proxy but it behaves like a table model so we're all fat and happy.
+    # Below, when the wordsPanel widget has to refer to its actual table model
+    # it keeps the reference in a simple property named self.model. No parens!
     def addToGW(self):
         qs = self.model().data(self.contextIndex, Qt.DisplayRole).toString()
         word = unicode(qs) # get python string
@@ -208,15 +216,84 @@ class myTableView(QTableView):
             if flag & IMC.WordMisspelt :
                 flag ^= IMC.WordMisspelt
                 self.model().setData(findex,flag,Qt.UserRole)
-
-    # The slot to receive the context menu choice Similar Words
-    def simWords(self):
-        pqMsgs.infoMsg("Similar words filter has not been implemented.")
         
-    # The slot to receive the context menu choice First Harmonic
+    # The actual code of First and Second Harmonic. Run through the word list
+    # and make a sublist of just the ones that are a Levenshtein distance of 1
+    # (first) or 2 (second) from the current word. If there are none, pop up a
+    # notice saying so. Otherwise, set the list in the wordsPanel.filterList
+    # Then filterAcceptsRow, above, will only accept words in the list.
+    def realHarmonic(self,dist):
+        qs = self.model().data(self.contextIndex, Qt.DisplayRole).toString()
+        word = unicode(qs) # get python string
+        wordLen = len(word) # save a few cycles in the test below
+        harmList = []
+        for i in range(IMC.wordCensus.size()):
+            word2 = unicode(IMC.wordCensus.getWord(i))
+            if dist >= abs(wordLen - len(word2)): # There's a chance of a match
+                if dist >= edit_distance(word,word2): # test it
+                    harmList.append(word2) # one hit is on the word itself
+        if 1 < len(harmList) : # got at least 1 other
+            self.parent.listFilter = harmList
+            self.parent.model.reset()
+        else:
+            pqMsgs.infoMsg(
+        "There are no words in edit distance {0} edit of {1}".format(dist,word)
+            )
+
     def firstHarmonic(self):
-        pqMsgs.infoMsg("First Harmonic words filter has not been implemented.")
-    
+        self.realHarmonic(1)
+    def secondHarmonic(self):
+        self.realHarmonic(2)
+
+    # The slot to receive the context menu choice Similar Words. Like first
+    # and second harmonic above, but simpler to process.
+    def similarWords(self):
+        qch = QChar(u'-')
+        qcp = QChar(u"'")
+        wordOriginal = self.model().data(self.contextIndex, Qt.DisplayRole).toString()
+        word = QString(wordOriginal)
+        word.remove(qch)
+        word.remove(qcp)
+        h1list = []
+        for i in range(IMC.wordCensus.size()):
+            word1 = IMC.wordCensus.getWord(i)
+            word2 = QString(word1) # force a copy!
+            word2.remove(qch) # otherwise this would affect the word
+            word2.remove(qcp) # in the census list
+            if 0 == word.compare(word2,Qt.CaseInsensitive):
+                h1list.append(unicode(word1)) # one hit on word itself
+        if 1 < len(h1list): # got at least 1 other
+            self.parent.listFilter = h1list
+            self.parent.model.reset()
+        else:
+            pqMsgs.infoMsg("There are no words similar to {0}".format(unicode(wordOriginal)))
+
+# Levenshtein distance computation in Python. At some point we probably
+# have to get one coded in C, there is more than one such in pypi. However
+# that means installing same on all 3 platforms. For the nonce we go with this.
+# The algorithm is is m*n in the lengths of the two strings.
+def edit_distance(a, b):
+    """
+    distance(a, b) -> int.
+    Calculates Levenshtein's edit distance between strings "a" and "b".
+    Modified for PPQT use from the original Text manipulation utilities
+    package at http://bitbucket.org/tarek/texttools
+    Author: Tarek Ziade
+    """
+    # ensure a is the longer string
+    if len(a) < len(b):
+        return edit_distance(b, a)
+    previous_row = xrange(len(b) + 1)
+    for i, c1 in enumerate(a):
+        current_row = [i + 1]
+        for j, c2 in enumerate(b):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    return previous_row[-1]
+
 class wordsPanel(QWidget):
     def __init__(self, parent=None):
         super(wordsPanel, self).__init__(parent)
@@ -234,7 +311,7 @@ class wordsPanel(QWidget):
         topLayout.addWidget(self.caseSwitch,0)
         topLayout.addStretch(1)
         topLayout.addWidget(self.filterMenu,0)
-        self.view = myTableView()
+        self.view = myTableView(self)
         self.view.setCornerButtonEnabled(False)
         self.view.setWordWrap(False)
         self.view.setAlternatingRowColors(True)
@@ -277,6 +354,7 @@ class wordsPanel(QWidget):
         self.lambdaApostrophe = lambda S : S[4] == u'p'
         self.lambdaMisspelt = lambda S : S[5] == u'X'
         self.filterLambda = self.lambdaAll # initially All
+        self.listFilter = None
         # Connect a user-selection in the popup to our filter method.
         self.connect(self.filterMenu, SIGNAL("activated(int)"),self.filter)
         # Connect doubleclicked from our table view to self.findThis
@@ -312,6 +390,7 @@ class wordsPanel(QWidget):
         elif row == 7 : self.filterLambda = self.lambdaApostrophe
         elif row == 8 : self.filterLambda = self.lambdaMisspelt
         else : self.filterLambda = self.lambdaAll
+        self.listFilter = None
         self.model.reset()
 
     # This slot receives the main window's docWillChange signal.
