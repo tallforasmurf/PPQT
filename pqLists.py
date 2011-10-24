@@ -196,7 +196,6 @@ class vocabList():
             return 0
     # tabulate one use of a word and set its flag on first seeing it
     def count(self,qs,flag):
-	dbg = unicode(qs)
         i = self.lookup(qs)
         if i is not None :
             self.counts[i] += 1
