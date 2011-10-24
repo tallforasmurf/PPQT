@@ -59,7 +59,7 @@ http://creativecommons.org/licenses/by-nc-sa/3.0/
 
 import bisect
 
-from PyQt4.QtCore import (QFile, QTextStream, QString, QChar)
+from PyQt4.QtCore import (Qt, QFile, QTextStream, QString, QChar)
 
 # Class for simple one-column unicode (usually just Latin-1) word lists
 # This class is used for the good_words, bad_words and scanno lists.
@@ -128,9 +128,8 @@ class vocabList():
         self.words = []
         self.counts = []
         self.flags = []
+	self.insertPoint = None
         self._size = 0 # can't be same as name of accessor function?
-        self.lastword = QString()
-        self.lastindex = -1
 
     def size(self):
         return self._size
@@ -142,6 +141,10 @@ class vocabList():
             return (self.words[index], self.counts[index], self.flags[index])
         else:
             raise ValueError # naughty naughty
+
+    # Used by pqWords when scanning the table
+    def getWord(self,index):
+	return unicode(self.words[index])
 
     # This is called from load, where we learn the word and its count
     # and its flags from the metadata file. We assume this is going to
@@ -163,21 +166,18 @@ class vocabList():
     # use the bisect_left algorithm. Short-circuit the lookup if coming back
     # for the same word as last time.
     def lookup(self,qs):
-        if self.lastword.compare(qs) == 0: return self.lastindex
         lo = 0
         hi = self._size
         while lo < hi:
             mid = (lo+hi)//2
-            if self.words[mid].compare(qs) < 0 : # words[mid] < qs
+            if self.words[mid].compare(qs,Qt.CaseSensitive) < 0 : # words[mid] < qs
                 lo = mid+1
             else:
                 hi = mid
-        self.lastindex = lo
-        self.lastword = qs
+	self.insertPoint = lo
         if (lo < self._size) : # not empty list
-            if (self.words[lo].compare(qs) == 0) : # matched at words[lo]
+            if (self.words[lo].compare(qs,Qt.CaseSensitive) == 0) : # matched at words[lo]
                 return lo
-	self.lastword = QString() 
         return None # not there
 
     # return the count value of a word
@@ -196,13 +196,14 @@ class vocabList():
             return 0
     # tabulate one use of a word and set its flag on first seeing it
     def count(self,qs,flag):
+	dbg = unicode(qs)
         i = self.lookup(qs)
         if i is not None :
             self.counts[i] += 1
         else:
 	    # new list key - must make a copy to prevent side-effects if the
 	    # caller is re-using his qstring.
-	    i = self.lastindex
+	    i = self.insertPoint
             self.words.insert(i,QString(qs))
             self.counts.insert(i,1)
             self.flags.insert(i,int(flag))
@@ -213,34 +214,42 @@ if __name__ == "__main__":
     import sys
     from PyQt4.QtGui import (QApplication,QFileDialog)
     from PyQt4.QtCore import (QFile, QTextStream, QString)
-    wl = wordList()
-    app = QApplication(sys.argv) # create the app
-    fn = QFileDialog.getOpenFileName(None,"Select a Unit Test File")
-    print(fn)
-    fh = QFile(fn)
-    if not fh.open(QFile.ReadOnly):
-        raise IOError, unicode(fh.errorString())
-    stream = QTextStream(fh)
-    stream.setCodec("UTF-8")
-    print('before active? {0}'.format(wl.active()))
-    wl.load(stream)
-    print('loaded active? {0}'.format(wl.active()))
-    for w in ['frog','cheese','banana','hasaspace', 'notinfile']:
-        print('{0}: {1}'.format(w,wl.check(w)))
     vl = vocabList()
-    print('vl size {0}'.format(vl.size()) )
-    stream.seek(0)
-    while (not stream.atEnd()):
-        word = stream.readLine().trimmed()
-        j = vl.count(word, 9)
-    for w in ['frog','cheese','banana','hasaspace', 'notinfile']:
-        i = vl.lookup(QString(w))
-        if i is not None:
-            (ww,cc,ff) = vl.get(i)
-            print('{0}: {1} {2} {3} {4}'.format(w, i, ww, cc, ff))
-        else:
-            print('{0}: not found'.format(w))
+    tx = u"could could Could Couldn't couldn't couldn't couldn't couldn't can't Zabriskie"
+    wds = tx.split()
+    for w in wds:
+	vl.count(QString(w),0)
     for i in range(vl.size()):
-	(ww,cc,ff) = vl.get(i)
-	print(i, ww,cc,ff)
+	(w,n,f) = vl.get(i)
+	print(unicode(w),n)
+	
+    #app = QApplication(sys.argv) # create the app
+    #fn = QFileDialog.getOpenFileName(None,"Select a Unit Test File")
+    #print(fn)
+    #fh = QFile(fn)
+    #if not fh.open(QFile.ReadOnly):
+        #raise IOError, unicode(fh.errorString())
+    #stream = QTextStream(fh)
+    #stream.setCodec("UTF-8")
+    #print('before active? {0}'.format(wl.active()))
+    #wl.load(stream)
+    #print('loaded active? {0}'.format(wl.active()))
+    #for w in ['frog','cheese','banana','hasaspace', 'notinfile']:
+        #print('{0}: {1}'.format(w,wl.check(w)))
+    #vl = vocabList()
+    #print('vl size {0}'.format(vl.size()) )
+    #stream.seek(0)
+    #while (not stream.atEnd()):
+        #word = stream.readLine().trimmed()
+        #j = vl.count(word, 9)
+    #for w in ['frog','cheese','banana','hasaspace', 'notinfile']:
+        #i = vl.lookup(QString(w))
+        #if i is not None:
+            #(ww,cc,ff) = vl.get(i)
+            #print('{0}: {1} {2} {3} {4}'.format(w, i, ww, cc, ff))
+        #else:
+            #print('{0}: not found'.format(w))
+    #for i in range(vl.size()):
+	#(ww,cc,ff) = vl.get(i)
+	#print(i, ww,cc,ff)
     
