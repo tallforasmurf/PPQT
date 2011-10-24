@@ -310,9 +310,13 @@ it will be saved with the metadata and never be shown as misspelt again.</li>
 <li>Similar words: Filter the word list to show only words that match the
 current word when letter case, hyphens, and apostrophes are ignored.</li>
 <li>First harmonic: Filter the word list to show only words that are
-within one character of difference from the current word.</li>
+within one edit of difference from the current word.</li>
+<li>Second harmonic: Show only words that are within one or two edits
+of the current word.</li>
 </ul>
-<p>After viewing Similar words or First harmonic words, select
+<p>Use Similar words to find inconsistent use of hyphens. Use
+First and Second Harmonic to find likely misspellings of a word.
+After viewing Similar or First or Second Harmonic, select
 All from the popup menu above the table to see all words again.</p>
 <h2>The Pages Panel</h2>
 <p>Click the Page tab to display the Pages panel. 
