@@ -371,7 +371,9 @@ class PPTextEditor(QPlainTextEdit):
         global reMarkup, qcDash, qcApost, qcLess, qcLbr, qslcLig
         global qsucLig, qsLine, i, qcThis, uiCat, inWord
         global uiWordFlags, qsWord, nextAction, parseArray
-        
+        IMC.wordCensus.clear()
+        IMC.charCensus.clear()
+        # If we are doing pages, it's for load, and the page table has been cleared.
         pqMsgs.startBar(self.document().blockCount(),"Building metadata")
         reLineSep = QRegExp("^-----File:\s*(\d+)\.png---(.+)(-+)$",Qt.CaseSensitive)
         reTrailDash = QRegExp("-+$")
