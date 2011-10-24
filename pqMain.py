@@ -506,7 +506,11 @@ class MainWindow(QMainWindow):
         if not self.recentFiles.contains(fname):
             self.recentFiles.prepend(QString(fname))
             while self.recentFiles.count() > 9:
-                self.recentFiles.removeLast()
+                # note dammit, QStringList is *supposed* to inherit removeLast()
+                # from QList, also .size() -- neither is true. Instead it has
+                # a .count() method, and does have removeAt, so that is how
+                # we drop the oldest items from the list.
+                self.recentFiles.removeAt(self.recentFiles.count()-1)
     
     # File>Scanno clicked. Ask the user for a file to open and if one is given,
     # store it as self.scannoPath, open it, and use it to load IMC.scannoList.
