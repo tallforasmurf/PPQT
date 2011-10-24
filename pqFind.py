@@ -756,7 +756,8 @@ class findRepEdit(QLineEdit):
 # of all the fields of the upper part of the panel.
 #
 # The values are stored in the form of a python dict with these keys:
-# 'label'  :'string'     label for the button
+# 'label'  : 'string'    label for the button
+# 'tooltip': 'string'    tooltip for the button, can be longer than the label
 # 'case'   : True/False  case switch
 # 'word'   : True/False  whole word switch
 # 'insel'  : True/False  in selection switch
@@ -781,11 +782,10 @@ class userButton(QPushButton):
         self.setContextMenuPolicy(Qt.PreventContextMenu) # we handle right-click
         # if a dict string was passed, treat it with suspicion
         self.udict = None
-        if initDict is not None: 
-            self.loadDict(initDict) # loads label
-        if self.udict is None : # no dict or bad dict, make minimal dict
-            self.udict = { 'label':'(empty)' }
-            self.setText(QString(self.udict['label']))
+        self.loadDict(initDict) # creates at least a minimal dict with a label
+        self.setText(QString(self.udict['label']))
+        if 'tooltip' in self.udict:
+            self.setToolTip(QString(self.udict['tooltip']))
 
     # trap a right-click or control-click and pass it as a signal to findPanel
     # where it will load our dict from the present find fields, and query the
@@ -801,10 +801,11 @@ class userButton(QPushButton):
         super(userButton, self).mouseReleaseEvent(event) # pass it up
 
     # Subroutine to load our values from a string that purports to be
-    # the python source of a dictionary - such as is created by
-    # userButtonLoad above, and saved in the settings in shutDown above.
-    # By putting this here we can load a user button from a file.
-    # Since it might come from a user-edited file, we treat it with
+    # the Python source of a dictionary - such as is created by
+    # findPanel.userButtonLoad() above, and saved in the settings in
+    # findPanel.shutDown(), and saved by File>Save Find Buttons.
+    # This is called on button creation, or when doing File> Load Find Buttons
+    # from a file. Since it might come from a user-edited file, we treat it with
     # grave suspicion. We require it to have a 'label':'string'
     # entry. We do not check other entries, and in fact you could
     # sneak in bad stuff e.g. 'andnext':'foobar' which would only cause
@@ -827,9 +828,7 @@ class userButton(QPushButton):
             # all good, go ahead and use it
         except StandardError:
             # some error raised, go to minimum default
-            self.udict = { 'label':'(empty)' }
-        self.setText(QString(self.udict['label']))
-
+            self.udict = { 'label':'(empty)', 'tooltip':'Undefined button' }
     
 if __name__ == "__main__":
     import sys
