@@ -183,7 +183,7 @@ Before the replacement is done, a message is shown: "Replace <i>nn</i>
 occurrences of <i>find-text</i> with <i>repl-text</i>?" and you
 have the option of cancelling the operation. The replace-all 
 operation is a single undo/redo step.</p>
-<h3>Canned Searches</h3>
+<h3>User-defined Buttons</h3>
 <p>Below the Replace controls is an array of 24 pushbuttons. 
 Use these to store find/replace operations for re-use.
 To store an operation, right-click (Mac users: <b>control</b>-click)
@@ -192,11 +192,14 @@ When you do so and click OK, that label is assigned to the button,
 and the state of all the find/replace controls&mdash;all checkboxes
 and entry fields&mdash;is stored in that button. Whenever you want to
 repeat that search, click the button to set all the find/replace
-controls to the stored settings.</p>
-<p>The current button settings are remembered from session to session.</p>
-<p>TBS: a way will be provided to save the entire set of buttons to
-a text file, and to load a new set of buttons from a text file. In this
-way we can distribute especially clever find/replace setups.</p>
+controls to the stored settings. The current button settings are remembered from session to session.</p>
+<p>To save the button settings to a file select File>Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (a suffix of .utf is recommended). In the saved file each non-empty button is represented on a single line.</p>
+<p>To load button settings from a file, select File>Load Find Buttons.
+Any button definitions in the file are assigned to the buttons.
+The intent of saving and loading buttons is to be able to save
+and re-use complex search operations, and exchange them with other
+users. The file syntax is documented elsewhere.</p>
+<p></p>
 <h3>Regex Syntax</h3>
 <p>The Qt regex support is similar to but has fewer features than the Perl regexes used in guiguts. The following forms are used to match text.</p>
 <table border='1'>

@@ -121,7 +121,7 @@ from urllib import (quote, unquote) # for safely encoding find/rep strings
 import pqMsgs
 
 from PyQt4.QtCore import (Qt,
-    QRegExp,
+    QChar, QRegExp,
     QString, QStringList,
     SIGNAL, SLOT )
 from PyQt4.QtGui import(
@@ -274,7 +274,9 @@ class findPanel(QWidget):
         stgs.beginReadArray("userButton")
         for i in range(UserButtonMax):
             stgs.setArrayIndex(i)
-            dict = unicode(stgs.value("dict",QString("{u'label': u'(empty)'}")).toString())
+            dict = unicode(stgs.value(
+            "dict",QString("{u'label':u'(empty)',u'tooltip':u'Undefined button'}")
+                ).toString())
             btn = userButton(unquote(dict))
             self.userButtons.append(btn)
             self.connect(self.userButtons[i], SIGNAL("clicked()"),
@@ -611,6 +613,7 @@ class findPanel(QWidget):
         d.clear()
         d['label'] = unicode(ans)
         self.userButtons[butnum].setText(ans)
+        self.userButtons[butnum].setToolTip(ans) # wipe out "Undefined button" tip
         d['case'] = self.caseSwitch.isChecked()
         d['word'] = self.wholeWordSwitch.isChecked()
         d['regex'] = self.regexSwitch.isChecked()
@@ -648,32 +651,51 @@ class findPanel(QWidget):
         stgs.endArray() 
         stgs.endGroup() # end of Find/xxx group
 
-    # method for pqMain to call to cause saving of all userbuttons.
-    # Save in just the format we use for the settings file, namely
-    # urllib.quote( of a dict.__repr__() string). Each string goes out
-    # with the number of the button followed by the dict string, on 
-    # a single line. Not the most user-friendly of formats, but really
-    # all the user "editing" can be done here in the app. by setting the
-    # widgets into the button before saving.
+    # Method for pqMain to call to cause saving of userbuttons.
+    # Saving in the settings file, we use urllib.quote() to avoid all questions
+    # of quotes and other specials. But the result is just about unreadable and
+    # we want the saved file to be user-editable so we just dump the
+    # dict.__repr__() string), which may well contains Unicode letters, so the
+    # file is encoded UTF-8 (whether or not the user supplies the right suffix).
+    # Each line goes out with the number of the button followed by the dict
+    # string, on a single line. Not the most user-friendly of formats.
     def saveUserButtons(self,stream):
         for i in range(UserButtonMax):
-            stream << "{0}:{1}\n".format(i,quote(self.userButtons[i].udict.__repr__()) )
+            if self.userButtons[i].udict['label'] != "(empty)" :
+                stream << "{0}:{1}\n".format(i,self.userButtons[i].udict.__repr__())
 
     # method for pqMain to call to cause loading of all userbuttons
     # from a text file. See above for format. See userButton.loadDict
-    # for validation.
+    # for validation. However, for just a touch of user-friendliness, we
+    # do not require the dict to be on a single line, instead we read and
+    # collect up to the right brace.
+    # n.b. the comparison u"}" == qss.at(x) will fail because a string cannot
+    # match a QChar. Or so it seems. You can do u"}" == qss[x], or what we do here.
     def loadUserButtons(self,stream):
         leadingBit = QRegExp("^\s*(\d+)\s*:")
+        stopper = QChar(u"}")
         while not stream.atEnd():
-            qs = stream.readLine()
+            qs = stream.readLine().trimmed()
             if 0 == leadingBit.indexIn(qs) :
-                qsn = leadingBit.cap(1) # just the digits
-                (i,ok) = qsn.toInt()
+                (i,ok) = leadingBit.cap(1).toInt() # just the digits
                 if (i >= 0) and (i < UserButtonMax):
                     qss = qs.right(qs.size()-leadingBit.cap(0).size())
-                    self.userButtons[i].loadDict(unquote(unicode(qss)))
+                    while True:
+                        if stopper == qss.at(qss.size()-1):
+                            break
+                        if stream.atEnd():
+                            qss.append(stopper)
+                        else:
+                            qss.append(u" ")
+                            qss.append(stream.readLine().trimmed())
+                    btn = self.userButtons[i]
+                    btn.loadDict(unicode(qss)) # always sets label
+                    btn.setText(btn.udict['label'])
+                    if 'tooltip' in btn.udict:
+                        btn.setToolTip(QString(btn.udict['tooltip']))
                 # else not valid index to start - ignore it
             # else doesn't start with n: - maybe blank line? anyway skip it
+        # end of file
 
 # We subclass QComboBox to make the recent-string-list pop-ups.
 # One change from default, we set the max width to 32; these are
@@ -814,7 +836,7 @@ class userButton(QPushButton):
     def loadDict(self,dictrepr):
         try:
             # execute an assignment - checks for valid python syntax
-            exec( 'self.udict = ' + initDict )
+            exec( 'self.udict = ' + dictrepr )
             # now make sure it was a dict not a list or whatever
             if not isinstance(self.udict,dict) : 
                 raise ValueError

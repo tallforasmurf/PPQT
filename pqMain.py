@@ -168,13 +168,18 @@ class MainWindow(QMainWindow):
                 "Save the book under a new name")
         fileScannosAction = self.createAction("Scannos...",
                 self.scannoOpen, None, "Read list of likely scannos")
+        fileButtonLoadAction = self.createAction("Load Find Buttons...",
+                self.buttonLoad, None, "Read user-defined buttons in Find Panel")
+        fileButtonSaveAction = self.createAction("Save Find buttons...",
+                self.buttonSave, None, "Save user-defined buttons in Find Panel")
         fileQuitAction = self.createAction("&Quit", self.close,
                 QKeySequence.Quit, "Close the application")
         # Create the File menu but don't populate it yet, do that on the
         # fly adding recent files to it. Save the prepared actions as a tuple.
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenuActions = (fileNewAction, fileOpenAction,
-                fileSaveAction, fileSaveAsAction, fileScannosAction, None, 
+                fileSaveAction, fileSaveAsAction, fileScannosAction,
+                fileButtonLoadAction, fileButtonSaveAction, None, 
                 fileQuitAction)
         # When the File menu is about to be opened, update its contents:
         self.connect(self.fileMenu, SIGNAL("aboutToShow()"),
@@ -347,11 +352,14 @@ class MainWindow(QMainWindow):
                 return (None, None)
         try:
             if not filehandle.open(mode):
-                raise IOError, unicode(filehandle.errorString())
+                raise IOError
             streamhandle = QTextStream(filehandle)
             streamhandle.setCodec(codec)
         except (IOError, OSError), e:
-            QMessageBox.warning(self, "Cannot open {0}: {1}".format(path,e))
+            pqMsgs.warningMsg(
+                "Cannot open {0}".format(unicode(path)),
+                unicode(filehandle.errorString())
+            )
             filehandle.close()
             return (None, None)
         return (streamhandle, filehandle)
@@ -402,7 +410,6 @@ class MainWindow(QMainWindow):
             if not gwinf.exists():
                 gwinf = QFileInfo(qdir,QString(u"good_words.utf"))
             gwpath = gwinf.absoluteFilePath()
-            dbg2 =  unicode(gwpath)
             bwinf = QFileInfo(qdir,QString(u"bad_words.txt"))
             if not bwinf.exists():
                 bwinf = QFileInfo(qdir,QString(u"bad_words.utf"))
@@ -525,6 +532,35 @@ class MainWindow(QMainWindow):
             fh.close()
         else:
             self.scannoPath.clear()
+
+    # File> Load Find Buttons clicked. Ask the user for a file to open and
+    # if one is given, open it and pass the text stream to the Find panel
+    # loadUserButtons method. Start the search in the book folder, as we
+    # expect user buttons to be book-related.
+    def buttonLoad(self):
+        startPath = QString(".") if self.bookPath.isEmpty() else self.bookPath
+        bfName = (QFileDialog.getOpenFileName(self,
+                "PPQT - choose a file of saved user button definitions",
+                startPath,
+                "text files (*.txt *.utf)"))
+        if not bfName.isEmpty():
+            (buttonStream, fh) = self.openSomeFile(bfName,
+                                                   QIODevice.ReadOnly, "UTF-8")
+            if buttonStream is not None:
+                IMC.findPanel.loadUserButtons(buttonStream)
+
+    # File> Save Find Buttons clicked. Ask the user for a file to open and
+    # if one is given, open it for output and pass the stream to the Find
+    # panel saveUserButtons method.
+    def buttonSave(self):
+        startPath = QString(".") if self.bookPath.isEmpty() else self.bookPath
+        bfName = QFileDialog.getSaveFileName(self,
+                "Save user-defined buttons as:", startPath)
+        if not bfName.isEmpty():
+            (buttonStream, fh) = self.openSomeFile(bfName,
+                                                   QIODevice.WriteOnly, "UTF-8")
+            if buttonStream is not None:
+                IMC.findPanel.saveUserButtons(buttonStream)
 
     # Called from the View menu, these functions set the hilighting switches
     # The state of the menu toggle is passed as a parameter.
