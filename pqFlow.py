@@ -384,7 +384,9 @@ class flowPanel(QWidget):
                             Z = QString("*/")
                             C = False # not centering
                             P = False # collect by lines
-                            (F, L, R) = self.getIndents(self.nfLeftIndent,qs,F,F,0)
+                            F = self.nfLeftIndent.value()
+                            L = F
+                            R = 0
                         elif M == "C" and (not self.skipCeCheck.isChecked()): # center
                             stack.append( (S, Z, C, P, F, L, R) )
                             # S is already True
@@ -453,23 +455,28 @@ class flowPanel(QWidget):
             # them in lines based on F, L, R.
             lbr = QString(u'\u2029')
             linelen = 75 - R
+            # We accumulate possibly multiple lines: limit has the accumulated
+            # length at which we next need to break the line. logicalen has
+            # the effective length so far, counting markup as 0/1/as-is.
             limit = linelen
-            spc1 = QString(u' ')
-            spcL = QString(u' '*L)
-            space = QString(u' '*F)
-            flow = QString()
+            logicalen = F
+            flow = QString(u' '*F)   # space for First indent of first line
+            spc1 = QString(u' ')     # space between tokens
+            spcL = QString(u' '*L)   # space for Left indent of new line
             for (tok,tl) in tokGen(tc,self.itbosc):
-                flow.append(space)
-                if (flow.size() + tl) <= limit :
+                if limit >= (logicalen + tl): # room for this token
                     flow.append(tok)
-                    space = spc1
-                else : # time to break
-                    flow.append(lbr)
-                    limit = flow.size() + linelen
-                    flow.append(spcL)
-                    flow.append(tok)
-            # used up all the tokens, replace
-            flow.append(lbr) # terminate the last line
+                    flow.append(spc1) # assume there'll be another token
+                    logicalen += (tl + 1)
+                else: # time to break the line.
+                    flow.replace(flow.size(),1,lbr) # Qt editor's line separator
+                    limit = logicalen + linelen # set new limit
+                    flow.append(spcL) # left indent
+                    flow.append(tok) # and the token
+                    flow.append(spc1) # assume there'll be another token
+                    logicalen += (L + tl + 1)
+            # used up all the tokens, replace the old text with reflowed text
+            flow.replace(flow.size(),1,lbr) # terminate the last line
             tc.insertText(flow)   
         pqMsgs.endBar()
 
@@ -531,9 +538,15 @@ def tokGen(tc, itbosc):
         ll = 0
         while not qs.at(i).isSpace():
             # since markup is < 1% of a doc, no point in applying the ibsRE
-            # when it has no chance of matching:
+            # when it has no chance of matching.
             if qs.at(i) == ltChar :
-                if 0 == ibsRE.indexIn(qs,i,QRegExp.CaretAtOffset):
+                # The reason there's a caret in that RE is that we want
+                # the search to fail quick, not run on ahead and find the
+                # next markup that may be 50 characters down the string.
+                # One would think with the CaretAtOffset rule, and a match
+                # at offset i, the return would be 0, but it's the offset.
+                if i == ibsRE.indexIn(qs,i,QRegExp.CaretAtOffset):
+                    dbg = unicode(ibsRE.cap(1))
                     x = itbosc[unicode(ibsRE.cap(1))]
                     ll += x if x<2 else ibsRE.matchedLength()
                     tok.append( ibsRE.cap(0) )
