@@ -138,6 +138,7 @@ from PyQt4.QtGui import(
 
 UserButtonMax = 24 # how many user buttons to instantiate
 UserButtonRow = 4 # how many to put in a row of the grid
+QtLineDelim = QChar(u'\u2029')
 
 class findPanel(QWidget):
     def __init__(self, parent=None):
@@ -372,7 +373,7 @@ class findPanel(QWidget):
             if self.regexp.isValid() :
                 # valid regex: if it contains \n replace with \u2029
                 pats = self.regexp.pattern()
-                pats.replace(QString("\\n"),QString(u"\u2029"))
+                pats.replace(QString("\\n"),QtLineDelim)
                 self.regexp.setPattern(pats)
                 # set case and greedy switches in QRegExp
                 cs = Qt.CaseSensitive if self.caseSwitch.isChecked() else Qt.CaseInsensitive
@@ -486,7 +487,9 @@ class findPanel(QWidget):
                     # Don't really know what will happen. Depends on where (and if)
                     # the old regex matches in the new selection.
                     qs = tc.selectedText() # get current selection as QString
-                    qs.replace(self.regexp, self.repEdits[repno].text())
+                    qr = QString(self.repEdits[repno].text()) # copy replace string
+                    qr.replace(QString("\\n"),QtLineDelim) # fix \n
+                    qs.replace(self.regexp,qr)
                     tc.insertText(qs)
                 else: # plain replace, just update the selection with new text
                     tc.insertText(self.repEdits[repno].text())
