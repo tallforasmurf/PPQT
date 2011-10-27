@@ -16,10 +16,10 @@ for guiguts and one developed by us specifically:
            guiguts tries (with poor success) to preserve vertical alignment.
 
 /# .. #/   Reflow within block-quote margins which have a settable default but
-           can be given in /#[first.left,right] markup
+           can be given in /#[left.first,right] markup
 
 /P .. P/   Indent by 4 spaces, reflow on a single-line basis as poetry. We add
-           support for /P[first.left,right] markup too
+           support for /P[left.first,right] markup too
 
 /C .. C/   Like the Guiguts /f..f/, which guiguts does not reflow or indent;
            supposedly HTML makes it text-align:center. Typically used for title
@@ -482,26 +482,30 @@ class flowPanel(QWidget):
 
     # subroutine of finding /# or /P markups. Get the F L R values for poetry
     # or block quote from one of two sources: either the list of three
-    # spinboxes in the UI, or from the optional [ [f.] [l,] r ] syntax after
-    # the markup. Guiguts started this, allowing /#[8.4,4] to mean, indent
-    # first lines 8, others 4, right 4. We are allowing it on /P as well, just
+    # spinboxes in the UI, or from the optional l[.f][,r] syntax after
+    # the markup. Guiguts started this, allowing /#[4.8,2] to mean, indent
+    # first lines 8, others 4, right 2. We are allowing it on /P as well, just
     # because we can... Add the results to the existing f, l, r to allow for nesting.
     def getIndents(self,uiList,qs,F,L,R):
-        paramRE = QRegExp("^/\S\s*\[(\d+\.)?(\d+,)?(\d+)\]")
+        paramRE = QRegExp("^/\S\s*\[(\d+)(\.\d+)?(\,\d+)?\]")
         tempF = uiList[0].value()
         tempL = uiList[1].value()
         tempR = uiList[2].value()
         if 0 == paramRE.indexIn(qs) : # some params given
-            t = paramRE.cap(1)
-            if not t.isEmpty() : #t = nn.
-                t.chop(1) # drop the .
-                (tempF, b) = t.toInt()
+            # in the following, since the pattern matched is d+
+            # there is no need to check the success boolean on toInt()
+            t = paramRE.cap(1) # left - if the regex matched, there is a left
+            (tempL, b) = t.toInt()
             t = paramRE.cap(2)
-            if not t.isEmpty() : # t = nn,
-                t.chop(1) # drop the ,
-                (tempR, b) = t.toInt()
-            (tempL, b) = paramRE.cap(3).toInt()
+            if not t.isEmpty() : # t has '.d+'
+                t.remove(0,1) # drop the leading dot
+                (tempF, b) = t.toInt()
+            t = paramRE.cap(3)
+            if not t.isEmpty() : # t has ',d+'
+                t.remove(0,1) # drop the leading comma
+            (tempR, b) = t.toInt()
         return (F+tempF, L+tempL, R+tempR)
+
     # This slot receives the pqMain's shutting-down signal. Stuff all our
     # current UI settings into the settings file.
     def shuttingDown(self):

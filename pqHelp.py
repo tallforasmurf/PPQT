@@ -382,12 +382,17 @@ The <i>First</i> indent applies to the first line of a paragraph;
 <i>Left</i> to the other lines.
 The second row of controls set the indents for poetry, in which the <i>First</i>
 indent applies to every line; the <i>Left</i> indent is used only if a line
-is too long to fit in 75 chars and is "folded."
-As in guiguts, you can set the indents for a particular section by
-putting one to three numbers in brackets on the top markup. For
-example <b>/#[6]</b> starts a blockquote with a <i>Left</i> indent of 6.
-The syntax is <b>[</b><i>first</i><b>.</b><i>right</i><b>,</b><i>left</i><b>]</b>. 
-PPQT also supports this on <b>/P</b> poetry markup.</p>
+is too long to fit in 75 chars and is "folded."</p>
+<p>As in guiguts, you can set the indents for a particular section by
+putting one to three numbers in brackets on the top markup.
+The syntax is <b>[</b><i>left</i><b>.</b><i>first</i><b>,</b><i>right</i><b>]</b> with the
+<i>first</i> and <i>right</i> optional.
+For example <b>/#[6]</b> starts a blockquote with a <i>Left</i> indent of 6;
+<b>/#[6.12]</b> specifies <i>Left</i> of 6 but <i>First</i> of 12; 
+<b>/#[8,8]</b> has <i>Left</i> and <i>Right</i> both 8; and
+<b>/#[8.4,0]</b> has  <i>Left</i> 8,  <i>First</i> 4 (exdented), and
+ <i>Right</i> 0. When omitted in the markup, <i>First</i> and <i>Right</i> 
+ come from the panel controls. PPQT also supports this on <b>/P</b> poetry markup.</p>
 <p>For Centered text, setting the "longest line+2" button adjusts
 the section as far to the left as possible leaving a 2-space indent.</p>
 <p>Normally you reflow after removing &lt;i>, &lt;b>, and &lt;sc> markup.
