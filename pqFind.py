@@ -138,7 +138,7 @@ from PyQt4.QtGui import(
 
 UserButtonMax = 24 # how many user buttons to instantiate
 UserButtonRow = 4 # how many to put in a row of the grid
-QtLineDelim = QChar(u'\u2029')
+QtLineDelim = QString(u'\u2029')
 
 class findPanel(QWidget):
     def __init__(self, parent=None):
@@ -680,8 +680,14 @@ class findPanel(QWidget):
         while not stream.atEnd():
             qs = stream.readLine().trimmed()
             if 0 == leadingBit.indexIn(qs) :
-                (i,ok) = leadingBit.cap(1).toInt() # just the digits
-                if (i >= 0) and (i < UserButtonMax):
+                (bn,ok) = leadingBit.cap(1).toInt() # just the digits
+                if bn == 99: # code for, highest (empty) one
+                    for i in range(UserButtonMax-1,-1,-1) : # go from low to hi
+                        if self.userButtons[i].udict['label'] == '(empty)' :
+                            bn = i
+                            break
+                    # if loop ends with no hit, bn remains 99
+                if (bn >= 0) and (bn < UserButtonMax):
                     qss = qs.right(qs.size()-leadingBit.cap(0).size())
                     while True:
                         if stopper == qss.at(qss.size()-1):
@@ -691,7 +697,7 @@ class findPanel(QWidget):
                         else:
                             qss.append(u" ")
                             qss.append(stream.readLine().trimmed())
-                    btn = self.userButtons[i]
+                    btn = self.userButtons[bn]
                     btn.loadDict(unicode(qss)) # always sets label
                     btn.setText(btn.udict['label'])
                     if 'tooltip' in btn.udict:
