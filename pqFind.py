@@ -138,7 +138,7 @@ from PyQt4.QtGui import(
 
 UserButtonMax = 24 # how many user buttons to instantiate
 UserButtonRow = 4 # how many to put in a row of the grid
-QtLineDelim = QString(u'\u2029')
+QtLineDelim = QChar(0x2029)
 
 class findPanel(QWidget):
     def __init__(self, parent=None):
