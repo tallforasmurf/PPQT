@@ -277,6 +277,9 @@ pqFlow.IMC = IMC
 # import pqView # html preview
 # pqView.IMC = IMC
 
+import pqHelp
+pqHelp.IMC = IMC
+
 import pqMain # code for the main window and all menus
 pqMain.IMC = IMC
 

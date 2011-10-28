@@ -76,6 +76,9 @@ class notesEditor(QPlainTextEdit):
 	    elif (kkey == IMC.ctl_P): #ctl/cmd-P
 		event.accept()
 		self.goToPage()
+	    elif (kkey == IMC.ctl_F): # ctl/cmd f
+		event.accept()
+		self.doFind()
             else: # one of the keys we support but not in this panel
                 event.ignore()
         else: # not one of our keys at all
@@ -154,3 +157,14 @@ class notesEditor(QPlainTextEdit):
 		pqMsgs.beep()
 	else: # no [ preceding the cursor on same line
 	    pqMsgs.beep()
+
+    # Do a simple find. getFindMsg returns (ok,find-text). This is a VERY
+    # simple find from the present cursor position downward, case-insensitive.
+    # If we get no hit we try once more from the top, thus in effect wrapping.    
+    def doFind(self):
+	(ok, findText) = pqMsgs.getFindMsg(self)
+	if ok and (not findText.isNull()) :
+	    if not self.find(findText): # no hits going down
+		self.moveCursor(QTextCursor.Start) # go to top
+		if not self.find(findText): # still no hit
+		    pqMsgs.beep()

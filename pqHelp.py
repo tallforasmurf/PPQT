@@ -23,14 +23,37 @@ Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
 http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
 from PyQt4.QtCore import ( Qt, QString )
-from PyQt4.QtGui import (QTextEdit)
+from PyQt4.QtGui import (QTextEdit,QTextCursor)
+import pqMsgs
 
 class helpDisplay(QTextEdit):
     def __init__(self, parent=None ):
         super(helpDisplay, self).__init__(parent)
         self.setHtml(QString(TheHelpText))
         #self.setReadOnly(True)
+    
+    # Re-implement the parent's keyPressEvent in order to provide a simple
+    # find function only.
+    def keyPressEvent(self, event):
+	kkey = int(event.modifiers())+int(event.key())
+	if kkey == IMC.ctl_F: # ctl/cmd f
+	    event.accept()
+	    self.doFind()
+	else: # not ctl/cmd f so,
+	    event.ignore()
+        # ignored or accepted, pass the event along.
+        super(helpDisplay, self).keyPressEvent(event)
 
+    # Do a simple find. getFindMsg returns (ok,find-text). This is a VERY
+    # simple find from the present cursor position downward, case-insensitive.
+    # If we get no hit we try once more from the top, thus in effect wrapping.    
+    def doFind(self):
+	(ok, findText) = pqMsgs.getFindMsg(self)
+	if ok and (not findText.isNull()) :
+	    if not self.find(findText): # no hits going down
+		self.moveCursor(QTextCursor.Start) # go to top
+		if not self.find(findText): # still no hit
+		    pqMsgs.beep()
 
 TheHelpText = '''<html>
 <head>
@@ -48,6 +71,7 @@ Attribution-NonCommercial-ShareAlike license.</p>
 <h3>Mac Users Note</h3><p> Throughout this Help, when you read <b>ctrl-</b>
 you think <b>cmd-</b>. And when you read <b>alt-</b>, you think <b>opt-</b>.
 Qt is quite consistent in these mappings.</p>
+<p>Key ctl-f for a simple Find dialog for searching in this help text.</p>
 <h2>Files and Folders</h2>
 <p>PPQT edits one text file at a time; call it <i>bookname</i><b>.</b><i>sfx</i>, for example <tt>foobar.utf</tt>.
 <h3>File Encodings and Suffixes</h3>
@@ -128,13 +152,16 @@ a plum-colored background on any word that appears in the scannos file.</p>
 </p>
 <h2>Notes Panel</h2>
 <p>Click the Notes tab. This panel is a simple plain-text editor to hold notes on the book in progress. Whatever contents you type here are saved
-in the metadata file and reloaded next time. TBS: a simple Find popup.</p>
+in the metadata file and reloaded with the file.</p>
 <p>When the focus is in the Notes panel, the alt-ctl-L key causes the
 current line number of the Edit panel cursor position to be entered, in curly braces: <tt>{1475}</tt>. The alt-ctl-P key causes the current book page
 number to be entered in square brackets: <tt>[214]</tt>. Use these keys
 to relate your notes to locations in the book, for example <tt>oe lig near {1475}; big table on [214]</tt>.
 </p><p>
 Place the cursor in or to the right of a {nnn} line number in the notes and key ctl-L. The Edit panel cursor jumps to that line. Place the cursor in or to the right of a [ppp] page number and key ctl-p. The Edit panel cursor jumps to the top of that page's text.</p>
+<p>Key ctl-f for a simple Find dialog for searching in the notes.
+If text is selected, it is pre-loaded in the find-text field. The search
+starts at the cursor and wraps around at the end of the notes.</p>
 <h2>Find Panel</h2>
 <p>The Find panel has controls for search and replace, including saved searches.</p>
 <h3>Find Controls</h3>

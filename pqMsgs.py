@@ -20,7 +20,8 @@ Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
 http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
 from PyQt4.QtCore import (Qt, QString )
-from PyQt4.QtGui import (QApplication, 
+from PyQt4.QtGui import (QApplication,
+    QDialog,
     QFont,QFontInfo,
     QInputDialog,
     QIntValidator,
@@ -28,7 +29,10 @@ from PyQt4.QtGui import (QApplication,
     QProgressBar,
     QSizePolicy,
     QStatusBar,
-    QMessageBox)
+    QMessageBox,
+    QTextEdit,
+    QTextCursor,
+    QTextDocument)
 
 # Subroutine to get a QFont for a monospaced font, preferably using the font
 # family named in IMC.fontFamily -- set from the View menu in pqMain. If the
@@ -99,6 +103,30 @@ def getStringMsg( title, text ):
     (ans, ok) = QInputDialog.getText(IMC.mainWindow, title, text)
     return (ans, ok)
 
+# Do a simple find for the Notes or Help panel. What is passed here is
+# the Q[Plain]TextEdit on which the find will be done. We use that for the
+# parent widget, so the dialog will center on that. Also we use the
+# property-based api to QInputDialog so we can prime the input field with
+# the currently selected edit text.
+
+def getFindMsg( editWidget ):
+    qd = QInputDialog(editWidget)
+    qd.setInputMode(QInputDialog.TextInput)
+    qd.setOkButtonText(QString("Find"))
+    qd.setLabelText(QString("Text to find"))
+    tc = editWidget.textCursor()
+    if tc.hasSelection():
+	qs = tc.selectedText()
+	if qs.size() > 40 :
+	    qs.truncate(40)
+	qd.setTextValue(qs)
+    b = (QDialog.Accepted == qd.exec_() )
+    if b :
+	return (True, qd.textValue())
+    else:
+	return (False, QString("") )
+
+    
 # Functions to create and manage a progress bar in our status bar
 # makeBar is called from pqMain to initialize the bar, on the right in
 # the status area.
@@ -177,9 +205,11 @@ if __name__ == "__main__":
 		pass
     IMC = tricorder()
     IMC.mainWindow = QWidget()
-    beep()
-    infoMsg("This is the message","Did you get that?")
-    (s, b) = getStringMsg("TITLE STRING", "label text")
-    if b : print( "got "+s)
-    else: print("cancel")
-
+    #beep()
+    #infoMsg("This is the message","Did you get that?")
+    #(s, b) = getStringMsg("TITLE STRING", "label text")
+    #if b : print( "got "+s)
+    #else: print("cancel")
+    ew = QTextEdit()
+    (b,qs) = getFindMsg(ew)
+    print(b,qs)
