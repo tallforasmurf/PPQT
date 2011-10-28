@@ -62,7 +62,16 @@ class makeAspell():
      
     def isUp(self):
         return self.ok
-    
+
+    # When the program terminates, this slot is called. However sometimes the
+    # message "Exception AttributeError: "'NoneType' object has no attribute
+    # 'error'" in <bound method Popen.__del__ of <subprocess.Popen object at
+    # 0x1036c3510>> ignored". That doesn't happen if we have a debug stop on the 
+    # terminate call. So the fix would seem to be to introduce a delay before
+    # going out of scope. But putting this call before all other termination
+    # code didnt help, even introducting a qWait of 5 seconds (!) didn't do it.
+    # It would seem this is Python issue 5099, http://bugs.python.org/issue5099
+    # and is fixed by a patch that I don't have.
     def terminate(self):
         self.ap.terminate()
 

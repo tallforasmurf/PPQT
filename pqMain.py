@@ -613,6 +613,7 @@ class MainWindow(QMainWindow):
             event.ignore() # as you were...
         # file wasn't dirty or is now saved
         # Let any modules that care, write to settings.
+        IMC.aspell.terminate() # do this FIRST -- see pqSpell.py
         self.emit(SIGNAL("shuttingDown"))
         IMC.settings.setValue("main/size",self.size())
         IMC.settings.setValue("main/position", self.pos())
@@ -622,6 +623,5 @@ class MainWindow(QMainWindow):
         IMC.settings.setValue("main/scannoSwitch",IMC.scannoHiliteSwitch)
         IMC.settings.setValue("main/fontFamily",IMC.fontFamily)
         # shut down Aspell in orderly fashion
-        IMC.aspell.terminate()
         event.accept() # pass it up the line
     
