@@ -25,6 +25,7 @@ http://creativecommons.org/licenses/by-nc-sa/3.0/
 from PyQt4.QtCore import ( pyqtSignal, Qt,
     QFile, QFileInfo, QDir,
     QIODevice, QPoint, QSize,
+    QSettings,
     QString, QStringList,
     SIGNAL, SLOT)
 
@@ -209,11 +210,14 @@ class MainWindow(QMainWindow):
                 None, "Toggle spellcheck hilight", True, "toggled(bool)")
         self.viewFontAction = self.createAction("&Font...", self.viewFont,
                 None, "Open font selection dialog")
+        self.viewDictAction = self.createAction("&Dictionary...", self.viewDict,
+                None, "Open dictionary selection dialog")
         # Create and populate the View menu
         viewMenu = self.menuBar().addMenu("&View")
         self.addActions(viewMenu, (self.viewScannosAction,
                                    self.viewSpellingAction,
-                                   self.viewFontAction))
+                                   self.viewFontAction,
+                                   self.viewDictAction))
         
     # This convenience function, lifted from Summerfield's examples, 
     # encapsulates the boilerplate of creating a menu action. (We are not
@@ -323,6 +327,9 @@ class MainWindow(QMainWindow):
         if sfx == u"utf" : return "UTF-8"
         if sfx == u"win" : return "cp1252"
         if sfx == u"mac" : return "macintosh"
+        if sfx == u"cyr" : return "cp1251"
+        if sfx == u"kir" : return "KOI8-R"
+        if sfx == u"kiu" : return "KOI8-U"
         return "latin1" # for .txt, .ltn, and unknown
     
     # Called from Quit, New, and Open to make sure the current file is saved.
@@ -590,7 +597,7 @@ class MainWindow(QMainWindow):
         self.editor.setHighlight(
             IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
     
-    # Initially we set DPCustomMono2 as the font, period, but later realized
+    # Early on we set DPCustomMono2 as the font, period, but later realized
     # it has very limited Unicode coverage, while other monos are just as
     # distinct for proofing and have full Unicode. So added View>Font and just
     # throw up a QFontDialog and let the user pick something. That gets saved
@@ -604,7 +611,24 @@ class MainWindow(QMainWindow):
             IMC.fontFamily = finf.family()
             IMC.editWidget.setFont(refont)
             IMC.notesEditor.setFont(refont)
-            
+
+    # Get the current dictionary tag from the spell checker (e.g. "en_US")
+    # and the list of available languages. Throw up a dialog with a popup
+    # menu, and if the user clicks ok, set a new main dictionary.
+    def viewDict(self):
+        if IMC.spellCheck.isUp(): # we have dictionary
+            qsmt = IMC.spellCheck.mainTag
+            qsl = IMC.spellCheck.dictList()
+            # The explanatory label is needlessly wordy to force the dialog
+            # to be wide enough to display the full title o_o
+            (qs,b) = pqMsgs.getChoiceMsg("Select Default Dictionary",
+                    "The currently selected language is "+unicode(qsmt), qsl)
+            if b: # user clicked OK
+                IMC.spellCheck.setMainDict(qs)
+        else:
+            pqMsgs.warningMsg("Spell check is not active",
+                              "Check console window for error messages?")
+
     # reimplement QWidget::closeEvent() to check for a dirty file and save it.
     # Also save our current geometry, recent files, etc., and emit the
     # shuttingDown signal so that other widgets can do the same.
@@ -613,7 +637,6 @@ class MainWindow(QMainWindow):
             event.ignore() # as you were...
         # file wasn't dirty or is now saved
         # Let any modules that care, write to settings.
-        IMC.aspell.terminate() # do this FIRST -- see pqSpell.py
         self.emit(SIGNAL("shuttingDown"))
         IMC.settings.setValue("main/size",self.size())
         IMC.settings.setValue("main/position", self.pos())
@@ -622,6 +645,6 @@ class MainWindow(QMainWindow):
         IMC.settings.setValue("main/scannoPath", self.scannoPath)
         IMC.settings.setValue("main/scannoSwitch",IMC.scannoHiliteSwitch)
         IMC.settings.setValue("main/fontFamily",IMC.fontFamily)
-        # shut down Aspell in orderly fashion
+        IMC.spellCheck.terminate() # shut down spellcheck
         event.accept() # pass it up the line
     

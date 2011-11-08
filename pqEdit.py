@@ -369,10 +369,11 @@ class PPTextEditor(QPlainTextEdit):
 
     def rebuildMetaData(self,page=False):
         global reMarkup, qcDash, qcApost, qcLess, qcLbr, qslcLig
-        global qsucLig, qsLine, i, qcThis, uiCat, inWord
+        global qsucLig, qsLine, qsDict, i, qcThis, uiCat, inWord
         global uiWordFlags, qsWord, nextAction, parseArray
         IMC.wordCensus.clear()
         IMC.charCensus.clear()
+        self.document().setModified(True) 
         # If we are doing pages, it's for load, and the page table has been cleared.
         pqMsgs.startBar(self.document().blockCount(),"Building metadata")
         reLineSep = QRegExp("^-----File:\s*(\d+)\.png---(.+)(-+)$",Qt.CaseSensitive)
@@ -424,9 +425,15 @@ class PPTextEditor(QPlainTextEdit):
             else: # just a random [ or (
                 nextAction = ( COUNT1, )
         def SYMBOL(): # math symbol can be <
-            global i, qsLine, reMarkup, nextAction
+            global i, qsLine, qsDict, reMarkup, nextAction
             if i == reMarkup.indexIn(qsLine,i) :
                 # </? i/b/sc/tb > markup starts here, suck it up
+                if i == sdMarkup.indexIn(qsLine,i):
+                    # <sd dictag> starts here
+                    qsDict = u"/" + sdMarkup.cap(1)
+                elif i == sxMarkup.indexIn(qsLine,i) :
+                    # </sd> here
+                    qsDict = QString()
                 nextAction = (COUNTN, reMarkup.matchedLength() )
             else:
                 nextAction = (COUNT1,)
@@ -437,7 +444,8 @@ class PPTextEditor(QPlainTextEdit):
             uiWordFlags |= flag
             nextAction = (COUNT1,)
         def WORDEND(): # char definitely not a wordchar and not <
-            global qsWord, uiWordFlags, inWord, nextAction
+            global qsWord, qsDict, uiWordFlags, inWord, nextAction
+            qsWord.append(qsDict)
             IMC.wordCensus.count(qsWord,uiWordFlags)
             qsWord.clear()
             uiWordFlags = 0
@@ -476,7 +484,8 @@ class PPTextEditor(QPlainTextEdit):
             else:
                 nextAction = ( WORDEND, )
         def WORDENDLT(): # symbol-math ending a word
-            global qsWord, uiWordFlags, inWord, qcThis, qcLess, nextAction
+            global qsWord, qsDict, uiWordFlags, inWord, qcThis, qcLess, nextAction
+            qsWord.append(qsDict)
             IMC.wordCensus.count(qsWord,uiWordFlags)
             qsWord.clear()
             inWord = False
@@ -535,6 +544,7 @@ class PPTextEditor(QPlainTextEdit):
                     nextAction[0](*nextAction[1:])
                     
                 if inWord : # line ends with a word, not unsurprising
+                    qsWord.append(qsDict)
                     IMC.wordCensus.count(qsWord,uiWordFlags)
             qtb = qtb.next() # next textblock == next line
             if (0 == (qtb.blockNumber() & 127)) : #every 128th block
@@ -542,17 +552,24 @@ class PPTextEditor(QPlainTextEdit):
         # ok we have stored all words of all lines. Go through vocabulary and
         # check the spelling -- it would be a big waste of time to check
         # the spelling of every word as it was read. We only mark bad spelling
-        # if Aspell is actually up and working.
-        for i in range(IMC.wordCensus.size()):
-            (qword, cnt, wflags) = IMC.wordCensus.get(i)
-            if not IMC.goodWordList.check(unicode(qword)):
-                if IMC.aspell.isUp() :
-                    if not IMC.aspell.check(qword):
+        # if the spellchecker is actually up and working.
+        if IMC.spellCheck.isUp() :
+            for i in range(IMC.wordCensus.size()):
+                (qword, cnt, wflags) = IMC.wordCensus.get(i)
+                (w,x,d) = unicode(qword).partition("/")
+                if not IMC.goodWordList.check(w) :
+                    if IMC.badWordList.check(w) \
+                       or (not IMC.spellCheck.check(w,d) ) :
                         wflags |= IMC.WordMisspelt
                         IMC.wordCensus.setflags(i,wflags)
         pqMsgs.endBar()
 # The following are global names referenced from inside the parsing functions
-reMarkup = QRegExp("\\<\\/?\w+>",Qt.CaseInsensitive)
+# Regex to match html markup: < /? spaces (tag) whoknowswhat >
+reMarkup = QRegExp("\\<\\/?\\s*(\\w+)[^>]*>",Qt.CaseInsensitive)
+# Regex to match exactly a spelling dictionary span, <sd xx_yy>
+sdMarkup = QRegExp("\\<sd\\s+([^>]+)>",Qt.CaseSensitive)
+# Regex to match exactly end of a spelling dictionary span, </sd>
+sxMarkup = QRegExp("\\</sd>",Qt.CaseSensitive)
 qcDash = QChar("-")
 qcApost = QChar("'")
 qcLess = QChar("<")
@@ -566,5 +583,6 @@ uiCat = 0 # holds current category
 inWord = False # state of parser
 uiWordFlags = 0 # see ppqt defs IMC.WordHasUpper etc
 qsWord = QString() # accumulated letters of word
+qsDict = QString() # alt-dictionary suffix
 nextAction = (None,) # holds the tuple of the next parse action
 parseArray = [[],[]] # holds the list of parse actions by category

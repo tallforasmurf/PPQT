@@ -5,32 +5,34 @@ from __future__ import unicode_literals
 from future_builtins import *
 
 '''
- Define a class that represents an interface to Aspell.
+ Define a class that represents an interface to a spellchecker.
  One object is instantiated in the main program and used for
  spell-checking of single words.
  
- At present we are attaching aspell via a pipe, using the subprocess
- module of the Python standard library. Thus to check a word means
- one pipe-write and at least two pipe-reads. If this becomes too slow
- (or turns out not to work for UTF-8!) 
- we will have to obtain a python wrapper for the C api to Aspell.
+ Originally we attached aspell via a pipe, using the subprocess
+ module of the Python standard library. However Aspell presents several
+ problems: hard to bundle with pyinstaller; latest 0.60 version not 
+ available on windows, no clear path to programming dictionary selection.
  
- The makeAspell class offers these methods:
+ The Enchant package wrapped with pyenchant solves most of these (bundling
+ may still be a problem).
+ 
+ Our spell class offers these methods:
     .isUp() true/false if spelling is working
-    .check(w) where w can be a python string or a QString, returns True
-        if aspell approves of the word
-    .checkLine(w) passes the line to aspell and returns zero or more
-        characters of response, * for a good word, # for a bad one.
-    .terminate() which actually isn't called, but could be e.g. from
-        a shuttingDown signal from pqMain.
-
- Aspell commands can be sent over the pipe, as follows:
-    *word	Add a word to the personal dictionary 
-    @word	Accept the word, but leave it out of the dictionary 
-    $$cs option,value e.g. $$cs master en_GB
- We could use these features to provide an add-word method or a
- change-dict method but have not done so.
- '''
+    .check(w) where w can be a python string or a QString
+        - returns False if checker is not up or rejects word
+        - returns True iff word is accepted
+    .terminate() is called from pqMain on shutdown
+    .dictList() returns a QStringList with the names (tags, e.g. "en_GB")
+        of the available dictionaries
+    .setMainDict(tag) switch to tag, e.g. u"fr_CA", as the main, default
+        dictionary. Returns true if tag is available, else false and makes
+        no change.
+    .setAltDict(tag) establish tag as a secondary dictionary, returns true if
+        tag is available, else false and makes no change.
+    .useAltDict(bool) makes the current alt dict active (True) or returns to
+        to default dict (False)
+'''
 
 __version__ = "0.1.0" # refer to PEP-0008
 __author__  = "David Cortesi"
@@ -42,91 +44,99 @@ __license__ = '''
 Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
 http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
+from PyQt4.QtCore import (QString,QStringList)
+import enchant
 
-import subprocess
-from PyQt4.QtCore import (QString)
-
-class makeAspell():
+class makeSpellCheck():
     def __init__(self):
-        aspellOptions = '-a --dont-suggest --run-together --run-together-min 1 --encoding utf-8'
-        self.ok = False
+        # initialize our main dictionary with the last-chosen by the user
+        self.mainTag = IMC.settings.value(u"main/spellDictTag",
+                                          QString(u"en_US")).toString()
         try:
-            self.ap = subprocess.Popen('aspell '+aspellOptions,
-                                     shell=True,stdin=subprocess.PIPE,
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE)
-            self.ok = True
-            junk = self.ap.stdout.readline() # absorb the first line
-        except:
-            pass
-     
+            self.mainDict = enchant.Dict(unicode(self.mainTag))
+        except: # on any error just set None
+            # query - worthwhile popping up a message?
+            # or - just print a diagnostic to the console?
+            self.mainDict = None
+        self.altTag = IMC.settings.value(u"main/altDictTag",
+                                         QString()).toString()
+
     def isUp(self):
-        return self.ok
+        return self.mainDict is not None
 
-    # When the program terminates, this slot is called. However sometimes the
-    # message "Exception AttributeError: "'NoneType' object has no attribute
-    # 'error'" in <bound method Popen.__del__ of <subprocess.Popen object at
-    # 0x1036c3510>> ignored". That doesn't happen if we have a debug stop on the 
-    # terminate call. So the fix would seem to be to introduce a delay before
-    # going out of scope. But putting this call before all other termination
-    # code didnt help, even introducting a qWait of 5 seconds (!) didn't do it.
-    # It would seem this is Python issue 5099, http://bugs.python.org/issue5099
-    # and is fixed by a patch that I don't have.
-    def terminate(self):
-        self.ap.terminate()
+    # check one word against the main or alt dictionary. aword is a QString.
+    # enchant doesn't treat hyphenated words as a phrase so we tokenize the
+    # hyphenated string and check the words individually, and-ing the results.
 
-    # Attached as a pipe, Aspell expects a line with zero or more words,
-    # and returns a separate LINE of output for each WORD it sees, with
-    # '*\n' for correct, '#\n' for not-found, followed by a null line.
-    # We assume that we are checking a single word and will get just the two
-    # two lines '*\n\n', but trust no-one: Our caller might send in an
-    # all-blank line, or a hyphenated string like mother-in-law, so we
-    # might see just '\n' or '*\n*\n*\n\n', '*\n#\n*\n\n'. So we read until we
-    # see the null line, and return the and-product over asterisks.
-    #
-    # If Aspell has a problem of any kind, it just goes away and we find out
-    # when a pipe read gets an OSError for broken pipe. If that happens we
-    # just set our ok flag and .isUp returns false thereafter.
-    #
-    def check(self,aword):
-        if aword.trimmed().size() : # nonempty text
-            try:
-                self.ap.stdin.write( aword.toUtf8() + '\n')
-                ans = self.ap.stdout.readline()
-            except: # guard against broken pipe?
-                ans = '' # this spell check failed..
-                self.ok = False # ..and no more will work
-            ok = (len(ans) > 1) # initialize &-reduction of stars
-            while len(ans) > 1:
-                ok = ok and ('*' == ans[0])
-                ans = self.ap.stdout.readline()
-            return ok
+    def check(self,aword,dictag=""):
+	d = self.mainDict
+	if dictag != "" : # alt dict wanted
+	    try:
+		d = enchant.Dict(dictag)
+	    except:
+		d = None
+        if d is not None: # we have a dict
+            if len(aword.strip()) : # nonempty text
+		l = aword.split(u'-')
+		b = True
+		for w in l:
+		    b = b and d.check(w)
+                return b
         return False
 
-    def checkLine(self,aline):
+    # open a pyEnchant "Broker" and ask it for the available dicts.
+    # format the list as a QStringList and return.
+    def dictList(self):
+        b = enchant.Broker()
+        l = b.list_languages()
+        qsl = QStringList()
+        for s in l:
+            qsl.append(QString(unicode(s)))
+        return qsl
+
+    # set a new main/default dictionary, if the tag is recognized
+    def setMainDict(self,tag):
         try:
-            self.ap.stdin.write(aline+'\n')
-            ans = self.ap.stdout.readline()
+            d = enchant.Dict(tag)
         except:
-            ans = ''
-            self.ok = False
-        ret = ''
-        while len(ans) > 1:
-            ret = ret+ans[0] # collect successive * and # 
-            ans = self.ap.stdout.readline()
-        return ret
+            return False
+        self.mainTag = tag
+        self.mainDict = d
+        return True
+    
+    # When the program terminates, this slot is called. Save the user-set
+    # main and alt dictionary tags.
+    def terminate(self):
+        IMC.settings.setValue(u"main/spellDictTag",self.mainTag)
+        IMC.settings.setValue(u"main/altDictTag",self.altTag)
 
 if __name__ == "__main__":
-    aspell = makeAspell()
-    print(aspell.isUp())
-    if aspell.isUp():
-        for w in ['cheese','bzongas', 'run-of-the-mill', '  ']:
-            if aspell.check(QString(w)):
+    from PyQt4.QtCore import (QSettings)
+    class tricorder():
+	def __init__(self):
+		pass
+    IMC = tricorder()
+    IMC.settings = QSettings()
+    IMC.spellCheck = makeSpellCheck()
+    sp = IMC.spellCheck
+    print("spellcheck is up: ",sp.isUp())
+    if sp.isUp():
+	print("en_US as main: ",sp.setMainDict(u"en_US"))
+	print("fr_FR as alt: ",sp.setAltDict(u"fr_FR"))
+	wl = ['cheese','bazongas','run-of-the-mill', 'basse-terre', '  ','lait','fraise','bloodyFrench']
+	print("Main dict")
+	for w in wl:
+            if sp.check(QString(w)):
                 print(w + " is a word")
             else:
                 print(w + " is not")
-        print (aspell.checkLine('cheese bzongas run-of-the-mill'))
-        polish = u"g\xc5\xbceg\xc5\xbc\xc3\xb3\xc5\x82ka"
-        print(polish, aspell.check(QString(polish)) )
+	sp.useAltDict(True)
+	print("Alt dict")
+	for w in wl:
+	    if sp.check(QString(w)):
+                print(w + " is a word")
+            else:
+                print(w + " is not")
+	sp.terminate()
 
     

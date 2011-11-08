@@ -88,7 +88,8 @@ from PyQt4.QtGui import ( QApplication )
 # This module imports a series of other modules, one for each major UI widget
 # and some for general utility, as follows:
 #
-#  pqSpell.py defines an interface to Aspell
+#  pqSpell.py defines an interface to some spell-checker
+#             (via enchant, typically MySpell)
 #
 #  pqLists.py defines search list objects used for good_words, bad_words,
 #             and for the word and character censuses.
@@ -230,10 +231,6 @@ IMC.markSetKeys = [IMC.ctl_alt_1, IMC.ctl_alt_2, IMC.ctl_alt_3,
 import pqMsgs # misc message and font routines
 pqMsgs.IMC = IMC
 
-import pqSpell # Spell-check routines and gateway to Aspell
-pqSpell.IMC = IMC
-IMC.aspell = pqSpell.makeAspell()
-
 import pqLists # ordered lists of words for quick lookup
 pqLists.IMC = IMC
 IMC.scannoList = pqLists.wordList()
@@ -288,7 +285,7 @@ pqMain.IMC = IMC
 # saved settings go in reasonable places
 app = QApplication(sys.argv)
 app.setOrganizationName("PGDP")
-app.setOrganizationDomain("pgdp.org")
+app.setOrganizationDomain("pgdp.net")
 app.setApplicationName("PPQT")
 
 # Create a default settings object, which will be stored using
@@ -296,6 +293,10 @@ app.setApplicationName("PPQT")
 # goes in ~/Library/Preferences/com.pgdp.org; on Linux, in
 # ~/.config/PGDP; on Windows, in the Registry under /Software/PGDP.
 IMC.settings = QSettings()
+
+import pqSpell # Spell-check routines (which use the settings)
+pqSpell.IMC = IMC
+IMC.spellCheck = pqSpell.makeSpellCheck()
 
 IMC.mainWindow = pqMain.MainWindow() # create the main window and all tabs
 IMC.mainWindow.show()

@@ -19,7 +19,7 @@ __license__ = '''
 Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
 http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
-from PyQt4.QtCore import (Qt, QString )
+from PyQt4.QtCore import (Qt, QString, QStringList )
 from PyQt4.QtGui import (QApplication,
     QDialog,
     QFont,QFontInfo,
@@ -101,6 +101,23 @@ def okCancelMsg ( text, info = None ):
 
 def getStringMsg( title, text ):
     (ans, ok) = QInputDialog.getText(IMC.mainWindow, title, text)
+    return (ans, ok)
+
+# Display a modal request for a selection from a list of options.
+# Blocks until the user clicks OK/Cancel. The parameters to getItem are:
+# * the parent widget over which it will center
+# * title string for the dialog
+# * label text above the input combobox
+# * QStringList of items among which to choose, e.g. dictionary tags
+# * int initial selection index
+# * bool for editable
+# Others defaulted.
+# QInputDialog returns a boolean True for OK, false for Cancel,
+# and the actual text of the selected item or of the default item.
+
+def getChoiceMsg( title, text, qsl):
+    (ans, ok) = QInputDialog.getItem(IMC.mainWindow,title,text,qsl,
+                                     0,False)
     return (ans, ok)
 
 # Do a simple find for the Notes or Help panel. What is passed here is
@@ -210,6 +227,12 @@ if __name__ == "__main__":
     #(s, b) = getStringMsg("TITLE STRING", "label text")
     #if b : print( "got "+s)
     #else: print("cancel")
-    ew = QTextEdit()
-    (b,qs) = getFindMsg(ew)
-    print(b,qs)
+    #ew = QTextEdit()
+    #(b,qs) = getFindMsg(ew)
+    #print(b,qs)
+    qsl = QStringList()
+    qsl.append("ONE")
+    qsl.append("TWO")
+    (s, b) = getChoiceMsg("TITLE STRING", "label text",qsl)
+    if b : print ("Choice "+unicode(s))
+    else: print ("Cancel "+unicode(s))

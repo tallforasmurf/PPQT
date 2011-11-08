@@ -85,11 +85,12 @@ or copy text by alt-dragging.</p>
 <h3>Scanno Highlighting</h3>
 <p>Use File > Scannos to load a file of scannos: a text file with one word per line (e.g <tt>en-common</tt> from guiguts). May be a UTF file. The same file will be re-loaded each time PPQT is restarted, if it exists.</p>
 <p>Use the View > Scannos menu to turn on scanno highlighting, putting
-a plum-colored background on any word that appears in the scannos file.</p>
+a plum-colored background on any word that appears in the scannos file. (May take several seconds to appear in a large book.)</p>
 <h3>Spellcheck</h3>
-<p>PPQT looks for a file <tt>good_words.txt</tt> (or <tt>.utf</tt>) when it opens the text for the first time, and loads its contents. It looks for a file <tt>bad_words.txt</tt> (or <tt>.utf</tt>) also. These "good" and "bad" words are saved in the metadata file thereafter. More "good" words can be added from the Words panel.</p>
-<p>When (re)building its metadata, PPQT checks all words for spelling. It tries to attach Aspell (version 0.60.x, the latest) as a subprocess. A "bad" word is assumed to be misspelt; a "good" word is assumed to be correct. Any word not in those lists is presented to Aspell (if it is attached), and noted as correct or misspelt.</p>
-<p>Use View > Spelling to turn on red-underlining of misspelt words.</p>
+<p>PPQT looks for a file <tt>good_words.</tt> (<tt>txt</tt> or <tt>utf</tt>) when it opens the text for the first time, and loads its contents. It looks for a file <tt>bad_words.</tt> (<tt>txt</tt> or <tt>utf</tt>)  also. The lists of "good" and "bad" words are saved in the metadata file thereafter. More "good" words can be added from the Words panel.</p>
+<p>When building or refreshing its metadata, PPQT checks all words for spelling. A "bad" word is assumed to be misspelt; a "good" word is assumed to be correct. Any word not in those lists is presented to the spell-checker and noted as correct or misspelt. You can mark any word, phrase or section for
+spell-check with an alternate dictionary with <b><tt>&lt;sd</tt></b>&nbsp;<i>langtag</i><b>&gt;</b>...<b><tt>&lt;/sd></tt></b>, for example <tt>He whispered &lt;sd fr_FR>&lt;i>Je t'aime</i>&lt;/sd>.</tt></p>
+<p>Select View&nbsp;>&nbsp;Spelling to turn on red-underlining of misspelt words (may take some seconds in a large book). Use View&nbsp;>&nbsp;Dictionary to select a dictionary for the main language of the book. Use the Refresh button of the Words panel to spellcheck with the new dictionary. (More dictionaries can be added; see elsewhere.)</p>
 <h2>Pngs Panel</h2>
 <p>Click the Pngs tab. This panel displays the scan image from the <tt>pngs</tt> folder that corresponds to the present edit cursor position. When the focus is in the Pngs panel (click in it) ctl-hyphen zooms out and ctl-plus zooms in. The current zoom setting is remembered from session to session.
 </p>
