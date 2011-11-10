@@ -76,14 +76,17 @@ Qt is quite consistent in these mappings.</p>
 <p>PPQT edits one text file at a time; call it <i>bookname</i><b>.</b><i>sfx</i>, for example <tt>foobar.utf</tt>.
 <h3>File Encodings and Suffixes</h3>
 <p>PPQT is entirely Unicode internally. The text file is converted to Unicode
-on input, and converted back to ascii (if necessary) on output. The type of
-encoding done is based on the file suffix:</p>
+on input, based on the file suffix, as follows:</p>
 <table border='1'>
 <tr><td><tt>.txt</tt></td><td>Latin-1 or 7-bit Ascii (PPQT cannot distinguish between these)</td></tr>
-<tr><td><tt>.utf</tt></td><td>UTF-8 encoding of Unicode. Use for any text with e.g. Greek characters</td></tr>
-<tr><td><tt>.win</tt></td><td>Windows code page 1252. Should be used only for input; save as .txt or .utf</td></tr>
-<tr><td><tt>.mac</tt></td><td>Mac Roman. Should be used only for input; save as .txt or .utf</td></tr>
+<tr><td><tt>.utf</tt></td><td>UTF-8 encoding of Unicode. Use for any text with non-latin characters</td></tr>
+<tr><td><tt>.win</tt></td><td>Windows code page 1252, the US and European windows code.</td></tr>
+<tr><td><tt>.mac</tt></td><td>Mac Roman.</td></tr>
+<tr><td><tt>.cyr</tt></td><td>Windows code page 1251, Cyrillic.</td></tr>
+<tr><td><tt>.kir</tt></td><td>KOI8-R, Cyrillic-Russian.</td></tr>
+<tr><td><tt>.kiu</tt></td><td>KOI8-U, Cyrillic-Ukranian.</td></tr>
 </table>
+<p>When saving, you should use <tt>.txt</tt> or <tt>.utf</tt>. However PPQT will save to any of the above encodings based on the file suffix of the output file.</p>
 <h3>Metadata</h3>
 When opening <i>bookname</i><b>.</b><i>sfx</i>, PPQT looks for a file named <i>bookname</i><b>.</b><i>sfx</i><b>.</b><tt>meta</tt>
 in the same directory, for example <tt>foobar.utf.meta</tt>. If the meta file

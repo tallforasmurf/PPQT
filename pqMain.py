@@ -394,10 +394,9 @@ class MainWindow(QMainWindow):
         if not self.ohWaitAreWeDirty():
             return false # dirty doc & user said cancel or save failed
         startdir = (QString(".") if self.bookPath.isEmpty() else self.bookPath)
-        bookname = (QFileDialog.getOpenFileName(self,
+        bookname = QFileDialog.getOpenFileName(self,
                 "PPQT - choose a book file to edit",
-                startdir,
-                "text files (*.txt *.asc *.ltn *.utf *.mac *.win)"))
+                startdir)
         if not bookname.isEmpty(): # user selected a file, we are "go"
             self.bookFile = bookname
             self.loadFile()
