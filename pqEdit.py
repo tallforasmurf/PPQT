@@ -514,7 +514,7 @@ class PPTextEditor(QPlainTextEdit):
             (PUNCOPENW, ), (WORDEND, ), (WORDEND, ), (WORDEND, ), 
             (PUNCAPO, ), (WORDENDLT, ),(WORDEND, ),(WORDEND, ),(WORDEND, )] ]
 
-        pqMsgs.startBar(self.document().blockCount(),"Building metadata")    
+        pqMsgs.startBar(self.document().blockCount(),"Counting words and chars...")    
         qtb = self.document().begin() # first text block
         while qtb != self.document().end(): # up to end of document
             qsLine = qtb.text() # text of line as qstring
@@ -549,11 +549,13 @@ class PPTextEditor(QPlainTextEdit):
             qtb = qtb.next() # next textblock == next line
             if (0 == (qtb.blockNumber() & 127)) : #every 128th block
                 pqMsgs.rollBar(qtb.blockNumber()) # roll the bar
+        pqMsgs.endBar()
         # ok we have stored all words of all lines. Go through vocabulary and
         # check the spelling -- it would be a big waste of time to check
         # the spelling of every word as it was read. We only mark bad spelling
         # if the spellchecker is actually up and working.
         if IMC.spellCheck.isUp() :
+            pqMsgs.startBar(IMC.wordCensus.size(),"Checking spelling...")
             for i in range(IMC.wordCensus.size()):
                 (qword, cnt, wflags) = IMC.wordCensus.get(i)
                 (w,x,d) = unicode(qword).partition("/")
@@ -562,7 +564,9 @@ class PPTextEditor(QPlainTextEdit):
                        or (not IMC.spellCheck.check(w,d) ) :
                         wflags |= IMC.WordMisspelt
                         IMC.wordCensus.setflags(i,wflags)
-        pqMsgs.endBar()
+                if 0 == i & 255 :
+                    pqMsgs.rollBar(i)
+            pqMsgs.endBar()
 # The following are global names referenced from inside the parsing functions
 # Regex to match html markup: < /? spaces (tag) whoknowswhat >
 reMarkup = QRegExp("\\<\\/?\\s*(\\w+)[^>]*>",Qt.CaseInsensitive)

@@ -266,7 +266,8 @@ the matching text for use in replacements. Any expression <i>E</i> can be quanti
 text: <tt>(?:The color is)\s(red|green|blue)</tt> can only match a string
 that begins "The color is" but the first capture, <b>\\1</b>, is what 
 matched <tt>(red|green|blue)</tt>. Also supported: lookahead tests
-with <b>(?=</b><i>E</i><b>)</b> and <b>(?!</b><i>E</i><b>)</b>.</p>
+with <b>(?=</b><i>E</i><b>)</b> and <b>(?!</b><i>E</i><b>)</b>. However
+the lookbehind tests of Perl regexes are not supported.</p>
 <p>Note: owing to some tricks PPQT plays with the Qt regex support, 
 the caret and dollar codes, which usually match at beginning and end
 of a line, only match at beginning and end of the document or

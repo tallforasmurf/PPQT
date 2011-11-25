@@ -615,9 +615,9 @@ class MainWindow(QMainWindow):
     # and the list of available languages. Throw up a dialog with a popup
     # menu, and if the user clicks ok, set a new main dictionary.
     def viewDict(self):
-        if IMC.spellCheck.isUp(): # we have dictionary
-            qsmt = IMC.spellCheck.mainTag
-            qsl = IMC.spellCheck.dictList()
+        qsl = IMC.spellCheck.dictList()
+        if qsl.count() : # we know about some
+            qsmt = IMC.spellCheck.mainTag if IMC.spellCheck.isUp() else u'(none)'
             # The explanatory label is needlessly wordy to force the dialog
             # to be wide enough to display the full title o_o
             (qs,b) = pqMsgs.getChoiceMsg("Select Default Dictionary",
@@ -625,7 +625,7 @@ class MainWindow(QMainWindow):
             if b: # user clicked OK
                 IMC.spellCheck.setMainDict(qs)
         else:
-            pqMsgs.warningMsg("Spell check is not active",
+            pqMsgs.warningMsg("No dictionaries are known!",
                               "Check console window for error messages?")
 
     # reimplement QWidget::closeEvent() to check for a dirty file and save it.
