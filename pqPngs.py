@@ -46,6 +46,10 @@ class pngDisplay(QWidget):
         self.defaultPM = QPixmap(700,900)
         self.defaultPM.fill(QColor("gray"))
         self.scarea = QScrollArea()
+        # The following two lines make sure that page up/dn gets through
+        # the scrollarea widget and up to us.
+        self.setFocusPolicy(Qt.ClickFocus)
+        self.scarea.setFocusProxy(self)
         self.scarea.setBackgroundRole(QPalette.Dark)
         self.scarea.setWidget(self.imLabel)
         # create the text label that will have the page number in it
@@ -133,50 +137,74 @@ class pngDisplay(QWidget):
             if self.lastIndex == (lo) :
                 return # nothing to do, we are there
             # On another page, save its index as IMC.currentPageIndex for use
-            # by pqNotes. Get its filename Qstring, e.g. "025", add ".png"
-            # and save as self.lastPage. Make full path to the image and load it.
+            # by pqNotes and here as lastIndex. Then display it.
             self.lastIndex = lo
             IMC.currentPageIndex = lo
-            self.lastPage = QString(IMC.pageTable[self.lastIndex][1]+u".png")
-            png = self.pngPath + self.lastPage
-            pxmap = QPixmap(png)
-            if not pxmap.isNull(): # successfully got a pixmap from a file
-                self.imLabel.setPixmap(pxmap)
-                self.imLabel.resize( self.zoomFactor * pxmap.size() )
-                self.txLabel.setText(
-                u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
-                    )
-            else: # no file - it's ok if pages are missing
-                self.imLabel.setPixmap(self.defaultPM)
-                self.txLabel.setText(u"No image")
+            self.showPage()
+    # Display the page indexed by self.lastPage.
+    # Get its filename Qstring, e.g. "025", add ".png"
+    # and save as self.lastPage. Make full path to the image and load it.
+    # Update our image label with the filename and zoom factor.
+    def showPage(self):
+        self.lastPage = QString(IMC.pageTable[self.lastIndex][1]+u".png")
+        png = self.pngPath + self.lastPage
+        pxmap = QPixmap(png)
+        if not pxmap.isNull(): # successfully got a pixmap from a file
+            self.imLabel.setPixmap(pxmap)
+            self.imLabel.resize( self.zoomFactor * pxmap.size() )
+            self.txLabel.setText(
+            u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
+                                )
+        else: # no file - it's ok if pages are missing
+            self.imLabel.setPixmap(self.defaultPM)
+            self.txLabel.setText(u"No image")
 
     # Re-implement the parent's keyPressEvent in order to provide zoom:
     # ctrl-plus increases the image size by 1.25
     # ctrl-minus decreases the image size by 0.8
-    # TODO: also trap pageup/dn and use to walk through images. Query: when
-    # should we reposition the editor?
+    # Also trap pageup/dn and use to walk through images.
+    # At this point we do not reposition the editor to match the page viewed.
+    # we page up/dn but as soon as focus returns to the editor and the cursor
+    # moves, this display will snap back to the edited page. As a user that
+    # seems best, come over to Pngs and page ahead to see what's coming, then
+    # back to the editor to read or type.
     def keyPressEvent(self, event):
-        # If not a ctl/cmd key or we are not displaying, just pass it on.
-        if (int(event.modifiers()) & Qt.ControlModifier) and self.ready:
-            code = event.key()
-            if (code == Qt.Key_Equal) \
+        # If we are initialized and have displayed some page, look at the key
+        if (self.ready) and (IMC.currentPageIndex is not None):
+            code = int(event.key())
+            mods = int(event.modifiers())
+            # print('key {0:X} mod {1:X}'.format(code,mods))
+            if (mods & Qt.ControlModifier):
+                # ctl/cmd-something 
+                if (code == Qt.Key_Equal) \
                 or (code == Qt.Key_Plus) or (code == Qt.Key_Minus):
-                event.accept()
-                fac = (0.8) if (code == Qt.Key_Minus) else (1.25)
-                fac *= self.zoomFactor # target zoom factor
-                if (fac >= 0.2) and (fac <= 3.0): # keep in bounds
-                    self.imLabel.resize( fac * self.imLabel.pixmap().size() )
-                    self.zoomFactor = fac
-                    self.txLabel.setText(
-                u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
-                    )
-            else: # control-something but not one of ours
-                event.ignore()
-        else: # not control/command modifier
-            event.ignore()
+                    # ctl/cmd + or -, do the zoom
+                    event.accept()
+                    fac = (0.8) if (code == Qt.Key_Minus) else (1.25)
+                    fac *= self.zoomFactor # target zoom factor
+                    if (fac >= 0.2) and (fac <= 3.0): # keep in bounds
+                        self.imLabel.resize( fac * self.imLabel.pixmap().size() )
+                        self.zoomFactor = fac
+                        self.txLabel.setText(
+                    u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
+                        )
+                else: # control-something but not one of ours
+                    event.ignore()
+            else: # not ctl/cmd modifier
+                if (code == Qt.Key_PageUp) or (code == Qt.Key_PageDown) :
+                    # real pgUp or pgDn
+                    event.accept()
+                    fac = 1 if (code == Qt.Key_PageDown) else -1
+                    fac += self.lastIndex
+                    if (fac >= 0) and (fac < len(IMC.pageTable)) : 
+                        # not off the end of the book, so,
+                        self.lastIndex = fac
+                        IMC.currentPageIndex = fac
+                        self.showPage()
+                else: # some other key
+                    event.ignore()
         # ignored or accepted, pass the event along.
         super(pngDisplay, self).keyPressEvent(event)
-
 
 if __name__ == "__main__":
     import sys
