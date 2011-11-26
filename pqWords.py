@@ -50,10 +50,13 @@ from PyQt4.QtCore import (Qt,
                           QVariant,
                           SIGNAL)
 from PyQt4.QtGui import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QContextMenuEvent,
     QHBoxLayout,
+    QItemSelectionModel,
+    QKeyEvent,
     QMenu,
     QPushButton,
     QSortFilterProxyModel,
@@ -142,7 +145,7 @@ class myTableModel(QAbstractTableModel):
 class mySortFilterProxy(QSortFilterProxyModel):
     def __init__(self, parent=None):
         super(mySortFilterProxy, self).__init__(parent)
-        self.parent = parent # save pointer to the panel widget
+        self.panelRef = parent # save pointer to the panel widget
         
     # Get the data from column 2 of row (feature string), and apply
     # parent.filterLambda to it. The model/view abstractions get really thick
@@ -150,21 +153,23 @@ class mySortFilterProxy(QSortFilterProxyModel):
     # the parent for the data for the display role for that index. Which is
     # supposed to come as a qvariant, but actually comes as a QString.
     def filterAcceptsRow(self, row, parent_index):
-        if self.parent.listFilter is None:
-            qmi = self.parent.model.index(row, 2, parent_index)
-            dat = self.parent.model.data(qmi,Qt.DisplayRole)
-            return self.parent.filterLambda(unicode(dat))
+        if self.panelRef.listFilter is None:
+            qmi = self.panelRef.tableModel.index(row, 2, parent_index)
+            dat = self.panelRef.tableModel.data(qmi,Qt.DisplayRole)
+            return self.panelRef.filterLambda(unicode(dat))
         else: # filtering on first harmonic or similar
-            qmi = self.parent.model.index(row, 0, parent_index)
-            dat = self.parent.model.data(qmi,Qt.DisplayRole)
-            return ( unicode(dat) in self.parent.listFilter )
+            qmi = self.panelRef.tableModel.index(row, 0, parent_index)
+            dat = self.panelRef.tableModel.data(qmi,Qt.DisplayRole)
+            return ( unicode(dat) in self.panelRef.listFilter )
 
 # subclass QTableView just so we can install a custom context menu
-# for column 0, and (TBS) intercept ^c to copy a word.
+# for column 0, and intercept ^c to copy a word.
 class myTableView(QTableView):
     def __init__(self, parent=None):
         super(myTableView, self).__init__(parent)
-        self.parent = parent # save ref to panel widget
+        # save ref to panel widget
+        self.panelRef = parent 
+        self.setFocusPolicy(Qt.ClickFocus)
         # set up stuff used in our context menu
         self.contextIndex = QModelIndex()
         self.contextMenu = QMenu(self)
@@ -176,7 +181,31 @@ class myTableView(QTableView):
         self.connect(simAction, SIGNAL("triggered()"), self.similarWords) 
         self.connect(har1Action, SIGNAL("triggered()"), self.firstHarmonic)
         self.connect(har2Action, SIGNAL("triggered()"), self.secondHarmonic)
-       
+
+    # Reimplement the parent (QTableView) KeyPressEvent in order to trap
+    # the ctl/cmd-c key and copy the selected word(s) to the clipboard.
+    # BUG: for reasons as yet unknown, the Edit menu in the menubar preempts
+    # the cmd-c Qt.Key_Copy signal, even when this widget has the focus.
+    # For now we are looking specifically for Key_C with the control modifier
+    # which can be entered here by the workaround of SHIFT-CMD-C.
+    def keyPressEvent(self, event):
+        code = int(event.key())
+        mods = int(event.modifiers())
+        #print('key {0:X} mod {1:X}'.format(code,mods))
+        if (code == Qt.Key_C) and (mods & Qt.ControlModifier) :
+            # PyQt4's implementation of QTableView::selectedIndexes() does 
+            # not return a QList but rather a Python list of indices.
+            lix = self.selectedIndexes()
+            if len(lix) : # non-zero selection
+                ans = QString()
+                for ix in lix :
+                    ans.append(
+                self.model().data(ix, Qt.DisplayRole).toString()
+                            )
+                    ans.append(u' ')
+                ans.chop(1) # drop final space
+                QApplication.clipboard().setText(ans)
+    
     # A context menu event means a right-click anywhere, ctrl-click (Mac)
     # or Menu button (Windows). We ignore any such except on column 0,
     # the word. There we pop up our menu.
@@ -200,22 +229,27 @@ class myTableView(QTableView):
     # self.model(). Note the parens. That actually gets us the sort filter
     # proxy but it behaves like a table model so we're all fat and happy.
     # Below, when the wordsPanel widget has to refer to its actual table model
-    # it keeps the reference in a simple property named self.model. No parens!
+    # it keeps the reference in a property named self.tableModel. No parens!
     def addToGW(self):
-        qs = self.model().data(self.contextIndex, Qt.DisplayRole).toString()
-        word = unicode(qs) # get python string
-        b = pqMsgs.okCancelMsg(
-            "Add {0} to good-words list?".format(word),
-            "This action cannot be undone.")
+        lix = self.selectedIndexes()
+        if len(lix) == 1 : # just one selected, presumably the on clicked-on
+            qs = self.model().data(lix[0], Qt.DisplayRole).toString()
+            mtxt = u'Add {0} to the good-words list?'.format(unicode(qs))
+        else :
+            mtxt = u'Add {0} words to the good-words list?'.format(len(lix))
+        b = pqMsgs.okCancelMsg(mtxt,"This action cannot be undone.")
         if b : # user says do it
-            IMC.goodWordList.insert(word)
-            # fabricate an index to the flags field of this row
-            findex = self.model().index(self.contextIndex.row(), 2)
-            # get flag as an int instead of a fancy char string
-            (flag, b) = self.model().data(findex, Qt.UserRole).toInt()
-            if flag & IMC.WordMisspelt :
-                flag ^= IMC.WordMisspelt
-                self.model().setData(findex,flag,Qt.UserRole)
+            for ix in lix :
+                qs = self.model().data(ix, Qt.DisplayRole).toString()
+                word = unicode(qs)
+                IMC.goodWordList.insert(word)
+                # fabricate an index to the flags field of the indexed row
+                findex = self.model().index(ix.row(), 2)
+                # get flag as an int instead of a fancy char string
+                (flag, b) = self.model().data(findex, Qt.UserRole).toInt()
+                if flag & IMC.WordMisspelt :
+                    flag ^= IMC.WordMisspelt
+                    self.model().setData(findex,flag,Qt.UserRole)
         
     # The actual code of First and Second Harmonic. Run through the word list
     # and make a sublist of just the ones that are a Levenshtein distance of 1
@@ -233,8 +267,8 @@ class myTableView(QTableView):
                 if dist >= edit_distance(word,word2): # test it
                     harmList.append(word2) # one hit is on the word itself
         if 1 < len(harmList) : # got at least 1 other
-            self.parent.listFilter = harmList
-            self.parent.model.reset()
+            self.panelRef.listFilter = harmList
+            self.panelRef.tableModel.reset()
         else:
             pqMsgs.infoMsg(
         "There are no words in edit distance {0} edit of {1}".format(dist,word)
@@ -263,8 +297,8 @@ class myTableView(QTableView):
             if 0 == word.compare(word2,Qt.CaseInsensitive):
                 h1list.append(unicode(word1)) # one hit on word itself
         if 1 < len(h1list): # got at least 1 other
-            self.parent.listFilter = h1list
-            self.parent.model.reset()
+            self.panelRef.listFilter = h1list
+            self.panelRef.tableModel.reset()
         else:
             pqMsgs.infoMsg("There are no words similar to {0}".format(unicode(wordOriginal)))
 
@@ -318,9 +352,9 @@ class wordsPanel(QWidget):
         mainLayout.addWidget(self.view,1)
         # Set up the table model/view. Interpose a sort filter proxy
         # between the view and the model.
-        self.model = myTableModel()
+        self.tableModel = myTableModel()
         self.proxy = mySortFilterProxy(self)
-        self.proxy.setSourceModel(self.model)
+        self.proxy.setSourceModel(self.tableModel)
         self.view.setModel(self.proxy)
         # Hook up the refresh button clicked signal to refresh below
         self.connect(self.refreshButton, SIGNAL("clicked()"),self.refresh)
@@ -391,13 +425,13 @@ class wordsPanel(QWidget):
         elif row == 8 : self.filterLambda = self.lambdaMisspelt
         else : self.filterLambda = self.lambdaAll
         self.listFilter = None
-        self.model.reset()
+        self.tableModel.reset()
 
     # This slot receives the main window's docWillChange signal.
     # It comes with a file path but we can ignore that.
     def docWillChange(self):
         self.view.setSortingEnabled(False)
-        self.model.beginResetModel()
+        self.tableModel.beginResetModel()
 
     # Subroutine to reset the visual appearance of the table view,
     # invoked on table reset because on instantiation we have no table.
@@ -414,7 +448,7 @@ class wordsPanel(QWidget):
     # Let the table view populate with all-new metadata (or empty
     # data if the command was File>New).
     def docHasChanged(self):
-        self.model.endResetModel()
+        self.tableModel.endResetModel()
         self.setUpTableView()
 
     # This slot receives the click of the refresh button. Tell the
@@ -422,9 +456,9 @@ class wordsPanel(QWidget):
     # data. Then call our editor to rebuild the metadata.
     def refresh(self):
         self.view.setSortingEnabled(False)
-        self.model.beginResetModel()
+        self.tableModel.beginResetModel()
         IMC.editWidget.rebuildMetaData()
-        self.model.endResetModel()
+        self.tableModel.endResetModel()
         self.setUpTableView()
 
 # No separate unit test - too dependent on edit metadata creation

@@ -11,9 +11,9 @@ The source code of PPQT is released under the Creative Commons
 Attribution-NonCommercial-ShareAlike license.</p>
 <h3>Acknowledgements</h3>
 <p>First a deep bow of respect to Steve Shulz (Thundergnat) who created and maintained Guiguts, the program from which PPQT takes inspiration and lots of ideas. Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Developement with PyQt</i>.</p>
-<h3>Mac Users Note</h3><p> Throughout this Help, when you read <b>ctrl-</b>
+<h3>Mac Users Note</h3><p> Throughout this Help, when you read <b>ctl-</b>
 you think <b>cmd-</b>. And when you read <b>alt-</b>, you think <b>opt-</b>.
-Qt is quite consistent in these mappings.</p>
+Qt is quite consistent in these mappings. However, when you see <b>control-</b>, that really means, the Control key.</p>
 <p>Key ctl-f for a simple Find dialog for searching in this help text.</p>
 <h2>Files and Folders</h2>
 <p>PPQT edits one text file at a time; call it <i>bookname</i><b>.</b><i>sfx</i>, for example <tt>foobar.utf</tt>.
@@ -92,11 +92,12 @@ a plum-colored background on any word that appears in the scannos file. (May tak
 <h3>Spellcheck</h3>
 <p>PPQT looks for a file <tt>good_words.</tt> (<tt>txt</tt> or <tt>utf</tt>) when it opens the text for the first time, and loads its contents. It looks for a file <tt>bad_words.</tt> (<tt>txt</tt> or <tt>utf</tt>)  also. The lists of "good" and "bad" words are saved in the metadata file thereafter. More "good" words can be added from the Words panel.</p>
 <p>When building or refreshing its metadata, PPQT checks all words for spelling. A "bad" word is assumed to be misspelt; a "good" word is assumed to be correct. Any word not in those lists is presented to the spell-checker and noted as correct or misspelt. You can mark any word, phrase or section for
-spell-check with an alternate dictionary with <b><tt>&lt;sd</tt></b>&nbsp;<i>langtag</i><b>&gt;</b>...<b><tt>&lt;/sd></tt></b>, for example <tt>He whispered &lt;sd fr_FR>&lt;i>Je t'aime</i>&lt;/sd>.</tt></p>
+spell-check with an alternate dictionary with <b><tt>&lt;sd</tt></b>&nbsp;<i>langtag</i><b>&gt;</b>...<b><tt>&lt;/sd></tt></b>, for example <tt>He whispered &lt;sd fr_FR>&lt;i>Je t'aime&lt;/i>&lt;/sd>.</tt></p>
 <p>Select View&nbsp;>&nbsp;Spelling to turn on red-underlining of misspelt words (may take some seconds in a large book). Use View&nbsp;>&nbsp;Dictionary to select a dictionary for the main language of the book. Use the Refresh button of the Words panel to spellcheck with the new dictionary. (More dictionaries can be added; see elsewhere.)</p>
 <h2>Pngs Panel</h2>
-<p>Click the Pngs tab. This panel displays the scan image from the <tt>pngs</tt> folder that corresponds to the present edit cursor position. When the focus is in the Pngs panel (click in it) ctl-hyphen zooms out and ctl-plus zooms in. The current zoom setting is remembered from session to session.
-</p>
+<p>Click the Pngs tab. This panel displays the scan image from the <tt>pngs</tt> folder that corresponds to the present edit cursor position. When the focus is in the Pngs panel (click in it) ctl-hyphen zooms out and ctl-plus zooms in. The current zoom setting is remembered from session to session.</p>
+<p>You can use the PgUp and PgDn keys in the Pngs panel to see preceding and following scan images. However as soon as you move the text edit cursor,
+the Pngs panel snaps back to the image corresponding to the cursor.</p>
 <h2>Notes Panel</h2>
 <p>Click the Notes tab. This panel is a simple plain-text editor to hold notes on the book in progress. Whatever contents you type here are saved
 in the metadata file and reloaded with the file.</p>
@@ -259,12 +260,13 @@ for example <tt>Aa---X</tt>, meaning from left to right:
 <li>9 if the word contains a digit, else hyphen</li>
 <li>h if the word contains a hyphen, else hyphen</li>
 <li>p if the word contains an apostrophe, else hyphen</li>
-<li>X if the word is in bad_words or rejected by Aspell, else hyphen</li>
+<li>X if the word is in bad_words or fails spellcheck, else hyphen</li>
 </ul>
 </ul>
 Click on any column to sort on that column. Set the Respect Case
 checkbox to decide if the Word column sort is case-sensitive.
-After editing, the table is out of date. Click Refresh to rebuild all metadata
+After the text is edited the table is out of date.
+Click Refresh to rebuild all metadata
 and make the table current. Use the popup menu in the upper right
 to filter the table to these categories:</p>
 <ul>
@@ -280,17 +282,19 @@ to filter the table to these categories:</p>
 </ul>
 <p>Doubleclick a word to load that word in the Find text and display
 the Find panel.</p>
-<p>Right-click (Mac users: <b>control</b>-click) on a word in the first
+<p>You can select one or more words by clicking, dragging, shift-clicking or
+ctl-clicking in the first column.
+Right-click (Mac users: <b>control</b>-click) on a word in the first
 column to open a context menu with these options:</p>
 <ul>
-<li>Add to goodwords: Add the current word to the good-words list, where
-it will be saved with the metadata and never be shown as misspelt again.</li>
+<li>Add to goodwords: Add all selected words to the good-words list
+and show them as correctly spelled.</li>
 <li>Similar words: Filter the word list to show only words that match the
-current word when letter case, hyphens, and apostrophes are ignored.</li>
+clicked word when letter case, hyphens, and apostrophes are ignored.</li>
 <li>First harmonic: Filter the word list to show only words that are
-within one edit of difference from the current word.</li>
+within one edit of difference from the clicked word.</li>
 <li>Second harmonic: Show only words that are within one or two edits
-of the current word.</li>
+of the clicked word.</li>
 </ul>
 <p>Use Similar words to find inconsistent use of hyphens. Use
 First and Second Harmonic to find likely misspellings of a word.

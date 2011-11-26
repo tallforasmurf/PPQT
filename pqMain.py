@@ -35,7 +35,7 @@ from PyQt4.QtGui import (
     QFont, QFontDialog, QFontInfo,
     QFrame,
     QKeySequence,
-    QMainWindow,
+    QMainWindow,QMenuBar,
     QSizePolicy,
     QSplitter,
     QStatusBar,
@@ -81,6 +81,9 @@ class MainWindow(QMainWindow):
         # Recall a user-preferred font if any:
         IMC.fontFamily = IMC.settings.value("main/fontFamily",
                                       QString("DejaVu Sans Mono")).toString()
+        # create a menu bar, not the default for QMainWindow, see note 
+        # re Mac OS X under the QMenuBar documentation.
+        self.theMenuBar = QMenuBar()
         # create the editor for the left-hand pane
         self.editor = PPTextEditor()
         IMC.editWidget = self.editor # provide other modules access to edit members
@@ -157,27 +160,28 @@ class MainWindow(QMainWindow):
 
         # Set up the menu actions, then create menus to invoke them.
 
-        # Actions for the File menu:
-        fileNewAction = self.createAction("&New...", self.fileNew,
+        # Actions for the File menu. All are parented by the main window
+        # their shortcuts are always active.
+        fileNewAction = self.createAction("&New...", None, self.fileNew,
                 QKeySequence.New, "Clear to an empty state")
-        fileOpenAction = self.createAction("&Open...", self.fileOpen,
+        fileOpenAction = self.createAction("&Open...", None, self.fileOpen,
                 QKeySequence.Open, "Open a book and its metadata")
-        fileSaveAction = self.createAction("&Save", self.fileSave,
+        fileSaveAction = self.createAction("&Save", None, self.fileSave,
                 QKeySequence.Save, "Save the book and metadata")
-        fileSaveAsAction = self.createAction("Save &As...",
+        fileSaveAsAction = self.createAction("Save &As...", None,
                 self.fileSaveAs, QKeySequence.SaveAs,
                 "Save the book under a new name")
-        fileScannosAction = self.createAction("Scannos...",
+        fileScannosAction = self.createAction("Scannos...", None,
                 self.scannoOpen, None, "Read list of likely scannos")
-        fileButtonLoadAction = self.createAction("Load Find Buttons...",
+        fileButtonLoadAction = self.createAction("Load Find Buttons...", None,
                 self.buttonLoad, None, "Read user-defined buttons in Find Panel")
-        fileButtonSaveAction = self.createAction("Save Find buttons...",
+        fileButtonSaveAction = self.createAction("Save Find buttons...", None,
                 self.buttonSave, None, "Save user-defined buttons in Find Panel")
-        fileQuitAction = self.createAction("&Quit", self.close,
+        fileQuitAction = self.createAction("&Quit", None, self.close,
                 QKeySequence.Quit, "Close the application")
         # Create the File menu but don't populate it yet, do that on the
         # fly adding recent files to it. Save the prepared actions as a tuple.
-        self.fileMenu = self.menuBar().addMenu("&File")
+        self.fileMenu = self.theMenuBar.addMenu("&File")
         self.fileMenuActions = (fileNewAction, fileOpenAction,
                 fileSaveAction, fileSaveAsAction, fileScannosAction,
                 fileButtonLoadAction, fileButtonSaveAction, None, 
@@ -190,30 +194,33 @@ class MainWindow(QMainWindow):
                             QVariant(QVariant.StringList)).toStringList()
         self.updateFileMenu()
         # Actions for the Edit menu: direct the edit menu items
-        # to the inherited methods of the QPlainTextEdit object.
-        editCopyAction = self.createAction("&Copy", self.editor.copy,
+        # to the inherited methods of the QPlainTextEdit object. These are
+        # parented to the editor, so their shortcuts can be preempted by
+        # other widgets e.g. Word panel.
+        editCopyAction = self.createAction("&Copy", self.editor, self.editor.copy,
                 QKeySequence.Copy, "Copy selection to clipboard")
-        editCutAction = self.createAction("Cu&t", self.editor.cut,
+        editCutAction = self.createAction("Cu&t", self.editor, self.editor.cut,
                 QKeySequence.Cut, "Cut selection to clipboard")
-        editPasteAction = self.createAction("&Paste", self.editor.paste,
+        editPasteAction = self.createAction("&Paste", self.editor, self.editor.paste,
                 QKeySequence.Paste, "Paste clipboard at selection")
-        # There will be some more, e.g. ex/indent
+        # There may perhaps be some more edit actions, e.g. ex/indent
         # Create and populate the Edit menu
-        editMenu = self.menuBar().addMenu("&Edit")
+        editMenu = self.theMenuBar.addMenu("&Edit")
         self.addActions(editMenu, (editCopyAction,
                 editCutAction, editPasteAction))
         # Actions for the View menu: toggle choices for spell and scanno hilite
         # we keep references to them because we may want to override them
-        self.viewScannosAction = self.createAction("Sca&nnos", self.viewSetScannos,
+        # Again these are parented by the main window so always the same.
+        self.viewScannosAction = self.createAction("Sca&nnos", None, self.viewSetScannos,
                 None, "Toggle scanno hilight", True, "toggled(bool)")
-        self.viewSpellingAction = self.createAction("S&pelling", self.viewSetSpelling,
+        self.viewSpellingAction = self.createAction("S&pelling", None, self.viewSetSpelling,
                 None, "Toggle spellcheck hilight", True, "toggled(bool)")
-        self.viewFontAction = self.createAction("&Font...", self.viewFont,
+        self.viewFontAction = self.createAction("&Font...", None, self.viewFont,
                 None, "Open font selection dialog")
-        self.viewDictAction = self.createAction("&Dictionary...", self.viewDict,
+        self.viewDictAction = self.createAction("&Dictionary...", None, self.viewDict,
                 None, "Open dictionary selection dialog")
         # Create and populate the View menu
-        viewMenu = self.menuBar().addMenu("&View")
+        viewMenu = self.theMenuBar.addMenu("&View")
         self.addActions(viewMenu, (self.viewScannosAction,
                                    self.viewSpellingAction,
                                    self.viewFontAction,
@@ -226,6 +233,10 @@ class MainWindow(QMainWindow):
     #
     # text = text of the menu item, e.g. "Save &As" (ampersand designates the
     #        windows accelerator key for that item, s.b. unique in any menu)
+    #
+    # parent = the parent widget or None to indicate "this main window"
+    #        when a parent (usually, the editor) is given, the action is
+    #        also given shortCutContext of Qt.WidgetShortcut.
     #
     # slot = target of a signal emitted by this action, see also signal
     #
@@ -240,10 +251,14 @@ class MainWindow(QMainWindow):
     #          slot and signal work together to say, when this action happens,
     #          send signal to slot.
     #
-    def createAction(self, text, slot=None, shortcut=None,
+    def createAction(self, text, parent, slot=None, shortcut=None,
                      tip=None, checkable=False, signal="triggered()"):
-        # create the action with a parent of this main window
-        action = QAction(text, self)
+        # create the action with a parent as specified
+        if parent is not None :
+            action = QAction(text, self)
+        else :
+            action = QAction(text, parent)
+            action.setShortcutContext(Qt.WidgetShortcut)
         if shortcut is not None:
             action.setShortcut(shortcut)
         if tip is not None:
