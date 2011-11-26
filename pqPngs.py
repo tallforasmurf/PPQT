@@ -30,7 +30,7 @@ the performance would indicate this is so.
 from PyQt4.QtCore import ( Qt, QFileInfo, QString, QSettings, QVariant )
 from PyQt4.QtGui import (
     QColor,
-    QFrame, QLabel, QPalette, QPixmap,
+    QFrame, QKeyEvent, QLabel, QPalette, QPixmap,
     QScrollArea, QSizePolicy,
     QVBoxLayout, QWidget)
 

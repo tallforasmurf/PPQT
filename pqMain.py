@@ -392,7 +392,7 @@ class MainWindow(QMainWindow):
     
     def fileOpen(self):
         if not self.ohWaitAreWeDirty():
-            return false # dirty doc & user said cancel or save failed
+            return False # dirty doc & user said cancel or save failed
         startdir = (QString(".") if self.bookPath.isEmpty() else self.bookPath)
         bookname = QFileDialog.getOpenFileName(self,
                 "PPQT - choose a book file to edit",
