@@ -189,6 +189,7 @@ class makeSpellCheck():
 		    self.altDict = d # ok that worked, save it
 		    self.altTag = dicTag
 		except:
+		    (t,v,b) = sys.exc_info()
 		    d = None
         if d is not None: # one way or another we have a dict
             if len(aword.strip()) : # nonempty text
@@ -249,9 +250,14 @@ class spellDict():
 	# Process the rest of the dictionary into a list of two-ples,
 	# ('wordtext', 'affixflags'). Sort the entire list on the word texts.
 	self.dictData = {}
-	for line in udf:
-	    (word,slash,aflags) = unicode(line).strip().partition(u'/')
-	    self.dictData[word] = aflags
+	try:
+	    for line in udf:
+		if len(line) and (line[0].isalnum()): # skip nulls, comments
+		    (word,slash,aflags) = unicode(line).strip().partition(u'/')
+		    self.dictData[word] = aflags
+	except:
+	    (t,v,b) = sys.exc_info()
+	    pass
 	# And that is all there is to loading a dictionary.
 
     '''
@@ -391,7 +397,7 @@ if __name__ == "__main__":
                 print(w + " is not")
 	print("Alt dict")
 	for w in wl:
-	    if sp.check(w,'fr_FR'):
+	    if sp.check(w,'la'):
                 print(w + " is a word")
             else:
                 print(w + " is not")
