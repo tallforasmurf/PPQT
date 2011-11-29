@@ -189,7 +189,11 @@ class makeSpellCheck():
 		    self.altDict = d # ok that worked, save it
 		    self.altTag = dicTag
 		except:
-		    (t,v,b) = sys.exc_info()
+		    # something went wrong reading a dict -- possible encoding
+		    # error (when supposed utf is actually cp1252, e.g.)
+		    # should we show a message? otherwise it is silently ignored
+		    # and the word with the alt dict is marked misspelled
+		    exctype, value = sys.exc_info()[:2]
 		    d = None
         if d is not None: # one way or another we have a dict
             if len(aword.strip()) : # nonempty text
@@ -225,7 +229,9 @@ class spellDict():
 	# sadly, python's unicode .isdecimal() doesn't actually recognize
 	# signs or decimal points! Not going to attempt scientific notation.
 	self.decimalWord = QRegExp(u'(\-|\+)?\d*\.?\d+')
-	# open the affix file as Latin-1, and find out how to read the dic
+	# open the affix file as Latin-1, and find out how to read the dic.
+	# Not that this is accurate, the OpenOffice Latin dictionary has
+	# SET UTF-8 but the dict was saved in Win CP1251, grrr.
 	uaf = codecs.open(affPath,'r','ISO8859-1')
 	setCodec = "ISO8859-1"
 	for line in uaf:
@@ -249,15 +255,13 @@ class spellDict():
 	dSize = int(udf.readline().strip())
 	# Process the rest of the dictionary into a list of two-ples,
 	# ('wordtext', 'affixflags'). Sort the entire list on the word texts.
+	# Note any encoding errors or i/o errors here will trap up to the 
+	# caller's try statement.
 	self.dictData = {}
-	try:
-	    for line in udf:
-		if len(line) and (line[0].isalnum()): # skip nulls, comments
-		    (word,slash,aflags) = unicode(line).strip().partition(u'/')
-		    self.dictData[word] = aflags
-	except:
-	    (t,v,b) = sys.exc_info()
-	    pass
+	for line in udf:
+	    if len(line) and (line[0].isalnum()): # skip nulls, comments
+		(word,slash,aflags) = unicode(line).strip().partition(u'/')
+		self.dictData[word] = aflags
 	# And that is all there is to loading a dictionary.
 
     '''
