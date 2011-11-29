@@ -199,7 +199,7 @@ class flowPanel(QWidget):
         skipVBox.addWidget(self.skipPoCheck,0)
         self.skipBqCheck = QCheckBox("Block quote /#..#/")
         skipVBox.addWidget(self.skipBqCheck,0)
-        self.skipCeCheck = QCheckBox("Center /f..f/")
+        self.skipCeCheck = QCheckBox("Center /C..C/")
         skipVBox.addWidget(self.skipCeCheck,0)
         self.skipNfCheck = QCheckBox("No-reflow /*..*/")
         skipVBox.addWidget(self.skipNfCheck,0)
@@ -307,8 +307,8 @@ class flowPanel(QWidget):
         self.theRealReflow(topBlock,endBlock)
 
     # FOR REFERENCE here are the actual data access items:
-    # self.bqIndent[0/1/2].value() for First, left, right
-    # self.poIndent[0/1/2].value() for Fold, left, right
+    # self.bqIndent[0/1/2].value() for first, left, right
+    # self.poIndent[0/1/2].value() for first, left, right
     # self.nfLeftIndent.value()
     # self.ctrOn75.isChecked() versus self.ctrOnLongest.isChecked()
     # self.itCounts[0/1/2].isChecked() == 0, 1, as-is
@@ -338,7 +338,7 @@ class flowPanel(QWidget):
     # We allow arbitrarily nested reflow markers -- tho only /# /P P/ #/ is
     # expected or useful -- but the mechanism is the same for all so why not.
     # The current scan state is represented by these variables:
-    # S : state is either: 1, looking for data, or 0, collecting data
+    # S : state is either: True, looking for data, or False, collecting data
     # Z : an endmark to watch for, e.g. "#/"
     # C : True when centering (effectively, Z=="C/") else False
     # P : True = reflow by paragraphs, False, by single lines as in Poetry
@@ -349,16 +349,20 @@ class flowPanel(QWidget):
         markupRE = QRegExp("^/(P|#|\*|C|X|L|\$)")
         topBlockNumber = topBlock.blockNumber()
         endBlockNumber = endBlock.blockNumber()
-        pqMsgs.startBar(2 * (endBlockNumber - topBlockNumber), "Reflowing text")
+        #pqMsgs.startBar(2 * (endBlockNumber - topBlockNumber), "Reflowing text")
         # establish normal starting state: collecting normal paragraphs
         (S, Z, C, P, F, L, R) = (True, None, False, True, 0,0,0 )
+        # vars used when centering to longest line
+        CstartingF = 0
+        CshortestF = 0
+        Cstartunit = 0
         stack = [] # pushdown stack of states
         tb = topBlock # current block (text line) in loop
         fbn = None # number of first block of reflow unit
         while True:
             tbn = tb.blockNumber()
-            if 0 == (tbn & 0x3f) :
-                pqMsgs.rollBar(tbn - topBlockNumber)
+            #if 0 == (tbn & 0x3f) :
+                #pqMsgs.rollBar(tbn - topBlockNumber)
             qs = tb.text().trimmed() # careful, trims both back AND front
             if S : # looking for data
                 if not qs.isEmpty(): # non-blank line: data? markup?
@@ -384,7 +388,7 @@ class flowPanel(QWidget):
                             Z = QString("*/")
                             C = False # not centering
                             P = False # collect by lines
-                            F = self.nfLeftIndent.value()
+                            F += self.nfLeftIndent.value()
                             L = F
                             R = 0
                         elif M == "C" and (not self.skipCeCheck.isChecked()): # center
@@ -393,6 +397,9 @@ class flowPanel(QWidget):
                             Z = QString("C/")
                             C = True # centering
                             P = False # by lines
+                            CstartingF = F
+                            CshortestF = 75
+                            Cstartunit = len(ulist)
                             F += 2 # minimum 2-space indent on centered
                             L = F
                             R = 0
@@ -404,6 +411,14 @@ class flowPanel(QWidget):
                     else: # text
                         if Z is not None and qs.startsWith(Z) :
                             # end of a markup and no para working
+                            if C and self.ctrOnLongest.isChecked() :
+                                # end of /C with center on longest
+                                Cadjust = CshortestF - (CstartingF + 2)
+                                if Cadjust > 0 : # need to shift left
+                                    u = len(ulist)-1
+                                    while u >= Cstartunit :
+                                        ulist[u][2] = ulist[u][2]-Cadjust
+                                        u -= 1
                             (S, Z, C, P, F, L, R) = stack.pop()
                         else:
                             if P : # collecting paragraphs
@@ -416,8 +431,11 @@ class flowPanel(QWidget):
                                     ldgspaces = len(txt) - qs.size()
                                     ulist.append( (tbn, tbn, F+ldgspaces, L, R) )
                                 else: # Centering, only stripped len matters
-                                    x = max(4,75-qs.size())/2
-                                    ulist.append( (tbn, tbn, int(x), 0, 0) )
+                                    x = int(max(4,75-qs.size())/2)
+                                    # note appending a list not a tuple so can
+                                    # modify in place later, see just above
+                                    ulist.append( [tbn, tbn, x, 0, 0] )
+                                    CshortestF = min(x,CshortestF)
                 else:
                     pass # blank line, keep looking
             else: # collecting lines of a para
@@ -442,8 +460,8 @@ class flowPanel(QWidget):
         progress = endBlockNumber - topBlockNumber
         for u in reversed(range(len(ulist))):
             (fbn,lbn,F,L,R) = ulist[u]
-            if 0 == (fbn & 0x1f) :
-                pqMsgs.rollBar(progress + (endBlockNumber - fbn))
+            #if 0 == (fbn & 0x1f) :
+                #pqMsgs.rollBar(progress + (endBlockNumber - fbn))
             # set up a text cursor that selects the text to be flowed
             ltb = doc.findBlockByNumber(lbn)
             tc.setPosition(ltb.position()+ltb.length())
@@ -478,7 +496,7 @@ class flowPanel(QWidget):
             # used up all the tokens, replace the old text with reflowed text
             flow.replace(flow.size(),1,lbr) # terminate the last line
             tc.insertText(flow)   
-        pqMsgs.endBar()
+        #pqMsgs.endBar()
 
     # subroutine of finding /# or /P markups. Get the F L R values for poetry
     # or block quote from one of two sources: either the list of three
@@ -524,7 +542,7 @@ class flowPanel(QWidget):
 # where tok is a QString and tl is its logical length, which may be less than
 # tok.size() when tok contains <i/b/sc> markups. The lengths to use for these are
 # passed as a dictionary (from flowpanel.itbosc, which isn't accessible as this
-# is a global function, not a method). Not that a multiline selection has
+# is a global function, not a method). Note that a multiline selection has
 # \u2029 instead of \n, but it comes up as isSpace() anyway so we don't care.
 ibsRE = QRegExp("^</?(i|b|sc)>",Qt.CaseInsensitive)
 ltChar = QChar(u'<')
@@ -550,7 +568,7 @@ def tokGen(tc, itbosc):
                 # One would think with the CaretAtOffset rule, and a match
                 # at offset i, the return would be 0, but it's the offset.
                 if i == ibsRE.indexIn(qs,i,QRegExp.CaretAtOffset):
-                    dbg = unicode(ibsRE.cap(1))
+                    #dbg = unicode(ibsRE.cap(1))
                     x = itbosc[unicode(ibsRE.cap(1))]
                     ll += x if x<2 else ibsRE.matchedLength()
                     tok.append( ibsRE.cap(0) )
