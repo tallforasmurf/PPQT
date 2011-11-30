@@ -81,9 +81,6 @@ class MainWindow(QMainWindow):
         # Recall a user-preferred font if any:
         IMC.fontFamily = IMC.settings.value("main/fontFamily",
                                       QString("DejaVu Sans Mono")).toString()
-        # create a menu bar, not the default for QMainWindow, see note 
-        # re Mac OS X under the QMenuBar documentation.
-        self.theMenuBar = QMenuBar()
         # create the editor for the left-hand pane
         self.editor = PPTextEditor()
         IMC.editWidget = self.editor # provide other modules access to edit members
@@ -181,7 +178,7 @@ class MainWindow(QMainWindow):
                 QKeySequence.Quit, "Close the application")
         # Create the File menu but don't populate it yet, do that on the
         # fly adding recent files to it. Save the prepared actions as a tuple.
-        self.fileMenu = self.theMenuBar.addMenu("&File")
+        self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenuActions = (fileNewAction, fileOpenAction,
                 fileSaveAction, fileSaveAsAction, fileScannosAction,
                 fileButtonLoadAction, fileButtonSaveAction, None, 
@@ -205,7 +202,7 @@ class MainWindow(QMainWindow):
                 QKeySequence.Paste, "Paste clipboard at selection")
         # There may perhaps be some more edit actions, e.g. ex/indent
         # Create and populate the Edit menu
-        editMenu = self.theMenuBar.addMenu("&Edit")
+        editMenu = self.menuBar().addMenu("&Edit")
         self.addActions(editMenu, (editCopyAction,
                 editCutAction, editPasteAction))
         # Actions for the View menu: toggle choices for spell and scanno hilite
@@ -220,7 +217,7 @@ class MainWindow(QMainWindow):
         self.viewDictAction = self.createAction("&Dictionary...", None, self.viewDict,
                 None, "Open dictionary selection dialog")
         # Create and populate the View menu
-        viewMenu = self.theMenuBar.addMenu("&View")
+        viewMenu = self.menuBar().addMenu("&View")
         self.addActions(viewMenu, (self.viewScannosAction,
                                    self.viewSpellingAction,
                                    self.viewFontAction,
