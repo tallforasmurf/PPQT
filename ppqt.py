@@ -72,7 +72,7 @@ __license__ = '''
 Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
 http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
-
+import os # for dict path manipulations
 import sys # for argv, passed to QApplication
 import platform # for mac detection
 
@@ -293,6 +293,16 @@ app.setApplicationName("PPQT")
 # goes in ~/Library/Preferences/com.pgdp.org; on Linux, in
 # ~/.config/PGDP; on Windows, in the Registry under /Software/PGDP.
 IMC.settings = QSettings()
+
+# Establish what should be a path to our spellcheck dictionary folder "dict"
+# We expect the folder of dicts to be at the same level as this executable,
+# -- yes, cheesy as heck! -- but we get our path different ways depending
+# on whether we are running in development or bundled by pyinstaller.
+if hasattr(sys, 'frozen') : # bundled by pyinstaller?
+	base = os.path.dirname(sys.executable)
+else: # running normally
+	base = os.path.dirname(__file__)
+IMC.dictPath = os.path.join(base,u"dict")
 
 import pqSpell # Spell-check routines (which use the settings)
 pqSpell.IMC = IMC

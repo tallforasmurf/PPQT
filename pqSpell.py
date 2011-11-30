@@ -81,9 +81,9 @@ Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
 http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
 from PyQt4.QtCore import (QRegExp, QString,QStringList)
+import pqMsgs
 import os
 import sys
-import pqMsgs
 
 class makeSpellCheck():
     def __init__(self):
@@ -94,19 +94,13 @@ class makeSpellCheck():
 	self.mainDict = None
 	# populate our list of available dictionaries by finding
 	# all the files of the form <tag>.dic and <tag>.aff in the folder
-	# dicts at the same level as this very source file. Cheesey!
-	# Save the path to the dict folder in self.dictPath and store the
+	# passed by the parent module and store the
 	# dict tags (file names) into the string list self.listOfDicts.
 	self.listOfDicts = QStringList()
-	if hasattr(sys, 'frozen') : # bundled by pyinstaller?
-	    base = sys.executable
-	else: # running normally
-	    base = os.path.dirname(__file__)
-	self.dictPath = os.path.join(base,u"dict")
-	print('Looking for dicts in:{0}'.format(self.dictPath))
+	print('Looking for dicts in:{0}'.format(IMC.dictPath))
 	# list all files in that folder. We don't need to sort them, we
 	# use the "in" operator to find the X.dic to match an X.aff
-	fnames = os.listdir(self.dictPath)
+	fnames = os.listdir(IMC.dictPath)
 	for fn in fnames:
 	    if u'.aff' == fn[-4:] :
 		# this is a tag.aff file, look for matching tag.dic
@@ -149,6 +143,7 @@ class makeSpellCheck():
 	    return True
         except: # on any error just set None
 	    # query - worthwhile popping up a message?
+	    exctype, value = sys.exc_info()[:2]
             self.mainDict = None # spelling is not up
 	    self.mainTag = u''
 	    pqMsgs.warningMsg("Dictionary {0} not loaded".format(tag))
@@ -163,8 +158,8 @@ class makeSpellCheck():
 	p = self.listOfDicts.indexOf(tag)
 	if p > -1 : # the tag is in our list of valid dicts
 	    fn = unicode(tag) # get qstring to python string
-	    fa = os.path.join(self.dictPath,fn+u'.aff')
-	    fd = os.path.join(self.dictPath,fn+u'.dic')
+	    fa = os.path.join(IMC.dictPath,fn+u'.aff')
+	    fd = os.path.join(IMC.dictPath,fn+u'.dic')
 	    obj = spellDict(fd,fa)
 	    return obj # success
 	else:
