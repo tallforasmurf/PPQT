@@ -1,0 +1,37 @@
+
+23:{u'label': u'*', u'tooltip': u'Any asterisk',
+u'regex': False, u'case': False, u'find': u'%2A'}
+22:{u'label': u'dblpunc', u'tooltip': u'Two or more of . , ; : ? !',
+u'regex': True, u'case': False, u'greedy': False, u'find': u'[%5C.%5C,;:?!]{2,}' }
+21:{u'label': u'endqnop', u'tooltip': u'Endquote without preceding punctuation',
+u'regex': True, u'case': False, u'greedy': False, u'find': u"[^%5C.%5C,;:?!][%5C'%5C%22%5C%BB][%5Cs-%5C[]" }
+20:{u'label': '/', u'tooltip': 'Any forward slash',
+u'regex': False, u'case': False, u'find': u'%2F' }
+19:{u'label': 'eolsp', u'tooltip': 'Space at end of line',
+u'regex': True, u'case': False, u'greedy': False, u'find': u'%5Cx0020+%5Cn', u'rep1': u'%5Cn', u'andnext': True }
+18:{u'label': 'eolhy', u'tooltip': 'Hyphen at end of line',
+u'regex': True, u'case': False, u'greedy': False, u'find': u'-+%5Cn', u'rep1': u'' }
+17:{u'label': 'line>75', u'tooltip': 'Line longer than 75 characters',
+u'regex': True, u'case': False, u'greedy': False, u'find': u'[^%5Cn]{76,}%5Cn' }
+16:{u'label': 'paranop', u'tooltip': 'No punctuation at paragraph-end',
+u'regex': True, u'case': False, u'greedy': False, u'find': u"[^%5C.%5C,?;:!%5C]%5C>][%5Cx0022%5Cx0027%5Cx00BB]?%5Cn%5Cn" }
+15:{u'label': u'non-ascii', u'tooltip': u'Characters between x80 and xFF',
+u'regex': True, u'case': True, u'greedy': False, u'find': u'[%5Cx0080-%5Cx00FF]'}
+14:{u'label': u'non-8859', u'tooltip': u'Characters not in ISO-8859-1',
+u'regex': True, u'case': True, u'greedy': False, u'find': u'[%5Cx00FF-%5Cx2028%5Cx202A-%5CxFBFF]'}
+13:{u'label': 'lcpara', u'tooltip': 'Paragraph starts with lowercase',
+u'regex': True, u'case': True, u'greedy': False, u'find': u'%5Cn%5Cn[a-z]' }
+12:{u'label': 'nXn', u'tooltip': 'Single-character line',
+u'regex': True, u'case': False, u'greedy': False, u'find': u'%5Cn[^%5Cn]%5Cn' }
+11:{u'label': u'commaA', u'tooltip': u'Comma followed by uppercase letter',
+u'regex': True, u'case': True, u'greedy': False, u'find': u',%5Cs+[A-Z]'}
+10:{u'label': u'dota', u'tooltip': u'Period followed by lowercase letter',
+u'regex': True, u'case': True, u'greedy': False, u'find': u'%5C.%5Cs+[a-z]'}
+9:{u'label': u'unbalanced', u'tooltip': u'Unbalanced brackets',
+u'regex': True, u'case': False, u'greedy': False, u'find': u'(%5C(([^)]|%5Cs)+%5C()|(%5C[([^]]|%5Cs)+%5C[)|(%5C{([^}]|%5Cs)+%5C{)'}
+8:{u'label': '-01-', u'tooltip': 'Standalone 0 or 1',
+u'regex': True, u'case': False, u'greedy': False, u'find': u'%5CW[01]%5CW' }
+7:{u'label': 'spacep', u'tooltip': 'Whitespace preceding punctuation or after hyphen',
+u'regex': True, u'case': False, u'greedy': False, u'find': u'(%5Cs[%5C.,;:?!%5C-])|(-%5Cs)' }
+6:{u'label': 'psep', u'tooltip': 'Page-separator line',
+u'regex': True, u'case': False, u'greedy': False, u'find': u'%5Cn-----File%3A.+-%5Cn' }
