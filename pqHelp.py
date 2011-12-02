@@ -159,7 +159,7 @@ the Pngs panel snaps back to the image corresponding to the cursor.</p>
 <p>Click the Notes tab. This panel is a simple plain-text editor to hold notes on the book in progress. Whatever contents you type here are saved
 in the metadata file and reloaded with the file.</p>
 <p>When the focus is in the Notes panel, the alt-ctl-L key causes the
-current line number of the Edit panel cursor position to be entered, in curly braces: <tt>{1475}</tt>. The alt-ctl-P key causes the current book page
+current line number of the Edit panel cursor position to be entered, in curly braces: <tt>{1475}</tt>. (Note: under Ubuntu, alt-ctl-L may be the keyboard shortcut for Lock Screen. Use Ubuntu's Preferences &gt; Keyboard Shortcuts to change this to, e.g., shift-alt-ctl-L.)</p><p>The alt-ctl-P key causes the current book page
 number to be entered in square brackets: <tt>[214]</tt>. Use these keys
 to relate your notes to locations in the book, for example <tt>oe lig near {1475}; big table on [214]</tt>.
 </p><p>
