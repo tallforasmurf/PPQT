@@ -349,7 +349,7 @@ class flowPanel(QWidget):
         markupRE = QRegExp("^/(P|#|\*|C|X|L|\$)")
         topBlockNumber = topBlock.blockNumber()
         endBlockNumber = endBlock.blockNumber()
-        #pqMsgs.startBar(2 * (endBlockNumber - topBlockNumber), "Reflowing text")
+        pqMsgs.startBar(2 * (endBlockNumber - topBlockNumber), "Reflowing text")
         # establish normal starting state: collecting normal paragraphs
         (S, Z, C, P, F, L, R) = (True, None, False, True, 0,0,0 )
         # vars used when centering to longest line
@@ -361,8 +361,8 @@ class flowPanel(QWidget):
         fbn = None # number of first block of reflow unit
         while True:
             tbn = tb.blockNumber()
-            #if 0 == (tbn & 0x3f) :
-                #pqMsgs.rollBar(tbn - topBlockNumber)
+            if 0 == (tbn & 0x3f) :
+                pqMsgs.rollBar(tbn - topBlockNumber)
             qs = tb.text().trimmed() # careful, trims both back AND front
             if S : # looking for data
                 if not qs.isEmpty(): # non-blank line: data? markup?
@@ -449,6 +449,8 @@ class flowPanel(QWidget):
                         (S, Z, C, P, F, L, R) = stack.pop()
             # bottom of repeat-until loop, check for end
             if tb == endBlock : # we have processed the last line to do
+                if not S : # we were collecting, no blank line at end of doc
+                    ulist.append( (fbn, tbn-1, F, L, R) )
                 break
             tb = tb.next()
         # and now for phase 2. ulist has all the paras and single lines
@@ -458,24 +460,27 @@ class flowPanel(QWidget):
         doc = IMC.editWidget.document()
         tc = IMC.editWidget.textCursor()
         progress = endBlockNumber - topBlockNumber
+        lbr = QString(u'\u2029') # Qt's logical line break character
         for u in reversed(range(len(ulist))):
             (fbn,lbn,F,L,R) = ulist[u]
-            #if 0 == (fbn & 0x1f) :
-                #pqMsgs.rollBar(progress + (endBlockNumber - fbn))
-            # set up a text cursor that selects the text to be flowed
+            if 0 == (fbn & 0x1f) :
+                pqMsgs.rollBar(progress + (endBlockNumber - fbn))
+            # set up a text cursor that selects the text to be flowed: 
+            # set the virtual insertion point after the end of the last line
             ltb = doc.findBlockByNumber(lbn)
             tc.setPosition(ltb.position()+ltb.length())
+            # drag to select up to the beginning of the first line
             ftb = ltb if fbn == lbn else doc.findBlockByNumber(fbn)
             tc.setPosition(ftb.position(),QTextCursor.KeepAnchor)
             # make that visible in the edit window
-            IMC.editWidget.setTextCursor(tc)
+            # IMC.editWidget.setTextCursor(tc)
             # collect tokens from this cursor's selection and assemble
             # them in lines based on F, L, R.
-            lbr = QString(u'\u2029')
             linelen = 75 - R
-            # We accumulate possibly multiple lines: limit has the accumulated
-            # length at which we next need to break the line. logicalen has
-            # the effective length so far, counting markup as 0/1/as-is.
+            # We accumulate possibly multiple lines divided by u2029.
+            # limit has the accumulated length at which we next need to break
+            # the current line. logicalen has the effective length so far,
+            # counting markup as 0/1/as-is.
             limit = linelen
             logicalen = F
             flow = QString(u' '*F)   # space for First indent of first line
@@ -487,16 +492,17 @@ class flowPanel(QWidget):
                     flow.append(spc1) # assume there'll be another token
                     logicalen += (tl + 1)
                 else: # time to break the line.
-                    flow.replace(flow.size(),1,lbr) # Qt editor's line separator
+                    # replace superfluous space with linebreak code
+                    flow.replace(flow.size()-1,1,lbr)
                     limit = logicalen + linelen # set new limit
                     flow.append(spcL) # left indent
                     flow.append(tok) # and the token
                     flow.append(spc1) # assume there'll be another token
                     logicalen += (L + tl + 1)
             # used up all the tokens, replace the old text with reflowed text
-            flow.replace(flow.size(),1,lbr) # terminate the last line
+            flow.replace(flow.size()-1,1,lbr) # terminate the last line
             tc.insertText(flow)   
-        #pqMsgs.endBar()
+        pqMsgs.endBar()
 
     # subroutine of finding /# or /P markups. Get the F L R values for poetry
     # or block quote from one of two sources: either the list of three
