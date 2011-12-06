@@ -595,11 +595,9 @@ if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt,QFile,QIODevice,QTextStream,QSettings)
     from PyQt4.QtGui import (QApplication,QPlainTextEdit,QFileDialog)
-    class tricorder():
-        def __init__(self):
-            pass
+    import pqIMC
     app = QApplication(sys.argv) # create an app
-    IMC = tricorder() # set up a fake IMC for unit test
+    IMC = pqIMC.tricorder() # set up a fake IMC for unit test
     import pqMsgs
     pqMsgs.IMC = IMC
     IMC.editWidget = QPlainTextEdit()

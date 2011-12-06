@@ -153,7 +153,7 @@ class MainWindow(QMainWindow):
                                        QPoint(200, 200)).toPoint() )
         self.hSplitter.restoreState(
                             IMC.settings.value("main/splitter").toByteArray() )
-        # Tell the editor to clear itself
+        # Tell the or to clear itself in order to initialize everything
         self.editor.clear()
         # put a message in our status bar for 5 seconds
         status.showMessage("Ready", 5000)
@@ -352,7 +352,7 @@ class MainWindow(QMainWindow):
     # safe to go ahead with the action.
     def ohWaitAreWeDirty(self):
         if self.editor.document().isModified() \
-           or IMC.notesEditor.document().isModified():
+        or IMC.needMetadataSave:
             reply = QMessageBox.question(self,
                             "There are unsaved changes!",
                             "Save the book and metadata first?",
@@ -478,6 +478,7 @@ class MainWindow(QMainWindow):
                 self.addRecentFile(self.bookFile)
                 self.editor.document().setModified(False)
                 IMC.notesEditor.document().setModified(False)
+                IMC.needMetadataSave = False
             except (IOError, OSError), e:
                 QMessageBox.warning(self, "Error on output: {0}".format(e))
                 retval = False
@@ -509,7 +510,7 @@ class MainWindow(QMainWindow):
     # to clear, and clear our filepath info.
     def fileNew(self):
         if not self.ohWaitAreWeDirty():
-            return false # dirty doc & user said cancel or save failed
+            return False # dirty doc & user said cancel or save failed
         self.emit(SIGNAL("docWillChange"),QString())
         self.editor.clear()
         self.emit(SIGNAL("docHasChanged"),QString())
@@ -634,7 +635,7 @@ class MainWindow(QMainWindow):
     # menu, and if the user clicks ok, set a new main dictionary.
     def viewDict(self):
         qsl = IMC.spellCheck.dictList()
-        if qsl.count() : # we know about some
+        if qsl.count() : # we know about some dicts
             qsmt = IMC.spellCheck.mainTag if IMC.spellCheck.isUp() else u'(none)'
             # The explanatory label is needlessly wordy to force the dialog
             # to be wide enough to display the full title o_o
@@ -642,6 +643,7 @@ class MainWindow(QMainWindow):
                     "The currently selected language is "+unicode(qsmt), qsl)
             if b: # user clicked OK
                 IMC.spellCheck.setMainDict(qs)
+                IMC.needSpellCheck = True
         else:
             pqMsgs.warningMsg("No dictionaries are known!",
                               "Check console window for error messages?")

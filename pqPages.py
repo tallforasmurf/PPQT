@@ -108,7 +108,6 @@ def toRoman(n,lc):
     if lc : return qs.toLower()
     return qs
 
-
 # Implement a concrete table model by subclassing Abstract Table Model.
 # The data served is derived from the page separator table prepared as 
 # metadata in the editor.
@@ -182,7 +181,7 @@ class myTableModel(QAbstractTableModel):
         # don't support other roles
         return QVariant()
 
-    # Called when the update button is clicked, run throught the page table
+    # Called when the update button is clicked, run through the page table
     # and reset folio values based on the folio rules.
     def updateFolios(self):
         self.beginResetModel()
@@ -199,7 +198,16 @@ class myTableModel(QAbstractTableModel):
             else:
                 raise Error
         self.endResetModel()
-        IMC.editWidget.document().setModified(True)
+        IMC.needMetadataSave = True
+
+# A quick summary of WTF a custom delegate is: an object that represents a
+# type of data when an instance of that type needs to be displayed or edited.
+# The delegate must implement 3 methods:
+# createEditor() returns a widget that the table view will position in the
+#    table cell to act as an editor;
+# setEditorData() initializes the editor widget with data to display;
+# setModelData() is called when editing is complete, to store possibly
+#    changed data back to the model.
 
 # Implement a custom data delegate for column 1, format code
 # Our editor is a combobox with the three choices in it.
@@ -214,14 +222,7 @@ class formatDelegate(QItemDelegate):
         cb.setCurrentIndex(v)
     def setModelData(self,cb,model,index):
         IMC.pageTable[index.row()][4] = cb.currentIndex()
-
-# A quick summary of WTF a custom delegate is: an object that represents a
-# type of data when it needs to be displayed or edited. The delegate must
-# implement 3 methods: createEditor() returns a widget that the table view
-# will position in the table cell to act as an editor; setEditorData()
-# is called to initialize the editor widget with data to display; and
-# setModelData() is called when editing is complete, to store possibly
-# changed data back to the model.
+        IMC.needMetadataSave = True
 
 # Implement a custom delegate for column 2, folio action.
 # The editor is a combobox with the three choices in it.
@@ -236,6 +237,7 @@ class actionDelegate(QItemDelegate):
         cb.setCurrentIndex(v)
     def setModelData(self,cb,model,index):
         IMC.pageTable[index.row()][3] = cb.currentIndex()
+        IMC.needMetadataSave = True
 
 # Implement a custom delegate for column 3, the folio value,
 # as a spinbox - why not, likely only small adjustments are needed.
@@ -251,6 +253,8 @@ class folioDelegate(QItemDelegate):
     def setModelData(self,sb,model,index):
         IMC.pageTable[index.row()][5] = sb.value()
         IMC.pageTable[index.row()][3] = IMC.FolioRuleSet
+        IMC.needMetadataSave = True
+
 
 class pagesPanel(QWidget):
     def __init__(self, parent=None):
@@ -332,16 +336,8 @@ if __name__ == "__main__":
     from PyQt4.QtGui import (QApplication,QFileDialog,QPlainTextEdit, QTextCursor)
     from PyQt4.QtCore import (QFile, QTextStream, QString, QRegExp)
     app = QApplication(sys.argv) # create the app
-    class tricorder():
-        def __init__(self):
-            pass
-    IMC = tricorder()
-    IMC.FolioFormatArabic = 0x00
-    IMC.FolioFormatUCRom = 0x01
-    IMC.FolioFormatLCRom = 0x02
-    IMC.FolioRuleAdd1 = 0x00
-    IMC.FolioRuleSet = 0x01
-    IMC.FolioRuleSkip = 0x02
+    import pqIMC
+    IMC = pqIMC.tricorder()
     import pqMsgs
     pqMsgs.IMC = IMC
     IMC.editWidget = QPlainTextEdit()

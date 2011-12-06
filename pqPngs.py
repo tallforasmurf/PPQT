@@ -210,10 +210,8 @@ if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (QSettings)
     from PyQt4.QtGui import (QApplication,QFileDialog)
-    class tricorder():
-        def __init__(self):
-            pass
-    IMC = tricorder() # set up a fake IMC for unit test
+    import pqIMC
+    IMC = pqIMC.tricorder() # set up a fake IMC for unit test
     IMC.settings = QSettings()
     app = QApplication(sys.argv) # create an app
     widj = pngDisplay()

@@ -374,12 +374,9 @@ if __name__ == "__main__":
     from PyQt4.QtGui import (QApplication)
     import sys
     app = QApplication(sys.argv) # create an app in case it pops a warning
-    class tricorder():
-	def __init__(self):
-		pass
-    IMC = tricorder()
+    import pqIMC
+    IMC = pqIMC.tricorder()
     IMC.settings = QSettings()
-
     IMC.spellCheck = makeSpellCheck()
     sp = IMC.spellCheck
     print("spellcheck is up: ",sp.isUp())

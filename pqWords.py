@@ -247,9 +247,9 @@ class myTableView(QTableView):
                 findex = self.model().index(ix.row(), 2)
                 # get flag as an int instead of a fancy char string
                 (flag, b) = self.model().data(findex, Qt.UserRole).toInt()
-                if flag & IMC.WordMisspelt :
-                    flag ^= IMC.WordMisspelt
-                    self.model().setData(findex,flag,Qt.UserRole)
+                flag &= 0xfff - IMC.WordMisspelt
+                self.model().setData(findex,flag,Qt.UserRole)
+                IMC.needMetadataSave = True
         
     # The actual code of First and Second Harmonic. Run through the word list
     # and make a sublist of just the ones that are a Levenshtein distance of 1
@@ -457,7 +457,7 @@ class wordsPanel(QWidget):
     def refresh(self):
         self.view.setSortingEnabled(False)
         self.tableModel.beginResetModel()
-        IMC.editWidget.rebuildMetaData()
+        IMC.editWidget.rebuildMetadata()
         self.tableModel.endResetModel()
         self.setUpTableView()
 

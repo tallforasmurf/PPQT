@@ -56,7 +56,7 @@ from pqLists import *
 import pqMsgs
 
 # Define a syntax highlighter object which will be linked into our editor.
-# The edit code below instantiates this object and keeps addressability to it.
+# The edit init below instantiates this object and keeps addressability to it.
 class wordHighLighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
         super(wordHighLighter, self).__init__(parent)
@@ -68,19 +68,19 @@ class wordHighLighter(QSyntaxHighlighter):
         self.scannoFormat = QTextCharFormat()
         self.scannoFormat.setBackground(QBrush(QColor("plum")))
         # Set the style for misspelt words. We underline in red using the
-        # platform's spellcheck underline style. An option woudl be to
+        # platform's spellcheck underline style. An option would be to
         # specify QTextCharFormat.WaveUnderline style so it would be the
         # same on all platforms.
         self.misspeltFormat = QTextCharFormat()
         self.misspeltFormat.setUnderlineStyle(QTextCharFormat.SpellCheckUnderline)
         self.misspeltFormat.setUnderlineColor(QColor("red"))
     
-    # The linked QPlainTextEdit calls this function for each text line before
-    # displaying it. It appears to call here with every text line in the document
-    # when highlighting is turned on via the View menu -- to judge by the hang
-    # time. Later it only calls us to look at a line as it changes. Anyway
-    # it behooves us to be as quick as possible. We don't actually check spelling
-    # now, we use the flag set when the metadata was last refreshed.
+    # The linked QPlainTextEdit calls this function for every text line in the
+    # whole bloody document when highlighting is turned on via the View menu,
+    # at least to judge by the hang-time. Later it only calls us to look at a
+    # line as it changes in editing. Anyway it behooves us to be as quick as
+    # possible. We don't actually check spelling, we just use the flag that
+    # was set when the last spellcheck was done.
     def highlightBlock(self, text):
         # quickly bail when nothing to do
         if text.length() == 0 : return
@@ -94,14 +94,13 @@ class wordHighLighter(QSyntaxHighlighter):
                     if IMC.scannoList.check(unicode(w)):
                         self.setFormat(i,l,self.scannoFormat)
                 if IMC.spellingHiliteSwitch: # we are checking spelling:
-                    if (IMC.badWordList.check(unicode(w))) \
-                    or (IMC.wordCensus.getFlag(w) & IMC.WordMisspelt):
+                    if (IMC.wordCensus.getFlag(w) & IMC.WordMisspelt):
                         self.setFormat(i,l,self.misspeltFormat)
                 i = self.wordMatch.indexIn(text,i+l) # advance to next word
 
 # Define the editor as a subclass of QPlainTextEdit. Only one object of this
-# class is created (in ppqt_main). fontsize arg will be recalled from
-# a prior session and passed in when object is created in main window.
+# class is created, in ppqtMain. The fontsize arg is recalled from saved 
+# settings and passed in when the object is created.
 
 class PPTextEditor(QPlainTextEdit):
     # Initialize the editor on creation.
@@ -114,11 +113,13 @@ class PPTextEditor(QPlainTextEdit):
         # Get a monospaced font as selected by the user with View>Font
         self.setFont(pqMsgs.getMonoFont(fontsize,True))
         # instantiate our "syntax" highlighter object, but link it to an empty
-        # QTextDocument. We will redirect it to our actual document after we 
-        # have loaded it and the metadata, as it relies on metadata.
-        self.nulDoc = QTextDocument()
+        # QTextDocument. We will redirect it to our actual document only after
+        # loading a document, as it relies on metadata, and then only when/if
+        # the IMC.*HiliteSwitch es are on.
+        self.nulDoc = QTextDocument() # make a null document
         self.hiliter = wordHighLighter(self.nulDoc)
-        # all the metadata lists will be initialized when clear() is called
+        # all the metadata lists will be initialized when self.clear() is
+        # called from pqMain, shortly.
 
     # switch on or off our text-highlighting. By switching the highlighter
     # to a null document we remove highlighting; by switching it back to
@@ -135,7 +136,7 @@ class PPTextEditor(QPlainTextEdit):
         self.document().clear()
         self.document().setModified(False)
         self.bookMarkList = \
-            [None, None, None, None, None, None, None, None, None, ]
+            [None, None, None, None, None, None, None, None, None]
         IMC.pageTable = []
         IMC.goodWordList.clear()
         IMC.badWordList.clear()
@@ -143,9 +144,13 @@ class PPTextEditor(QPlainTextEdit):
         IMC.charCensus.clear()
         IMC.notesEditor.clear()
         IMC.pngPanel.clear()
+        IMC.needSpellCheck = False
+        IMC.needWordCensus = False
+        IMC.needMetadataSave = False
+        IMC.needBookSave = False
 
     # Re-implement the parent's keyPressEvent in order to provide some
-    # special controls. Note on Mac, "ctrl-" is "cmd-" and "alt-" is "opt-"
+    # special controls. (Note on Mac, "ctrl-" is "cmd-" and "alt-" is "opt-")
     # ctrl-plus increases the edit font size 1 pt
     # (n.b. ctrl-plus probably only comes from a keypad, we usually just get
     #  ctrl-shift-equals instead of plus)
@@ -153,16 +158,17 @@ class PPTextEditor(QPlainTextEdit):
     # ctrl-<n> for n in 1..9 jumps the insertion point to bookmark <n>
     # ctrl-alt-<n> sets bookmark n at the current position
     def keyPressEvent(self, event):
-        # add as little overhead as possible: if it isn't ours, pass it on.
-        kkey = int(event.modifiers())+int(event.key())
         #print('key {0:x} mod {1:x}'.format(int(event.key()),int(event.modifiers())))
+        kkey = int(event.modifiers())+int(event.key())
+        # add as little overhead as possible: if it isn't ours, pass it on.
         if kkey in IMC.keysOfInterest : # trusting python to do this quickly
             event.accept() # we handle this one
-            if kkey in IMC.findKeys: # ^f, ^g, etc.
+            if kkey in IMC.findKeys:
+                # ^f, ^g, etc. -- just pass them straight to the Find panel
                 self.emit(SIGNAL("editKeyPress"),kkey)
             elif (kkey == IMC.ctl_plus) or (kkey == IMC.ctl_minus) \
-            or (kkey == IMC.ctl_shft_equal) :
-                # n.b. the self.font and setFont methods are from QWidget
+                or (kkey == IMC.ctl_shft_equal) :
+                # n.b. the self.font and setFont methods inherit from QWidget
                 # Point increment by which to change.
                 n = (-1) if (kkey == IMC.ctl_minus) else 1
                 # Actual point size currently in use, plus increment
@@ -175,27 +181,41 @@ class PPTextEditor(QPlainTextEdit):
                     self.setFont(f) # and put the font back
             elif kkey in IMC.markKeys : # ^1-9, jump to bookmark
                 bkn = kkey - IMC.ctl_1 # make it 0-8
-                if self.bookMarkList[bkn] is not None: # and one is set,
-                    self.setTextCursor(self.bookMarkList[bkn])
+                if self.bookMarkList[bkn] is not None: # if that bookmark is set,
+                    self.setTextCursor(self.bookMarkList[bkn]) # jump to it
             elif kkey in IMC.markSetKeys : # ctl-alt-1-9, set a bookmark
                 bkn = kkey - IMC.ctl_alt_1 # make it 0-8
                 self.bookMarkList[bkn] = self.textCursor()
-                self.bookMarkList[bkn].clearSelection() # forget any selection
-                self.document().setModified(True) # need to save metadata
+                self.bookMarkList[bkn].clearSelection() # don't save the selection
+                IMC.needMetadataSave = True # need to save metadata
         else: # not in keysOfInterest
             event.ignore()
         # ignored or accepted, pass the event along.
         super(PPTextEditor, self).keyPressEvent(event)
      
     # Implement save: the main window opens the files for output and passes
-    # us text streams ready to write.
-    
+    # us text streams ready to write. However we only write the ones that need
+    # saving. It is possible to need to save the meta but not the doc (e.g.
+    # if a bookmark was set or spellcheck done with a different dict). But,
+    # if the doc was changed, the meta will also change.
+        
     def save(self, dataStream, metaStream):
+        if self.document().isModified() :
+            self.writeDocument(dataStream)
+            self.document().setModified(False)
+        if IMC.needMetadataSave :
+            self.rebuildMetadata() # update any census that needs it
+            self.writeMetadata(metaStream)
+            IMC.needMetadataSave = False
+
+    def writeDocument(self,dataStream):
         # writing the file is pretty easy...
         dataStream << self.toPlainText()
         dataStream.flush()
+
+    def writeMetadata(self,metaStream):
         # Writing the metadata takes a bit more work.
-        self.rebuildMetaData() # first pick up any new chars or words
+        self.rebuildMetadata() # first do census a/o spellcheck
         # pageTable goes out between {{PAGETABLE}}..{{/PAGETABLE}}
         if len(IMC.pageTable) :
             metaStream << u"{{PAGETABLE}}\n"
@@ -237,7 +257,6 @@ class PPTextEditor(QPlainTextEdit):
             IMC.badWordList.save(metaStream)
             metaStream << u"{{/GOODWORDS}}\n"
         metaStream.flush()
-        self.document().setModified(False) # not dirty no mo'
     
     # Implement load: the main window has the job of finding and opening files
     # then passes QTextStreams ready to read here. If metaStream is None,
@@ -252,17 +271,20 @@ class PPTextEditor(QPlainTextEdit):
         if badStream is not None:
             IMC.badWordList.load(badStream)
         if metaStream is None:
-            self.rebuildMetaData(page=True) # build page table & vocab from scratch
+            self.rebuildMetadata(page=True) # build page table & vocab from scratch
         else:
-            self.loadMetaData(metaStream)
-        # restore hiliting if the user wanted it.
+            self.loadMetadata(metaStream)
+        # restore hiliting if the user wanted it. Note this can cause a 
+        # serious delay if the new book is large. However the alternative is
+        # to not set it on and then we are out of step with the View menu
+        # toggles, so the user has to set it off before loading, or suffer.        
         self.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
-        
+
     # load page table & vocab from the .meta file as a stream.
     # n.b. QString has a split method we could use but instead
     # we take the input line to a Python u-string and split it. For
     # the word/char census we have to take the key back to a QString.
-    def loadMetaData(self,metaStream):
+    def loadMetadata(self,metaStream):
         sectionRE = QRegExp(
             u"\{\{(PAGETABLE|CHARCENSUS|WORDCENSUS|BOOKMARKS|NOTES|GOODWORDS|BADWORDS)\}\}",
             Qt.CaseSensitive)
@@ -335,15 +357,54 @@ class PPTextEditor(QPlainTextEdit):
                         "Metadata may be incomplete, suggest quit")
                 break
 
-    # Scan the successive lines of the document and build our metadata.
+    # rebuild as much of the char/word census and spellcheck as we need to.
+    # We could need just a spellcheck, if e.g. the dictionary has changed but
+    # the document has not. If page=True is passed this is the first open of
+    # a document (anyway, no metadata) we do it all.
+    def rebuildMetadata(self,page=False):
+        if page or self.document().isModified() :
+            self.doCensus(page)
+        if IMC.needSpellCheck :
+            self.doSpellcheck()
+            IMC.needMetadataSave = True
+            IMC.needSpellCheck = False
+
+    # Go through vocabulary census and check the spelling (it would be a big
+    # waste of time to check every word as it was read). If the spellcheck
+    # is not up (i.e. it couldn't find a dictionary) we only mark as bad the
+    # words in the badwords list.
+    def doSpellcheck(self):
+        canspell = IMC.spellCheck.isUp()
+        pqMsgs.startBar(IMC.wordCensus.size(),"Checking spelling...")
+        for i in range(IMC.wordCensus.size()):
+            (qword, cnt, wflags) = IMC.wordCensus.get(i)
+            wflags ^= (0xff - IMC.WordMisspelt) # turn off flag if on
+            # some words have /dict-tag, split that out as string or ""
+            (w,x,d) = unicode(qword).partition("/")
+            if IMC.goodWordList.check(w):
+                pass
+            elif IMC.badWordList.check(w) :
+                wflags |= IMC.WordMisspelt
+            elif canspell : # check word in its optional dictionary
+                if not ( IMC.spellCheck.check(w,d) ) :
+                    wflags |= IMC.WordMisspelt
+            IMC.wordCensus.setflags(i,wflags)
+            if 0 == i & 0x3f :
+                pqMsgs.rollBar(i)
+        pqMsgs.endBar()
+
+    # Scan the successive lines of the document and build the census of chars,
+    # words, and (first time only) the table of page separators.
+    #
     # Qt obligingly supplies each line as a QTextBlock. We examine the line
     # to see if it is a page separator. If we are opening a file having no
     # metadata, the Page argument is True and we build a page table entry.
-    # Other times we are called from e.g. the word census panel to refresh
-    # metadata, and we just skip over page separator lines. For any other line
-    # we scan by characters, parsing out words and taking the char and word
-    # counts. Note that the word and char census lists should be cleared
-    # before this method is called.
+    # Other times (e.g. from the Refresh button of the Word or Char panel),
+    # or prior to a save) we skip over page separator lines.
+    
+    # For any other line we scan by characters, parsing out words and taking
+    # the char and word counts. Note that the word and char census lists
+    # should be cleared before this method is called.
     
     # In scanning words, we assume that this is a properly proofed document
     # with no broken words at end of line (although there can be broken words
@@ -351,29 +412,34 @@ class PPTextEditor(QPlainTextEdit):
     # part of the word ("mother-in-law") but not at end of word (lacunae like
     # "help----" or emdashes) Similarly we collect internal apostrophes
     # ("it's", "hadn't" are words) but not apostrophes at ends ("'Twas" is
-    # parsed as Twas, "students' work" as students work). This is because
+    # parsed as Twas, "students' work" as "students work"). This is because
     # there seems to be no way to distinguish the case of "'Twas brillig"
     # ('Twas as a word) from "'That's Amore' was a song" ('That's is not).
     # Accepting internal hyphens and apostrophes requires a one-char lookahead.
+    
     # Harder is (a) recognizing [oe] and [OE] ligatures, and skipping <i>
-    # and other html-like markups. For these we use the QString::indexIn method
-    # to see if they are coming.
+    # and other html-like markups. For these we use the QString::indexIn
+    # and a regex to do lookahead.
+    
     # The first version of this code used nested if-logic, but in an attempt to
     # simplify and speed up we now use a modified finite-state system driven by
     # a two-row table. Each column represents one of the 30 Unicode categories
     # returned by QChar::category(). The two rows represent the inWord
-    # state true/false. Each cell contains a tuple (func,[arg[,arg]]). We do
-    # the next action as tup[0](*tup[1:]) (ooh, very "pythonic"). The executed
+    # state true/false. Each cell contains a tuple (func,[arg[,arg]]). We call
+    # the next action as tup[0](*tup[1:]) (ooh, very pythonic). The executed
     # function does something and sets the next action-tuple. The functions are
     # all local to the main function, which makes for a long piece of code.
 
-    def rebuildMetaData(self,page=False):
+    def doCensus(self,page=False):
         global reMarkup, qcDash, qcApost, qcLess, qcLbr, qslcLig
         global qsucLig, qsLine, qsDict, i, qcThis, uiCat, inWord
         global uiWordFlags, qsWord, nextAction, parseArray
+        IMC.needSpellCheck = True # after a census this is true
         IMC.wordCensus.clear()
         IMC.charCensus.clear()
-        self.document().setModified(True) 
+        # If we are doing pages, it's for load, and the page table has been
+        # cleared. If not, we don't want to mess with the page table.
+        IMC.needSpellCheck = True # after a census this is true
         # If we are doing pages, it's for load, and the page table has been cleared.
         pqMsgs.startBar(self.document().blockCount(),"Building metadata")
         reLineSep = QRegExp("^-----File:\s*(\d+)\.png---(.+)(-+)$",Qt.CaseSensitive)
@@ -424,18 +490,22 @@ class PPTextEditor(QPlainTextEdit):
                 nextAction = (COUNTN, 4)
             else: # just a random [ or (
                 nextAction = ( COUNT1, )
-        def SYMBOL(): # math symbol can be <
+        def SYMBOL(): # math symbol can be <, look for markup
             global i, qsLine, qsDict, reMarkup, nextAction
             if i == reMarkup.indexIn(qsLine,i) :
-                # </? i/b/sc/tb > markup starts here, suck it up
-                if i == sdMarkup.indexIn(qsLine,i):
-                    # <sd dictag> starts here
-                    qsDict = u"/" + sdMarkup.cap(1)
-                elif i == sxMarkup.indexIn(qsLine,i) :
-                    # </sd> here
-                    qsDict = QString()
+                # </? i/b/sc/xx > markup starts here, suck it up
+                if reMarkup.cap(1) == sdMarkup :
+                    if reMarkup.cap(2).isNull() : # assume </sd>
+                        qsDict = QString() # no alternate dict
+                    else: # assume <sd dict_tag>
+                        # start tagging words with /dictag
+                        qsDict.append(u"/")
+                        qsDict.append(reMarkup.cap(2).trimmed())
+                        pass
+                # regardless, skip the whole markup
                 nextAction = (COUNTN, reMarkup.matchedLength() )
             else:
+                # it may be < but it isn't markup, continue 1 char at a time
                 nextAction = (COUNT1,)
         # The following are called when inWord is True
         def WORDCONTINUE(flag):
@@ -550,28 +620,12 @@ class PPTextEditor(QPlainTextEdit):
             if (0 == (qtb.blockNumber() & 127)) : #every 128th block
                 pqMsgs.rollBar(qtb.blockNumber()) # roll the bar
         pqMsgs.endBar()
-        # ok we have stored all words of all lines. Go through vocabulary and
-        # check the spelling -- it would be a big waste of time to check
-        # the spelling of every word as it was read. We only mark bad spelling
-        # if the spellchecker is actually up and working.
-        if IMC.spellCheck.isUp() :
-            pqMsgs.startBar(IMC.wordCensus.size(),"Checking spelling...")
-            for i in range(IMC.wordCensus.size()):
-                (qword, cnt, wflags) = IMC.wordCensus.get(i)
-                (w,x,d) = unicode(qword).partition("/")
-                if not IMC.goodWordList.check(w) :
-                    if IMC.badWordList.check(w) \
-                       or (not IMC.spellCheck.check(w,d) ) :
-                        wflags |= IMC.WordMisspelt
-                        IMC.wordCensus.setflags(i,wflags)
-                if 0 == i & 255 :
-                    pqMsgs.rollBar(i)
-            pqMsgs.endBar()
 # The following are global names referenced from inside the parsing functions
-# Regex to match html markup: < /? spaces (tag) whoknowswhat >
-reMarkup = QRegExp("\\<\\/?\\s*(\\w+)[^>]*>",Qt.CaseInsensitive)
-# Regex to match exactly a spelling dictionary span, <sd xx_yy>
-sdMarkup = QRegExp("\\<sd\\s+([^>]+)>",Qt.CaseSensitive)
+# Regex to match html markup: < /? spaces? (tag) spaces? whoknowswhat >
+# the cap(1) is the markup verb, and cap(2) is possibly a dict tag
+reMarkup = QRegExp("\\<\\/?\\s*(\\w+)\\s*([^>]*)>",Qt.CaseInsensitive)
+# Global literal for start of alternate spell dict markup <sd tag>
+sdMarkup = QString(u"sd")
 # Regex to match exactly end of a spelling dictionary span, </sd>
 sxMarkup = QRegExp("\\</sd>",Qt.CaseSensitive)
 qcDash = QChar("-")

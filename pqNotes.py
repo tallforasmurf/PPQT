@@ -24,7 +24,7 @@ http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
 import pqMsgs
 
-from PyQt4.QtCore import ( QChar, QRegExp, QString, Qt, QString)
+from PyQt4.QtCore import ( QChar, QRegExp, QString, Qt, QString, SIGNAL)
 from PyQt4.QtGui import (
     QFont, QFontInfo,
     QPlainTextEdit,
@@ -40,10 +40,24 @@ class notesEditor(QPlainTextEdit):
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
 	# get same font as main editor uses
         self.setFont(pqMsgs.getMonoFont(12,False))
+	self.connect(self.document(), SIGNAL("modificationChanged(bool)"),self.eek)
 
+    # called from pqEdit.clear()
     def clear(self):
+	self.clearing = True
         self.document().clear()
-    
+	self.document().setModified(False)
+	self.clearing = False
+
+    # slot to receive the modificationChanged(bool) signal from our document.
+    # if it indicates we are modified, set needMetadataSave true if it isn't
+    # already. Should the user undo out of all changes, modval will be false
+    # but we can't assume that negates a need to save metadata, some other
+    # module might have set the flag since we did.
+    def eek(self,modval):
+	if not self.clearing :
+	    IMC.needMetadataSave |= modval
+
     # Re-implement the parent's keyPressEvent in order to provide zoom:
     # ctrl-plus and ctrl-minus step the font size one point. Other keys:
     # shift-ctl-L inserts the current line number as {nnn}
