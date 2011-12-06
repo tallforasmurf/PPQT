@@ -132,6 +132,7 @@ class notesEditor(QPlainTextEdit):
 		    tc = IMC.editWidget.textCursor() # cursor on main doc
 		    tc.setPosition(tb.position()) # set it on block
 		    IMC.editWidget.setTextCursor(tc) # make it visible
+		    IMC.editWidget.setFocus(Qt.TabFocusReason)
 	    else: # no {ddd} seen
 		pqMsgs.beep()
 	else: # no { preceding the cursor on same line
@@ -165,6 +166,7 @@ class notesEditor(QPlainTextEdit):
 		    etc = IMC.pageTable[pn][0] # cursor for that page
 		    doc = IMC.editWidget.document() # main document
 		    IMC.editWidget.setTextCursor(etc) # make it visible
+		    IMC.editWidget.setFocus(Qt.TabFocusReason)
 		else: # should not occur
 		    pqMsgs.beep()
 	    else: # no [ppp] seen
