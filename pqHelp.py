@@ -30,7 +30,7 @@ class helpDisplay(QTextEdit):
     def __init__(self, parent=None ):
         super(helpDisplay, self).__init__(parent)
         self.setHtml(QString(TheHelpText))
-        #self.setReadOnly(True)
+        self.setReadOnly(True)
     
     # Re-implement the parent's keyPressEvent in order to provide a simple
     # find function only.

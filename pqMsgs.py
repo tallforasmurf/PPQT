@@ -217,10 +217,8 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv) # create an app
     from PyQt4.QtGui import QWidget
-    class tricorder():
-	def __init__(self):
-		pass
-    IMC = tricorder()
+    import pqIMC
+    IMC = pqIMC.tricorder()
     IMC.mainWindow = QWidget()
     #beep()
     #infoMsg("This is the message","Did you get that?")

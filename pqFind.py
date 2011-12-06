@@ -865,9 +865,8 @@ if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt,QSettings)
     from PyQt4.QtGui import (QApplication,QPlainTextEdit)
-    class tricorder():
-        def __init__(self):
-            pass
+	import pqIMC
+	IMC = pq.tricorder()
     app = QApplication(sys.argv) # create an app
 
     #ubutt = userButton() # no dict
@@ -877,13 +876,6 @@ if __name__ == "__main__":
     #ubutt = userButton("{ 'label':99 }") # label not a string
     #ubutt = userButton("{ 'label':'what', 'word':True }")
     
-    
-    IMC = tricorder() # set up a fake IMC for unit test
-    IMC.ctl_minus = Qt.ControlModifier | Qt.Key_Minus
-    IMC.ctl_equal = Qt.ControlModifier | Qt.Key_Equal
-    IMC.ctl_plus = Qt.ControlModifier | Qt.Key_Plus
-    IMC.ctl_shft_equal = Qt.ShiftModifier | IMC.ctl_equal
-
     import pqMsgs
     pqMsgs.IMC = IMC
     IMC.editWidget = QPlainTextEdit()

@@ -50,6 +50,7 @@ import pqChars
 import pqWords
 import pqPages
 import pqFlow
+import pqView
 import pqHelp
 # The parent module begins execution by instantiating one of these.
 # in the __init__ we create every other widget we own.
@@ -63,9 +64,11 @@ class MainWindow(QMainWindow):
         # bookFile.isEmpty() there is no current document.
         # IMC.bookPath is the leading part of bookFile, used to
         # look for pngs, goodwords etc, and to start open/save dialogs.
+        # IMC.bookType is the file suffix, for those who care.
         self.bookFile = QString()
         self.bookPath = QString()
         IMC.bookPath = self.bookPath # for use in other modules
+        IMC.bookType = QString()
         # Recall a scannoPath if we had one, else get a default empty QString
         # See closeEvent() below for how these settings are saved.
         self.scannoPath = IMC.settings.value("main/scannoPath",
@@ -342,7 +345,7 @@ class MainWindow(QMainWindow):
         if sfx == u"cyr" : return "cp1251"
         if sfx == u"kir" : return "KOI8-R"
         if sfx == u"kiu" : return "KOI8-U"
-        return "latin1" # for .txt, .ltn, and unknown
+        return "latin1" # for .txt, .ltn, .htm(l) and unknown
     
     # Called from Quit, New, and Open to make sure the current file is saved.
     # Query the user with a modal dialog if necessary. Return True if it is
@@ -432,27 +435,30 @@ class MainWindow(QMainWindow):
             if not bwinf.exists():
                 bwinf = QFileInfo(qdir,QString(u"bad_words.utf"))
             bwpath = bwinf.absoluteFilePath()
-            self.setWindowTitle("PPQT - {0}".format(finf.fileName()))
+            self.setWindowTitle("PPQT - loading...")
             (bookStream, bfh) = self.openSomeFile(self.bookFile,
                         QIODevice.ReadOnly, self.codecFromFileSuffix()) 
             (metaStream, mfh) = self.openSomeFile(self.bookFile + u".meta",
                         QIODevice.ReadOnly, "UTF-8")
             (goodStream, gfh) =self.openSomeFile(gwpath,QIODevice.ReadOnly,"UTF-8")
             (badStream, xfh) = self.openSomeFile(bwpath,QIODevice.ReadOnly,"UTF-8")
+            # emit signal to any panels that care before the edit window changes.
+            self.emit(SIGNAL("docWillChange"),self.bookFile)
+            self.editor.clear()
             try:
-                # emit signal to any panels that care before the actual
-                # edit window changes.
-                self.emit(SIGNAL("docWillChange"),self.bookFile)
-                self.editor.clear()
                 self.editor.load(bookStream, metaStream, goodStream, badStream)
-                self.emit(SIGNAL("docHasChanged"),self.bookFile)
+                self.setWindowTitle(u"PPQT - {0}".format(finf.fileName()))
+                IMC.bookPath = self.bookPath
+                IMC.bookType = finf.suffix()
             except (IOError, OSError), e:
-                pqMsgs.warningMsg("Error during load: {0}".format(e))
+                pqMsgs.warningMsg(u"Error during load: {0}".format(e))
+                self.setWindowTitle(u"PPQT - new file")
             finally:
                 bfh.close()
                 if metaStream is not None: mfh.close()
                 if goodStream is not None: gfh.close()
                 if badStream is not None: xfh.close()
+                self.emit(SIGNAL("docHasChanged"),self.bookFile)
 
     # File>Save clicked, or called from ohWaitAreWeDirty above.
     # If we don't know a bookFile we must have started New: go to Save As.
