@@ -78,19 +78,13 @@ also be saved to a file or loaded from a file. The format for a settings string
 or for a file is one __repr__ string of a python dict, per line. Within the
 string the "find" and "rep1/2/3" keys are uuencoded strings, so as not
 to have to fret about escaping the regex special characters.
-TODO: save/load user buttons
-    main add menu items and pass methods
-    add buttonSave method to find
-    implement save
-    add buttonLoad method to find
-    implement load
 
-To implement an adequate regex find we have to word around a crippling
+To implement an adequate regex find we have to work around a crippling
 restriction in the QTextDocument.find() method: it will not search across a
 textblock (line) boundary. Hence it can never match to \n, which kills all 
 sorts of important uses, like finding <i> markup that crosses a line. It also
 has the problem that it takes a regex as a "const" argument, meaning it never
-updates the regex's captured-text properties!
+updates the regex's captured-text values!
 
 To get around this we get the span of text to be searched as a QString, gaining
 read access to that span of the edit document in place. We apply
@@ -100,10 +94,15 @@ cursor selection.
 
 While this gets around the restrictions, it introduces two new issues. One, in
 the edit document, there is no actual \n; end of line is \u2029, paragraph sep.
-We do this substitution invisibly on the user's regex string. Worse, this
-also means that the ^ and $ assertions only match at the start and end of the
-document (or selection), never at actual line-end. A partial workaround is to
-use literal \n searches, but they don't match at the start/end of the document!
+We do this substitution ('\u2029' in place of '\n') invisibly on the user's
+regex find string, and also in any replace string before use.
+
+Worse, searching over a span of text means that the ^ and $ assertions only
+match at the start and end of the document (or selection), never at actual
+line-end. A partial workaround is to use literal \n searches, but they don't
+match at the start/end of the document! (Conceivably we could invisibly
+replace '$' with '(?=\0x2029)', a non-capturing lookahead, but there is no
+equivalent for '^' because Qt4 doesn't support lookbehind assertions.)
 '''
 
 __version__ = "0.1.0" # refer to PEP-0008
@@ -353,7 +352,7 @@ class findPanel(QWidget):
 
     # The heart of search, pulled out for use from replace-all. Takes a
     # textDocument, a starting textcursor based on that document. Returns a
-    # find textcursor which is null if no match. Depends on the vars
+    # find textcursor which is null if no match. Depends on the values of
     # self.regexp, self.regexSwitch, self.caseSwitch, self.greedySwitch
     # and self.wholeWordSwitch.
     def realSearch(self, doc, startTc, backward = False):
@@ -520,13 +519,15 @@ class findPanel(QWidget):
                 pqMsgs.beep()
                 return
             m1 = pqMsgs.trunc(self.findText.text(),25)
-            m2 = pqMsgs.trunc(self.repEdits[repno].text(),25)
+            qr = QString(self.repEdits[repno].text()) # copy replace string
+            m2 = pqMsgs.trunc(qr,25)
             if pqMsgs.okCancelMsg(
             "Replace {0} occurrences of {1}\nwith {2} ?".format(len(hits),m1,m2)
             ) :
                 # user says ok do it. In order to make it one undoable operation
                 # we have to use a single textCursor for all. We use findTc
                 # and we transfer the position of each hit into it with moves.
+                qr.replace(QString("\\n"),QtLineDelim) # fix \n
                 findTc = QTextCursor(doc)
                 findTc.beginEditBlock() # start undoable operation
                 for tc in hits:
@@ -536,10 +537,10 @@ class findPanel(QWidget):
                     if self.regexSwitch.isChecked():
                         qs = findTc.selectedText()
                         if self.regexp.indexIn(qs) > -1 : # should always be
-                            qs.replace(self.regexp, self.repEdits[repno].text())
+                            qs.replace(self.regexp, qr)
                             findTc.insertText(qs)
                     else:
-                        findTc.insertText(self.repEdits[repno].text())
+                        findTc.insertText(qr)
                 findTc.endEditBlock()
 
     # Slot for the editKeyPress signal from the edit panel. The key is
@@ -865,8 +866,8 @@ if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt,QSettings)
     from PyQt4.QtGui import (QApplication,QPlainTextEdit)
-	import pqIMC
-	IMC = pq.tricorder()
+    import pqIMC
+    IMC = pqIMC.tricorder()
     app = QApplication(sys.argv) # create an app
 
     #ubutt = userButton() # no dict
