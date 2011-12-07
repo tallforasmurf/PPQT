@@ -375,7 +375,10 @@ class PPTextEditor(QPlainTextEdit):
     # words in the badwords list.
     def doSpellcheck(self):
         canspell = IMC.spellCheck.isUp()
-        pqMsgs.startBar(IMC.wordCensus.size(),"Checking spelling...")
+        nwords = IMC.wordCensus.size()
+        if 0 >= nwords : # could be zero in a null document
+            return
+        pqMsgs.startBar(nwords,"Checking spelling...")
         for i in range(IMC.wordCensus.size()):
             (qword, cnt, wflags) = IMC.wordCensus.get(i)
             wflags ^= (0xff - IMC.WordMisspelt) # turn off flag if on
@@ -439,9 +442,6 @@ class PPTextEditor(QPlainTextEdit):
         IMC.charCensus.clear()
         # If we are doing pages, it's for load, and the page table has been
         # cleared. If not, we don't want to mess with the page table.
-        IMC.needSpellCheck = True # after a census this is true
-        # If we are doing pages, it's for load, and the page table has been cleared.
-        pqMsgs.startBar(self.document().blockCount(),"Building metadata")
         reLineSep = QRegExp("^-----File:\s*(\d+)\.png---(.+)(-+)$",Qt.CaseSensitive)
         reTrailDash = QRegExp("-+$")
         iFolio = 0 # really, page number
