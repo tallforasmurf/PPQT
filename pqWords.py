@@ -398,11 +398,14 @@ class wordsPanel(QWidget):
                      self.setCase)
 
     # This slot receives a double-click on the table. Figure out which
-    # word it is and get the Find panel set up to search for it.
+    # word it is and get the Find panel set up to search for it. Some words
+    # have /dictag, get rid of that before going to the search.
     def findThis(self,qmi):
         if qmi.column() != 0 :
             qmi = qmi.sibling(qmi.row(),0)
         qs = qmi.data(Qt.DisplayRole).toString()
+        if qs.contains(QChar(u'/')) :
+            qs = qs.split(QChar(u'/'))[0]
         IMC.findPanel.censusFinder(qs)
 
     # This slot receives a change of the respect case checkbox. Set the
