@@ -157,10 +157,10 @@ class flowPanel(QWidget):
         poiGBox.setLayout(poiHBox)
         self.poIndent = [None,None,None]
         poiHBox.addWidget(QLabel("First:"),0)
-        self.poIndent[0] = self.makeSpin(2,60,12,u"poFirst")
+        self.poIndent[0] = self.makeSpin(2,60,2,u"poFirst")
         poiHBox.addWidget(self.poIndent[0],0)
         poiHBox.addWidget(QLabel("Left:"),0)
-        self.poIndent[1] = self.makeSpin(2,35,2,u"poLeft")
+        self.poIndent[1] = self.makeSpin(2,35,12,u"poLeft")
         poiHBox.addWidget(self.poIndent[1],0)
         poiHBox.addWidget(QLabel("Right:"),0)
         self.poIndent[2] = self.makeSpin(0,35,0,u"poRight")
@@ -345,43 +345,52 @@ class flowPanel(QWidget):
     # F, L, R: current first, left, right indents
 
     def theRealReflow(self,topBlock,endBlock):
-        ulist = [] # list of unit tuples
+        # list of work unit tuples built in the first pass, executed in 2nd.
+        ulist = []
+        # RE that recognizes start of a block markup and captures its code
         markupRE = QRegExp("^/(P|#|\*|C|X|L|\$)")
+        # Save the block numbers for use in sizing the progress bar. Set the
+        # bar limit to twice the block count, run it half in each pass.
         topBlockNumber = topBlock.blockNumber()
         endBlockNumber = endBlock.blockNumber()
         pqMsgs.startBar(2 * (endBlockNumber - topBlockNumber), "Reflowing text")
         # establish normal starting state: collecting normal paragraphs
         (S, Z, C, P, F, L, R) = (True, None, False, True, 0,0,0 )
-        # vars used when centering to longest line
-        CstartingF = 0
-        CshortestF = 0
-        Cstartunit = 0
-        stack = [] # pushdown stack of states
-        tb = topBlock # current block (text line) in loop
-        fbn = None # number of first block of reflow unit
+        # pushdown stack of states, allows nested markup
+        stack = []
+        # These vars are used to normalize P and * lines, and C lines when
+        # centering to longest line
+        NtargetF = 0 # minimum left indent to normalize to
+        NshortestF = 0 # actual least left indent seen in the block
+        NstartUnit = 0 # unit number of first line in block
+        tb = topBlock # current block (text line) in the pass-1 loop
+        fbn = None # number of first block of a work unit (paragraph)
         while True:
             tbn = tb.blockNumber()
-            if 0 == (tbn & 0x3f) :
+            if 0 == (tbn & 0x1f) :
                 pqMsgs.rollBar(tbn - topBlockNumber)
-            qs = tb.text().trimmed() # careful, trims both back AND front
-            if S : # looking for data
-                if not qs.isEmpty(): # non-blank line: data? markup?
-                    if 0 == markupRE.indexIn(qs): # markup.
-                        M = markupRE.cap(1)
+            qs = tb.text().trimmed() # trims both back AND front whitespace
+            if S : # not in a paragraph, looking for data
+                if not qs.isEmpty(): # non-blank line: is it data? or markup?
+                    if 0 == markupRE.indexIn(qs): # start of block markup
+                        M = markupRE.cap(1) # the code letter *#PC etc
                         if M == "#" and (not self.skipBqCheck.isChecked()): # block quote
                             stack.append( (S, Z, C, P, F, L, R) )
                             # S is already True
                             Z = QString("#/")
                             C = False # not centering
-                            P = True # collect paras
+                            P = True # collecting paras
                             (F, L, R) = self.getIndents(self.bqIndent,qs,F,L,R)
                         elif M == "P" and (not self.skipPoCheck.isChecked()): # poetry
                             stack.append( (S, Z, C, P, F, L, R) )
                             # S is already True
                             Z = QString("P/")
-                            P = False # collect single lines
+                            P = False # collecting single lines
                             C = False # not centering
                             (F, L, R) = self.getIndents(self.poIndent,qs,F,L,R)
+                            NtargetF = F
+                            NshortestF = 75
+                            NstartUnit = len(ulist)
                         elif M == "*" and (not self.skipNfCheck.isChecked()) : # noflow
                             stack.append( (S, Z, C, P, F, L, R) )
                             # S is already True
@@ -391,74 +400,88 @@ class flowPanel(QWidget):
                             F += self.nfLeftIndent.value()
                             L = F
                             R = 0
+                            NtargetF = F
+                            NshortestF = 75
+                            NstartUnit = len(ulist)
                         elif M == "C" and (not self.skipCeCheck.isChecked()): # center
                             stack.append( (S, Z, C, P, F, L, R) )
                             # S is already True
                             Z = QString("C/")
                             C = True # centering
                             P = False # by lines
-                            CstartingF = F
-                            CshortestF = 75
-                            Cstartunit = len(ulist)
                             F += 2 # minimum 2-space indent on centered
                             L = F
                             R = 0
-                        else: # /$, /X, /L or we are skipping this markup
+                            NtargetF = F
+                            NshortestF = 75
+                            NstartUnit = len(ulist)
+                        else: # /$, /X, /L -- or we are told to skip this markup
                             M.append("/") # make endmarkup eg $/
+                            # suck up all lines of this markup to end of markup
+                            # or end of reflow (missing endmark). this is why
+                            # altho we allow nested markup, you can't double-nest
+                            # the same type or overlap types.
                             while tb.next() != endBlock:
                                 tb = tb.next()
                                 if tb.text().startsWith(M) : break                            
-                    else: # text
+                    else: # not start of markup -- data, or end of markup?
                         if Z is not None and qs.startsWith(Z) :
-                            # end of a markup and no para working
-                            if C and self.ctrOnLongest.isChecked() :
+                            # end of a markup and no para working. If ending
+                            # Center-on-longest or ending P or *, normalize
+                            # indents to the starting F by subtracting an 
+                            # adjustment from all the work units of this block.
+                            if (C and self.ctrOnLongest.isChecked()) \
+                            or ((not C) and (not P)) :
                                 # end of /C with center on longest
-                                Cadjust = CshortestF - (CstartingF + 2)
-                                if Cadjust > 0 : # need to shift left
+                                Nadjust = NshortestF - NtargetF
+                                if Nadjust > 0 : # need to shift left
                                     u = len(ulist)-1
-                                    while u >= Cstartunit :
-                                        ulist[u][2] = ulist[u][2]-Cadjust
+                                    while u >= NstartUnit :
+                                        ulist[u][2] = ulist[u][2]-Nadjust
                                         u -= 1
+                            # finished with a markup block
                             (S, Z, C, P, F, L, R) = stack.pop()
-                        else:
+                        else: # just data: first line of a paragraph                            
                             if P : # collecting paragraphs
                                 fbn = tbn # first line of a para
-                                S = False # now collecting
+                                S = False # now collecting more of it
                             else : # single-line mode, line is a unit
                                 if not C : # /* or /P -- for these, the
                                     # leading spaces count! Add them to F.
                                     txt = unicode(tb.text()).rstrip()
                                     ldgspaces = len(txt) - qs.size()
-                                    ulist.append( (tbn, tbn, F+ldgspaces, L, R) )
+                                    x = F+ldgspaces
+                                    ulist.append( [tbn, tbn, x, L, R] )
                                 else: # Centering, only stripped len matters
                                     x = int(max(4,75-qs.size())/2)
-                                    # note appending a list not a tuple so can
-                                    # modify in place later, see just above
                                     ulist.append( [tbn, tbn, x, 0, 0] )
-                                    CshortestF = min(x,CshortestF)
+                                NshortestF = min(x,NshortestF)
                 else:
                     pass # blank line, keep looking
-            else: # collecting lines of a para
+            else: # S False, collecting lines of a para
                 if qs.isEmpty() : # blank line, ends para
-                    ulist.append( (fbn, tbn-1, F, L, R) )
-                    S = True # now looking
+                    ulist.append( [fbn, tbn-1, F, L, R] )
+                    S = True # now looking for more
                 else : # non-blank line: more data? or end markup?
                     if (Z is not None) and qs.startsWith(Z):
-                        # end of current markup
-                        ulist.append( (fbn, tbn-1, F, L, R) )
+                        # end of current markup (#/)
+                        ulist.append( [fbn, tbn-1, F, L, R] )
                         (S, Z, C, P, F, L, R) = stack.pop()
             # bottom of repeat-until loop, check for end
             if tb == endBlock : # we have processed the last line to do
                 if not S : # we were collecting, no blank line at end of doc
-                    ulist.append( (fbn, tbn-1, F, L, R) )
+                    ulist.append( [fbn, tbn-1, F, L, R] )
                 break
             tb = tb.next()
-        # and now for phase 2. ulist has all the paras and single lines
+        # OK, now for phase 2. ulist has all the paras and single lines
         # to be hacked. Work our way from end to top. The tokgen function
         # is a generator (co-routine) that returns the next token and its
         # effective length (counting i/b/sc markups as specified in the ui).
         doc = IMC.editWidget.document()
+        # In order to have a single undo/redo operation we have to use a
+        # single QTextCursor, which is this one:
         tc = IMC.editWidget.textCursor()
+        tc.beginEditBlock() # start single undo/redo macro
         progress = endBlockNumber - topBlockNumber
         lbr = QString(u'\u2029') # Qt's logical line break character
         for u in reversed(range(len(ulist))):
@@ -503,6 +526,7 @@ class flowPanel(QWidget):
             flow.replace(flow.size()-1,1,lbr) # terminate the last line
             tc.insertText(flow)   
         pqMsgs.endBar()
+        tc.endEditBlock() # complete single undo/redo macro
 
     # subroutine of finding /# or /P markups. Get the F L R values for poetry
     # or block quote from one of two sources: either the list of three
@@ -574,7 +598,6 @@ def tokGen(tc, itbosc):
                 # One would think with the CaretAtOffset rule, and a match
                 # at offset i, the return would be 0, but it's the offset.
                 if i == ibsRE.indexIn(qs,i,QRegExp.CaretAtOffset):
-                    #dbg = unicode(ibsRE.cap(1))
                     x = itbosc[unicode(ibsRE.cap(1))]
                     ll += x if x<2 else ibsRE.matchedLength()
                     tok.append( ibsRE.cap(0) )
@@ -594,7 +617,7 @@ if __name__ == "__main__":
     import sys
     import sys
     from PyQt4.QtCore import (Qt,QFile,QIODevice,QTextStream,QSettings)
-    from PyQt4.QtGui import (QApplication,QPlainTextEdit,QFileDialog)
+    from PyQt4.QtGui import (QApplication,QPlainTextEdit,QFileDialog,QMainWindow)
     import pqIMC
     app = QApplication(sys.argv) # create an app
     IMC = pqIMC.tricorder() # set up a fake IMC for unit test
@@ -603,7 +626,10 @@ if __name__ == "__main__":
     IMC.editWidget = QPlainTextEdit()
     IMC.settings = QSettings()
     widj = flowPanel()
-    widj.show()
+    MW = QMainWindow()
+    MW.setCentralWidget(widj)
+    pqMsgs.makeBarIn(MW.statusBar())
+    MW.show()
     utname = QFileDialog.getOpenFileName(widj,
                 "UNIT TEST DATA FOR FLOW", ".")
     utfile = QFile(utname)
