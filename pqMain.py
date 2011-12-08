@@ -129,7 +129,9 @@ class MainWindow(QMainWindow):
         self.flowPanel = pqFlow.flowPanel()
         self.tabSet.addTab(self.flowPanel, u"Fl&ow")
         self.connect(self, SIGNAL("shuttingDown"), self.flowPanel.shuttingDown)
-        
+        # Create the html Preview Panel - it's simple, needs no signals
+        self.pvwPanel = pqView.htmlPreview()
+        self.tabSet.addTab(self.pvwPanel, u"P&vw")
         # Other panels as required here
         # Help panel last:
         self.helpPanel = pqHelp.helpDisplay()

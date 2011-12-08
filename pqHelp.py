@@ -436,14 +436,18 @@ However you can preview reflow while these are still in place by setting
 the controls on the right center. For example if &lt;sc> markup will
 be converted to uppercase, set the control to treat this markup as 0 length.</p>
 <p>TBS: controls for removing line separators interactively.</p>
+<h2>The Preview Panel</h2>
+<p>Click the Pvw tab to display the HTML Preview panel. Whenever
+you click the Refresh button on this panel, the complete contents of the
+Edit document are copied into this panel and displayed as HTML.
+The HTML rendering is done by the open-source WebKit (www.webkit.org), the same HTML engine used by Apple's Safari and by KDE. It fully supports CSS and
+standard HTML code.</p>
+<p>The base URL for image references is the base path of the book text file,
+so the images folder should be located at the same place as the book text.</p>
 <h2>The Footnote Panel</h2>
 <p>TBS Mucho! Controls for validating and formatting footnotes.</p>
 <h2>The HTML Panel</h2>
 <p>Mondo TBS. Controls for converting to HTML</p>
-<h2>The Preview Panel</h2>
-<p>Small TBS: use a QWebView widget to preview the html text in the Edit panel.
-Query: could this be used to open a proofer profile???
-</p>
 </body>
 </html>'''
 

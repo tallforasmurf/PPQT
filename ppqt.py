@@ -172,8 +172,8 @@ pqFlow.IMC = IMC
 #import pqHtml # html conversion
 # pqHtml.IMC = IMC
 
-# import pqView # html preview
-# pqView.IMC = IMC
+import pqView # html preview
+pqView.IMC = IMC
 
 import pqHelp
 pqHelp.IMC = IMC
