@@ -193,20 +193,16 @@ class PPTextEditor(QPlainTextEdit):
         # ignored or accepted, pass the event along.
         super(PPTextEditor, self).keyPressEvent(event)
      
-    # Implement save: the main window opens the files for output and passes
-    # us text streams ready to write. However we only write the ones that need
-    # saving. It is possible to need to save the meta but not the doc (e.g.
-    # if a bookmark was set or spellcheck done with a different dict). But,
-    # if the doc was changed, the meta will also change.
-        
+    # Implement save: the main window opens the files for output using 
+    # QIODevice::WriteOnly, which wipes the contents (contrary to the doc)
+    # so we need to write the document and metadata regardless of whether
+    # they've been modified. However we avoid rebuilding metadata if we can.        
     def save(self, dataStream, metaStream):
-        if self.document().isModified() :
-            self.writeDocument(dataStream)
-            self.document().setModified(False)
-        if IMC.needMetadataSave :
-            self.rebuildMetadata() # update any census that needs it
-            self.writeMetadata(metaStream)
-            IMC.needMetadataSave = False
+        self.writeDocument(dataStream)
+        self.document().setModified(False)
+        self.rebuildMetadata() # update any census that needs it
+        self.writeMetadata(metaStream)
+        IMC.needMetadataSave = False
 
     def writeDocument(self,dataStream):
         # writing the file is pretty easy...
@@ -364,6 +360,7 @@ class PPTextEditor(QPlainTextEdit):
     def rebuildMetadata(self,page=False):
         if page or self.document().isModified() :
             self.doCensus(page)
+            IMC.needMetadataSave = True
         if IMC.needSpellCheck :
             self.doSpellcheck()
             IMC.needMetadataSave = True
