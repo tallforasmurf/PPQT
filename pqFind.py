@@ -612,7 +612,13 @@ class findPanel(QWidget):
         j = butnum + 1
         (ans, ok) = pqMsgs.getStringMsg(u"Loading button {0}".format(j),
                         u"Enter a short label for button {0}".format(j) )
-        if ans.isNull() or (not ok) : return
+        if not ok : # Cancel was clicked, make no change
+            return
+        if ans.isNull(): # null label means, clear button
+            self.userButtons[butnum].udict = {u'label':u'(empty)',u'tooltip':u'Undefined button'}
+            self.userButtons[butnum].setText(QString(u'(empty)'))
+            self.userButtons[butnum].setToolTip(QString(u'Undefined button'))
+            return
         d = self.userButtons[butnum].udict
         d.clear()
         d['label'] = unicode(ans)
