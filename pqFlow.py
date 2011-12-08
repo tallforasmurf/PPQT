@@ -615,7 +615,6 @@ def tokGen(tc, itbosc):
 
 if __name__ == "__main__":
     import sys
-    import sys
     from PyQt4.QtCore import (Qt,QFile,QIODevice,QTextStream,QSettings)
     from PyQt4.QtGui import (QApplication,QPlainTextEdit,QFileDialog,QMainWindow)
     import pqIMC
