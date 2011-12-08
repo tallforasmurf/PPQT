@@ -71,52 +71,54 @@ Attribution-NonCommercial-ShareAlike license.</p>
 <h3>Mac Users Note</h3><p> Throughout this Help, when you read <b>ctl-</b>
 you think <b>cmd-</b>. And when you read <b>alt-</b>, you think <b>opt-</b>.
 Qt is quite consistent in these mappings. However, when you see <b>control-</b>, that really means, the Control key.</p>
-<p>Key ctl-f for a simple Find dialog for searching in this help text.</p>
+<p>Try it now: key ctl-f for a simple Find dialog for searching in this help text.</p>
 <h2>Files and Folders</h2>
-<p>PPQT edits one text file at a time; call it <i>bookname</i><b>.</b><i>sfx</i>, for example <tt>foobar.utf</tt>.
+<p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>.
 <h3>File Encodings and Suffixes</h3>
 <p>PPQT is entirely Unicode internally. The text file is converted to Unicode
-on input, based on the file suffix, as follows:</p>
+on input, and back to some byte code on output, based on the file suffix. Rename a new file as needed to get these encodings:</p>
 <table border='1'>
 <tr><td><tt>.txt</tt></td><td>Latin-1 or 7-bit Ascii (PPQT cannot distinguish between these)</td></tr>
-<tr><td><tt>.utf</tt></td><td>UTF-8 encoding of Unicode. Use for any text with non-latin characters</td></tr>
-<tr><td><tt>.win</tt></td><td>Windows code page 1252, the US and European windows code.</td></tr>
-<tr><td><tt>.mac</tt></td><td>Mac Roman.</td></tr>
-<tr><td><tt>.cyr</tt></td><td>Windows code page 1251, Cyrillic.</td></tr>
+<tr><td><tt>.utf</tt></td><td>UTF-8 encoding of Unicode, preferred for text with non-latin characters</td></tr>
+<tr><td><tt>.win</tt></td><td>Windows code page 1252, the US and European Windows alphabet.</td></tr>
+<tr><td><tt>.mac</tt></td><td>Mac Roman, the Apple alphabet.</td></tr>
+<tr><td><tt>.cyr</tt></td><td>Windows code page 1251, Windows Cyrillic alphabet.</td></tr>
 <tr><td><tt>.kir</tt></td><td>KOI8-R, Cyrillic-Russian.</td></tr>
 <tr><td><tt>.kiu</tt></td><td>KOI8-U, Cyrillic-Ukranian.</td></tr>
 </table>
-<p>When saving, you should use <tt>.txt</tt> or <tt>.utf</tt>. However PPQT will save to any of the above encodings based on the file suffix of the output file.</p>
+<p>When saving, prefer <tt>.utf</tt> if there is any chance the text contains non-Latin-1 characters; prefer <tt>.txt</tt> when you are sure it is pure Latin-1 or ASCII. However, PPQT will save to any of the above encodings based on the file suffix of the output file.</p>
 <h3>Metadata</h3>
-When opening <i>bookname</i><b>.</b><i>sfx</i>, PPQT looks for a file named <i>bookname</i><b>.</b><i>sfx</i><b>.</b><tt>meta</tt>
-in the same directory, for example <tt>foobar.utf.meta</tt>. If the meta file
-does not exist, PPQT assumes this is the first time it has opened the file.
-It scans the text gathering information including the location of page separator lines and counting words and characters. This metadata is stored in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
-exist, PPQT loads these metadata from it.</p>
-<p>It is not recommended that you examine or edit the metadata file
-but if you do, be aware that it is written in UTF-8 format. If strange
-characters appear, your editor app did not use the utf-encoding to load it.
-Do not save the metadata file unless you are sure you can save it in UTF-8 format.</p>
+When opening  <tt>afinebook.txt</tt>, PPQT looks for a file named  <tt>afinebook.txt</tt>.<tt>meta</tt> in the same location. If the meta file
+is not found, PPQT assumes this is the first time it has opened this book.
+It scans the text gathering information including the location of page separator lines, and counting words and characters. These metadata are stored in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
+exist, PPQT loads them from it, saving .</p>
+<p>Feel free to examine or edit the metadata file, but be aware that it is written in UTF-8 format. If strange characters appear, your editor app did not use the utf-encoding to load it. Do not save the metadata file unless you are sure you can save it in UTF-8 format.</p>
 <h3>Page Images</h3>
 <p>PPQT expects to find a folder named <tt>pngs</tt> in the same location as
 the text file, containing the scan images for the book. These are displayed in 
 the Pngs panel.</p>
+<h2>The Main Window</h2>
+<p>When launched, PPQT displays a single window divided in two by a vertical bar. The left side is the Edit Panel where you edit the document. The right side
+is a tabbed set of panels for different functions. All these panels are described below.</p>
+<p>You can adjust the size and location of the main window and you can drag
+the vertical "splitter" left and right. These adjustments are remembered from
+session to session.</p>
 <h2>The Edit Panel</h2>
 <p>The left-side panel is a typical modern plain text line-editor.
 It uses a monospaced font, defaulting to Deja Vu Mono (dejavu-fonts.org)
 or to Courier New, either of which is legible and has a full range
-of Unicode characters. Select View>Font... to select a preferred font, which will be remembered from session to session.</p>
+of Unicode characters. Select View>Font... to select another font, which will be remembered from session to session. (It would be a bad idea to use anything but a monospaced font.)</p>
 <p>Below the edit panel is a status area where activity messages appear
 from time to time. Bottom center is a line-number field displaying the
 line number of the edit cursor. Type a new number in
 that field and press Return to jump to a different line. Further to the
 right is a progress bar that shows the status of some long-running operations.</p>
-<h3>Selection</h3>
+<h3>Selecting Text</h3>
 <p>Select text
 by dragging, or by click then shift-click, or by doubleclick (word) or 
 tripleclick (line). Extend a selection by holding the shift key and
 using an arrow key. Move text by dragging the selection,
-or copy text by alt-dragging.</p>
+or copy text by alt-dragging. PPQT does not support rectangular selections or discontinuous selections.</p>
 <h3>Edit Keys</h3>
 <ul>
 <li>up/dn/left/right: move cursor</li>
@@ -143,21 +145,22 @@ or copy text by alt-dragging.</p>
 </ul>
 <p>Bookmarks are saved in the metadata.</p>
 <h3>Scanno Highlighting</h3>
-<p>Use File > Scannos to load a file of scannos: a text file with one word per line (e.g <tt>en-common</tt> from guiguts). May be a UTF file. The same file will be re-loaded each time PPQT is restarted, if it exists.</p>
+<p>Use File > Scannos to load a file of scannos: a text file with one word per line (e.g <tt>en-common</tt> from guiguts). May be a UTF file. The same file will be re-loaded each time PPQT is restarted, if it is found.</p>
 <p>Use the View > Scannos menu to turn on scanno highlighting, putting
-a plum-colored background on any word that appears in the scannos file. (May take several seconds to appear in a large book.)</p>
+a plum-colored background on any word that appears in the scannos file. (Be patient, this may take several seconds to appear in a large book.)</p>
 <h3>Spellcheck</h3>
 <p>PPQT looks for a file <tt>good_words.</tt> (<tt>txt</tt> or <tt>utf</tt>) when it opens the text for the first time, and loads its contents. It looks for a file <tt>bad_words.</tt> (<tt>txt</tt> or <tt>utf</tt>)  also. The lists of "good" and "bad" words are saved in the metadata file thereafter. More "good" words can be added from the Words panel.</p>
-<p>When building or refreshing its metadata, PPQT checks all words for spelling. A "bad" word is assumed to be misspelt; a "good" word is assumed to be correct. Any word not in those lists is presented to the spell-checker and noted as correct or misspelt. You can mark any word, phrase or section for
-spell-check with an alternate dictionary with <b><tt>&lt;sd</tt></b>&nbsp;<i>langtag</i><b>&gt;</b>...<b><tt>&lt;/sd></tt></b>, for example <tt>He whispered &lt;sd fr_FR>&lt;i>Je t'aime&lt;/i>&lt;/sd>.</tt></p>
-<p>Select View&nbsp;>&nbsp;Spelling to turn on red-underlining of misspelt words (may take some seconds in a large book). Use View&nbsp;>&nbsp;Dictionary to select a dictionary for the main language of the book. Use the Refresh button of the Words panel to spellcheck with the new dictionary. (More dictionaries can be added; see elsewhere.)</p>
+<p>When building or refreshing its metadata, PPQT checks all words for spelling. A "bad" word is assumed to be misspelt; a "good" word is assumed to be correct. Any word not in those lists is presented to the spell-checker and noted as correct or misspelt based on the current dictionary.</p>
+<p>Select View&nbsp;>&nbsp;Spelling to turn on red-underlining of misspelt words (may take some seconds in a large book). Use View&nbsp;>&nbsp;Dictionary to select a dictionary for the main language of the book. Use the Refresh button of the Words panel to spellcheck with the new dictionary. Dictionaries for several languages are included; more can be added by a procedure documented elsewhere.</p>
+<p>You can mark any word, phrase or section for
+spell-check with an alternate dictionary with the nonstandard tag <b><tt>&lt;sd</tt></b>&nbsp;<i>dictag</i><b>&gt;</b>...<b><tt>&lt;/sd></tt></b>, for example <tt>He whispered &lt;sd fr_FR>&lt;i>Je t'aime&lt;/i>&lt;/sd></tt>. During spellcheck, switching to and from the alternate dictionary may introduce a noticeable pause.</tt>
 <h2>Pngs Panel</h2>
 <p>Click the Pngs tab. This panel displays the scan image from the <tt>pngs</tt> folder that corresponds to the present edit cursor position. When the focus is in the Pngs panel (click in it) ctl-hyphen zooms out and ctl-plus zooms in. The current zoom setting is remembered from session to session.</p>
 <p>You can use the PgUp and PgDn keys in the Pngs panel to see preceding and following scan images. However as soon as you move the text edit cursor,
 the Pngs panel snaps back to the image corresponding to the cursor.</p>
 <h2>Notes Panel</h2>
 <p>Click the Notes tab. This panel is a simple plain-text editor to hold notes on the book in progress. Whatever contents you type here are saved
-in the metadata file and reloaded with the file.</p>
+in the <tt>.meta</tt> file and reloaded with the book.</p>
 <p>When the focus is in the Notes panel, the alt-ctl-L key causes the
 current line number of the Edit panel cursor position to be entered, in curly braces: <tt>{1475}</tt>. (Note: under Ubuntu, alt-ctl-L may be the keyboard shortcut for Lock Screen. Use Ubuntu's Preferences &gt; Keyboard Shortcuts to change this to, e.g., shift-alt-ctl-L.)</p><p>The alt-ctl-P key causes the current book page
 number to be entered in square brackets: <tt>[214]</tt>. Use these keys
@@ -225,7 +228,8 @@ and the state of all the find/replace controls&mdash;all checkboxes
 and entry fields&mdash;is stored in that button. Whenever you want to
 repeat that search, click the button to set all the find/replace
 controls to the stored settings. The current button settings are remembered from session to session.</p>
-<p>To save the button settings to a file select File>Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (a suffix of .utf is recommended). In the saved file each non-empty button is represented on a single line.</p>
+<p>To clear the contents of a button, right-click it, clear the label field to empty, and click OK.</p>
+<p>To save the button settings to a file select File>Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (so a suffix of .utf is a good idea). In the saved file each non-empty button is represented on a single line.</p>
 <p>To load button settings from a file, select File>Load Find Buttons.
 Any button definitions in the file are assigned to the buttons.
 The intent of saving and loading buttons is to be able to save
@@ -373,11 +377,10 @@ is the name of the .png file in the pngs folder.</li>
 <li>Folio: the folio (book page number) for this scanned page</li>
 <li>Proofers: the userids who proofed this page at its various stages</li>
 </ul>
-<p>This table cannot be sorted. Doubleclick a cell in the Scan#
-column to make the
-editor jump to the top of that page's text.</p>
-<p>Doubleclick a cell in the Action column to set the folio action
-to one of:</p>
+<p>This table cannot be sorted.</p>
+<p>Doubleclick a cell in the Scan# column to make the
+editor jump to the top of that page's text.
+Doubleclick a cell in the Action column to set the folio action to one of:</p>
 <ul>
 <li>Add 1: this page's folio is +1 over the preceding page's</li>
 <li>Set @: set this page's folio to the number in column 4</li>
@@ -398,7 +401,7 @@ by clicking in the proofer column.</p>
 This panel has controls related to reflowing paragraphs (TBS: and
 formatting tables) in the ASCII etext (not HTML). Normal paragraphs
 are flowed in a 75-character line. Other types of markup are supported
-similar to guiguts:</p>
+similar (but not identically) to guiguts:</p>
 <table border='1'>
 <tr><th>Markup</th><th>Usage</th></tr>
 <tr><td><b>/#..#/</b></td><td>Block Quote: paragraphs are reflowed
@@ -435,7 +438,8 @@ the section as far to the left as possible leaving a 2-space indent.</p>
 However you can preview reflow while these are still in place by setting
 the controls on the right center. For example if &lt;sc> markup will
 be converted to uppercase, set the control to treat this markup as 0 length.</p>
-<p>TBS: controls for removing line separators interactively.</p>
+<p>TBS: controls for removing line separators interactively. Controls for 
+formatting tables marked up as /T..T/.</p>
 <h2>The Preview Panel</h2>
 <p>Click the Pvw tab to display the HTML Preview panel. Whenever
 you click the Refresh button on this panel, the complete contents of the
