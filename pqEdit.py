@@ -396,6 +396,11 @@ class PPTextEditor(QPlainTextEdit):
     # Scan the successive lines of the document and build the census of chars,
     # words, and (first time only) the table of page separators.
     #
+    # If this is an HTML file (from IMC.bookType), and if its first line is
+    # <!DOCTYPE..., we skip until we see <body>. This avoids polluting our
+    # char and word censii with CSS comments and etc. Regular HTML tags
+    # like <table> and <b> are skipped over automatically during parsing.
+    #
     # Qt obligingly supplies each line as a QTextBlock. We examine the line
     # to see if it is a page separator. If we are opening a file having no
     # metadata, the Page argument is True and we build a page table entry.
@@ -583,6 +588,11 @@ class PPTextEditor(QPlainTextEdit):
 
         pqMsgs.startBar(self.document().blockCount(),"Counting words and chars...")    
         qtb = self.document().begin() # first text block
+        if IMC.bookType.startsWith(QString(u"htm")) \
+        and qtb.text().startsWith(QString(u"<!DOCTYPE")) :
+            while (qtb != self.document().end()) \
+            and (not qtb.text().startsWith(QString(u"<body"))) :
+                qtb = qtb.next()
         while qtb != self.document().end(): # up to end of document
             qsLine = qtb.text() # text of line as qstring
             if reLineSep.exactMatch(qsLine): # a page separator
