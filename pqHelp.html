@@ -306,37 +306,44 @@ After viewing Similar or First or Second Harmonic, select
 All from the popup menu above the table to see all words again.</p>
 <h2>The Pages Panel</h2>
 <p>Click the Page tab to display the Pages panel. 
-This is a table showing the page separator information from the original
-file. This information is retained in the metadata even after the
-page separator lines are deleted.</p>
-<p>The main use of this table is to set the correct folio values.
-Folios are the visible page numbers that are displayed by
-the HTML etext. The columns are:</p>
+The lower part displays a table showing the page separator information extracted from the original file. The information is retained in the metadata even after the page separator lines are deleted. Use this table is to set the correct values for the folios, the visible page numbers that are displayed in an HTML etext. The columns are:</p>
 <ul>
 <li>Scan#: the number of the scanned image, usually three digits; this
-is the name of the .png file in the pngs folder.</li>
-<li>Format: the display format for a visible folio in the HTML version</li>
+is the filename of the .png image in the pngs folder.</li>
+<li>Format: the display format for a visible folio: arabic or roman numerals.</li>
 <li>Action: how to compute and display the folio for this page</li>
 <li>Folio: the folio (book page number) for this scanned page</li>
 <li>Proofers: the userids who proofed this page at its various stages</li>
 </ul>
-<p>This table cannot be sorted.</p>
-<p>Doubleclick a cell in the Scan# column to make the
-editor jump to the top of that page's text.
-Doubleclick a cell in the Action column to set the folio action to one of:</p>
+<p>The table is always in scan image order. Double-click a cell in the Scan# column to make the
+editor jump to the top of that page's text.</p>
+<p>
+Double-click a cell in the Action column to set the folio action to one of:</p>
 <ul>
 <li>Add 1: this page's folio is +1 over the preceding page's</li>
 <li>Set @: set this page's folio to the number in column 4</li>
 <li>Skip folio: no visible page number for this image</li>
 </ul>
-<p>Doubleclick a number in the folio column to set a specific
-numeric value to go with the Set @ action.</p>
-<p>Doubleclick a cell in the Format column to set the format to
-one of Arabic, roman (lowercase) or ROMAN (uppercase).</p>
-<p>After making one or more of these changes, click the Update
+<p>Double-click a number in the folio column to set a specific
+numeric value to go with the Set @ action.
+Double-click a cell in the Format column to set the format to
+one of Arabic, roman (lowercase) or ROMAN (uppercase).
+After making one or more of these changes, click the Update
 button to update the table to reflect the changes. Using these
 controls you can get the folios of the file to exactly match
 the folios in the original book.</p>
+<h3>Inserting Folio Text</h3>
+<p>At the top of the panel is a text-entry field and an Insert button.
+Use these to insert a text pattern at the start of every page (except
+pages for which the Action is Skip folio). Use this to prepare an HTML
+file to display folios. The text pattern may contain <tt>\n</tt> to
+insert a line-break, and it may contain <tt>%f</tt> to insert the
+folio number for that page as shown in the table. Insert
+any unique pattern that you can extend (or delete) later with regular expression
+replacements, for example <tt>[=%f=]</tt>. The full-on pattern for
+HTML folios in the side margin is:</p><blockquote>
+<tt>\n&lt;span class='pgnum'>&lt;a id='Page_%f' name='Page_%f'>&lt;/a>[Pg&amp;nbsp;%f]&lt;/span>\n</tt>
+</blockquote>
 <p>TBS: some way to open a proofer's profile page at pgdp.net 
 by clicking in the proofer column.</p>
 <h2>The Reflow Panel</h2>
