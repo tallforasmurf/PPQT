@@ -262,11 +262,12 @@ class PPTextEditor(QPlainTextEdit):
     
     def load(self, dataStream, metaStream, goodStream, badStream):
         self.setPlainText(dataStream.readAll())
-        if goodStream is not None:
-            IMC.goodWordList.load(goodStream)
-        if badStream is not None:
-            IMC.badWordList.load(badStream)
         if metaStream is None:
+            # load goodwords, badwords, and take census
+            if goodStream is not None:
+                IMC.goodWordList.load(goodStream)
+            if badStream is not None:
+                IMC.badWordList.load(badStream)
             self.rebuildMetadata(page=True) # build page table & vocab from scratch
         else:
             self.loadMetadata(metaStream)
@@ -297,7 +298,7 @@ class PPTextEditor(QPlainTextEdit):
                         parts = unicode(qline).split(' ')
                         tc = QTextCursor(self.document())
                         tc.setPosition(int(parts[0]))
-                        tup = (tc, parts[1], parts[2], int(parts[3]), int(parts[4]), int(parts[5]) )
+                        tup = [tc, parts[1], parts[2], int(parts[3]), int(parts[4]), int(parts[5]) ]
                         IMC.pageTable.append(tup)
                         qline = metaStream.readLine()
                     continue
