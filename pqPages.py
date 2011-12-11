@@ -6,9 +6,11 @@ from __future__ import unicode_literals
 from future_builtins import *
 
 '''
-Implement the Page table, based on IMC.pageTable.
-The latter is a simple Python list of lists, each tuple having:
-0: a QTextCursor positioned to the first character of the page
+Implement the Page table, based on IMC.pageTable, and allow inserting
+Folio strings in the document. The actual data is a simple Python list of lists,
+each member having:
+
+0: a QTextCursor positioned before the first character of the page
     -- text cursors are updated by their document as the text changes
 1: the file number (digits preceding ".png") as a QString
 2: the proofer-name section as a QString, possibly with extra hyphens
@@ -18,7 +20,8 @@ The latter is a simple Python list of lists, each tuple having:
     IMC.FolioFormatArabic, IMC.FolioFormatUCRom, IMC.FolioFormatLCRom
     Question: do we need UCAlpha/LCAlpha formats?
 5: the current folio value
-As initially created, folio stuff is Add1, Arabic, and a sequential number.
+As initially created (when a book is first read), every folio 
+tuple is Add1, Arabic, and a sequential number.
 
 The table is implemented using a Qt AbstractTableView, and AbstractTableModel.
 (Unlike the Char and Word panels we do not interpose a sort proxy; we build
@@ -68,9 +71,12 @@ from PyQt4.QtGui import (
     QTableView,
     QHBoxLayout, QVBoxLayout,
     QHeaderView,
+    QLineEdit,
     QPushButton,
     QSpinBox,
+    QTextCursor,
     QWidget)
+import pqMsgs
 
 # These are global items so that both the table model and the custom delegates
 # can access them.
@@ -264,8 +270,12 @@ class pagesPanel(QWidget):
         self.setLayout(mainLayout)
         hlayout = QHBoxLayout()
         self.updateButton = QPushButton("Update")
-        hlayout.addStretch(1) # button over on the right
+        self.insertText = QLineEdit()
+        self.insertText.setFont(pqMsgs.getMonoFont())
+        self.insertButton = QPushButton("Insert")
         hlayout.addWidget(self.updateButton,0)
+        hlayout.addWidget(self.insertText,1) # text gets all available room
+        hlayout.addWidget(self.insertButton,0)
         mainLayout.addLayout(hlayout)
         self.view = QTableView()
         self.view.setCornerButtonEnabled(False)
@@ -287,7 +297,8 @@ class pagesPanel(QWidget):
                     self.goToRow)
         # Connect the update button to the model's update method
         self.connect(self.updateButton, SIGNAL("clicked()"),self.model.updateFolios)
-
+        # Connect the insert button to our insert method
+        self.connect(self.insertButton, SIGNAL("clicked()"),self.insertMarkers)
 
     # This slot receives a double-click from the table view,
     # passing an index. If the click is in column 0, the scan number,
@@ -329,6 +340,49 @@ class pagesPanel(QWidget):
         self.model.endResetModel()
         self.setUpTableView()
 
+    # On the Insert button being pressed, make some basic sanity checks
+    # and get user go-ahead then insert the given text at the head of
+    # every page.
+    def insertMarkers(self):
+        # Copy the text and if it is empty, complain and exit. 
+        qi = QString(self.insertText.text())
+        if qi.isEmpty() :
+            pqMsgs.warningMsg("No insert text specified")
+            return
+        # See how many pages are involved: all the ones that aren't marked skip
+        n = 0
+        for i in range(len(IMC.pageTable)):
+            if IMC.pageTable[i][3] != IMC.FolioRuleSkip :
+                n += 1
+        if n == 0 : # page table empty or all rows marked skip
+            pqMsgs.warningMsg("No pages to give folios to")
+            return
+        m = "Insert this string at the top of {0} pages?".format(n)
+        b = pqMsgs.okCancelMsg(QString(m),pqMsgs.trunc(qi,35))
+        if b :  
+            # Convert any '\n' in the text to the QT line delimiter char
+            # we do this in the copy so the lineEdit text doesn't change
+            qi.replace(QString(u'\n'),QString(IMC.QtLineDelim))
+            # get a cursor on the edit document
+            tc = QTextCursor(IMC.editWidget.textCursor())
+            # Working from the end of the document backward, go to the
+            # top of each page and insert the string
+            for i in reversed(range(len(IMC.pageTable))) :
+                page = IMC.pageTable[i]
+                if page[3] is not IMC.FolioRuleSkip :
+                    # set our text cursor to that page's start
+                    tc.setPosition(page[0].position())
+                    # update our string with the current folio
+                    if page[4] == IMC.FolioFormatArabic :
+                        f = QString(u"{0}".format(page[5]))
+                    else:
+                        f = toRoman(page[5], page[4] == IMC.FolioFormatLCRom)
+                    qf = QString(qi)
+                    qf.replace(QString(u'%f'),f,Qt.CaseInsensitive)
+                    dbg = unicode(qf)
+                    tc.insertText(qf)
+
+
 # Unit test code fairly elaborate due to learning curve for delegates
 
 if __name__ == "__main__":
@@ -340,6 +394,7 @@ if __name__ == "__main__":
     IMC = pqIMC.tricorder()
     import pqMsgs
     pqMsgs.IMC = IMC
+    IMC.fontFamily = QString(u"Courier")
     IMC.editWidget = QPlainTextEdit()
     IMC.pageTable = []
     widj = pagesPanel()
