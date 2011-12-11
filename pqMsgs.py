@@ -55,10 +55,11 @@ def getMonoFont(fontsize=12, msg=False):
 # if necessary. Also, since Qt message boxes support html, convert any <
 # into &lt;.
 def trunc(qs,maxl):
-    if qs.length() > maxl:
-	qs.truncate(maxl-3)
-	qs.append(u"...")
-    q2 = qs.replace(QString("<"),QString("&lt;"))
+    q2 = QString(qs) # make a copy
+    if q2.length() > maxl:
+	q2.truncate(maxl-3)
+	q2.append(u"...")
+    q2 = q2.replace(QString("<"),QString("&lt;"))
     return q2
 
 # Display a modal info message, blocking until the user clicks OK
