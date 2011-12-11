@@ -656,6 +656,7 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         if not self.ohWaitAreWeDirty() : # user clicked cancel
             event.ignore() # as you were...
+            return
         # file wasn't dirty or is now saved
         # Let any modules that care, write to settings.
         self.emit(SIGNAL("shuttingDown"))
