@@ -26,7 +26,7 @@ __license__ = '''
 Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
 http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
-from PyQt4.QtCore import (Qt)
+from PyQt4.QtCore import (Qt,QChar)
 #
 # Stupid star trek reference here.
 #
@@ -93,6 +93,8 @@ class tricorder():
         self.findPanel = None # ref to Find panel
         self.statusBar = None # ref to status bar of main window
         self.progressBar = None # ref to progress bar in status bar
+        # constant value for the line-delimiter used by QPlainTextEdit
+        self.QtLineDelim = QChar(0x2029)
         # Keystrokes checked by editor and other panels that monitor KeyEvent signals.
         # In rough order of frequency of use, we support:
         # ^g and ^G, search again forward/backward,

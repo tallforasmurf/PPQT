@@ -483,7 +483,7 @@ class flowPanel(QWidget):
         tc = IMC.editWidget.textCursor()
         tc.beginEditBlock() # start single undo/redo macro
         progress = endBlockNumber - topBlockNumber
-        lbr = QString(u'\u2029') # Qt's logical line break character
+        lbr = IMC.QtLineDelim # short name copy Qt's logical line break character
         for u in reversed(range(len(ulist))):
             (fbn,lbn,F,L,R) = ulist[u]
             if 0 == (fbn & 0x1f) :

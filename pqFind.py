@@ -137,7 +137,6 @@ from PyQt4.QtGui import(
 
 UserButtonMax = 24 # how many user buttons to instantiate
 UserButtonRow = 4 # how many to put in a row of the grid
-QtLineDelim = QChar(0x2029)
 
 class findPanel(QWidget):
     def __init__(self, parent=None):
@@ -372,7 +371,7 @@ class findPanel(QWidget):
             if self.regexp.isValid() :
                 # valid regex: if it contains \n replace with \u2029
                 pats = self.regexp.pattern()
-                pats.replace(QString("\\n"),QtLineDelim)
+                pats.replace(QString("\\n"),IMC.QtLineDelim)
                 self.regexp.setPattern(pats)
                 # set case and greedy switches in QRegExp
                 cs = Qt.CaseSensitive if self.caseSwitch.isChecked() else Qt.CaseInsensitive
@@ -487,7 +486,7 @@ class findPanel(QWidget):
                     # the old regex matches in the new selection.
                     qs = tc.selectedText() # get current selection as QString
                     qr = QString(self.repEdits[repno].text()) # copy replace string
-                    qr.replace(QString("\\n"),QtLineDelim) # fix \n
+                    qr.replace(QString("\\n"),IMC.QtLineDelim) # fix \n
                     qs.replace(self.regexp,qr)
                     tc.insertText(qs)
                 else: # plain replace, just update the selection with new text
@@ -527,7 +526,7 @@ class findPanel(QWidget):
                 # user says ok do it. In order to make it one undoable operation
                 # we have to use a single textCursor for all. We use findTc
                 # and we transfer the position of each hit into it with moves.
-                qr.replace(QString("\\n"),QtLineDelim) # fix \n
+                qr.replace(QString("\\n"),IMC.QtLineDelim) # fix \n
                 findTc = QTextCursor(doc)
                 findTc.beginEditBlock() # start undoable operation
                 for tc in hits:
