@@ -111,6 +111,7 @@ class MainWindow(QMainWindow):
                      IMC.findPanel.editKeyPress)
         self.connect(self, SIGNAL("shuttingDown"), IMC.findPanel.shuttingDown)
         self.tabSet.addTab(IMC.findPanel, u"&Find")
+        self.connect(self, SIGNAL("docHasChanged"), IMC.findPanel.docHasChanged)   
         # Create Char Census panel
         self.charPanel = pqChars.charsPanel()
         self.tabSet.addTab(self.charPanel, u"&Char")
