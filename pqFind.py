@@ -75,9 +75,9 @@ dict. The dict for a button can be loaded by a right-click; a left-click dumps
 the dict values into the widgets. The contents of all the user buttons is saved
 in the Settings at shutdown and reloaded at startup. The array contents can
 also be saved to a file or loaded from a file. The format for a settings string
-or for a file is one __repr__ string of a python dict, per line. Within the
-string the "find" and "rep1/2/3" keys are uuencoded strings, so as not
-to have to fret about escaping the regex special characters.
+or for a file is one __repr__ string of a python dict, per line. The argument
+strings are URL-encoded so that we don't have to double-up backslashes
+or quotes within the find/replace, tooltip, and label strings.
 
 To implement an adequate regex find we have to work around a crippling
 restriction in the QTextDocument.find() method: it will not search across a
@@ -86,11 +86,12 @@ sorts of important uses, like finding <i> markup that crosses a line. It also
 has the problem that it takes a regex as a "const" argument, meaning it never
 updates the regex's captured-text values!
 
-To get around this we get the span of text to be searched as a QString, gaining
-read access to that span of the edit document in place. We apply
-QRegExp.indexIn(qstring) to it. On a match, our regex is updated, and the 
-search can span any number of lines. We translate the match back to a text
-cursor selection.
+To get around this we set a textCursor over the span of text to be searched
+(which could be the whole document) get "const" access to it as a QString,
+gaining read access to that span of the edit document in place. We apply
+QRegExp.indexIn(QString) to it. On a match, our regex is updated with capture
+values, and the search can span any number of lines. We translate the match
+back to a textCursor selection.
 
 While this gets around the restrictions, it introduces two new issues. One, in
 the edit document, there is no actual \n; end of line is \u2029, paragraph sep.
@@ -153,10 +154,10 @@ class findPanel(QWidget):
         self.regexp = QRegExp()
         self.regexp.setPatternSyntax(QRegExp.RegExp2)
         # Search boundary positions set on First/Last. Boundary has to be set
-        # as a textcursor so it will update as document changes length, but 
-        # that means we need a document before we can set them.
-        self.rangeTop = QTextCursor()
-        self.rangeBot = QTextCursor()
+        # as a textcursor so it will update as document changes length.
+        self.rangeTop = None
+        self.rangeBot = None
+        self.setFullRange() # sets to full document, which is null right now
         # Flags for when find or rep has been loaded from a user button (and
         # hence shouldn't be saved in the popup menu)
         self.userLoad = [False, False, False, False]
@@ -349,11 +350,27 @@ class findPanel(QWidget):
             if self.andNextSwitch.isChecked() :
                 self.andNextSwitch.setChecked(False)
 
-    # The heart of search, pulled out for use from replace-all. Takes a
+    # Subroutine to set the search range cursors to the full document.
+    # Make each a copy of the document's cursor, not merely a ref to it.
+    def setFullRange(self):
+        self.rangeTop = QTextCursor(IMC.editWidget.textCursor())
+        self.rangeTop.movePosition(QTextCursor.Start)
+        self.rangeBot = QTextCursor(IMC.editWidget.textCursor())
+        self.rangeBot.movePosition(QTextCursor.End)
+
+    # Slot for the docHasChanged signal out of pqMain. Reset our text
+    # boundary to the whole document and clear the In Sel'n button if on.
+    # The signal passes a file path string but we ignore it.
+    def docHasChanged(self):
+        self.setFullRange() # sets rangeTop and rangeBot
+        self.inSelSwitch.setChecked(False)
+        
+    # The heart of search, pulled out for use from replace-all (and 
+    # potentially, but not yet, from pqNotes and pqHelp). Takes a
     # textDocument, a starting textcursor based on that document. Returns a
-    # find textcursor which is null if no match. Depends on the values of
-    # self.regexp, self.regexSwitch, self.caseSwitch, self.greedySwitch
-    # and self.wholeWordSwitch.
+    # find textCursor whose selection is null if no-match, else selects the
+    # found text. Depends on the values of self.regexp, self.regexSwitch,
+    # self.caseSwitch, self.greedySwitch and self.wholeWordSwitch.
     def realSearch(self, doc, startTc, backward = False):
         if not self.regexSwitch.isChecked() :
             # normal string search: apply the QTextDocument.find() method
@@ -367,30 +384,31 @@ class findPanel(QWidget):
             findTc = doc.find(self.findText.text(),startTc,flags)
         else:
             # Regex search! See notes in prologue.
-            findTc = QTextCursor() # null cursor says no-match
+            findTc = QTextCursor(startTc) # null cursor says no-match
+            findTc.clearSelection() # probably not necessary
             if self.regexp.isValid() :
                 # valid regex: if it contains \n replace with \u2029
                 pats = self.regexp.pattern()
                 pats.replace(QString("\\n"),IMC.QtLineDelim)
                 self.regexp.setPattern(pats)
                 # set case and greedy switches in QRegExp
-                cs = Qt.CaseSensitive if self.caseSwitch.isChecked() else Qt.CaseInsensitive
-                self.regexp.setCaseSensitivity(cs)
+                self.regexp.setCaseSensitivity(
+                    Qt.CaseSensitive if self.caseSwitch.isChecked() \
+                    else Qt.CaseInsensitive)
                 self.regexp.setMinimal(not self.greedySwitch.isChecked())
                 # set up workTc selecting all possible text to search, based
                 # on the direction of the search.
-                workTc = QTextCursor(startTc) # workTc is linked to same doc
+                workTc = QTextCursor(startTc) # workTc points to start of range
+                # Set a cursor to select all text in the searchable range. We
+                # do this by "dragging" from startTc's position to the end
+                # of the range. See note in doSearch below, about overlapping finds.
                 if backward :
-                    # The search range for backward is from startTc.selectionStart
-                    # back to self.rangeTop.position
-                    workTc.setPosition(startTc.selectionStart(),QTextCursor.MoveAnchor)
                     workTc.setPosition(self.rangeTop.position(),QTextCursor.KeepAnchor)
                 else:
-                    # The search range for forward is from startTc.selectionEnd
-                    # ahead to self.rangeBot.position
-                    workTc.setPosition(startTc.selectionEnd(),QTextCursor.MoveAnchor)
                     workTc.setPosition(self.rangeBot.position(),QTextCursor.KeepAnchor)
-                # apply the regex to that text as a QString:
+                # apply the regex to that text as a QString, getting an index
+                # to the left end of a hit, and also priming self.regex.cap(n)
+                # for replacements.
                 if backward : 
                     fpos = self.regexp.lastIndexIn(workTc.selectedText())
                 else:
@@ -415,7 +433,7 @@ class findPanel(QWidget):
                 # else - not in rage, fall through and return false
             else: # not in-selection
                 return True
-        return False
+        return False # null selection: no hit
     
     # Called when any of the search buttons is clicked or when the relevant
     # key events are seen. Button number passed is 0 for next, 1 for prior,
@@ -425,12 +443,9 @@ class findPanel(QWidget):
     # The boundaries have to be textCursors we might not have made them yet..
     def doSearch(self,button):
         doc = IMC.editWidget.document()
-        editTc = IMC.editWidget.textCursor()
-        # if this is the first/last button or if no range cursors exist,
-        # set the boundaries based on inSelSwitch.
-        if (button & 0x02) or (self.rangeTop.blockNumber() == 0) :
-            self.rangeTop = QTextCursor(doc)
-            self.rangeBot = QTextCursor(doc)
+        editTc = QTextCursor(IMC.editWidget.textCursor())
+        # if this is the first/last button set the boundaries based on inSelSwitch.
+        if button & 0x02 :
             if self.inSelSwitch.isChecked() : # in selection
                 if editTc.hasSelection() : # non-empty selection
                     self.rangeTop.setPosition(editTc.selectionStart())
@@ -439,17 +454,25 @@ class findPanel(QWidget):
                     pqMsgs.infoMsg(u"No selection!",
                 u"Clear in-sel'n flag or select text range for find/replace")
                     return
-            else : # inSel not checked
-                self.rangeTop.movePosition(QTextCursor.Start)
-                self.rangeBot.movePosition(QTextCursor.End)
-            if (button & 0x02) : # first/last button
-                startTc = self.rangeBot if (button & 0x01) else self.rangeTop
-            else:
-                startTc = editTc
+            else : # inSel not checked, range is entire document
+                self.setFullRange()
+            startTc = self.rangeBot if (button & 0x01) else self.rangeTop
         else :
-            # Not First/Last, so set start to current cursor. QTextDocument
-            # knows whether to use the position or anchor based on direction.
+            # Not First/Last, so set start to current edit cursor. Left to itself,
+            # QTextDocument will start a forward search at selectionEnd,
+            # and a backward search at selectionStart, in other words, assuming
+            # that editTc's selection is the result of a previous find, it
+            # never allows the next find to overlap with the previous one.
+            # Tentatively we will override this, and permit overlapping finds.
+            # If the current cursor has a selection, make a forward find start
+            # at selectionStart+1 and a backward one at sselectionEnd-1.
+            # (If it has no selection, just start where it points.)
             startTc = editTc
+            if startTc.hasSelection():
+                if button & 0x01 : # backward
+                    startTc.setPosition(editTc.selectionEnd()-1)
+                else: # forward
+                    startTc.setPosition(editTc.selectionStart()+1)
         # Perform a search but first, save it in the pushdown list
         self.popups[0].noteString()
         findTc = self.realSearch(doc, startTc, button&0x01)
@@ -468,29 +491,37 @@ class findPanel(QWidget):
     # f/t, f/t, false. 
     # This code also depends on self.regexSwitch, self.regexp, and the
     # replace[repno] field.
+    # Following the replace we need to adjust the edit cursor position.
+    # Qt's default on .insertText is to clear the selection and leave
+    # the cursor after the last inserted char. We recreate the selection
+    # by "dragging" backwards to the starting position.
     
     def doReplace(self,repno,andNext=False,andPrior=False, doAll=False):
         self.popups[repno].noteString() # any use gets pushed on the popup list
         if not self.allSwitch.isChecked() : # one-shot replace
             tc = IMC.editWidget.textCursor()
-            if tc.hasSelection() : # not a null selection
-                if self.regexSwitch.isChecked() :
-                    # the way Qt supports regex replace is through QString::replace()
-                    # which performs a match followed by a replace. Altho we presumably
-                    # set the current selection by doing a regex search, the
-                    # qs.replace() call will repeat the search. Presumably it will
-                    # match very quickly as is started out as a match to the same
-                    # regex. However nothing stops you from doing a regex find, then
-                    # ten minutes later with a different selection, clicking Replace.
-                    # Don't really know what will happen. Depends on where (and if)
-                    # the old regex matches in the new selection.
-                    qs = tc.selectedText() # get current selection as QString
-                    qr = QString(self.repEdits[repno].text()) # copy replace string
-                    qr.replace(QString("\\n"),IMC.QtLineDelim) # fix \n
-                    qs.replace(self.regexp,qr)
-                    tc.insertText(qs)
-                else: # plain replace, just update the selection with new text
-                    tc.insertText(self.repEdits[repno].text())
+            j = tc.selectionStart()
+            if self.regexSwitch.isChecked() :
+                # the way Qt supports regex replace is through QString::replace()
+                # which performs a match followed by a replace. Altho we presumably
+                # set the current selection by doing a regex search, the
+                # qs.replace() call will repeat the search. Presumably it will
+                # match very quickly as is started out as a match to the same
+                # regex. However nothing stops you from doing a regex find,
+                # altering the selection, clicking Replace. What happens then
+                # is highly unintuitive, the selection shrinks or expands back
+                # to cover the regex match and is replaced.
+                qs = tc.selectedText() # get current selection as QString
+                qr = QString(self.repEdits[repno].text()) # copy replace string
+                qr.replace(QString("\\n"),IMC.QtLineDelim) # fix \n
+                qs.replace(self.regexp,qr)
+                tc.insertText(qs)
+            else: # plain replace, just update the selection with new text
+                tc.insertText(self.repEdits[repno].text())
+            # "drag" backward to reselect the inserted text
+            tc.setPosition(IMC.editWidget.textCursor().position())
+            tc.setPosition(j,QTextCursor.KeepAnchor)
+            IMC.editWidget.setTextCursor(tc)
             if andNext : 
                 self.doSearch(0) # Next button
             if andPrior :
@@ -498,12 +529,12 @@ class findPanel(QWidget):
         else: # replace all!
             # For replace all we assume the bounds were set by a prior First
             # button. We loop doing finds from the top boundary until no-match,
-            # saving the text cursors for each. (This is potentially expensive
-            # in time and memory. The text cursors will go out of scope when
-            # the operation ends, releasing the memory.) If we find any matches
-            # we show an ok/cancel dialog saying how many. On OK, we loop doing
-            # all the replaces on the found text cursors. The edit cursor is not 
-            # updated so none of this shows on the edit panel.
+            # saving a text cursors for each. After each hit, resume the search
+            # at the top of the hit+1, thus allowing overlapping matches. That
+            # is potentially a black hole for certain pathological regexes!
+            # If we find any matches we show an ok/cancel dialog saying how many.
+            # On OK, we loop doing all the replaces on the found text cursors.
+            # The edit cursor is not updated so none of this shows on the edit panel.
             # Note: we apply the replacements in reverse order, from bottom to
             # top, so that changes in document length will not affect the position
             # of the textcursors. Apparently cursors aren't updated during a
@@ -512,7 +543,11 @@ class findPanel(QWidget):
             doc = IMC.editWidget.document()
             findTc = self.realSearch(doc,self.rangeTop,False)
             while self.validHit(findTc):
-                hits.insert(0,findTc) # LIFO order
+                hits.insert(0,QTextCursor(findTc)) # save hits in LIFO order
+                # start the next search 1 char into the last hit. For a 
+                # greedy recursive regex this could make one cursor per char,
+                # and probably blow the program out of the water.
+                findTc.setPosition(findTc.selectionStart()+1)
                 findTc = self.realSearch(doc,findTc,False)
             if 0 == len(hits):
                 pqMsgs.beep()
@@ -544,7 +579,7 @@ class findPanel(QWidget):
 
     # Slot for the editKeyPress signal from the edit panel. The key is
     # passed as an int in IMC.findKeys. Do the right thing based on it.
-    # See notes in ppqt.py where the key values are set up.
+    # See notes in pqIMC.py where the key values are set up.
     def editKeyPress(self,kkey):
         if   kkey == IMC.ctl_G : self.doSearch(0) # ^g == Next
         elif kkey == IMC.ctl_shft_G : self.doSearch(1) # ^G == Prior
