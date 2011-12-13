@@ -392,15 +392,14 @@ the folios in the original book.</p>
 <h3>Inserting Folio Text</h3>
 <p>At the top of the panel is a text-entry field and an Insert button.
 Use these to insert a text pattern at the start of every page (except
-pages for which the Action is Skip folio). Use this to prepare an HTML
-file to display folios. The text pattern may contain <tt>\n</tt> to
-insert a line-break, and it may contain <tt>%f</tt> to insert the
-folio number for that page as shown in the table. Insert
-any unique pattern that you can extend (or delete) later with regular expression
+pages for which the Action is Skip folio). The text pattern may contain <tt>\n</tt> to insert a line-break, and it may contain <tt>%f</tt> to insert the
+folio number for that page. Insert
+any unique pattern that you can extend later with regular expression
 replacements, for example <tt>[=%f=]</tt>. The full-on pattern for
 HTML folios in the side margin is:</p><blockquote>
 <tt>\n&lt;span class='pgnum'>&lt;a id='Page_%f' name='Page_%f'>&lt;/a>[Pg&amp;nbsp;%f]&lt;/span>\n</tt>
 </blockquote>
+<p>Inserting folio text is a single undo/redo operation.</p>
 <p>TBS: some way to open a proofer's profile page at pgdp.net 
 by clicking in the proofer column.</p>
 <h2>The Reflow Panel</h2>
