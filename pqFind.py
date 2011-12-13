@@ -425,14 +425,11 @@ class findPanel(QWidget):
     # called with a find-match cursor to see if it is valid, i.e. if it
     # is in the selection bounds.
     def validHit(self,findTc):
-        if not findTc.isNull(): # found something
-            if self.inSelSwitch.isChecked() : # gotta check the bounds
-                if (findTc.selectionStart() >= self.rangeTop.position()) \
-                and (findTc.selectionEnd() <= self.rangeBot.position()) :
-                    return True # match inside range
+        if findTc.hasSelection(): # found something
+            if (findTc.selectionStart() >= self.rangeTop.position()) \
+            and (findTc.selectionEnd() <= self.rangeBot.position()) :
+                return True # match inside range
                 # else - not in rage, fall through and return false
-            else: # not in-selection
-                return True
         return False # null selection: no hit
     
     # Called when any of the search buttons is clicked or when the relevant
@@ -547,6 +544,8 @@ class findPanel(QWidget):
                 # start the next search 1 char into the last hit. For a 
                 # greedy recursive regex this could make one cursor per char,
                 # and probably blow the program out of the water.
+                dbg = findTc.selectionStart()
+                dbh = findTc.selectionEnd()
                 findTc.setPosition(findTc.selectionStart()+1)
                 findTc = self.realSearch(doc,findTc,False)
             if 0 == len(hits):
