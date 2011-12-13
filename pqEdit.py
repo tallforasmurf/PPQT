@@ -200,8 +200,8 @@ class PPTextEditor(QPlainTextEdit):
     def save(self, dataStream, metaStream):
         self.writeDocument(dataStream)
         self.rebuildMetadata() # update any census that needs it
-        self.writeMetadata(metaStream)
         self.document().setModified(False)
+        self.writeMetadata(metaStream)
         IMC.needMetadataSave = False
 
     def writeDocument(self,dataStream):
@@ -211,7 +211,6 @@ class PPTextEditor(QPlainTextEdit):
 
     def writeMetadata(self,metaStream):
         # Writing the metadata takes a bit more work.
-        self.rebuildMetadata() # first do census a/o spellcheck
         # pageTable goes out between {{PAGETABLE}}..{{/PAGETABLE}}
         if len(IMC.pageTable) :
             metaStream << u"{{PAGETABLE}}\n"
