@@ -365,6 +365,7 @@ class pagesPanel(QWidget):
             qi.replace(QString(u'\n'),QString(IMC.QtLineDelim))
             # get a cursor on the edit document
             tc = QTextCursor(IMC.editWidget.textCursor())
+            tc.beginEditBlock() # start single undoable operation
             # Working from the end of the document backward, go to the
             # top of each page and insert the string
             for i in reversed(range(len(IMC.pageTable))) :
@@ -381,6 +382,7 @@ class pagesPanel(QWidget):
                     qf.replace(QString(u'%f'),f,Qt.CaseInsensitive)
                     dbg = unicode(qf)
                     tc.insertText(qf)
+            tc.endEditBlock() # wrap up the undo op
 
 
 # Unit test code fairly elaborate due to learning curve for delegates
