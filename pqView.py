@@ -37,8 +37,7 @@ from PyQt4.QtGui import (
     QWidget
 )
 from PyQt4.QtWebKit import(
-    QWebPage,
-    QWebView
+    QWebFrame, QWebPage, QWebView
 )    
 import pqMsgs
 
@@ -63,9 +62,13 @@ class htmlPreview(QWidget):
 	self.connect(self.preview,SIGNAL("loadProgress(int)"),self.loadProgresses )
 	self.connect(self.preview,SIGNAL("loadFinished(bool)"),self.loadEnds )
     
-    # refresh button clicked, 
+    # refresh button clicked. Get the current scroll position (a QPoint)
+    # from the QWebFrame associated with the QWebPage displayed in our
+    # QWebView. Then reset the HTML and scroll back to the same point.
     def refresh(self):
+	scrollpos = self.preview.page().mainFrame().scrollPosition()
 	self.setHtml(IMC.editWidget.toPlainText())
+	self.preview.page().mainFrame().setScrollPosition(scrollpos)
 
     # handle the load-in-progress signals by running our main window's
     # progress bar
