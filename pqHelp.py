@@ -171,15 +171,18 @@ Place the cursor in or to the right of a {nnn} line number in the notes and key 
 If text is selected, it is pre-loaded in the find-text field. The search
 starts at the cursor and wraps around at the end of the notes.</p>
 <h2>Find Panel</h2>
-<p>The Find panel has controls for search and replace, including saved searches.</p>
+<p>The Find panel has controls for search and replace, including saved searches.
+Search/replace is done within top and bottom boundaries which are initially
+the beginning and end of the document.
+Upon doing any search, keyboard focus returns to the Edit panel.</p>
 <h3>Find Controls</h3>
 <p>The top row of five checkboxes affect the search.</p>
 <table border='1'>
 <tr><td style='width:6em;'>Respect Case</td><td>When checked, search is case-sensitive.</td></tr>
 <tr><td>Whole Word</td><td>When checked, normal searches only match whole words.
 Does not apply to regex (use <tt>\\b</tt> in the expression)</td></tr>
-<tr><td>In Sel'n</td><td>When checked, search and replace occur only in bounds
-of the selection that exists when you next click the First or Last button.</td></tr>
+<tr><td>In Sel'n</td><td>When checked, search and replace occur in bounds
+set when you click the First or Last button.</td></tr>
 <tr><td>Regex</td><td>When checked, the Find string is treated as a regular expression.</td></tr>
 <tr><td>Greedy</td><td>When checked, a regular expression matches all it can;
 otherwise as little as it can.</td></tr>
@@ -191,16 +194,19 @@ containing the last 10 find values you explicitly typed in the field.
 The Find text field turns pink when Regex is checked and the syntax is not valid.</p>
 <p>Below the text field are four buttons that perform searches:</p>
 <table border='1'>
-<tr><td style='width:4em;'>Next</td><td>Search for the Find text beginning at the edit cursor and going toward the end of the document or prior selection. Pressing Return in the Find text field triggers a Next action.</td></tr>
-<tr><td>Prior</td><td>Search for the Find text beginning at the edit cursor and going back toward the top of the document or the prior selection.</td></tr>
-<tr><td>First</td><td>If In Sel'n is checked, set current selection as search boundary. Search for the Find text beginning at the top of the document or the
-top of the selection.</td></tr>
-<tr><td>Last</td><td>If In Sel'n is checked, set current selection as search boundary. Search for the Find text beginning at the end of the document or bottom of the selection and going backward.</td></tr>
+<tr><td style='width:4em;'>Next</td><td>Search for the Find text beginning at the edit cursor and going toward the bottom boundary. Pressing Return in the Find text field is the same as clicking Next.</td></tr>
+<tr><td>Prior</td><td>Search for the Find text beginning at the edit cursor and going back toward the top boundary.</td></tr>
+<tr><td>First</td><td>If In Sel'n is checked, set the top and bottom of the
+current selection as the search boundaries; otherwise set to the whole document.
+Search for the Find text beginning at the top boundary and going forward.</td></tr>
+<tr><td>Last</td><td>If In Sel'n is checked, set the top and bottom of the
+current selection as the search boundaries; otherwise set to the whole document.
+Search for the Find text beginning at the bottom boundary and going backward.</td></tr>
 </table>
 <h3>Replace Controls</h3>
 <p>There are three Replace fields. They are identical in use. Each is a text
 field to enter the replacement text. On the left is a popup menu with the
-last 10 replacement values you typed in that field.
+last 10 replacement strings you used out of that field.
 (These are remembered from session to session.)
 On the right is a Repl button that causes the current edit selection to be
 replaced with the field contents.</p>
@@ -212,8 +218,8 @@ of any Repl button is followed by the effect of the Prior button.</p>
 Repl on the first replace field; ctl-t is like clicking Repl and then Next; 
 and shift-ctl-t is like clicking Repl and then Prior.</p>
 <p>When ALL! is checked, clicking any Repl button
-causes all instances of the Find text (in the document, or in the 
-current boundaries set by In Sel'n) to be looked up and replaced.
+causes all instances of the Find text within the search boundaries
+to be looked up and replaced.
 Before the replacement is done, a message is shown: "Replace <i>nn</i>
 occurrences of <i>find-text</i> with <i>repl-text</i>?" and you
 have the option of cancelling the operation. The replace-all 
@@ -226,8 +232,9 @@ a button. A message pops up asking you to give a short label for the button.
 When you do so and click OK, that label is assigned to the button,
 and the state of all the find/replace controls&mdash;all checkboxes
 and entry fields&mdash;is stored in that button. Whenever you want to
-repeat that search, click the button to set all the find/replace
-controls to the stored settings. The current button settings are remembered from session to session.</p>
+repeat that search, click the button. All the find/replace
+controls are returned to the stored settings.
+The button contents are remembered from session to session.</p>
 <p>To clear the contents of a button, right-click it, clear the label field to empty, and click OK.</p>
 <p>To save the button settings to a file select File>Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (so a suffix of .utf is a good idea). In the saved file each non-empty button is represented on a single line.</p>
 <p>To load button settings from a file, select File>Load Find Buttons.
@@ -241,7 +248,7 @@ users. The file syntax is documented elsewhere.</p>
 <table border='1'>
 <tr><td style='width:3em;'>non-special characters</td><td>match themselves</td></tr>
 <tr><td><b>\\</b><i>x</i></td><td>Escape for special characters: except as below, matches <i>x</i>. Use <b>\\\\</b> to match a slash.</td></tr>
-<tr><td><b>\\n</b> </td><td>Matches between lines,<tt>\\n\\n</tt> is an empty line</td></tr>
+<tr><td><b>\\n</b> </td><td>Matches between lines. <tt>\\n\\n</tt> matches an empty line</td></tr>
 <tr><td><b>\\x</b><i>xxxx</i></td><td>matches Unicode character valued <i>xxxx</i>       </td></tr>
 <tr><td><b>.</b> (dot)</td><td>Matches any one character <i>including newline</i>  </td></tr>
 <tr><td><b>\\d</b> </td><td>  matches a decimal digit</td></tr>
@@ -255,7 +262,7 @@ users. The file syntax is documented elsewhere.</p>
 <tr><td><b>[^</b><i>chars</i><b>]</td><td>  matches any character except <i>chars</i></td></tr>
 <tr><td> <b>\\b</b></td><td>matches the zero-width boundary between a
 word and non-word character. <tt>\\bon\\b</tt> matches only the word "on".</td></tr>
-<tr><td><b>\\B</b></td><td> matches what <b>\\b</b> doesn't. <tt>\\Bon\\B<\tt> will not match the word "on" but will match inside "tone". </td></tr>
+<tr><td><b>\\B</b></td><td> matches what <b>\\b</b> doesn't. <tt>\\Bon\\B</tt> will not match the word "on" but will match inside "tone". </td></tr>
 </table><p>Any of the above expressions
 can be or'd with stiles: <tt>alpha|beta</tt> means alpha or beta.
 Any of those expressions may be put in parentheses to capture
@@ -270,21 +277,18 @@ the matching text for use in replacements. Any expression <i>E</i> can be quanti
 <p>Non-capturing parentheses force a match but do not capture the matching
 text: <tt>(?:The color is)\s(red|green|blue)</tt> can only match a string
 that begins "The color is" but the first capture, <b>\\1</b>, is what 
-matched <tt>(red|green|blue)</tt>. Also supported: lookahead tests
-with <b>(?=</b><i>E</i><b>)</b> and <b>(?!</b><i>E</i><b>)</b>. However
-the lookbehind tests of Perl regexes are not supported.</p>
+matched <tt>(red|green|blue)</tt>.</p>
+<p>Lookahead tests with <b>(?=</b><i>E</i><b>)</b> and <b>(?!</b><i>E</i><b>)</b> are supported: <tt>Fred(?=\\n)</tt> 
+matches "Fred" only at the end of a line; <tt>Fred(?!\\n)</tt> only when
+not at end of line. However the lookbehind tests of Perl regexes are not supported.</p>
 <p>Note: owing to some tricks PPQT plays with the Qt regex support, 
 the caret and dollar codes, which usually match at beginning and end
-of a line, only match at beginning and end of the document or
-selection boundary. Use \\n to match at beginning and end of line.</p>
+of a line, only match at top and bottom search boundary respectively.
+Use \\n to match at beginning and end of line.</p>
 <p>Replacement text for a regex match may contain <b>\\</b><i>n</i> to refer
 to the <i>n</i>th captured (parenthesized) text. None of the special
 replacements supported by guiguts (such as <tt>\\U...\\E</tt> to uppercase
 the text) are available.</p>
-<p>The Greedy checkbox is used to set on or off the Qt "minimal" option for
-regex matching but frankly, the difference between non-Greedy and
-Greedy matches is hard to detect. If a regex doesn't behave as you
-expect, change the state of the Greedy switch and try again.</p>
 <h2>The Characters Panel</h2>
 <p>Click the Char tab to show the Characters panel.
 This panel displays a table of all characters seen in the document,
