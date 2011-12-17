@@ -191,7 +191,7 @@ containing the last 10 find values you explicitly typed in the field.
 The Find text field turns pink when Regex is checked and the syntax is not valid.</p>
 <p>Below the text field are four buttons that perform searches:</p>
 <table border='1'>
-<tr><td style='width:4em;'>Next</td><td>Search for the Find text beginning at the edit cursor and going toward the end of the document or prior selection.</td></tr>
+<tr><td style='width:4em;'>Next</td><td>Search for the Find text beginning at the edit cursor and going toward the end of the document or prior selection. Pressing Return in the Find text field triggers a Next action.</td></tr>
 <tr><td>Prior</td><td>Search for the Find text beginning at the edit cursor and going back toward the top of the document or the prior selection.</td></tr>
 <tr><td>First</td><td>If In Sel'n is checked, set current selection as search boundary. Search for the Find text beginning at the top of the document or the
 top of the selection.</td></tr>
