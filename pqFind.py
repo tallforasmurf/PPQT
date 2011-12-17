@@ -478,9 +478,11 @@ class findPanel(QWidget):
         # Perform a search but first, save it in the pushdown list
         self.popups[0].noteString()
         findTc = self.realSearch(doc, startTc, button&0x01)
-        # search is done, finish up.
+        # search is done, finish up: set the visible cursor in the edit window
+        # to the found text, and throw the focus over there too.
         if self.validHit(findTc): # got a hit and in-bounds
             IMC.editWidget.setTextCursor(findTc)
+            IMC.editWidget.setFocus(Qt.TabFocusReason)
         else:
             pqMsgs.beep()
 
