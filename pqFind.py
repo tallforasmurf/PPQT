@@ -232,6 +232,11 @@ class findPanel(QWidget):
                                      lambda b=2: self.doSearch(b) )
         self.connect(self.lastButton, SIGNAL("clicked()"),
                                      lambda b=3: self.doSearch(b) )
+        # Connect the returnPressed of find text to the click slot of 
+        # the Next button - so return in the text looks for the next instance
+        # of that text -- the natural expectation of the find box.
+        self.connect(self.findText, SIGNAL("returnPressed()"),
+                                self.nextButton, SLOT("click()") )
         # Set up the rep container layouts and parent them
         repHolderHbox = QHBoxLayout()
         mainLayout.addLayout(repHolderHbox,0)
