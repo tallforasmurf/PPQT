@@ -467,14 +467,18 @@ class findPanel(QWidget):
             # never allows the next find to overlap with the previous one.
             # Tentatively we will override this, and permit overlapping finds.
             # If the current cursor has a selection, make a forward find start
-            # at selectionStart+1 and a backward one at sselectionEnd-1.
-            # (If it has no selection, just start where it points.)
+            # at selectionStart+1 and a backward one at selectionStart-1.
+            # (If it has no selection, just start where it points.) This may
+            # seem counterintuitive, but the find always tries to match from the
+            # starting position forward, and on failure, advances one char either
+            # forward or backward and tries again. Work it out on paper, you'll see.
             startTc = editTc
             if startTc.hasSelection():
                 if button & 0x01 : # backward
-                    startTc.setPosition(editTc.selectionEnd()-1)
+                    startTc.setPosition(editTc.selectionStart()-1)
                 else: # forward
                     startTc.setPosition(editTc.selectionStart()+1)
+            dbg = startTc.position()
         # Perform a search but first, save it in the pushdown list
         self.popups[0].noteString()
         findTc = self.realSearch(doc, startTc, button&0x01)
