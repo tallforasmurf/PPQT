@@ -199,7 +199,7 @@ class PPTextEditor(QPlainTextEdit):
     # they've been modified. However we avoid rebuilding metadata if we can.        
     def save(self, dataStream, metaStream):
         self.writeDocument(dataStream)
-        self.rebuildMetadata() # update any census that needs it
+        #self.rebuildMetadata() # update any census that needs it
         self.document().setModified(False)
         self.writeMetadata(metaStream)
         IMC.needMetadataSave = False
