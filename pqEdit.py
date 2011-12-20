@@ -377,7 +377,7 @@ class PPTextEditor(QPlainTextEdit):
         pqMsgs.startBar(nwords,"Checking spelling...")
         for i in range(IMC.wordCensus.size()):
             (qword, cnt, wflags) = IMC.wordCensus.get(i)
-            wflags ^= (0xff - IMC.WordMisspelt) # turn off flag if on
+            wflags = wflags & (0xff - IMC.WordMisspelt) # turn off flag if on
             # some words have /dict-tag, split that out as string or ""
             (w,x,d) = unicode(qword).partition("/")
             if IMC.goodWordList.check(w):
