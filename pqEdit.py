@@ -360,11 +360,8 @@ class PPTextEditor(QPlainTextEdit):
     def rebuildMetadata(self,page=False):
         if page or self.document().isModified() :
             self.doCensus(page)
-            IMC.needMetadataSave = True
         if IMC.needSpellCheck :
             self.doSpellcheck()
-            IMC.needMetadataSave = True
-            IMC.needSpellCheck = False
 
     # Go through vocabulary census and check the spelling (it would be a big
     # waste of time to check every word as it was read). If the spellcheck
@@ -375,6 +372,8 @@ class PPTextEditor(QPlainTextEdit):
         nwords = IMC.wordCensus.size()
         if 0 >= nwords : # could be zero in a null document
             return
+        IMC.needMetadataSave = True
+        IMC.needSpellCheck = False
         pqMsgs.startBar(nwords,"Checking spelling...")
         for i in range(IMC.wordCensus.size()):
             (qword, cnt, wflags) = IMC.wordCensus.get(i)
@@ -440,6 +439,7 @@ class PPTextEditor(QPlainTextEdit):
         global qsucLig, qsLine, qsDict, i, qcThis, uiCat, inWord
         global uiWordFlags, qsWord, nextAction, parseArray
         IMC.needSpellCheck = True # after a census this is true
+        IMC.needMetadataSave = True
         IMC.wordCensus.clear()
         IMC.charCensus.clear()
         # If we are doing pages, it's for load, and the page table has been

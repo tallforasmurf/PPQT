@@ -460,7 +460,9 @@ class wordsPanel(QWidget):
     def refresh(self):
         self.view.setSortingEnabled(False)
         self.tableModel.beginResetModel()
-        IMC.editWidget.rebuildMetadata()
+        if IMC.editWidget.document().isModified():
+            IMC.editWidget.doCensus()
+        IMC.editWidget.doSpellcheck()
         self.tableModel.endResetModel()
         self.setUpTableView()
 
