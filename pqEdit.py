@@ -212,6 +212,7 @@ class PPTextEditor(QPlainTextEdit):
     def writeMetadata(self,metaStream):
         # Writing the metadata takes a bit more work.
         # pageTable goes out between {{PAGETABLE}}..{{/PAGETABLE}}
+        metaStream << u"{{VERSION 0}}\n" # meaningless at the moment
         if len(IMC.pageTable) :
             metaStream << u"{{PAGETABLE}}\n"
             for (tc,fn,pr,f1,f2,f3) in IMC.pageTable :
@@ -251,6 +252,9 @@ class PPTextEditor(QPlainTextEdit):
             metaStream << u"{{GOODWORDS}}\n"
             IMC.badWordList.save(metaStream)
             metaStream << u"{{/GOODWORDS}}\n"
+        p1 = self.textCursor().selectionStart()
+        p2 = self.textCursor().selectionEnd()
+        metaStream << u"{{CURSOR "+unicode(p1)+u' '+unicode(p2)+u"}}\n"
         metaStream.flush()
     
     # Implement load: the main window has the job of finding and opening files
@@ -282,15 +286,21 @@ class PPTextEditor(QPlainTextEdit):
     # the word/char census we have to take the key back to a QString.
     def loadMetadata(self,metaStream):
         sectionRE = QRegExp(
-            u"\{\{(PAGETABLE|CHARCENSUS|WORDCENSUS|BOOKMARKS|NOTES|GOODWORDS|BADWORDS)\}\}",
+    u"\{\{(PAGETABLE|CHARCENSUS|WORDCENSUS|BOOKMARKS|NOTES|GOODWORDS|BADWORDS|CURSOR|VERSION)([^\}]*)\}\}",
             Qt.CaseSensitive)
+        metaVersion = 0 # base version
         while not metaStream.atEnd() :
             qline = metaStream.readLine().trimmed()
             if qline.isEmpty() : continue # allow blank lines between sections
             if sectionRE.exactMatch(qline) : # section start
                 section = sectionRE.cap(1)
                 endsec = QString(u"{{/" + section + u"}}")
-                if section == u"PAGETABLE":
+                if section == u"VERSION":
+                    qv = sectionRE.cap(2).trimmed()
+                    if not qv.isEmpty() :
+                        metaVersion = int(qv)  
+                    continue # no more data after {{VERSION x }}
+                elif section == u"PAGETABLE":
                     qline = metaStream.readLine()
                     while (not qline.startsWith(endsec)) and (not qline.isEmpty()):
                         # we eliminate spaces in proofer names in buildMeta()
@@ -337,17 +347,26 @@ class PPTextEditor(QPlainTextEdit):
                         e.appendPlainText(qline)
                         qline = metaStream.readLine()
                     e.setUndoRedoEnabled(True)
+                    continue
                 elif section == u"GOODWORDS" :
                     # not going to bother checking for endsec return,
                     # if it isn't that then we will shortly fail anyway
                     w = IMC.goodWordList.load(metaStream,endsec)
+                    continue
                 elif section == u"BADWORDS" :
                     w = IMC.badWordList.load(metaStream,endsec)
+                    continue
+                elif section == u"CURSOR" : # restore selection as of save
+                    p1p2 = unicode(sectionRE.cap(2).trimmed()).split(' ')
+                    tc = QTextCursor(self.document())
+                    tc.setPosition(int(p1p2[0]),QTextCursor.MoveAnchor)
+                    tc.setPosition(int(p1p2[1]),QTextCursor.KeepAnchor)
+                    self.setTextCursor(tc)
                 else:
                     # this can't happen; section is text captured by the RE
                     # and we have accounted for all possibilities
                     raise AssertionError, "impossible metadata"
-            else:
+            else: # Non-blank line that doesn't match sectionRE?
                 pqMsgs.infoMsg(
                     "Unexpected line in metadata: {0}".format(pqMsgs.trunc(qline,20)),
                         "Metadata may be incomplete, suggest quit")
