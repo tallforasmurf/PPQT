@@ -123,12 +123,15 @@ class PPTextEditor(QPlainTextEdit):
 
     # switch on or off our text-highlighting. By switching the highlighter
     # to a null document we remove highlighting; by switching it back to
-    # the real document, we cause re-highlighting of everything (and a 
-    # significant delay for a large document).
+    # the real document, we cause re-highlighting of everything. This makes
+    # significant delay for a large document, so put up a status message
+    # during it by starting and ending a progress bar.
     def setHighlight(self, onoff):
         self.hiliter.setDocument(self.nulDoc) # turn off hiliting always
         if onoff:
+            pqMsgs.startBar(100,"Setting Spelling Highlights...")
             self.hiliter.setDocument(self.document())
+            pqMsgs.endBar()
 
     # Implement clear/new. Just toss everything we keep.
     def clear(self):
@@ -410,6 +413,8 @@ class PPTextEditor(QPlainTextEdit):
             if 0 == i & 0x3f :
                 pqMsgs.rollBar(i)
         pqMsgs.endBar()
+        if IMC.spellingHiliteSwitch :
+            self.setHighlight(True) # force refresh of spell underlines
 
     # Scan the successive lines of the document and build the census of chars,
     # words, and (first time only) the table of page separators.
