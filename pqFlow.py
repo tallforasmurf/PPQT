@@ -338,9 +338,9 @@ class flowPanel(QWidget):
     # We allow arbitrarily nested reflow markers -- tho only /# /P P/ #/ is
     # expected or useful -- but the mechanism is the same for all so why not.
     # The current scan state is represented by these variables:
-    # S : state is either: True, looking for data, or False, collecting data
+    # S : scanning is either: True, looking for data, or False, collecting data
     # Z : an endmark to watch for, e.g. "#/"
-    # C : True when centering (effectively, Z=="C/") else False
+    # C : True when centering else False (effectively, Z=="C/")
     # P : True = reflow by paragraphs, False, by single lines as in Poetry
     # F, L, R: current first, left, right indents
 
@@ -350,7 +350,7 @@ class flowPanel(QWidget):
         # RE that recognizes start of a block markup and captures its code
         markupRE = QRegExp("^/(P|#|\*|C|X|L|\$)")
         # Save the block numbers for use in sizing the progress bar. Set the
-        # bar limit to twice the block count, run it half in each pass.
+        # bar limit to twice the block count, count out half in each pass.
         topBlockNumber = topBlock.blockNumber()
         endBlockNumber = endBlock.blockNumber()
         pqMsgs.startBar(2 * (endBlockNumber - topBlockNumber), "Reflowing text")
@@ -360,9 +360,10 @@ class flowPanel(QWidget):
         stack = []
         # These vars are used to normalize P and * lines, and C lines when
         # centering to longest line
+        N = [0,0,0]
         NtargetF = 0 # minimum left indent to normalize to
-        NshortestF = 0 # actual least left indent seen in the block
-        NstartUnit = 0 # unit number of first line in block
+        NshortestF = 1 # actual least left indent seen in the block
+        NstartUnit = 2 # unit number of first line in block
         tb = topBlock # current block (text line) in the pass-1 loop
         fbn = None # number of first block of a work unit (paragraph)
         while True:
@@ -375,36 +376,34 @@ class flowPanel(QWidget):
                     if 0 == markupRE.indexIn(qs): # start of block markup
                         M = markupRE.cap(1) # the code letter *#PC etc
                         if M == "#" and (not self.skipBqCheck.isChecked()): # block quote
-                            stack.append( (S, Z, C, P, F, L, R) )
+                            stack.append( (S, Z, C, P, F, L, R, N[:]) )
                             # S is already True
                             Z = QString("#/")
                             C = False # not centering
                             P = True # collecting paras
-                            (F, L, R) = self.getIndents(self.bqIndent,qs,F,L,R)
+                            (F, L, R) = self.getIndents(M,qs,F,L,R)
                         elif M == "P" and (not self.skipPoCheck.isChecked()): # poetry
-                            stack.append( (S, Z, C, P, F, L, R) )
+                            stack.append( (S, Z, C, P, F, L, R, N[:]) )
                             # S is already True
                             Z = QString("P/")
                             P = False # collecting single lines
                             C = False # not centering
-                            (F, L, R) = self.getIndents(self.poIndent,qs,F,L,R)
-                            NtargetF = F
-                            NshortestF = 75
-                            NstartUnit = len(ulist)
+                            (F, L, R) = self.getIndents(M,qs,F,L,R)
+                            N[NtargetF] = F
+                            N[NshortestF] = 75
+                            N[NstartUnit] = len(ulist)
                         elif M == "*" and (not self.skipNfCheck.isChecked()) : # noflow
-                            stack.append( (S, Z, C, P, F, L, R) )
+                            stack.append( (S, Z, C, P, F, L, R, N[:]) )
                             # S is already True
                             Z = QString("*/")
                             C = False # not centering
                             P = False # collect by lines
-                            F += self.nfLeftIndent.value()
-                            L = F
-                            R = 0
-                            NtargetF = F
-                            NshortestF = 75
-                            NstartUnit = len(ulist)
+                            (F, L, R) = self.getIndents(M,qs,F,L,R)
+                            N[NtargetF] = F
+                            N[NshortestF] = 75
+                            N[NstartUnit] = len(ulist)
                         elif M == "C" and (not self.skipCeCheck.isChecked()): # center
-                            stack.append( (S, Z, C, P, F, L, R) )
+                            stack.append( (S, Z, C, P, F, L, R, N[:]) )
                             # S is already True
                             Z = QString("C/")
                             C = True # centering
@@ -412,9 +411,9 @@ class flowPanel(QWidget):
                             F += 2 # minimum 2-space indent on centered
                             L = F
                             R = 0
-                            NtargetF = F
-                            NshortestF = 75
-                            NstartUnit = len(ulist)
+                            N[NtargetF] = F
+                            N[NshortestF] = 75
+                            N[NstartUnit] = len(ulist)
                         else: # /$, /X, /L -- or we are told to skip this markup
                             M.append("/") # make endmarkup eg $/
                             # suck up all lines of this markup to end of markup
@@ -431,16 +430,17 @@ class flowPanel(QWidget):
                             # indents to the starting F by subtracting an 
                             # adjustment from all the work units of this block.
                             if (C and self.ctrOnLongest.isChecked()) \
-                            or ((not C) and (not P)) :
-                                # end of /C with center on longest
-                                Nadjust = NshortestF - NtargetF
+                            or ((not C) and (not P)) : # noflow or poetry
+                                # adjust to desired left indent
+                                Nadjust = N[NshortestF] - N[NtargetF]
                                 if Nadjust > 0 : # need to shift left
                                     u = len(ulist)-1
-                                    while u >= NstartUnit :
-                                        ulist[u][2] = ulist[u][2]-Nadjust
+                                    while u >= N[NstartUnit] :
+                                        if ulist[u][5] == len(stack) :
+                                            ulist[u][2] = ulist[u][2]-Nadjust
                                         u -= 1
                             # finished with a markup block
-                            (S, Z, C, P, F, L, R) = stack.pop()
+                            (S, Z, C, P, F, L, R, N) = stack.pop()
                         else: # just data: first line of a paragraph                            
                             if P : # collecting paragraphs
                                 fbn = tbn # first line of a para
@@ -451,26 +451,26 @@ class flowPanel(QWidget):
                                     txt = unicode(tb.text()).rstrip()
                                     ldgspaces = len(txt) - qs.size()
                                     x = F+ldgspaces
-                                    ulist.append( [tbn, tbn, x, L, R] )
+                                    ulist.append( [tbn, tbn, x, L, R, len(stack)] )
                                 else: # Centering, only stripped len matters
                                     x = int(max(4,75-qs.size())/2)
-                                    ulist.append( [tbn, tbn, x, 0, 0] )
-                                NshortestF = min(x,NshortestF)
+                                    ulist.append( [tbn, tbn, x, 0, 0, len(stack)] )
+                                N[NshortestF] = min(x,N[NshortestF])
                 else:
                     pass # blank line, keep looking
             else: # S False, collecting lines of a para
                 if qs.isEmpty() : # blank line, ends para
-                    ulist.append( [fbn, tbn-1, F, L, R] )
+                    ulist.append( [fbn, tbn-1, F, L, R, len(stack)] )
                     S = True # now looking for more
                 else : # non-blank line: more data? or end markup?
                     if (Z is not None) and qs.startsWith(Z):
                         # end of current markup (#/)
-                        ulist.append( [fbn, tbn-1, F, L, R] )
-                        (S, Z, C, P, F, L, R) = stack.pop()
+                        ulist.append( [fbn, tbn-1, F, L, R, len(stack)] )
+                        (S, Z, C, P, F, L, R, N) = stack.pop()
             # bottom of repeat-until loop, check for end
             if tb == endBlock : # we have processed the last line to do
                 if not S : # we were collecting, no blank line at end of doc
-                    ulist.append( [fbn, tbn-1, F, L, R] )
+                    ulist.append( [fbn, tbn-1, F, L, R, len(stack)] )
                 break
             tb = tb.next()
         # OK, now for phase 2. ulist has all the paras and single lines
@@ -485,7 +485,7 @@ class flowPanel(QWidget):
         progress = endBlockNumber - topBlockNumber
         lbr = IMC.QtLineDelim # short name copy Qt's logical line break character
         for u in reversed(range(len(ulist))):
-            (fbn,lbn,F,L,R) = ulist[u]
+            (fbn,lbn,F,L,R,x) = ulist[u]
             if 0 == (fbn & 0x1f) :
                 pqMsgs.rollBar(progress + (endBlockNumber - fbn))
             # set up a text cursor that selects the text to be flowed: 
@@ -528,17 +528,26 @@ class flowPanel(QWidget):
         pqMsgs.endBar()
         tc.endEditBlock() # complete single undo/redo macro
 
-    # subroutine of finding /# or /P markups. Get the F L R values for poetry
-    # or block quote from one of two sources: either the list of three
-    # spinboxes in the UI, or from the optional l[.f][,r] syntax after
-    # the markup. Guiguts started this, allowing /#[4.8,2] to mean, indent
-    # first lines 8, others 4, right 2. We are allowing it on /P as well, just
-    # because we can... Add the results to the existing f, l, r to allow for nesting.
-    def getIndents(self,uiList,qs,F,L,R):
+    # subroutine of finding indents for /#, /P, /* markups. Get the F L R values
+    # from one of two sources: the spinboxes in the UI, or the optional l[.f][,r]
+    # syntax after the markup. Guiguts started this, allowing /#[4.8,2] to mean
+    # indent first lines 8, others 4, right 2. We are allowing it on /P and /*
+    # as well, just because we can. Add the results to the existing f, l, r to
+    # allow for nesting markups.
+    def getIndents(self,M,qs,F,L,R):
         paramRE = QRegExp("^/\S\s*\[(\d+)(\.\d+)?(\,\d+)?\]")
-        tempF = uiList[0].value()
-        tempL = uiList[1].value()
-        tempR = uiList[2].value()
+        if M == "#" :
+            tempF = self.bqIndent[0].value()
+            tempL = self.bqIndent[1].value()
+            tempR = self.bqIndent[2].value()
+        elif M == "P" :
+            tempF = self.poIndent[0].value()
+            tempL = self.poIndent[1].value()
+            tempR = self.poIndent[2].value()
+        else : # M damn better be "*"
+            tempF = self.nfLeftIndent.value()
+            tempL = tempF
+            tempR = 0
         if 0 == paramRE.indexIn(qs) : # some params given
             # in the following, since the pattern matched is d+
             # there is no need to check the success boolean on toInt()
