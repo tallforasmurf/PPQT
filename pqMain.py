@@ -215,8 +215,8 @@ class MainWindow(QMainWindow):
         editToLowerAction = self.createAction("to&Lower", self.editor,
             self.editor.toLowerCase, QKeySequence(Qt.Key_L+Qt.CTRL),
             "Make selected text lowercase")
-        editToTitleAction = self.createAction("to&Title", self.editor,
-            self.editor.toTitleCase, QKeySequence(Qt.Key_T+Qt.CTRL),
+        editToTitleAction = self.createAction("toT&itle", self.editor,
+            self.editor.toTitleCase, QKeySequence(Qt.Key_I+Qt.CTRL),
             "Make Selected Text Titlecase")
         # There may perhaps be some more edit actions, e.g. ex/indent
         # Create and populate the Edit menu
