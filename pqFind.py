@@ -478,7 +478,6 @@ class findPanel(QWidget):
                     startTc.setPosition(editTc.selectionStart()-1)
                 else: # forward
                     startTc.setPosition(editTc.selectionStart()+1)
-            dbg = startTc.position()
         # Perform a search but first, save it in the pushdown list
         self.popups[0].noteString()
         findTc = self.realSearch(doc, startTc, button&0x01)
@@ -555,8 +554,6 @@ class findPanel(QWidget):
                 # start the next search 1 char into the last hit. For a 
                 # greedy recursive regex this could make one cursor per char,
                 # and probably blow the program out of the water.
-                dbg = findTc.selectionStart()
-                dbh = findTc.selectionEnd()
                 findTc.setPosition(findTc.selectionStart()+1)
                 findTc = self.realSearch(doc,findTc,False)
             if 0 == len(hits):
