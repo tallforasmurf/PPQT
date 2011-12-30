@@ -31,11 +31,12 @@ on input, and back to some byte code on output, based on the file suffix. Rename
 </table>
 <p>When saving, prefer <tt>.utf</tt> if there is any chance the text contains non-Latin-1 characters; prefer <tt>.txt</tt> when you are sure it is pure Latin-1 or ASCII. However, PPQT will save to any of the above encodings based on the file suffix of the output file.</p>
 <h3>Metadata</h3>
-When opening  <tt>afinebook.txt</tt>, PPQT looks for a file named  <tt>afinebook.txt</tt>.<tt>meta</tt> in the same location. If the meta file
+When opening  <tt>afinebook.txt</tt>, PPQT looks for a file named  <tt>afinebook.txt.meta</tt> in the same location (i.e. the full book name
+plus <tt>.meta</tt>). If the meta file
 is not found, PPQT assumes this is the first time it has opened this book.
-It scans the text gathering information including the location of page separator lines, and counting words and characters. These metadata are stored in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
-exist, PPQT loads them from it, saving .</p>
-<p>Feel free to examine or edit the metadata file, but be aware that it is written in UTF-8 format. If strange characters appear, your editor app did not use the utf-encoding to load it. Do not save the metadata file unless you are sure you can save it in UTF-8 format.</p>
+It scans the text gathering information including the location of page separator lines, and counting words and characters. These metadata will be stored in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
+exist, PPQT loads the metadata items from it.</p>
+<p>Feel free to examine or edit the metadata file, but be aware that it is written in UTF-8 format. If strange characters appear, your editor app did not use the utf-encoding to load it. Do not save the metadata file unless you are sure you are loading and saving it in UTF-8 format.</p>
 <h3>Page Images</h3>
 <p>PPQT expects to find a folder named <tt>pngs</tt> in the same location as
 the text file, containing the scan images for the book. These are displayed in 
@@ -83,10 +84,11 @@ or copy text by alt-dragging. PPQT does not support rectangular selections or di
 <li>ctl-=: replace selection (same as Find panel replace #1)</li>
 <li>ctl-t: replace selection and repeat find forward</li>
 <li>shift-ctl-t: replace selection and repeat find backward</li>
+<li>ctl-u, ctl-l, ctl-i: change selection to uppercase, lowercase, titlecase (Unicode compliant)</li>
 <li>ctl-1 through ctl-9: jump to bookmark 1-9</li>
-<li>shift-ctl-1 through shift-ctl-9: set bookmark 1-9 to cursor</li>
+<li>shift-ctl-1 through shift-ctl-9: set bookmark 1-9 to cursor (bookmarks
+are saved in the metadata file)</li>
 </ul>
-<p>Bookmarks are saved in the metadata.</p>
 <h3>Scanno Highlighting</h3>
 <p>Use File > Scannos to load a file of scannos: a text file with one word per line (e.g <tt>en-common</tt> from guiguts). May be a UTF file. The same file will be re-loaded each time PPQT is restarted, if it is found.</p>
 <p>Use the View > Scannos menu to turn on scanno highlighting, putting
