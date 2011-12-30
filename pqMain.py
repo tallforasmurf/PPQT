@@ -200,17 +200,30 @@ class MainWindow(QMainWindow):
         # to the inherited methods of the QPlainTextEdit object. These are
         # parented to the editor, so their shortcuts can be preempted by
         # other widgets e.g. Word panel.
-        editCopyAction = self.createAction("&Copy", self.editor, self.editor.copy,
-                QKeySequence.Copy, "Copy selection to clipboard")
-        editCutAction = self.createAction("Cu&t", self.editor, self.editor.cut,
-                QKeySequence.Cut, "Cut selection to clipboard")
-        editPasteAction = self.createAction("&Paste", self.editor, self.editor.paste,
-                QKeySequence.Paste, "Paste clipboard at selection")
+        editCopyAction = self.createAction("&Copy", self.editor,
+            self.editor.copy, QKeySequence.Copy,
+            "Copy selection to clipboard")
+        editCutAction = self.createAction("Cu&t", self.editor,
+            self.editor.cut, QKeySequence.Cut,
+            "Cut selection to clipboard")
+        editPasteAction = self.createAction("&Paste", self.editor,
+            self.editor.paste, QKeySequence.Paste,
+            "Paste clipboard at selection")
+        editToUpperAction = self.createAction("to&Upper", self.editor,
+            self.editor.toUpperCase, QKeySequence(Qt.Key_U+Qt.CTRL),
+            "Make selected text UPPERCASE")
+        editToLowerAction = self.createAction("to&Lower", self.editor,
+            self.editor.toLowerCase, QKeySequence(Qt.Key_L+Qt.CTRL),
+            "Make selected text lowercase")
+        editToTitleAction = self.createAction("to&Title", self.editor,
+            self.editor.toTitleCase, QKeySequence(Qt.Key_T+Qt.CTRL),
+            "Make Selected Text Titlecase")
         # There may perhaps be some more edit actions, e.g. ex/indent
         # Create and populate the Edit menu
         editMenu = self.menuBar().addMenu("&Edit")
-        self.addActions(editMenu, (editCopyAction,
-                editCutAction, editPasteAction))
+        self.addActions(editMenu,
+            (editCopyAction, editCutAction, editPasteAction,
+             None, editToUpperAction, editToLowerAction, editToTitleAction))
         # Actions for the View menu: toggle choices for spell and scanno hilite
         # we keep references to them because we may want to override them
         # Again these are parented by the main window so always the same.

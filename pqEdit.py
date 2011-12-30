@@ -55,14 +55,17 @@ from PyQt4.QtGui import (
 from pqLists import *
 import pqMsgs
 
+# Global regex used by wordHighLighter and by textTitleCase to find words
+# of one character and longer. 
+WordMatch = QRegExp(u"\\b\\w+\\b")
 # Define a syntax highlighter object which will be linked into our editor.
 # The edit init below instantiates this object and keeps addressability to it.
 class wordHighLighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
+        global WordMatch
         super(wordHighLighter, self).__init__(parent)
-        # regex to find words of 1 characters and longer
-        # n.b. won't work unless backslashes doubled on \b
-        self.wordMatch = QRegExp(u"\\b\\w+\\b")
+        # store a local reference to the global regex
+        self.wordMatch = WordMatch
         # Initialize text formats to apply to words from various lists.
         #  - Scanno candidates get a light lilac background.
         self.scannoFormat = QTextCharFormat()
@@ -152,6 +155,83 @@ class PPTextEditor(QPlainTextEdit):
         IMC.needMetadataSave = False
         IMC.needBookSave = False
 
+    # Implement the Edit menu items: 
+    # Edit > ToUpper,  Edit > ToTitle,  Edit > ToLower
+    # Note that in full Unicode, changing letter case is not so simple as it
+    # was in Latin-1! We use the QChar and QString facilities to do it, and
+    # a regex in a loop to pick off words. Restore the current selection after
+    # so another operation can be done on it.
+    def toUpperCase(self):
+        global WordMatch # the regex \b\w+\b
+        tc = self.textCursor()
+        if not tc.hasSelection() :
+            return # no selection, nothing to do
+        startpos = tc.selectionStart()
+        endpos = tc.selectionEnd()
+        qs = QString(tc.selectedText()) # copy of selected text
+        i = WordMatch.indexIn(qs,0) # index of first word if any
+        if i < 0 : return # no words in selection, exit
+        while i >= 0:
+            w = WordMatch.cap(0) # found word as QString
+            n = w.size() # its length
+            qs.replace(i,n,w.toUpper()) # replace it with UC version
+            i = WordMatch.indexIn(qs,i+n) # find next word if any
+        # we have changed at least one word, replace selection with altered text
+        tc.insertText(qs)
+        # that wiped the selection, so restore it by "dragging" left to right
+        tc.setPosition(startpos,QTextCursor.MoveAnchor) # click
+        tc.setPosition(endpos,QTextCursor.KeepAnchor)   # drag
+        self.setTextCursor(tc)
+
+    # to-lower is identical except for the method call.
+    def toLowerCase(self):
+        global WordMatch # the regex \b\w+\b
+        tc = self.textCursor()
+        if not tc.hasSelection() :
+            return # no selection, nothing to do
+        startpos = tc.selectionStart()
+        endpos = tc.selectionEnd()
+        qs = QString(tc.selectedText()) # copy of selected text
+        i = WordMatch.indexIn(qs,0) # index of first word if any
+        if i < 0 : return # no words in selection, exit
+        while i >= 0:
+            w = WordMatch.cap(0) # found word as QString
+            n = w.size() # its length
+            qs.replace(i,n,w.toLower()) # replace it with UC version
+            i = WordMatch.indexIn(qs,i+n) # find next word if any
+        # we have changed at least one word, replace selection with altered text
+        tc.insertText(qs)
+        # that wiped the selection, so restore it by "dragging" left to right
+        tc.setPosition(startpos,QTextCursor.MoveAnchor) # click
+        tc.setPosition(endpos,QTextCursor.KeepAnchor)   # drag
+        self.setTextCursor(tc)
+
+    # toTitle is similar but we only change the initial character of the word.
+    # Note it would be possible to write a smarter version that looked up the
+    # word in a list of common adjectives, connectives, and adverbs and avoided
+    # capitalizing a, and, of, by and so forth. Not gonna happen.
+    def toTitleCase(self):
+        global WordMatch # the regex \b\w+\b
+        tc = self.textCursor()
+        if not tc.hasSelection() :
+            return # no selection, nothing to do
+        startpos = tc.selectionStart()
+        endpos = tc.selectionEnd()
+        qs = QString(tc.selectedText()) # copy of selected text
+        i = WordMatch.indexIn(qs,0) # index of first word if any
+        if i < 0 : return # no words in selection, exit
+        while i >= 0:
+            w = WordMatch.cap(0) # found word as QString
+            n = w.size()
+            qs.replace(i,1,qs.at(i).toUpper()) # replace initial with UC
+            i = WordMatch.indexIn(qs,i+n) # find next word if any
+        # we have changed at least one word, replace selection with altered text
+        tc.insertText(qs)
+        # that wiped the selection, so restore it by "dragging" left to right
+        tc.setPosition(startpos,QTextCursor.MoveAnchor) # click
+        tc.setPosition(endpos,QTextCursor.KeepAnchor)   # drag
+        self.setTextCursor(tc)
+       
     # Re-implement the parent's keyPressEvent in order to provide some
     # special controls. (Note on Mac, "ctrl-" is "cmd-" and "alt-" is "opt-")
     # ctrl-plus increases the edit font size 1 pt
