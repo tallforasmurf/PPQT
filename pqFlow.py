@@ -553,7 +553,7 @@ class flowPanel(QWidget):
 			PSW['M'] = unicode(markupRE.cap(1)) # u'*', u'P' etc
 			PSW['Z'] = QString(PSW['M']+u'/')
 			unitList.append(self.makeUnit('M',PSW,0,0))
-			if PSW['M'] == u'#' :
+			if PSW['M'] == u'#' and (not self.skipBqCheck.isChecked()) :
 			    # Start a block quote section
 			    PSW['P'] = True # collect paragraphs
 			    self.getIndents(qs,PSW,[
@@ -562,7 +562,7 @@ class flowPanel(QWidget):
 			        self.bqIndent[2].value()] )
 			    # don't care about W
 			    PSW['B'] = 0
-			elif PSW['M'] == u'P' :
+			elif PSW['M'] == u'P' and (not self.skipPoCheck.isChecked()) :
 			    # start a poetry section
 			    PSW['P'] = False # collect by lines
 			    self.getIndents(qs,PSW,[
@@ -571,7 +571,7 @@ class flowPanel(QWidget):
 			        self.poIndent[2].value()] )
 			    PSW['W'] = 75
 			    # don't care about B
-			elif PSW['M'] == u'*' :
+			elif PSW['M'] == u'*' and (not self.skipNfCheck.isChecked()) :
 			    # start a no-reflow indent section
 			    PSW['P'] = False # collect by lines
 			    self.getIndents(qs,PSW,[
@@ -580,7 +580,7 @@ class flowPanel(QWidget):
 			        0] )
 			    PSW['W'] = 75
 			    # don't care about B
-			elif PSW['M'] == u'C' :
+			elif PSW['M'] == u'C' and (not self.skipCeCheck.isChecked()) :
 			    # start a centering section
 			    PSW['P'] = False # collect by lines
 			    self.getIndents(qs,PSW,[2,2,0])
@@ -600,12 +600,13 @@ class flowPanel(QWidget):
 			    PSW['W'] = 75
 			    # don't care about B
 			else : 
-			    # start a list by paragraphs - the only remaining
-			    # possibility because the RE only matches these codes.
-			    PSW['P'] = True # collect paras
-			    self.getIndents(pq,PSW,[2,4,4])
-			    PSW['W'] = 75
-			    # don't care about B
+			    # one of the sections is being skipped: consume
+			    # lines until we see the end of the section.
+                            while thisBlock.next() != endBlock:
+                                thisBlock = thisBlock.next()
+                                if thisBlock.text().startsWith(PSW['Z']) :
+				    thisBlock = thisBlock.previous()
+				    break                            
 		    elif PSW['Z'] is not None and qs.startsWith(PSW['Z']):
 			# we have found end of markup with no paragraph working
 			# document it with an end-markup unit
