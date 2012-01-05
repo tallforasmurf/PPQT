@@ -520,7 +520,7 @@ class flowPanel(QWidget):
 	# of nesting we push the PSW onto this
 	stack = []
 	# We recognize the start of markup with this RE    
-	markupRE = QRegExp("^/(P|#|\\*|C|X|U)")
+	markupRE = QRegExp("^/(P|#|\\*|C|X|U|R)")
 	# We step through QTextBlocks using the next() method but we take the
 	# block numbers to set up the progress bar:
 	topBlockNumber = topBlock.blockNumber()
@@ -599,6 +599,11 @@ class flowPanel(QWidget):
 			    self.getIndents(qs,PSW,[2,4,4])
 			    PSW['W'] = 75
 			    # don't care about B
+			elif PSW['M'] == u'R' :
+			    # start a right-aligned section
+			    PSW['P'] = False # collect by lines
+			    self.getIndents(qs,PSW,[0,0,0])
+			    PSW['W'] = 0
 			else : 
 			    # one of the sections is being skipped: consume
 			    # lines until we see the end of the section.
@@ -630,6 +635,10 @@ class flowPanel(QWidget):
 				# (may be reduced later)
 				lineIndent = ( 75-len(lineText.strip()) ) /2
 				lineIndent = int( max(2, lineIndent) )
+				u['F'] = lineIndent
+			    elif PSW['M'] == u'R' :
+				# calculate indent for right-aligned line
+				lineIndent = max(0, (75-len(lineText.strip())) -PSW['R'])
 				u['F'] = lineIndent
 			    elif PSW['M'] != u'X' : 
 				# calculate indent for P, *, L: existing leading
@@ -800,7 +809,7 @@ FIRST PAGE
 
 BY
 
-AUTHOR TEDIOUS
+AUTHOR TED IOUS
 C/
 
 /P
@@ -811,9 +820,10 @@ They tell me you are wicked and I believe them, for I have seen your painted wom
 P/
 
 /U
-First
-They tell me you are wicked and I believe them, for I have seen your painted women
-Third
+* First
+* They tell me you are wicked and I believe them
+* For I have seen your painted women
+* Third
 U/
 
     ''')

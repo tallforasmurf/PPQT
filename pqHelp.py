@@ -424,8 +424,11 @@ in the second row of controls.</td></tr>
 by an amount specified in the third control, otherwise no change.</td></tr>
 <tr><td><b>/C..C/</b></td><td>Centering: single lines are indented so
 as to center on the 75-char line, with at least a 2-space indent.</td></tr>
-<tr><td><b>/L..L/<br />/$..$/<br />/X..X/</b></td><td>These sections are
-skipped entirely.</td></tr>
+<tr><td><b>/U..U/</b></td><td>Unsigned list: lines are indented 2; lines
+that reach 71 are folded and indented 4.</td></tr>
+<tr><td><b>/R..R/</b></td><td>All contained lines are aligned right, for
+example as a signature or the attribution for a block quote.
+<tr><td><b>/X..X/</b></td><td>Left entirely alone.</td></tr>
 </table>
 <p>Set the switches on the left center to skip over special sections.</p>
 <p>The top row of controls set the default indents for block quotes.
@@ -433,7 +436,7 @@ The <i>First</i> indent applies to the first line of a paragraph;
 <i>Left</i> to the other lines.
 The second row of controls set the indents for poetry, in which the <i>First</i>
 indent applies to every line; the <i>Left</i> indent is used only if a line
-is too long to fit in 75 chars and is "folded."</p>
+is too long to fit in 75 chars and is folded.</p>
 <p>As in guiguts, you can set the indents for a particular section by
 putting one to three numbers in brackets on the top markup.
 The syntax is <b>[</b><i>left</i><b>.</b><i>first</i><b>,</b><i>right</i><b>]</b> with the
@@ -443,7 +446,10 @@ For example <b>/#[6]</b> starts a blockquote with a <i>Left</i> indent of 6;
 <b>/#[8,8]</b> has <i>Left</i> and <i>Right</i> both 8; and
 <b>/#[8.4,0]</b> has  <i>Left</i> 8,  <i>First</i> 4 (exdented), and
  <i>Right</i> 0. When omitted in the markup, <i>First</i> and <i>Right</i> 
- come from the panel controls. PPQT also supports this on <b>/P</b> poetry markup.</p>
+ come from the panel controls. PPQT supports this on all markup codes,
+ not just block quotes; although only the <i>First</i> value is
+ meaningful for <b>/C</b> or <b>/*</b>, and only the <i>Right</i>
+ value matters for <b>/R</b>.</p>
 <p>For Centered text, setting the "longest line+2" button adjusts
 the section as far to the left as possible leaving a 2-space indent.</p>
 <p>Normally you reflow after removing &lt;i>, &lt;b>, and &lt;sc> markup.
