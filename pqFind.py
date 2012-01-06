@@ -119,6 +119,7 @@ http://creativecommons.org/licenses/by-nc-sa/3.0/
 
 from urllib import (quote, unquote) # for safely encoding find/rep strings
 import pqMsgs
+import ast
 
 from PyQt4.QtCore import (Qt,
     QChar, QRegExp,
@@ -892,19 +893,22 @@ class userButton(QPushButton):
     # The strings are not executed, so there's nothing like sql injection here.
     def loadDict(self,dictrepr):
         try:
-            # execute an assignment - checks for valid python syntax
-            exec( 'self.udict = ' + dictrepr )
+            # validate dictrepr as being strictly a literal dictionary: ast
+            # will throw ValueError if it isn't a good literal and only a literal,
+            # thus avoiding possible code injection
+            okdict = ast.literal_eval(dictrepr)
             # now make sure it was a dict not a list or whatever
-            if not isinstance(self.udict,dict) : 
+            if not isinstance(okdict,dict) : 
                 raise ValueError
             # and make sure it has a label key
-            if not 'label' in self.udict :
+            if not 'label' in okdict :
                 raise ValueError
             # and make sure the value of dict['label'] is a string
-            if not ( isinstance(self.udict['label'],str) \
-                     or isinstance(self.udict['label'],unicode) ):
+            if not ( isinstance(okdict['label'],str) \
+                     or isinstance(okdict['label'],unicode) ):
                 raise ValueError
             # all good, go ahead and use it
+            self.udict = okdict
         except StandardError:
             # some error raised, go to minimum default
             self.udict = { 'label':'(empty)', 'tooltip':'Undefined button' }
