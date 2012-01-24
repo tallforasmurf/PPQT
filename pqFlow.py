@@ -68,6 +68,7 @@ the old text.
 
 '''
 import pqMsgs
+import pqTable
 from PyQt4.QtCore import (Qt, QChar,
     QRegExp,
     QString, QVariant, SIGNAL )
@@ -197,13 +198,13 @@ class flowPanel(QWidget):
         skipGBox.setLayout(skipVBox)
         self.skipPoCheck = QCheckBox("Poetry /P..P/")
         skipVBox.addWidget(self.skipPoCheck,0)
-        self.skipBqCheck = QCheckBox("Block quote /#..#/")
+        self.skipBqCheck = QCheckBox("Block quote /Q..Q/")
         skipVBox.addWidget(self.skipBqCheck,0)
         self.skipCeCheck = QCheckBox("Center /C..C/")
         skipVBox.addWidget(self.skipCeCheck,0)
         self.skipNfCheck = QCheckBox("No-reflow /*..*/")
         skipVBox.addWidget(self.skipNfCheck,0)
-        self.skipTbCheck = QCheckBox("Tables /t, /T")
+        self.skipTbCheck = QCheckBox("Tables /T..T/")
         skipVBox.addWidget(self.skipTbCheck,0)
         #skipVBox.addStretch(1)
         # group of token-width radio button sets
@@ -332,13 +333,14 @@ class flowPanel(QWidget):
     #    '/' markup  of type following ends
     # 'M' : the type of markup starting, in effect, or ending:
     #    ' ' no active markup, open text
-    #    '#' block quote
+    #    'Q' block quote
     #    'P' poetry
     #    '*' no-reflow but indent as per UI
     #    'C' no-reflow but center as per UI
     #    'X' no-reflow and leave alone
-    #    'U' unordered list by single lines (Guiguts /L)
-    #    'W' unordered list by paragraphs
+    #    'U' unordered list by paragraphs
+    #    'R' right-aligned by lines
+    #    'T' single or multiline table
     # 'A' : text block number of start of the unit
     # 'Z' : text block numberof end of the unit
     # 'F', 'L', 'R': the desired First, Left and Right margins for this unit,
@@ -347,21 +349,24 @@ class flowPanel(QWidget):
     # existing indent seen in a *, P, or C markup. All lines of a * or P
     # markup section, or of a C section with "longest line" checked, are
     # indented by F-W, which may be negative.
-    # 'B' : the count of blank lines that preceded this unit, used in
-    # HTML conversion to detect chapter heads.
+    # 'B' : the count of blank lines that preceded this unit, used in Table
+    # to detect row divisions and in HTML conversion to detect chapter heads
+    # or Poetry stanzas.
 
     def theRealReflow(self,topBlock,endBlock):
-	global tokGen # see wayyyy below us
+	global tokGen # see wayyyy below this code down at the end
+	# Parse the text into work units
         unitList = self.parseText(topBlock,endBlock)
         if 0 == len(unitList) :
             return # all-blank? or perhaps an error like unbalanced markup
         #
 	# Now do the actual reflowing. unitList has all the paras and single
 	# lines to be hacked. Work from end to top. For lines in sections
-	# X, *, and C, just adjust the leading spaces. For other sections
-	# reflow into new lines. The tokgen function (below) is a generator
-	# that returns the next token and its effective length (counting
-	# i/b/sc markups as specified in the UI).
+	# R, P, *, and C, just adjust the leading spaces. Skip over X, and
+	# pass Tables to a separate module. For nonmarkup, Q and U sections
+	# reflow paragraphs into new lines. The tokgen function (below) is a
+	# generator that returns the next token and its effective length
+	# (counting i/b/sc markups as specified in the UI).
         doc = IMC.editWidget.document()
         # In order to have a single undo/redo operation we have to use a
         # single QTextCursor, which is this one:
@@ -378,32 +383,40 @@ class flowPanel(QWidget):
         for u in reversed(range(len(unitList))):
             unit = unitList[u]
 	    if unit['T'] == u'/' :
-		# end of markup, which we see first because going backwards.
+		# end of markup, which we see first because of going backwards.
 		# push our leastIndent and set it to the new one.
 		markStack.append( (leastIndent, markupCode) )
 		leastIndent = unit['W']
 		markupCode = unit['M']
+		if markupCode == u'T':
+		    # bottom of a table section, not its start
+		    tableBottomIndex = u
 		continue
 	    if unit['T'] == u'M' :
-		# start of markup, which we see last; pop our least-indent stack
+		# start of markup, which we see last in our backward scan
+		if markupCode == u'T' :
+		    # top of a table section; pass the table work units to
+		    # pqTable.tableReflow, which will do the needful.
+		    pqTable.tableReflow(tc,doc,unitList[u:tableBottomIndex+1])
+		# and emerge from this markup block
 		(leastIndent, markupCode) = markStack.pop()
 		continue
-	    # a real unit of lines to process.
+	    # neither end of markup, so: a real unit of lines to process.
 	    blockNumberA = unit['A'] # First block of paragraph
 	    blockNumberZ = unit['Z'] # ..and last block number
 	    # approximately every 16 lines complete, roll the bar
 	    if 0x0 == (blockNumberA & 0x0f) :
 		pqMsgs.rollBar(endBlockNumber - blockNumberA)
 	    # is this a reflow block or not?
-	    blockType = unit['M']
-	    if blockType == u'X' : 
+	    if markupCode == u'X' or markupCode == u'T':
+		# line of /X which we skip, or /T which we defer
 		continue # don't touch it
-	    if (blockType == u'*') or (blockType == u'C') :
+	    if (markupCode == u'*') or (markupCode == u'C') or (markupCode == u'R') :
 		# non-reflow block; adjust leading spaces. F is how many
-		# spaces this line has (* section) or needs to center it (C).
+		# spaces this line has (* section) or needs to align it (C, R).
 		indentAmount = unit['F']
-		if blockType == u'*' or \
-		   (blockType == u'C' and self.ctrOnLongest.isChecked()) :
+		if markupCode == u'*' or \
+		(markupCode == u'C' and self.ctrOnLongest.isChecked()) :
 		    # reduce that to bring the longest line to the proper
 		    # left margin, typically 2 but could be nested deeper.
 		    indentAmount = unit['F'] - leastIndent + unit['L']
@@ -421,7 +434,7 @@ class flowPanel(QWidget):
 		tc.insertText(QString(lineText))
 		continue # and that's that for this unit
 	    # This unit describes a paragraph of one or more lines to reflow.
-	    # This includes open text, block quotes, and lines of Poetry.
+	    # This includes open text, block quotes, lists, and lines of Poetry.
 	    # set up a text cursor that selects the text to be flowed: 
             # set the virtual insertion point after the end of the last line
             blockZ = doc.findBlockByNumber(blockNumberZ)
@@ -434,10 +447,11 @@ class flowPanel(QWidget):
             # lines based on F, L, R, adjusted by W. Collect the marginal
 	    # indents and tokens into a QString flowText.
 	    F = unit['F']
-	    if markupCode == u'P' or markupCode == u'U' :
-		F = max(0,F-leastIndent)
 	    L = unit['L']
-	    if markupCode == u'P' or markupCode == u'U' :
+	    if markupCode == u'P' :
+		# pull Poetry lines back out if they had previously indented
+		# for example if they had previously been reflowed
+		F = max(0,F-leastIndent)
 		L = max(0,L-leastIndent)
 	    flowText = QString(u' '*F) # start the paragraph with indent F
 	    oneSpace = QString(u' ') # one space between tokens
@@ -467,30 +481,26 @@ class flowPanel(QWidget):
 	# and that's reflow, folks. Barely 800 lines. pih. easy.
 
     # subroutine to update the PSW with F L R indent values for markups, either
-    # tfrom a list of three values passed in (typically from the UI, but for
-    # some markup types, defined literals), or from the optional l[.f][,r]
-    # syntax after the markup. Guiguts started this, allowing /#[4.8,2] to mean
-    # indent first lines 8, others 4, right 2. We are allowing it all markups
-    # just because we can. L == F for single-line markups like /*.
-    def getIndents(self,qs,PSW,defaults):
-        paramRE = QRegExp("^/\S\s*\[(\d+)(\.\d+)?(\,\d+)?\]")
-        tempF = defaults[0]
-        tempL = defaults[1]
-        tempR = defaults[2]
-        if 0 == paramRE.indexIn(qs) : # some params given
-            # in the following, since the pattern matched is d+
-            # there is no need to check the success boolean on toInt()
-            t = paramRE.cap(1) # left - if the regex matched, there is a left
-            (tempL, b) = t.toInt()
-            t = paramRE.cap(2)
-            if not t.isEmpty() : # t has '.d+'
-                t.remove(0,1) # drop the leading dot
-                (tempF, b) = t.toInt()
-            t = paramRE.cap(3)
-            if not t.isEmpty() : # t has ',d+'
-                t.remove(0,1) # drop the leading comma
-            (tempR, b) = t.toInt()
-        PSW['F']+=tempF
+    # from a list of three numbers passed in (which would typically come from
+    # the UI, but for some markup types, defined literals), or from the optional
+    # F:n L:n R:n syntax after the markup.
+    def getIndents(self, qs, PSW, dfltF, dfltL, dfltR):
+	dbg = unicode(qs)
+	F_RE = QRegExp(u' F\\w*:(\\d+)')
+	L_RE = QRegExp(u' L\\w*:(\\d+)')
+	R_RE = QRegExp(u' R\\w*:(\\d+)')
+	tempF = dfltF
+	if -1 < F_RE.indexIn(qs) : # we see F:n, capture it
+	    (tempF, b) = F_RE.cap(1).toInt()
+	tempL = dfltL
+	if -1 < L_RE.indexIn(qs) : # don't have to check the success boolean
+	    (tempL, b) = L_RE.cap(1).toInt()
+	tempR = dfltR
+	if -1 < R_RE.indexIn(qs) : # .. we know cap(1) is only digits
+	    (tempR, b) = R_RE.cap(1).toInt()
+	# Add the captured or default value into the PSW -- adding because
+	# this markup may be nested in another.
+	PSW['F']+=tempF
         PSW['L']+=tempL
         PSW['R']+=tempR
     
@@ -509,18 +519,18 @@ class flowPanel(QWidget):
 	# reference to the IBM 360) which is a dict initialized to:
 	PSW = { 'S': True, 'Z':None, 'M':' ', 'P':True, 'F':0, 'L':0, 'R':0, 'W':75, 'B':0 }
 	# S : scanning: True, looking for a para, or False, collecting a para
-	# Z : None, or a QString of the end of the current markup, '#/'
+	# Z : None, or a QString of the end of the current markup, 'P/'
 	# M : the code of this markup e.g. u'*'
 	# P : True = reflow by paragraphs, False, by single lines as in Poetry
 	# F, L, R: current first, left, right indents
 	# W, shortest existing indent seen in a no-reflow section
-	# B, count of blank lines skipped
+	# B, count of blank lines skipped ahead of this line/para
 	# we allow nesting markups arbitrarily, altho only the nest of
-	# /P within /# block quote is really likely or necessary. To keep track
+	# /P within /Q block quote is really likely or necessary. To keep track
 	# of nesting we push the PSW onto this
 	stack = []
 	# We recognize the start of markup with this RE    
-	markupRE = QRegExp("^/(P|#|\\*|C|X|U|R)")
+	markupRE = QRegExp("^/(P|Q|\\*|C|X|U|R|T)")
 	# We step through QTextBlocks using the next() method but we take the
 	# block numbers to set up the progress bar:
 	topBlockNumber = topBlock.blockNumber()
@@ -544,66 +554,61 @@ class flowPanel(QWidget):
 		    PSW['B'] += 1
 		else:
 		    # We are looking for work and we found a non-empty line!
-			# But: is it text, or a markup?
+		    # But: is it text, or a markup?
 		    if 0 == markupRE.indexIn(qs):
 			# we have found a markup! Save our current state
 			stack.append(PSW.copy())
 			# Now, figure out which markup it is, and set PSW to suit.
 			# Note that PSW['S'] is already True and stays that way
-			PSW['M'] = unicode(markupRE.cap(1)) # u'*', u'P' etc
-			PSW['Z'] = QString(PSW['M']+u'/')
-			unitList.append(self.makeUnit('M',PSW,0,0))
-			if PSW['M'] == u'#' and (not self.skipBqCheck.isChecked()) :
-			    # Start a block quote section
+			PSW['M'] = unicode(markupRE.cap(1)) # u'Q', u'P' etc
+			PSW['Z'] = QString(PSW['M']+u'/') # endmark, 'Q/' etc
+			# make a start-markup work unit for this line
+			unitList.append(self.makeUnit('M',PSW,thisBlockNumber,0))
+			PSW['B'] = 0 # clear the blank-line-before count
+			if PSW['M'] == u'Q' and (not self.skipBqCheck.isChecked()) :
+			    # Enter a block quote section
 			    PSW['P'] = True # collect paragraphs
-			    self.getIndents(qs,PSW,[
-			        self.bqIndent[0].value(),
-			        self.bqIndent[1].value(),
-			        self.bqIndent[2].value()] )
+			    self.getIndents(qs,PSW,self.bqIndent[0].value(),
+			    self.bqIndent[1].value(), self.bqIndent[2].value() )
 			    # don't care about W
-			    PSW['B'] = 0
 			elif PSW['M'] == u'P' and (not self.skipPoCheck.isChecked()) :
-			    # start a poetry section
+			    # Enter a poetry section
 			    PSW['P'] = False # collect by lines
-			    self.getIndents(qs,PSW,[
-			        self.poIndent[0].value(),
-			        self.poIndent[1].value(),
-			        self.poIndent[2].value()] )
-			    PSW['W'] = 75
-			    # don't care about B
+			    self.getIndents(qs,PSW, self.poIndent[0].value(),
+			        self.poIndent[1].value(), self.poIndent[2].value() )
+			    PSW['W'] = 75 # initialize to find shortest indent
 			elif PSW['M'] == u'*' and (not self.skipNfCheck.isChecked()) :
-			    # start a no-reflow indent section
+			    # Enter a no-reflow indent section
 			    PSW['P'] = False # collect by lines
-			    self.getIndents(qs,PSW,[
-			        self.nfLeftIndent.value(),
-			        self.nfLeftIndent.value(),
-			        0] )
-			    PSW['W'] = 75
-			    # don't care about B
+			    self.getIndents(qs,PSW,self.nfLeftIndent.value(),
+			        self.nfLeftIndent.value(), 0 )
+			    PSW['W'] = 75 # initialize to find shortest indent
 			elif PSW['M'] == u'C' and (not self.skipCeCheck.isChecked()) :
-			    # start a centering section
+			    # Enter a centering section
 			    PSW['P'] = False # collect by lines
-			    self.getIndents(qs,PSW,[2,2,0])
-			    PSW['W'] = 75
-			    # don't care about B
+			    self.getIndents(qs,PSW,2,2,0)
+			    PSW['W'] = 75 # initialize to find shortest indent
 			elif PSW['M'] == u'X' :
-			    # start a no-reflow no-indent section
+			    # Enter a no-reflow no-indent section
 			    PSW['P'] = False # collect by lines
 			    PSW['F'] = 0
 			    PSW['L'] = 0
 			    PSW['R'] = 0
-			    # don't care about W or B
+			    # don't care about W
 			elif PSW['M'] == u'U' :
-			    # start a list by single lines
-			    PSW['P'] = False # collect by lines
-			    self.getIndents(qs,PSW,[2,4,4])
-			    PSW['W'] = 75
-			    # don't care about B
+			    # Enter a list markup
+			    PSW['P'] = True # collect by paragraphs
+			    self.getIndents(qs,PSW,2,4,4)
+			    # don't care about W
 			elif PSW['M'] == u'R' :
-			    # start a right-aligned section
+			    # Enter a right-aligned section
 			    PSW['P'] = False # collect by lines
-			    self.getIndents(qs,PSW,[0,0,0])
-			    PSW['W'] = 0
+			    self.getIndents(qs,PSW,0,0,0)
+			    # don't care about W
+			elif PSW['M'] == u'T' :
+			    # start a table section /T or /TM
+			    PSW['P'] = False # collect by lines
+			    # table will fit in current F and R values
 			else : 
 			    # one of the sections is being skipped: consume
 			    # lines until we see the end of the section.
@@ -611,11 +616,12 @@ class flowPanel(QWidget):
                                 thisBlock = thisBlock.next()
                                 if thisBlock.text().startsWith(PSW['Z']) :
 				    thisBlock = thisBlock.previous()
-				    break                            
+				    break     
+		    # markupRE did not hit, not starting a markup. Ending one?
 		    elif PSW['Z'] is not None and qs.startsWith(PSW['Z']):
 			# we have found end of markup with no paragraph working
 			# document it with an end-markup unit
-			unitList.append(self.makeUnit('/',PSW,0,0))
+			unitList.append(self.makeUnit('/',PSW,thisBlockNumber,0))
 			# and return to what we were doing before the markup
 			PSW = stack.pop()
 			PSW['B'] = 0
@@ -626,8 +632,8 @@ class flowPanel(QWidget):
 			    firstBlockNumber = thisBlockNumber
 			    PSW['S'] = False # go to other half of the if-stack
 			else:
-			    # we are not doing paragraphs, e.g. we are in /*
-			    # estimate the proper indent for this line.
+			    # we are not doing paragraphs, e.g. we are in /C
+			    # create a work unit to describe this line
 			    u = self.makeUnit('P',PSW,thisBlockNumber,thisBlockNumber)
 			    lineText = unicode(qs) # get text to python-land
 			    if PSW['M'] == u'C' : 
@@ -638,18 +644,19 @@ class flowPanel(QWidget):
 				u['F'] = lineIndent
 			    elif PSW['M'] == u'R' :
 				# calculate indent for right-aligned line
-				lineIndent = max(0, (75-len(lineText.strip())) -PSW['R'])
+				lineIndent = max(0, (75-len(lineText.strip()))-PSW['R'])
 				u['F'] = lineIndent
-			    elif PSW['M'] != u'X' : 
-				# calculate indent for P, *, L: existing leading
+			    elif PSW['M'] == u'P' or PSW['M'] == u'*': 
+				# calculate indent for P or *: existing leading
 				# spaces plus F (possibly adjusted later)
 				lineIndent = len(lineText)-len(lineText.lstrip())
 				u['F'] = lineIndent + PSW['F']
-			    else :  # indent for X is 0
+			    else :  # indent for X is 0, for T is ignored
 				lineIndent = 0
 				u['F'] = 0
-			    PSW['W'] = min(lineIndent,PSW['W'])
+			    PSW['W'] = min(lineIndent,PSW['W']) # note shortest indent
 			    unitList.append(u)			    
+			    PSW['B'] = 0
 	    else: # PSW['S'] is false
 		# we are collecting the lines of a paragraph. Is this line empty?
 		# the .trimmed method strips leading and trailing whitespace,
@@ -773,6 +780,8 @@ if __name__ == "__main__":
     IMC.fontFamily = QString("Courier")
     import pqMsgs
     pqMsgs.IMC = IMC
+    import pqTable
+    pqTable.IMC = IMC
     IMC.editWidget = QPlainTextEdit()
     IMC.editWidget.setFont(pqMsgs.getMonoFont())
     IMC.settings = QSettings()
@@ -782,49 +791,93 @@ if __name__ == "__main__":
     pqMsgs.makeBarIn(MW.statusBar())
     MW.show()
     utqs = QString('''
+This lengthy quote is the unit-test document. It contains representative
+samples of all the reflow markup types. This is a sample of an open paragraph
+to be reflowed.
+
+The types of reflow markup are as follows, which is an example of a list. The list
+for ascii reflow is exactly like a block quote with FLR of 2,4,4, which exdents
+the first line. You can of course specify different FLR values. In HTML the
+List section is converted to a <ul> markup.
+
+The following are the markups that reflow by paragraphs, like open text but with
+different margin values.
+
+/U
+Poetry markup is done with /P..P/. It allows FLR values with defaults coming
+from the UI spinboxes.
+
+Block quote is done with /Q..Q/. It takes FLR with defaults from the UI.
+
+Lists are done with /U..U/.
+U/
+
+/Q F:8 L:6 R:12
+The following markups are not reflowed by paragraphs, but rather are
+treated as single lines.
+
+/R
+--David Hume, 1789
+R/
+
+Q/
+
+/P F:2 R:10 L:8
+Here are our thoughts, voyagers' thoughts,
+Here not the land, firm land, alone appears, may then by them be said,
+The sky o'erarches here, we feel the undulating deck beneath our feet,
+We feel the long pulsation, ebb and flow of endless motion,
+The tones of unseen mystery, the vague and vast suggestions of the      briny world, the liquid-flowing syllables,
+The perfume, the faint creaking of the cordage, the melancholy rhythm,
+The boundless vista and the horizon far and dim are all here,
+And this is ocean's poem.
+
+Then falter not O book, fulfil your destiny,
+You not a reminiscence of the land alone,
+You too as a lone bark cleaving the ether, purpos'd I know not      whither, yet ever full of faith,
+Consort to every ship that sails, sail you!
+Bear forth to them folded my love, (dear mariners, for you I fold it      here in every leaf;)
+Speed on my book! spread your white sails my little bark athwart the  imperious waves,
+Chant on, sail on, bear o'er the boundless blue from me to every sea,
+This song for mariners and all their ships.
+P/
 
 /X
 -123456789-123456789-123456789-123456789-123456789-123456789-123456789-123|56789
 X/
 
-This is a paragraph of text on
-several lines. When building or refreshing its metadata,
-PPQT checks all words for spelling. A "bad" word is assumed
-to be misspelt; a "good" word is assumed to be correct.
-Any word not in those lists is presented to the spell-checker
-and noted as correct or misspelt based on the current dictionary.
+/T  single line table
+Line numero uno   99.95
+Deux Dos Due     165.56
+T/
 
-/#
-When building or refreshing its metadata,
-PPQT checks all words for spelling. A "bad" word is assumed
-to be misspelt; a "good" word is assumed to be correct.
-Any word not in those lists is presented to the spell-checker
-and noted as correct or misspelt based on the current dictionary.
-#/
+/T T(W:50) 2(A:R)  single line table width col 2 aligned right
+Line numero uno   99.95
+Deux Dos Due     165.56
+T/
 
-/C
-A
-TYPICALLY LONG AND VERBOSE AND TURGID TITLE FOR THE
-FIRST PAGE 
+/TM T(W:60) 2(W:10 A:R) multiline table typical TOC
+Introduction   1
 
-BY
+Preface  5
 
-AUTHOR TED IOUS
-C/
+This Is the Title of Chapter One    7
 
-/P
-Twinkle,
-  Twinkle,
-    Star of mine,
-They tell me you are wicked and I believe them, for I have seen your painted women under the gas lamps luring the farm boys.
-P/
+The Title of Chapter Two, in which
+Doris Gets Her Offs.       25
 
-/U
-* First
-* They tell me you are wicked and I believe them
-* For I have seen your painted women
-* Third
-U/
+Index   299
+T/
+
+/TM TABLE(TOP:'-' WIDTH:30 SIDE:'|') COL(B:'-' S:'|')
+------------------------------------------
+|cell | cell |  now si the time for all |
+|one  | two  |  good parties to end     |
+------------------------------------------
+|row 2 cell | @ | some more exciting     |
+|           |   |  prose |
+------------------------------------------
+T/
 
     ''')
     IMC.editWidget.setPlainText(utqs)

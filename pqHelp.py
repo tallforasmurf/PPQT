@@ -410,13 +410,14 @@ HTML folios in the side margin is:</p><blockquote>
 by clicking in the proofer column.</p>
 <h2>The Reflow Panel</h2>
 <p>Click the Flow tab to display the Reflow panel.
-This panel has controls related to reflowing paragraphs (TBS: and
-formatting tables) in the ASCII etext (not HTML). Normal paragraphs
-are flowed in a 75-character line. Other types of markup are supported
-similar (but not identically) to guiguts:</p>
+This panel has controls related to reflowing paragraphs and marked-up
+sections in the ASCII etext. (The same markup codes are respected during
+HTML conversion, described later.) Normal paragraphs
+are flowed in a 75-character line. Other markup sections are
+supported as follows:</p>
 <table border='1'>
 <tr><th>Markup</th><th>Usage</th></tr>
-<tr><td><b>/#..#/</b></td><td>Block Quote: paragraphs are reflowed
+<tr><td><b>/Q..Q/</b></td><td>Block Quote: paragraphs are reflowed
 within left and right indents as set in the top row of controls.</td></tr>
 <tr><td><b>/P..P/</b></td><td>Poetry:single lines are indented as given
 in the second row of controls.</td></tr>
@@ -424,40 +425,115 @@ in the second row of controls.</td></tr>
 by an amount specified in the third control, otherwise no change.</td></tr>
 <tr><td><b>/C..C/</b></td><td>Centering: single lines are indented so
 as to center on the 75-char line, with at least a 2-space indent.</td></tr>
-<tr><td><b>/U..U/</b></td><td>Unsigned list: lines are indented 2; lines
-that reach 71 are folded and indented 4.</td></tr>
-<tr><td><b>/R..R/</b></td><td>All contained lines are aligned right, for
-example as a signature or the attribution for a block quote.
+<tr><td><b>/U..U/</b></td><td>Unsigned list: text is reflowed by paragraphs
+with the first line of each paragraph indented 2 and others indented 4.</td></tr>
+<tr><td><b>/R..R/</b></td><td>Each line is aligned right, for the
+heading of a letter, a signature or the source of a quote.
 <tr><td><b>/X..X/</b></td><td>Left entirely alone.</td></tr>
+<tr><td><b>/T..T/</b><br /><b>/TM../T</b></td>
+<td>Table formatting, see discussion below</td>
 </table>
-<p>Set the switches on the left center to skip over special sections.</p>
-<p>The top row of controls set the default indents for block quotes.
-The <i>First</i> indent applies to the first line of a paragraph;
-<i>Left</i> to the other lines.
-The second row of controls set the indents for poetry, in which the <i>First</i>
-indent applies to every line; the <i>Left</i> indent is used only if a line
-is too long to fit in 75 chars and is folded.</p>
-<p>As in guiguts, you can set the indents for a particular section by
-putting one to three numbers in brackets on the top markup.
-The syntax is <b>[</b><i>left</i><b>.</b><i>first</i><b>,</b><i>right</i><b>]</b> with the
-<i>first</i> and <i>right</i> optional.
-For example <b>/#[6]</b> starts a blockquote with a <i>Left</i> indent of 6;
-<b>/#[6.12]</b> specifies <i>Left</i> of 6 but <i>First</i> of 12; 
-<b>/#[8,8]</b> has <i>Left</i> and <i>Right</i> both 8; and
-<b>/#[8.4,0]</b> has  <i>Left</i> 8,  <i>First</i> 4 (exdented), and
- <i>Right</i> 0. When omitted in the markup, <i>First</i> and <i>Right</i> 
- come from the panel controls. PPQT supports this on all markup codes,
- not just block quotes; although only the <i>First</i> value is
- meaningful for <b>/C</b> or <b>/*</b>, and only the <i>Right</i>
- value matters for <b>/R</b>.</p>
+<p>Set the switches on the left center to skip over special sections. For example set the skip-Tables checkbox and /T markup is treated the same as /X and  left alone.</p>
 <p>For Centered text, setting the "longest line+2" button adjusts
-the section as far to the left as possible leaving a 2-space indent.</p>
+the section as far to the left as possible leaving a 2-space indent.
+If the button is not set, each line is centered on 75 spaces, which
+may produce a deep left margin.</p>
 <p>Normally you reflow after removing &lt;i>, &lt;b>, and &lt;sc> markup.
 However you can preview reflow while these are still in place by setting
 the controls on the right center. For example if &lt;sc> markup will
 be converted to uppercase, set the control to treat this markup as 0 length.</p>
-<p>TBS: controls for removing line separators interactively. Controls for 
-formatting tables marked up as /T..T/.</p>
+<h3>Indents</h3>
+<p>The top row of controls set the default indents for block quotes.
+The <i>First</i> indent applies to the first line of a paragraph;
+<i>Left</i> to the other lines. The <i>Right</i> indent causes lines to
+be shorter than 75 by this amount.</p>
+<p>The second row of controls set the indents for poetry, in which the <i>First</i>
+indent applies to every line; the <i>Left</i> indent is used only if a line
+is too long to fit in 75 chars and is folded.</p>
+<p>You can specify the First, Left and/or Right indent for any section
+by writing <b>F:</b><i>nn</i> <b>L:</b><i>nn</i> <b>R:</b><i>nn</i> following
+the start of the markup. For example <tt>/Q F:8 L:6</tt> starts a 
+block-quote markup with those margins, overriding the <i>First</i> and <i>Left</i> margins set with the visible controls, but using the <i>Right</i> from the control.</p>
+<p>You can add these explicit indent values on Quote, Poetry and List markups. You can
+also use them on Right markup but only the <b>R:</b><i>nn</i> is used.
+You can use them on no-reflow (/*) markup but only the <b>L:</b><i>nn</i> is used.</p>
+<h3>Nesting Markups</h3>
+<p>To a limited degree you can nest the markups. For example you can nest
+a /P poetry section within a /Q block quote section or a /U list section.
+You can nest a /R right align section in poetry or a quote. Multiple
+levels of nesting (/R within /P within /Q) are possible. The F/L/R indents
+for a nested section are taken relative to the indents for its containing section.</p>
+<h3>Tables</h3>
+PPQT treats tables as a special kind of reflow. You mark off the data lines
+of the table with <b>/T..T/</b>. The logical columns within a row are separated
+in one of two ways: by strings of two or more spaces, or with stiles (|).</p>
+<p>A single-line table has one table row per text line. Here is a simple table with two rows and two columns.</p>
+<pre>/T
+column 1    755.00
+another row  2000.00
+T/</pre><p>A multi-line table has one or more text lines per logical row,
+and the rows are separated by blank lines. The markup starts with <b>/TM</b>.
+Here is a multiline table, a typical table of contents:</p>
+<pre>/TM
+Introduction.—The Present Need   xiii
+
+Chapter I. Applied Art    1
+
+Chapter IV. The Nature and Properties of Clay   29
+T/
+</pre>
+<p>For the default markup PPQT makes the table 75 characters wide (or less
+if it is nested in another markup), aligns the column text left, and divides the
+columns roughly in proportion to their contents. You can specify detailed
+controls on the opening markup line.</p>
+<p>Specify table properties with <b>T(</b><i>properties</i><b>)</b> where the
+<i>properties</i> can be:</p>
+<ul><li><b>W:</b><i>nn</i> for the width of the table.</li>
+<li><b>S:'|'</b> (a stile in single quotes) to have the right side of the finished table be a column of
+stile characters.</li>
+<li><b>T:'-'</b> to have the top line of the table be a row of hyphens.</li>
+</ul>
+<p>For example <tt>/TM T(W:50)</tt> specifies a table width of 50.</p>
+<p>Set the defaults for all columns with <b>C(</b><i>properties</i><b>)</b>, where
+the <i>properties</i> can be:</p>
+<ul><li><b>W:</b><i>nn</i> for the minimum width of every column.</li>
+<li><b>A:R/L/C</b> for align text left, right or center in the cell.</li>
+<li><b>B:'-'</b> to have each cell have a line of hyphens under it.</li>
+<li><b>S:'|'</b> to have the left side of each column be a column of stiles.</li>
+</ul>
+<p>You can set the width and alignment properties (only) of a specific
+column <i>n</i> by writing <i>n</i><b>(</b><i>properties</i><b>)</b>.
+Here is a fully-specified table before reflow:</p>
+<pre>/TM TABLE(TOP:'-' WIDTH:40 SIDE:'|') COL(B:'-' S:'|') 2(A:R W:12)
+cell  cell   now is the time for all 
+one   two    good parties to end     
+
+row 2 cell  @  some more exciting     
+                prose 
+T/</pre>
+<p>and after reflow:</p>
+<pre>/TM TABLE(TOP:'-' WIDTH:40 SIDE:'|') COL(B:'-' S:'|') 2(A:R W:12)
+----------------------------------------
+|cell one |    cell two|now is the time|
+|         |            |for all good   |
+|         |            |parties to end |
+----------------------------------------
+|row 2    |           @|some more      |
+|cell     |            |exciting       |
+|prose    |            |               |
+----------------------------------------
+T/</pre>
+<p>You can omit the contents of empty cells on the right end of a row. However, you cannot leave blank a cell or cells within a row, or PPQT will assign
+text to the wrong column, as in the example above where "prose" fell
+to column 1. To fill in for a cell that is logically empty,
+use a single @ character, as in the above example.</p>
+<p>PPQT assigns horizontal space to columns using some brain-dead heuristics.
+To get exactly the spacing you want, specify the width of the table and
+of each column individually.</p>
+<p>As suggested by the example, you can spell out the names of properties,
+for example <tt>WIDTH:50</tt> instead of <tt>W:50</tt>. But actually, only
+the initial letter is checked, so <tt>WATERMELON:50</tt> works, too.</p>
+<p>TBS: controls for removing line separators interactively.</p>
 <h2>The Preview Panel</h2>
 <p>Click the Pvw tab to display the HTML Preview panel. Whenever
 you click the Refresh button on this panel, the complete contents of the
