@@ -30,7 +30,7 @@ __license__ = '''
 Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
 http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
-from PyQt4.QtCore import ( QChar, Qt, QString, QUrl, SIGNAL)
+from PyQt4.QtCore import ( QChar, QPoint, Qt, QString, QUrl, SIGNAL)
 from PyQt4.QtGui import (
     QFont,
     QPushButton,
@@ -66,15 +66,16 @@ class htmlPreview(QWidget):
 	self.connect(self.preview,SIGNAL("loadStarted()"),self.loadStarts )
 	self.connect(self.preview,SIGNAL("loadProgress(int)"),self.loadProgresses )
 	self.connect(self.preview,SIGNAL("loadFinished(bool)"),self.loadEnds )
+	self.scrollPosition = QPoint(0,0)
     
     # refresh button clicked. Get the current scroll position (a QPoint that
     # reflects the position of the scrollbar "thumb" in the webview)
-    # from the QWebFrame associated with the QWebPage displayed in our
-    # QWebView. Then reset the HTML and scroll back to the same point.
+    # from the QWebFrame -- associated with the QWebPage -- displayed in our
+    # QWebView -- and save it. See loadEnds() for use.
+    # Then reload the HTML contents from the editor.
     def refresh(self):
-	scrollpos = self.preview.page().mainFrame().scrollPosition()
+	self.scrollPosition = self.preview.page().mainFrame().scrollPosition()
 	self.setHtml(IMC.editWidget.toPlainText()) # see setHtml below!
-	self.preview.page().mainFrame().setScrollPosition(scrollpos)
 
     # handle the load-in-progress signals by running our main window's
     # progress bar
@@ -84,8 +85,13 @@ class htmlPreview(QWidget):
 	pqMsgs.rollBar(amt)
     def loadEnds(self,bool):
 	pqMsgs.endBar()
-	if not bool:
+	if bool:
+	    # load was ok, reset scroll position now the rendering is finished
+	    self.preview.page().mainFrame().setScrollPosition(self.scrollPosition)
+	else:
 	    pqMsgs.warningMsg("Some problem loading html")
+		
+
 
     # provide simpler access to the web view's setHtml method. Provide a base
     # url which is the file path to where the image subdirectory should be.
