@@ -128,6 +128,7 @@ class MainWindow(QMainWindow):
         self.connect(self, SIGNAL("docWillChange"), self.pagePanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.pagePanel.docHasChanged)   
         self.flowPanel = pqFlow.flowPanel()
+        IMC.flowPanel = self.flowPanel # make flow globally accessible
         self.tabSet.addTab(self.flowPanel, u"Fl&ow")
         self.connect(self, SIGNAL("shuttingDown"), self.flowPanel.shuttingDown)
         # Create the html Preview Panel - it's simple, needs no signals
