@@ -165,6 +165,8 @@ pqPages.IMC = IMC
 
 import pqFlow # text reflow
 pqFlow.IMC = IMC
+import pqTable
+pqTable.IMC = IMC
 
 #import pqFoot # footnote management
 # pqFoot.IMC = IMC
