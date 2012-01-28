@@ -10,7 +10,8 @@ Provide a simple HTML Preview using a QWebView widget. The panel consists
 of a Refresh button and a WebView. On Refresh we get the
 editor's plain text and stuff it into the webview as HTML. We use the 
 loadstarted, loadprogress, and loadended signals as they are intended, to
-roll the progress bar.
+roll the progress bar. (Note: to date, this has always finished so fast
+the progress bar is never really visible. It is quick!)
 
 We also provide a function for getting the plain text from the displayed
 web page, this lets us extract the plain text from an HTML document
@@ -31,13 +32,14 @@ http://creativecommons.org/licenses/by-nc-sa/3.0/
 '''
 from PyQt4.QtCore import ( QChar, Qt, QString, QUrl, SIGNAL)
 from PyQt4.QtGui import (
+    QFont,
     QPushButton,
     QHBoxLayout,
     QVBoxLayout,
     QWidget
 )
 from PyQt4.QtWebKit import(
-    QWebFrame, QWebPage, QWebView
+    QWebFrame, QWebPage, QWebView, QWebSettings
 )    
 import pqMsgs
 
@@ -50,6 +52,9 @@ class htmlPreview(QWidget):
 	hbox.addStretch(1)
 	vbox = QVBoxLayout()
 	vbox.addLayout(hbox,0)
+	settings = QWebSettings.globalSettings()
+	settings.setFontFamily(QWebSettings.StandardFont, 'Palatino')
+	settings.setFontSize(QWebSettings.DefaultFontSize, 16)
 	self.preview = QWebView(self)
 	vbox.addWidget(self.preview,1)
 	self.setLayout(vbox)
@@ -62,12 +67,13 @@ class htmlPreview(QWidget):
 	self.connect(self.preview,SIGNAL("loadProgress(int)"),self.loadProgresses )
 	self.connect(self.preview,SIGNAL("loadFinished(bool)"),self.loadEnds )
     
-    # refresh button clicked. Get the current scroll position (a QPoint)
+    # refresh button clicked. Get the current scroll position (a QPoint that
+    # reflects the position of the scrollbar "thumb" in the webview)
     # from the QWebFrame associated with the QWebPage displayed in our
     # QWebView. Then reset the HTML and scroll back to the same point.
     def refresh(self):
 	scrollpos = self.preview.page().mainFrame().scrollPosition()
-	self.setHtml(IMC.editWidget.toPlainText())
+	self.setHtml(IMC.editWidget.toPlainText()) # see setHtml below!
 	self.preview.page().mainFrame().setScrollPosition(scrollpos)
 
     # handle the load-in-progress signals by running our main window's
