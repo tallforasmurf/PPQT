@@ -398,7 +398,7 @@ the folios in the original book.</p>
 <h3>Inserting Folio Text</h3>
 <p>At the top of the panel is a text-entry field and an Insert button.
 Use these to insert a text pattern at the start of every page (except
-pages for which the Action is Skip folio). The text pattern may contain <tt>\n</tt> to insert a line-break, and it may contain <tt>%f</tt> to insert the
+pages for which the Action is Skip folio). The text pattern may contain <tt>\\n</tt> to insert a line-break, and it may contain <tt>%f</tt> to insert the
 folio number for that page. Insert
 any unique pattern that you can extend later with regular expression
 replacements, for example <tt>[=%f=]</tt>. The full-on pattern for
@@ -411,38 +411,45 @@ by clicking in the proofer column.</p>
 <h2>The Reflow Panel</h2>
 <p>Click the Flow tab to display the Reflow panel.
 This panel has controls related to reflowing paragraphs and marked-up
-sections in the ASCII etext. (The same markup codes are respected during
-HTML conversion, described later.) Normal paragraphs
-are flowed in a 75-character line. Other markup sections are
+sections in the ASCII etext, and for HTML conversion.
+</p>
+<h3>Markup Codes</h3>
+<p>Use the following codes to mark sections for special treatment in the
+reflow of ASCII etext and during HTML conversion. During reflow, normal paragraphs are flowed in a 75-character line. Other markup sections are
 supported as follows:</p>
 <table border='1'>
 <tr><th>Markup</th><th>Usage</th></tr>
 <tr><td><b>/Q..Q/</b></td><td>Block Quote: paragraphs are reflowed
 within left and right indents as set in the top row of controls.</td></tr>
+<tr><td><b>/U..U/</b></td><td>Unsigned list: text is reflowed by paragraphs
+with the first line of each paragraph indented 2 and others indented 4.</td></tr>
 <tr><td><b>/P..P/</b></td><td>Poetry:single lines are indented as given
 in the second row of controls.</td></tr>
+<tr><td><b>/R..R/</b></td><td>Each line is aligned right, for the
+heading of a letter, a signature or the source of a quote.
 <tr><td><b>/*..*/</b></td><td>No-flow: the entire section may be indented
 by an amount specified in the third control, otherwise no change.</td></tr>
 <tr><td><b>/C..C/</b></td><td>Centering: single lines are indented so
 as to center on the 75-char line, with at least a 2-space indent.</td></tr>
-<tr><td><b>/U..U/</b></td><td>Unsigned list: text is reflowed by paragraphs
-with the first line of each paragraph indented 2 and others indented 4.</td></tr>
-<tr><td><b>/R..R/</b></td><td>Each line is aligned right, for the
-heading of a letter, a signature or the source of a quote.
-<tr><td><b>/X..X/</b></td><td>Left entirely alone.</td></tr>
 <tr><td><b>/T..T/</b><br /><b>/TM../T</b></td>
 <td>Table formatting, see discussion below</td>
+<tr><td><b>/X..X/</b></td><td>Left entirely alone.</td></tr>
 </table>
-<p>Set the switches on the left center to skip over special sections. For example set the skip-Tables checkbox and /T markup is treated the same as /X and  left alone.</p>
+<h3>ASCII Reflow</h3>
+<p>Select a portion of text and click Reflow Now: Selection, or 
+click Document to reflow the whole document. Reflow is a single
+undo/redo operation. Before doing it you can
+set the switches on the left center to skip over special sections. For example set the skip-Tables checkbox and /T markup is treated the same as /X and  left alone. During reflow, the markup codes are retained and you can
+apply reflow multiple times without harm.</p>
 <p>For Centered text, setting the "longest line+2" button adjusts
-the section as far to the left as possible leaving a 2-space indent.
+a centered section as far to the left as possible leaving a 2-space indent.
 If the button is not set, each line is centered on 75 spaces, which
 may produce a deep left margin.</p>
 <p>Normally you reflow after removing &lt;i>, &lt;b>, and &lt;sc> markup.
 However you can preview reflow while these are still in place by setting
 the controls on the right center. For example if &lt;sc> markup will
 be converted to uppercase, set the control to treat this markup as 0 length.</p>
-<h3>Indents</h3>
+<h4>Indents</h4>
 <p>The top row of controls set the default indents for block quotes.
 The <i>First</i> indent applies to the first line of a paragraph;
 <i>Left</i> to the other lines. The <i>Right</i> indent causes lines to
@@ -454,16 +461,15 @@ is too long to fit in 75 chars and is folded.</p>
 by writing <b>F:</b><i>nn</i> <b>L:</b><i>nn</i> <b>R:</b><i>nn</i> following
 the start of the markup. For example <tt>/Q F:8 L:6</tt> starts a 
 block-quote markup with those margins, overriding the <i>First</i> and <i>Left</i> margins set with the visible controls, but using the <i>Right</i> from the control.</p>
-<p>You can add these explicit indent values on Quote, Poetry and List markups. You can
-also use them on Right markup but only the <b>R:</b><i>nn</i> is used.
+<p>You can write these explicit indent values on Quote, Poetry and List markups. You can also use them on Right markup but only the <b>R:</b><i>nn</i> is used.
 You can use them on no-reflow (/*) markup but only the <b>L:</b><i>nn</i> is used.</p>
-<h3>Nesting Markups</h3>
+<h4>Nesting Markups</h4>
 <p>To a limited degree you can nest the markups. For example you can nest
 a /P poetry section within a /Q block quote section or a /U list section.
 You can nest a /R right align section in poetry or a quote. Multiple
 levels of nesting (/R within /P within /Q) are possible. The F/L/R indents
 for a nested section are taken relative to the indents for its containing section.</p>
-<h3>Tables</h3>
+<h4>ASCII Tables</h4>
 PPQT treats tables as a special kind of reflow. You mark off the data lines
 of the table with <b>/T..T/</b>. The logical columns within a row are separated
 in one of two ways: by strings of two or more spaces, or with stiles (|).</p>
@@ -475,25 +481,27 @@ T/</pre><p>A multi-line table has one or more text lines per logical row,
 and the rows are separated by blank lines. The markup starts with <b>/TM</b>.
 Here is a multiline table, a typical table of contents:</p>
 <pre>/TM
-Introduction.—The Present Need   xiii
+Introduction.--The Present Need   xiii
 
 Chapter I. Applied Art    1
 
-Chapter IV. The Nature and Properties of Clay   29
+Chapter IV. The Nature and
+Properties of Clay   29
 T/
 </pre>
-<p>For the default markup PPQT makes the table 75 characters wide (or less
+<p>By default PPQT makes a table 75 characters wide (less
 if it is nested in another markup), aligns the column text left, and divides the
 columns roughly in proportion to their contents. You can specify detailed
-controls on the opening markup line.</p>
-<p>Specify table properties with <b>T(</b><i>properties</i><b>)</b> where the
+controls on the opening markup line.
+Specify table properties with <b>T(</b><i>properties</i><b>)</b> where the
 <i>properties</i> can be:</p>
 <ul><li><b>W:</b><i>nn</i> for the width of the table.</li>
 <li><b>S:'|'</b> (a stile in single quotes) to have the right side of the finished table be a column of
 stile characters.</li>
 <li><b>T:'-'</b> to have the top line of the table be a row of hyphens.</li>
 </ul>
-<p>For example <tt>/TM T(W:50)</tt> specifies a table width of 50.</p>
+<p>For example <tt>/TM T(W:50)</tt> specifies a multi-line table with a
+width of 50.</p>
 <p>Set the defaults for all columns with <b>C(</b><i>properties</i><b>)</b>, where
 the <i>properties</i> can be:</p>
 <ul><li><b>W:</b><i>nn</i> for the minimum width of every column.</li>
@@ -523,16 +531,49 @@ T/</pre>
 |prose    |            |               |
 ----------------------------------------
 T/</pre>
-<p>You can omit the contents of empty cells on the right end of a row. However, you cannot leave blank a cell or cells within a row, or PPQT will assign
-text to the wrong column, as in the example above where "prose" fell
-to column 1. To fill in for a cell that is logically empty,
-use a single @ character, as in the above example.</p>
+<p>You can omit the contents of empty cells on the right end of a row. However, you cannot leave blank a cell or cells on any line within a row, or PPQT will assign
+text to the wrong column (as in the example above where "prose" fell
+from column 3 to column 1 because column 1 & 2 were left blank).
+To fill in for a cell that is logically empty,
+use a single @ character on every line, as in the above example.</p>
 <p>PPQT assigns horizontal space to columns using some brain-dead heuristics.
 To get exactly the spacing you want, specify the width of the table and
 of each column individually.</p>
 <p>As suggested by the example, you can spell out the names of properties,
 for example <tt>WIDTH:50</tt> instead of <tt>W:50</tt>. But actually, only
 the initial letter is checked, so <tt>WATERMELON:50</tt> works, too.</p>
+<h3>HTML Conversion</h3>
+<p>ASCII reflow is designed so you can do it repeatedly. HTML conversion
+is a one-shot deal, it wipes out the reflow markup lines and the spacing
+of tables. Select a range of text and click HTML Convert: Selection, or
+click Document to do the whole thing. HTML conversion is a single
+undo/redo operation. During conversion the following changes are made
+for the different markup types.</p>
+<table border='1' style='width:100%;'>
+<tr><th style='width:25%;'>Markup</th><th>Converted to:</th></tr>
+<tr><td>text paragraphs</td><td><tt>&lt;p></tt><i>para text</i><tt>&lt;/p></tt></td></tr>
+<tr><td><b>/Q</b></td><td><tt>&lt;div class="blockquote"></tt></tr>
+<tr><td>text in /Q..Q/</td><td><tt>&lt;p></tt><i>para text</i><tt>&lt;/p></tt></td></tr>
+<tr><td><b>Q/</b></td><td><tt>&lt;/div></tt></tr>
+<tr><td><b>/U</b></td><td><tt>&lt;ul></tt></tr>
+<tr><td>text in /U..U/</td><td><tt>&lt;li></tt><i>para text</i><tt>&lt;/li></tt></td></tr>
+<tr><td><b>U/</b></td><td><tt>&lt;/ul></tt></tr>
+<tr><td><b>/R</b></td><td><tt>&lt;div class="ralign"></tt></tr>
+<tr><td>text in /R..R/</td><td><tt>&lt;p></tt><i>each line of text</i><tt>&lt;/p></tt></td></tr>
+<tr><td><b>R/</b></td><td><tt>&lt;/div></tt></tr>
+<tr><td><b>/X</b>, <b>/C</b>, <b>/*</b></td><td><tt>&lt;pre></tt></td></tr>
+<tr><td>text in these</td><td>not touched</td></tr>
+<tr><td><b>X/</b>, <b>C/</b>, <b>*/</b></td><td><tt>&lt;/pre></tt></td></tr>
+<tr><td><b>/T</b>, <b>/TM</b></td><td><tt>&lt;table></tt> or <tt>&lt;table style="width:<i>pp</i>%;"></tt> where <i>pp</i> is the specified table width/75</tt></td></tr>
+<tr><td><b>T/</b></td><td><tt>&lt;/table></tt></td>
+</table>
+<p>Within a table, the cell values are enclosed appropriately in <tt>&lt;tr></tt> and <tt>&lt;td></tt> codes. Where a specific width was given for a column, the first row of that column is coded <tt>&lt;td style="width:<i>pp</i>%;"></tt> where
+<i>pp</i> is based on the specified width divided into the table width.
+When a column has right alignment or center alignment, every cell in it is 
+coded with <tt>class="r"</tt> or <tt>class="c"</tt> respectively.
+This assumes CSS of<pre>td.r {text-align:right}
+td.c {text-align:center}</pre>
+
 <p>TBS: controls for removing line separators interactively.</p>
 <h2>The Preview Panel</h2>
 <p>Click the Pvw tab to display the HTML Preview panel. Whenever
@@ -541,11 +582,9 @@ Edit document are copied into this panel and displayed as HTML.
 The HTML rendering is done by the open-source WebKit (www.webkit.org), the same HTML engine used by Apple's Safari and by KDE. It fully supports CSS and
 standard HTML code.</p>
 <p>The base URL for image references is the base path of the book text file,
-so the images folder should be located at the same place as the book text.</p>
+so the <tt>images</tt> folder should be located at the same place as the book text.</p>
 <h2>The Footnote Panel</h2>
 <p>TBS Mucho! Controls for validating and formatting footnotes.</p>
-<h2>The HTML Panel</h2>
-<p>Mondo TBS. Controls for converting to HTML</p>
 </body>
 </html>'''
 

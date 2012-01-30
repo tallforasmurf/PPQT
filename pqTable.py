@@ -15,13 +15,18 @@ The syntax of table code is
 table rows as single lines
 T/
 
-/t optional-specs
+/TM optional-specs
 table rows as multiple lines
 
 separated by blank lines
-t/
+T/
 
 The optional-specs determine the layout of the table and of columns.
+Note this syntax has been considerably simplified and reduced in function
+from my original design. Some features could perhaps be added back in future:
+  * ability to specify more elaborate cell-border strings than '-'
+  * ability to specify junction characters e.g. '+' or a set of box-drawing ones.
+  * decimal alignment for cell contents.
 
 Properties of a table as a whole:
     width: minimum count of characters,
@@ -468,6 +473,10 @@ class tableCells:
 # 'B' : the count of blank lines that preceded this unit - used to spot
 #       break between rows in a multiline table
 
+# global regex used to split data line on delimiters which are either
+# 2+ spaces or a stile with optional spaces.
+splitRE = QRegExp(u'( {2,}| *\| *)')
+
 def tableReflow(tc,doc,unitList):
     # Note the properties of the table including specified width, multiline etc.
     tprops = tableProperties(getLineQs(tc,doc,unitList[0]['A']))
@@ -476,9 +485,6 @@ def tableReflow(tc,doc,unitList):
     targetTableWidth = tprops.tableWidth()
     if targetTableWidth is None:
         targetTableWidth = 75 - unitList[0]['F']
-    # save regex used to split data line on delimiters which are either
-    # 2+ spaces or a stile with optional spaces.
-    splitRE = QRegExp(u'( {2,}| *\| *)')
     # make a table cells storage object
     tcells = tableCells(tprops)
     # note if the table has a hyphenated top line
@@ -737,6 +743,115 @@ def getLineQs(tc,doc,lineNumber):
 def getLineText(tc,doc,lineNumber):
     return unicode(getLineQs(tc,doc,lineNumber))
 
+# OK here we have the much simpler job of converting a /T markup into
+# HTML. Parse the /T[M] line as a tableProperties. From this we can pull
+# the specified table width and any specified column widths. These are
+# converted to percentage values based on the ascii line and inserted as
+# style='width:nn%;'
+# Then collect all the rows into a tableCells object. Read them out
+# row by row and insert them as <tr> and <td> items. Where the column is
+# aligned C or R, we insert class='TC' or class='TR' into the <td>.
+
+def tableHTML(tc,doc,unitList):
+    tprops = tableProperties(getLineQs(tc,doc,unitList[0]['A']))
+    # if the table width was specified, figure its percentage based
+    # on the line width in effect (the table might be nested, e.g.).
+    twpct = None
+    twasc = 75 - unitList[0]['F']
+    if tprops.tableWidth() is not None:
+        twpct = int(100*tprops.tableWidth()/twasc)
+    # Get percent widths for any columns that were given a W: spec
+    # syntax only supports cols 1-9. Use a dict, not a list, so if the actual
+    # data has >9 cols we don't try to test it.
+    cwpct = {}
+    for c in range(1,10):
+        if tprops.columnWidth(c) is not None:
+            cwpct[c] = int(100*tprops.columnWidth(c)/twasc)
+    # create a tcells object to store column data
+    tcells = tableCells(tprops)
+    # note if the table has a hyphenated top line or cell dividers
+    topChar = tprops.tableTopString()
+    botChar = tprops.columnBottomString()
+    # decide what work units to process. The first and last are the markup
+    # start/end units, skip those. If there is a top-line, skip that also.
+    work = range(1,len(unitList)-1)
+    if topChar is not None:
+        qs = getLineQs(tc,doc,unitList[1]['A']) # fetch text of first line
+        if qs.size() == qs.count(QChar(topChar)):
+            # top string is spec'd and there is a top string of ---
+            del work[0] # don't process it
+    r = 1 # current row number 1-n, used to store in tcells
+    for u in work:
+        unit = unitList[u]
+        qs = getLineQs(tc,doc,unit['A'])
+        if botChar is not None:
+            if qs.size() == qs.count(QChar(botChar)):
+                # this line consists entirely of hyphens, treat as blank
+                if tprops.isMultiLine():
+                    r += 1 # start a new multiline row
+                continue # ignoring the divider line
+        # line is not all-hyphens (or hyphens not spec'd), and not all-blank
+        # because all-blanks are not included as work units, but if unit['B']
+        # is nonzero it was preceded by a blank line.
+        if tprops.isMultiLine() and (unit['B'] > 0):
+            r += 1 # start a new multiline row
+        # Bust the line into pieces based on spaces and/or stiles, and
+        # stow the pieces numbered sequentially as columns. When stiles are
+        # used for the outer columns, .split returns null strings which we discard.
+        qsl = qs.split(splitRE)
+        if qsl[0] == u'' :
+            qsl.removeAt(0)
+        if qsl[qsl.count()-1] == u'':
+            qsl.removeAt(qsl.count()-1)
+        c = 1
+        for cqs in qsl:
+            tcells.store(r,c,cqs)
+            c += 1
+        # If this is a single-line table, increment the row number.
+        if tprops.isSingleLine():
+            r += 1
+    # All the cell data are stored, prepare the table text as a big string
+    # starting with the <table> or <table style='width:p%;'> line
+    if twpct is None:
+        t = u'<table>'
+    else:
+        t = u'<table style="width:{0:d}%;">'.format(twpct)
+    tqs = QString(t)
+    tqs.append(IMC.QtLineDelim)
+    # Build up the table row by row. Handle alignment with a class,
+    # <td> for left, <td class='r'> or <td class='c'>.  In the first row,
+    # add <style='width:pp%;'> for columns with specified widths.
+    tds = u'<td{0}{1}>'
+    for r in range(1,tcells.rowCount()+1):
+        tqr = QString(u'<tr>')
+        for c in range(1,tcells.columnCount()+1):
+            al = tprops.columnAlignment(c)
+            if al is None: al = CalignLeft
+            if al == CalignLeft: al = u''
+            elif al == CalignRight: al = u' class="r"'
+            else: al = u' class="c"'
+            wd = u''
+            if (r == 1) and (c in cwpct) :
+                wd = u' style="width:{0:d}%;"'.format(cwpct[c])
+            cqs = tcells.fetch(r,c)
+            td = tds.format(al,wd)
+            tqr.append(QString(td))
+            tqr.append(cqs)
+            tqr.append(QString(u'</td>'))
+        tqr.append(QString(u'</tr>'))
+        tqs.append(tqr)
+        tqs.append(IMC.QtLineDelim)
+    # the </table> was done by realHTML when it saw T/, so replace
+    # the whole table except the last line with the text we have
+    blockA = doc.findBlockByNumber(unitList[0]['A'])
+    blockZ = doc.findBlockByNumber(unitList[-2]['A'])
+    tc.setPosition(blockA.position())
+    tc.setPosition(blockZ.position()+blockZ.length(),QTextCursor.KeepAnchor)
+    tc.insertText(tqs)
+    
+    
+    
+    
 if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt)
@@ -750,14 +865,13 @@ if __name__ == "__main__":
     #IMC.editWidget = QPlainTextEdit()
     #IMC.editWidget.setFont(pqMsgs.getMonoFont())
 
-    tp = tableProperties(u"/t T(A:C T:'-' S:'|') Col(B:'-' S:'|') 3(A:R W:8)")
-    print('ta ',tp.tableAlignment())
+    tp = tableProperties(QString(u"/t T(A:C T:'-' S:'|') Col(B:'-' S:'|') 3(A:R W:8)"))
     print('tw ',tp.tableWidth())
     print('ts ',tp.tableSideString())
     print('tt ',tp.tableTopString())
     print(tp.columnWidth(1))
     print(tp.columnWidth(3))
-    tc = tableCells(tp,True)
+    tc = tableCells(tp)
     tc.store(1,1,QString(' foobar '))
     tc.store(1,2,QString('    999.99'))
     tc.store(1,3,QString('eh?'))
