@@ -6,62 +6,62 @@ from __future__ import unicode_literals
 from future_builtins import *
 '''
 Implement the (re)Flow panel. On this panel are an array of controls
-related to reflowing text, which is only done in the etext, not the HTML.
-Generally reflow means arranging the text of each paragraph to fit
-in the 75-character line. Complicating this are the special markups developed
-for guiguts and one developed by us specifically:
+related to reflowing the ASCII etext, and buttons for HTML conversion.
+
+ASCII reflow means arranging the text of each paragraph to fit in the standard
+75-character line. Complicating this are the special markups pioneered by
+Guiguts and supported here with somewhat different syntax:
+
+/Q .. Q/   Reflow within block-quote margins, with default margins from the
+           control on the panel but which can be set using /Q F:nn L:nn R:nn
+	   in the opening markup line.
+
+/U .. U/   Unsigned list, treated identically to /Q F:2 L:4 but allows
+           explicit F:/L:/R: options as well.
 
 /* .. */   Do not reflow but can be indented by a settable default amount or
-           by specific amount specified in /*[n] on the first line. In HTML
-           guiguts tries (with poor success) to preserve vertical alignment.
+           by specific amount specified in /* L:nn on the first line.
 
-/# .. #/   Reflow within block-quote margins which have a settable default but
-           can be given in /#[left.first,right] markup
+/P .. P/   Indent by 2 spaces, reflow on a single-line basis as poetry. Default
+           margins from the controls but we add /P F:nn L:nn R:nn support.
 
-/P .. P/   Indent by 4 spaces, reflow on a single-line basis as poetry. We add
-           support for /P[left.first,right] markup too
+/C .. C/   Like the Guiguts /f..f/, which guiguts does not reflow or indent.
+           Typically used for title pages etc. We indent the whole by 2 spaces
+	   minimum, and center each line on col 36 by default, but optionally
+	   on the center of the longest line, minimizing the width.
 
-/C .. C/   Like the Guiguts /f..f/, which guiguts does not reflow or indent;
-           supposedly HTML makes it text-align:center. Typically used for title
-           pages etc. We indent the whole by 2 spaces minimum, and center each
-           line on col 36 by default, but optionally on the center of the
-           longest line, minimizing the width of the centered block.
+/X .. X/   Do not reflow, do not indent.
 
-/$ .. $/   Do not reflow, do not indent. In HTML ??
+/R .. R/   Right-aligned text, something missing from Guiguts, convenient
+	   signatures and letter heads.
 
-/L .. L/   Same as /$..$/ in text files; in HTML, treated as unsigned list
-           with each nonempty line as one list item.
+/T .. T/   Single-line table markup
 
-/X .. X/   Same as /$..$/ in text files; in HTML, wrapped in <pre> 
+/TM .. T/  Multi-line table markup. These allow more complex table options
+           which are documented in pqTable.
 
 The reflow markups are always left in place, ensuring that reflow can be
 done multiple times.
 
-/T .. T/   Multi-line table markup TBS
-
-/t .. t/   Single-line table markup TBS
-
-The plan is to do with a static markup what guiguts did with the awesome
-but difficult-to-use ascii table special effects dialog.
-
 The general algorithm of reflow is two-pass. On the first pass we examine the
 document (or selection, no difference) line-by-line from top to bottom. In this
 pass we identify each reflow unit, that is, each block of text to be treated.
-In open text or block quote, a unit is a paragraph delimited by blank lines.
-In poetry, noflow, and centered text, a unit is each single non-empty line.
+In open text, /Q, and /U, a unit is a paragraph delimited by blank lines.
+In other markups a unit is each single non-empty line. Empty lines are counted
+but otherwise ignored.
 
-For each unit we note five items: the first and last text block numbers, the
-first-line indent, the left indent, and the right indent (relative to a 75-char
-line). The indents of course depend on the type of markup we are in at that
-point. All these decisions are made on the first pass and recorded in a list
-of tuples, one for each unit/paragraph.
+For each unit we note several items: the first and last text block numbers;
+the first-line indent, left indent, and right indent (relative to a 75-char
+line); the count of blank lines preceding.. The indents of course depend on
+the type of markup we are in at that point. All these decisions are made on
+the first pass and recorded in a list of dicts, one for each unit/paragraph.
 
 The second pass operates on single units, working from the bottom of the
 document or selection, up. This is so changes in the text will not alter
-the block numbers of text still to be done. For each unit we form a QTextCursor
-for the unit. We pull tokens from the unit text and form a new text as a
-QString with the specified indents. Then we assign the reflowed text string
-as the text of the cursor, replacing the unflowed text with flowed.
+the block numbers of text still to be done. For each unit we pull tokens from
+the unit text and form a new text as a QString with the specified indents.
+Then we insert the reflowed text string to replace the original line(s).
+All updates are done with one QTextCursor set up for a single undo "macro".
 
 In a "pythonic" move we use a "generator" (co-routine) to produce tokens from
 the old text.
@@ -127,7 +127,10 @@ class flowPanel(QWidget):
         #               two radio buttons 75, longest line
         #   doitFrame sunken frame for important buttons
         #      doitHBox
-        #         "Reflow Now" [Selection]  [Whole Document]
+        #         "Reflow Now" [Selection]  [Document]
+	#   htmlFrame sunken frame for two more buttons
+	#      htmlHBox
+	#         "HTML Convert" [Selection]  [Document]
         #
         # TBS: Possibly other groups of controls from gg text menu
         
@@ -238,7 +241,7 @@ class flowPanel(QWidget):
         scHBox.addWidget(self.scCounts[2],0)
         scHBox.addStretch(1)
         tknVBox.addStretch(1)
-        # main buttons
+        # reflow action buttons
         doitGBox = QGroupBox()
         mainLayout.addWidget(doitGBox)
         doitHBox = QHBoxLayout()
@@ -248,12 +251,25 @@ class flowPanel(QWidget):
         doitHBox.addWidget(self.reflowSelSwitch,0)
         self.reflowDocSwitch = QPushButton("Document")
         doitHBox.addWidget(self.reflowDocSwitch,0)
-        doitHBox.addStretch(1)        
-        mainLayout.addStretch(1)
+        doitHBox.addStretch(1) # compress to the left
+	# html action buttons
+        htmlGBox = QGroupBox()
+        mainLayout.addWidget(htmlGBox)
+        htmlHBox = QHBoxLayout()
+        htmlGBox.setLayout(htmlHBox)
+        htmlHBox.addWidget(QLabel("HTML Convert: "),0)
+        self.htmlSelSwitch = QPushButton("Selection")
+        htmlHBox.addWidget(self.htmlSelSwitch,0)
+        self.htmlDocSwitch = QPushButton("Document")
+        htmlHBox.addWidget(self.htmlDocSwitch,0)
+        htmlHBox.addStretch(1)   # compress to the left     
+        mainLayout.addStretch(1) # make compact to the top
         self.connect(self.reflowSelSwitch, SIGNAL("clicked()"),self.reflowSelection)
         self.connect(self.reflowDocSwitch, SIGNAL("clicked()"),self.reflowDocument)
-        self.itbosc = {'it':1,'bo':0,'sc':2}
+        self.itbosc = {'i':1,'b':0,'sc':2}
         self.updateItBoSc()
+        self.connect(self.htmlSelSwitch, SIGNAL("clicked()"),self.htmlSelection)
+        self.connect(self.htmlDocSwitch, SIGNAL("clicked()"),self.htmlDocument)
         self.stgs.endGroup() # and that's that
         
     # convenience subroutine to make a spinbox recovering its value from
@@ -284,13 +300,29 @@ class flowPanel(QWidget):
     # as 0, 1, or as-is (2).
     
     def updateItBoSc(self):
-        self.itbosc['it'] = 0 if self.itCounts[0].isChecked() else \
+        self.itbosc['i'] = 0 if self.itCounts[0].isChecked() else \
             1 if self.itCounts[1].isChecked() else 2
-        self.itbosc['bo'] = 0 if self.boCounts[0].isChecked() else \
+        self.itbosc['b'] = 0 if self.boCounts[0].isChecked() else \
             1 if self.boCounts[1].isChecked() else 2
         self.itbosc['sc'] = 0 if self.scCounts[0].isChecked() else \
             1 if self.scCounts[1].isChecked() else 2
 
+    # FOR REFERENCE here are the actual data access items in the UI:
+    # self.bqIndent[0/1/2].value() for first, left, right
+    # self.poIndent[0/1/2].value() for first, left, right
+    # self.nfLeftIndent.value()
+    # self.ctrOn75.isChecked() versus self.ctrOnLongest.isChecked()
+    # self.itCounts[0/1/2].isChecked() == 0, 1, as-is
+    # self.boCounts[0/1/2].isChecked() == 0, 1, as-is
+    # self.scCounts[0/1/2].isChecked() == 0, 1, as-is
+    # -- the above 3 are also available as self.itbosc['b'/'i'/'sc']
+    # self.skipPoCheck.isChecked()
+    # self.skipBqCheck.isChecked()
+    # self.skipNfCheck.isChecked()
+    # self.skipCeCheck.isChecked()
+    # self.skipTbCheck.isChecked()
+
+    # These slots receive the clicked signal of the action buttons
     def reflowSelection(self):
         tc = IMC.editWidget.textCursor()
         if tc.hasSelection():
@@ -307,30 +339,30 @@ class flowPanel(QWidget):
         endBlock = doc.findBlockByNumber(doc.blockCount()-1)
         self.theRealReflow(topBlock,endBlock)
 
-    # FOR REFERENCE here are the actual data access items:
-    # self.bqIndent[0/1/2].value() for first, left, right
-    # self.poIndent[0/1/2].value() for first, left, right
-    # self.nfLeftIndent.value()
-    # self.ctrOn75.isChecked() versus self.ctrOnLongest.isChecked()
-    # self.itCounts[0/1/2].isChecked() == 0, 1, as-is
-    # self.boCounts[0/1/2].isChecked() == 0, 1, as-is
-    # self.scCounts[0/1/2].isChecked() == 0, 1, as-is
-    # -- the above 3 are also available as self.itbosc['bo'/'it'/'sc']
-    # self.skipPoCheck.isChecked()
-    # self.skipBqCheck.isChecked()
-    # self.skipNfCheck.isChecked()
-    # self.skipCeCheck.isChecked()
-    # self.skipTbCheck.isChecked()
+    def htmlSelection(self):
+        tc = IMC.editWidget.textCursor()
+        if tc.hasSelection():
+            doc = IMC.editWidget.document()
+            topBlock = doc.findBlock(tc.selectionStart())
+            endBlock = doc.findBlock(tc.selectionEnd()-1)
+            self.theRealHTML(topBlock,endBlock)
+        else:
+            pqMsgs.warningMsg("No selection to convert.")
+    
+    def htmlDocument(self):
+        doc = IMC.editWidget.document()
+        topBlock = doc.begin()
+        endBlock = doc.findBlockByNumber(doc.blockCount()-1)
+        self.theRealHTML(topBlock,endBlock)
 
-    # Reflow proceeds in two passes. The first pass, implemented as 
-    # parseText below, scans the text and reduces it to a sequence of
-    # "work units. This method is shared with HTML conversion so it
-    # produces more data than reflow really needs. A work unit is a dict
+    # Reflow proceeds in two passes. The first pass is common to Reflow and
+    # to HTML, and is implemented as parseText below. It scans the text and
+    # reduces it to a sequence of "work units." A work unit is a dict
     # having these members:
     # 'T' : type of work unit, specifically
     #    'P' paragraph or line to reflow within margins F, L, R
-    #    'M' markup of type following starts
-    #    '/' markup  of type following ends
+    #    'M' markup of type noted next begins with this line
+    #    '/' markup of type noted next ends with this line
     # 'M' : the type of markup starting, in effect, or ending:
     #    ' ' no active markup, open text
     #    'Q' block quote
@@ -342,13 +374,12 @@ class flowPanel(QWidget):
     #    'R' right-aligned by lines
     #    'T' single or multiline table
     # 'A' : text block number of start of the unit
-    # 'Z' : text block numberof end of the unit
+    # 'Z' : text block number of end of the unit
     # 'F', 'L', 'R': the desired First, Left and Right margins for this unit,
-    # 'F' and 'R' also apply to single lines
-    # 'W' : valid only in a 'T':'/' end of markup unit, the smallest
-    # existing indent seen in a *, P, or C markup. All lines of a * or P
-    # markup section, or of a C section with "longest line" checked, are
-    # indented by F-W, which may be negative.
+    # 'W' : valid only in end of markup unit, the smallest existing text indent
+    # seen in a *, P, or C markup. Lines of a * or P markup, or C markup with
+    # "longest line" checked, are indented by F-W (which may be negative) thus
+    # removing any existing indent installed from a previous reflow.
     # 'B' : the count of blank lines that preceded this unit, used in Table
     # to detect row divisions and in HTML conversion to detect chapter heads
     # or Poetry stanzas.
@@ -359,7 +390,6 @@ class flowPanel(QWidget):
         unitList = self.parseText(topBlock,endBlock)
         if 0 == len(unitList) :
             return # all-blank? or perhaps an error like unbalanced markup
-        #
 	# Now do the actual reflowing. unitList has all the paras and single
 	# lines to be hacked. Work from end to top. For lines in sections
 	# R, P, *, and C, just adjust the leading spaces. Skip over X, and
@@ -480,54 +510,26 @@ class flowPanel(QWidget):
         tc.endEditBlock() # close the single undo/redo macro
 	# and that's reflow, folks. Barely 800 lines. pih. easy.
 
-    # subroutine to update the PSW with F L R indent values for markups, either
-    # from a list of three numbers passed in (which would typically come from
-    # the UI, but for some markup types, defined literals), or from the optional
-    # F:n L:n R:n syntax after the markup.
-    def getIndents(self, qs, PSW, dfltF, dfltL, dfltR):
-	dbg = unicode(qs)
-	F_RE = QRegExp(u' F\\w*:(\\d+)')
-	L_RE = QRegExp(u' L\\w*:(\\d+)')
-	R_RE = QRegExp(u' R\\w*:(\\d+)')
-	tempF = dfltF
-	if -1 < F_RE.indexIn(qs) : # we see F:n, capture it
-	    (tempF, b) = F_RE.cap(1).toInt()
-	tempL = dfltL
-	if -1 < L_RE.indexIn(qs) : # don't have to check the success boolean
-	    (tempL, b) = L_RE.cap(1).toInt()
-	tempR = dfltR
-	if -1 < R_RE.indexIn(qs) : # .. we know cap(1) is only digits
-	    (tempR, b) = R_RE.cap(1).toInt()
-	# Add the captured or default value into the PSW -- adding because
-	# this markup may be nested in another.
-	PSW['F']+=tempF
-        PSW['L']+=tempL
-        PSW['R']+=tempR
-    
-    def makeUnit(self,type,PSW,ab,zb):
-    	# convenience subroutine just to shorten some code below: return
-    	# a unit record based on the PSW, a type code, and start and end blocks.
-    	return { 'T':type, 'M':PSW['M'], 'A':ab, 'Z':zb,
-                'F':PSW['F'], 'L':PSW['L'], 'R':PSW['R'],
-                'W':PSW['W'], 'B':PSW['B']}
-   
+    # This is the text parser used by theRealReflow and theRealHTML.
+    # Parse a span of text lines into work units, as documented above.
+    # We keep track of the parsing state in a record called PSW (a nostalgic
+    # reference to the IBM 360), a dict with these members:
+    # S : scanning: True, looking for a para, or False, collecting a para
+    # Z : None, or a QString of the end of the current markup, e.g. 'P/'
+    # M : the code of this markup e.g. u'Q'
+    # P : True = reflow by paragraphs, False, by single lines as in Poetry
+    # F, L, R: current first, left, right indents
+    # W, shortest existing indent seen in a no-reflow section
+    # B, count of blank lines skipped ahead of this line/para
+    # Many of these items get copied into each work unit.
+    # 
+    # We permit nesting markups pretty much arbitrarily (nothing can nest
+    # inside /X or /T however). In truth only the nest of /P or /R inside
+    # /Q block quote is really likely. To keep track of nesting we push the
+    # PSW onto a stack when entering a markup, and pop it on exit.
     def parseText(self,topBlock,endBlock):
-	# here we parse a span of text (which may be the whole doc) into a series
-	# of work units. Each unit is a dict, described above.
 	unitList = []
-	# We keep track of the parsing state in a record called PSW (a nostalgic
-	# reference to the IBM 360) which is a dict initialized to:
 	PSW = { 'S': True, 'Z':None, 'M':' ', 'P':True, 'F':0, 'L':0, 'R':0, 'W':75, 'B':0 }
-	# S : scanning: True, looking for a para, or False, collecting a para
-	# Z : None, or a QString of the end of the current markup, 'P/'
-	# M : the code of this markup e.g. u'*'
-	# P : True = reflow by paragraphs, False, by single lines as in Poetry
-	# F, L, R: current first, left, right indents
-	# W, shortest existing indent seen in a no-reflow section
-	# B, count of blank lines skipped ahead of this line/para
-	# we allow nesting markups arbitrarily, altho only the nest of
-	# /P within /Q block quote is really likely or necessary. To keep track
-	# of nesting we push the PSW onto this
 	stack = []
 	# We recognize the start of markup with this RE    
 	markupRE = QRegExp("^/(P|Q|\\*|C|X|U|R|T)")
@@ -563,7 +565,7 @@ class flowPanel(QWidget):
 			PSW['M'] = unicode(markupRE.cap(1)) # u'Q', u'P' etc
 			PSW['Z'] = QString(PSW['M']+u'/') # endmark, 'Q/' etc
 			# make a start-markup work unit for this line
-			unitList.append(self.makeUnit('M',PSW,thisBlockNumber,0))
+			unitList.append(self.makeUnit('M',PSW,thisBlockNumber,thisBlockNumber))
 			PSW['B'] = 0 # clear the blank-line-before count
 			if PSW['M'] == u'Q' and (not self.skipBqCheck.isChecked()) :
 			    # Enter a block quote section
@@ -621,7 +623,7 @@ class flowPanel(QWidget):
 		    elif PSW['Z'] is not None and qs.startsWith(PSW['Z']):
 			# we have found end of markup with no paragraph working
 			# document it with an end-markup unit
-			unitList.append(self.makeUnit('/',PSW,thisBlockNumber,0))
+			unitList.append(self.makeUnit('/',PSW,thisBlockNumber,thisBlockNumber))
 			# and return to what we were doing before the markup
 			PSW = stack.pop()
 			PSW['B'] = 0
@@ -678,7 +680,7 @@ class flowPanel(QWidget):
 			unitList.append(
 			    self.makeUnit('P',PSW,firstBlockNumber,thisBlockNumber-1))
 			# and also put in a work unit for the end of the markup
-			unitList.append(self.makeUnit('/',PSW,0,0) )
+			unitList.append(self.makeUnit('/',PSW,thisBlockNumber,thisBlockNumber) )
 		        # and return to what we were doing before the markup
 		        PSW = stack.pop()
 		        PSW['B'] = 0
@@ -710,6 +712,178 @@ class flowPanel(QWidget):
 	pqMsgs.endBar()
 	return unitList
 
+    # subroutine to update the PSW with F L R indent values for markups, either
+    # from a list of three numbers passed in (which would typically come from
+    # the UI, but for some markup types, defined literals), or from the optional
+    # F:n L:n R:n syntax after the markup.
+    def getIndents(self, qs, PSW, dfltF, dfltL, dfltR):
+	dbg = unicode(qs)
+	F_RE = QRegExp(u' F\\w*:(\\d+)')
+	L_RE = QRegExp(u' L\\w*:(\\d+)')
+	R_RE = QRegExp(u' R\\w*:(\\d+)')
+	tempF = dfltF
+	if -1 < F_RE.indexIn(qs) : # we see F:n, capture it
+	    (tempF, b) = F_RE.cap(1).toInt()
+	tempL = dfltL
+	if -1 < L_RE.indexIn(qs) : # don't have to check the success boolean
+	    (tempL, b) = L_RE.cap(1).toInt()
+	tempR = dfltR
+	if -1 < R_RE.indexIn(qs) : # .. we know cap(1) is only digits
+	    (tempR, b) = R_RE.cap(1).toInt()
+	# Add the captured or default value into the PSW -- adding because
+	# this markup may be nested in another.
+	PSW['F']+=tempF
+        PSW['L']+=tempL
+        PSW['R']+=tempR
+    
+    def makeUnit(self,type,PSW,ab,zb):
+    	# convenience subroutine just to shorten some code: return
+    	# a unit record based on the PSW, a type code, and start and end blocks.
+    	return { 'T':type, 'M':PSW['M'], 'A':ab, 'Z':zb,
+                'F':PSW['F'], 'L':PSW['L'], 'R':PSW['R'],
+                'W':PSW['W'], 'B':PSW['B']}
+
+    # Do HTML conversion. Use the textParse method to make a list of units.
+    # Process the list of units from bottom up, replacing as we go:
+    #  Q/   -->   </div>
+    #  /Q   -->   <div class='blockquote'>
+    #  R/   -->   </div>
+    #  /R   -->   <div class='ralign'>
+    #  U/   -->   </ul>
+    #  /U   -->   <ul>
+    #  P/   -->   </div></div>
+    #  /P   -->   <div class='poetry'><div class='stanza'>
+    #  T/   -->   </table>
+    #  /T[M] -->  <table>
+    #  */, X/, C/  --> </pre>
+    #  /*, /X, /C  --> <pre>
+    #
+    # We "enter" a markup at its end (Q/, T/, etc) and on entering push the
+    # prior markup type. Within a markup we insert bookend texts around each
+    # work unit based on the markup:
+    #  Q/, R/, and open code: <p> and </p>
+    #  U/ : <li> and </li>
+    #  P/ : <span class="iX"> and </span><br /> where "iX" is based on F-W
+    #  */, X/, C/, and T/ -- None
+    # On seeing T/ we note the unit number ending the table; on /T[M] we pass
+    # the slice of table units from /T to T/ to pqTable.tableHTML.
+    # The B, preceding blank lines, value of a work unit is used as follows:
+    # With poetry, B>0 means inserting </div><div class='stanza'>
+    # In open text, B==4 means using <h2> and </h2> as paragraph bookends;
+    # but B==2 when the next-higher unit has B!=4 means use <h3> and </h3>
+    # Globals bookendA etc are below.
+    #
+    # Note on inserting bookends and other markup: QTextBlock.length() does
+    # include the line-delim at the end of the block. We include our own
+    # line-delim inserting bookendA, so <p>, <li> etc go on a line alone,
+    # and also on bookendZ, which goes after the existing line-delim and
+    # gets one of its own as well, thus <p>\n ... text \N</p>\n where 
+    # \N represents the existing line-delim.
+    
+    def theRealHTML(self,topBlock,endBlock):
+	# This is a serious one-time-only operation for the whole document.
+	# Get user buy-in if it's more than half the document.
+	doc = IMC.editWidget.document()
+	topBlockNumber = topBlock.blockNumber()
+	endBlockNumber = endBlock.blockNumber()
+	if (doc.blockCount()/2) < (endBlockNumber - topBlockNumber) :
+	    yn = pqMsgs.okCancelMsg(
+	        QString(u"HTML Conversion is a big deal: OK?"),
+	        QString(U"Inspect result carefully before saving; ^Z to undo")
+	        )
+	    if not yn : return
+	# Parse the text into work units
+	unitList = IMC.flowPanel.parseText(topBlock,endBlock)
+	if 0 == len(unitList) :
+	    return # all-blank? or perhaps an error like unbalanced markup
+	# In order to have a single undo/redo operation we have to use a
+	# single QTextCursor, namely this one:
+	tc = IMC.editWidget.textCursor()
+	tc.beginEditBlock() # start single undo/redo macro
+	pqMsgs.startBar((endBlockNumber - topBlockNumber), "Converting markup to HTML")
+	# keep track of the current markup code and allow nesting
+	markupCode = u' ' # state: open text; no markup active
+	markStack = []
+	# process units from last to first
+	for u in reversed(range(len(unitList))):
+	    unit = unitList[u]
+	    unitBlockA = doc.findBlockByNumber(unit['A'])
+	    unitBlockZ = unitBlockA if unit['A'] == unit['Z'] \
+	                    else doc.findBlockByNumber(unit['Z'])
+	    if 0x0 == (unit['A'] & 0x0f) :
+		pqMsgs.rollBar(endBlockNumber - unit['A'])
+	    if unit['T'] == 'P' :
+		# this is a paragraph (or line) of text. Get first, last QTextBlocks.
+		# select bookend strings based on current markup
+		bA = bookendA[markupCode]
+		bZ = bookendZ[markupCode]
+		if bA is not None:
+		    # not in * or C or X, so insert bookends on this paragraph
+		    if markupCode == ' ': # or, if len(markStack)==0
+			# this is open text, check for headers
+			if (unit['B'] == 2) and (u) and (unitList[u-1]['B'] != 4):
+			    bA = bookendA['3']
+			    bZ = bookendZ['3']
+			if unit['B'] == 4 :
+			    bA = bookendA['2']
+			    bZ = bookendZ['2']
+		    if markupCode == 'P':
+			# line of poetry, we have to, one, modify bA for the indent,
+			F = int((unit['F']-2)/2) # number of nominal ems
+			if F :
+			    bA = bA.format(F) # the ascii 2 is included
+			else :
+			    bA = u'<span>'
+			# and two, look for a stanza break
+			if unit['B'] > 0:
+			    bA = u'</div><div class="stanza">\u2029' + bA
+		    bA = QString(bA)
+		    # Minimal check for user error of re-marking
+		    if not unitBlockA.text().startsWith(bA):
+			bA.append(IMC.QtLineDelim)
+			bZ = QString(bZ)
+			bZ.append(IMC.QtLineDelim)
+			# insert bookends from bottom up to not invalidate #A
+			tc.setPosition(unitBlockZ.position()+unitBlockZ.length())
+			tc.insertText(bZ)
+			tc.setPosition(unitBlockA.position())
+			tc.insertText(bA)
+		# end of unit type P bookending all paras not in C/*/X markup    
+	    elif unit['T'] == '/' :
+		# this is an end-markup line such as Q/, so we are entering a
+		# new markup. Push the current markup code and set the new.
+		markStack.append(markupCode)
+		markupCode = unit['M']
+		# replace the markup line contents with the markup close HTML.
+		# Note in ASCII we never look past the x/ so there can be
+		# comments there, but for HTML we should wipe the whole line.
+		mzs = QString(markupZ[markupCode])
+		mzs.append(IMC.QtLineDelim)
+		tc.setPosition(unitBlockA.position()+unitBlockA.length()) # click
+		tc.setPosition(unitBlockA.position(),QTextCursor.KeepAnchor) # drag 
+		tc.insertText(mzs)
+		# Note unit at the bottom of a table markup
+		if markupCode == 'T':
+		    tableBottom = u
+	    else : # unit['T'] = 'M' we would assert
+		# this is a start-markup such as /Q or /T. If the latter, 
+		# process it.
+		if markupCode == 'T':
+		    pqTable.tableHTML(tc,doc,unitList[u : tableBottom+1])
+		    # pqTable writes its own <table> string
+		else:
+		    # Overwrite the markup line with the openmarkup HTML.
+		    mza = QString(markupA[markupCode])
+		    mza.append(IMC.QtLineDelim)
+		    mza.prepend(IMC.QtLineDelim)
+		    tc.setPosition(unitBlockA.position()+unitBlockA.length()) # click
+		    tc.setPosition(unitBlockA.position(),QTextCursor.KeepAnchor) # drag 
+		    tc.insertText(mza)
+		# Exit this markup
+		markupCode = markStack.pop()
+        tc.endEditBlock() # close the single undo/redo macro
+        pqMsgs.endBar() # wipe out the progress bar
+    
     # This slot receives the pqMain's shutting-down signal. Stuff all our
     # current UI settings into the settings file.
     def shuttingDown(self):
@@ -723,6 +897,8 @@ class flowPanel(QWidget):
         stgs.setValue("poRight",self.poIndent[2].value() )
         stgs.setValue("nfLeft",self.nfLeftIndent.value() )
         stgs.endGroup()
+
+    # ============= end of the class definition of flowPanel!! ========
 
 # tokGen is a generator function that returns the successive tokens from the
 # text selected by a text cursor. Each token is returned as a tuple, (tok,tl)
@@ -770,6 +946,59 @@ def tokGen(tc, itbosc):
         # back to spaces, return this token
         yield( (tok, ll) )
 
+# Opening and closing bookends for theRealHTML indexed by markup code.
+# These are Python strings rather than QStrings mainly so the P string
+# can have a format code.
+bookendA = {
+            ' ':u'<p>',
+            'Q':u'<p>',
+            'R':u'<p>',
+            'P':u'<span class="i{0:02d}">', # indent filled in
+            'U':u'<li>',
+            'T':None,
+            'X':None,
+            'C':None,
+            '*':None,
+            '2':u'<h2>',
+            '3':u'<h3>'
+            }
+bookendZ = {
+            ' ':u'</p>',
+            'Q':u'</p>',
+            'R':u'</p>',
+            'P':u'</span><br />',
+            'U':u'</li>',
+            'T':None,
+            'X':None,
+            'C':None,
+            '*':None,
+            '2':u'</h2>',
+            '3':u'</h3>'
+            }
+# Similarly, markup open/close strings indexed by markup code letter
+markupA = {
+            ' ':None,
+            'Q':u'<div class="blockquote">',
+            'R':u'<div class="ralign">',
+            'P':u'<div class="poetry"><div class="stanza">',
+            'U':u'<ul>',
+            'T':u'<table>',
+            'X':u'<pre>',
+            'C':u'<pre>',
+            '*':u'<pre>'
+            }
+markupZ = {
+            ' ':None,
+            'Q':u'</div>',
+            'R':u'</div>',
+            'P':u'</div></div>',
+            'U':u'</ul>',
+            'T':u'</table>',
+            'X':u'</pre>',
+            'C':u'</pre>',
+            '*':u'</pre>'
+            }
+
 if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt,QFile,QIODevice,QTextStream,QSettings)
@@ -786,6 +1015,7 @@ if __name__ == "__main__":
     IMC.editWidget.setFont(pqMsgs.getMonoFont())
     IMC.settings = QSettings()
     widj = flowPanel()
+    IMC.flowPanel = widj
     MW = QMainWindow()
     MW.setCentralWidget(widj)
     pqMsgs.makeBarIn(MW.statusBar())
