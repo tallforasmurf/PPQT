@@ -82,7 +82,7 @@ on input, and back to some byte code on output, based on the file suffix. Rename
 <tr><td><tt>.utf</tt></td><td>UTF-8 encoding of Unicode, preferred for text with non-latin characters</td></tr>
 <tr><td><tt>.win</tt></td><td>Windows code page 1252, the US and European Windows alphabet.</td></tr>
 <tr><td><tt>.mac</tt></td><td>Mac Roman, the Apple alphabet.</td></tr>
-<tr><td><tt>.cyr</tt></td><td>Windows code page 1251, Windows Cyrillic alphabet.</td></tr>
+<tr><td><tt>.isr</tt></td><td>Windows code page 1255, Windows Hebrew</td></tr> <tr><td><tt>.cyr</tt></td><td>Windows code page 1251, Windows Cyrillic alphabet.</td></tr>
 <tr><td><tt>.kir</tt></td><td>KOI8-R, Cyrillic-Russian.</td></tr>
 <tr><td><tt>.kiu</tt></td><td>KOI8-U, Cyrillic-Ukranian.</td></tr>
 </table>

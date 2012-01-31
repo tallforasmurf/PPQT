@@ -359,6 +359,7 @@ class MainWindow(QMainWindow):
         if sfx == u"utf" : return "UTF-8"
         if sfx == u"win" : return "cp1252"
         if sfx == u"mac" : return "macintosh"
+        if sfx == u"isr" : return "cp1255"
         if sfx == u"cyr" : return "cp1251"
         if sfx == u"kir" : return "KOI8-R"
         if sfx == u"kiu" : return "KOI8-U"
