@@ -612,8 +612,10 @@ class findPanel(QWidget):
     # public method for use by the Char and Word census panels. When a
     # row is double-clicked, throw the char/word into the find text and 
     # bring the find panel to the front.
-    def censusFinder(self,qs):
+    def censusFinder(self,qs,rep=None):
         self.findText.setText(qs)
+        if rep is not None:
+            self.repEdits[1].setText(rep)
         if not self.isVisible() :
             IMC.mainWindow.makeMyPanelCurrent(self) 
         self.findText.setFocus() # get keyboard focus to find string

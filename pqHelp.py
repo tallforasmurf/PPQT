@@ -294,11 +294,12 @@ the text) are available.</p>
 <h2>The Characters Panel</h2>
 <p>Click the Char tab to show the Characters panel.
 This panel displays a table of all characters seen in the document,
-in four columns:</p>
+in five columns:</p>
 <ul>
 <li>Glyph: the character symbol</li>
 <li>Value: the hex value of the unicode character</li>
 <li>Count: the number of times the character appears</li>
+<li>Entity: the HTML/XML Entity code for this character</li>
 <li>Unicode category</li>
 </ul>
 <p>Click on the heading of any column to sort on that column.
@@ -311,8 +312,14 @@ to rebuild all metadata and make the counts accurate.</p>
 <li> &#172; 7-bit: show only characters not in 7-bit ASCII</li>
 <li> &#172; Latin-1: show only characters not in the Latin-1 set</li>
 </ul>
-<p>Doubleclick a row to copy that character into the Find text and
-display the Find panel.</p>
+<p>Use this menu to easily find characters that are not allowed
+in a 7-bit file or a Latin-1 file, or to discover if the file needs
+to be saved as UTF-8.</p>
+<p>Doubleclick the character glyph or value. The character glyph
+is copied into the Find text and the Find panel is displayed.
+Doubleclick on the Entity column and the glyph is copied to
+the Find text while the Entity code is copied to the first
+Replace text, making it easy to replace a glyph with its Entity code.</p>
 <h2>The Words Panel</h2>
 <p>Click the Word tab to see the Words panel.
 This is a table of all words in the document, in three columns:</p>

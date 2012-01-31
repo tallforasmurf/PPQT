@@ -8,11 +8,12 @@ from future_builtins import *
 '''
 Implement the Character Census panel. At the top a row with a Refresh
 button on the left and a filter combobox on the right. Below, a table
-with four columns:
+with five columns:
 * Glyph, the character 
 * Value, the character's unicode value in hex
 * Count, the number times it appears in the document
-* Category, the QChar.category in words.
+* Entity, the HTML named or numeric entity value
+* Category, the QChar.category() in words.
 The table is implemented using a Qt AbstractTableView, SortFilterProxyModel,
 and AbstractTableModel. The AbstractTableModel is subclassed to implement
 fetching data from the IMC.charCensus list. The AbstractTableModel is used
@@ -59,17 +60,18 @@ from PyQt4.QtGui import (
 class myTableModel(QAbstractTableModel):
     def __init__(self, parent=None):
         super(myTableModel, self).__init__(parent)
-        # The header texts for the four columns
+        # The header texts for the columns
         self.headerDict = { 0:"Glyph", 1:"Value",
-                            2:"Count", 3:"Unicode Category" }
+                            2:"Count", 3:"Entity", 4:"Unicode Category" }
         # the text alignments for the columns
         self.alignDict = { 0:Qt.AlignHCenter, 1: Qt.AlignRight,
-                           2:Qt.AlignRight, 3: Qt.AlignLeft }
+                           2:Qt.AlignRight, 3: Qt.AlignLeft, 4:Qt.AlignLeft }
         # The values for tool/status tips for data and headers
         self.tipDict = { 0: "Character glyph",
                          1: "Unicode value in hex",
                          2: "Number of occurrences",
-                         3: "Unicode category" }
+                         3: "HTML/XML Entity code",
+                         4: "Unicode category" }
         # The strings that interpret a QChar.category value
         self.catDict = {  0: "NoCategory",
                           1: "Mark_NonSpacing", 2: "Mark_SpacingCombining",
@@ -91,7 +93,7 @@ class myTableModel(QAbstractTableModel):
 
     def columnCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
-        return 4 # glyph, hex, count, category
+        return 5 # glyph, hex, count, entity, category
     
     def flags(self,index):
         return Qt.ItemIsEnabled
@@ -111,13 +113,19 @@ class myTableModel(QAbstractTableModel):
     def data(self, index, role ):
         if role == Qt.DisplayRole : # wants actual data
             (qs,count,flag) = IMC.charCensus.get(index.row())
+            ui = qs.at(0).unicode() # gets an integer
+            uu = unicode(qs)[0] # gets a uchar
             if 0 == index.column():
                 return qs
             elif 1 == index.column():
-                u = qs.at(0).unicode()
-                return QString("0x{0:04x}".format(u))
+                return QString("0x{0:04x}".format(ui))
             elif 2 == index.column():
                 return count
+            elif 3 == index.column():
+                if uu in IMC.namedEntityDict :
+                    return QString("&"+IMC.namedEntityDict[uu]+";")
+                else:
+                    return QString("&#{0:d};".format(ui))
             else:
                 return QString(self.catDict[int(flag)])
         elif (role == Qt.TextAlignmentRole) :
@@ -193,10 +201,15 @@ class charsPanel(QWidget):
     # This slot receives a double-click on the table. Figure out which
     # character it is and get the Find panel set up to search for it.
     def findThis(self,qmi):
+        rep = None
+        if qmi.column() == 3 :
+            # doubleclick in entity column, put entity in the replace field
+            rep = qmi.data(Qt.DisplayRole).toString()
         if qmi.column() != 0 :
+            # get reference to column 0
             qmi = qmi.sibling(qmi.row(),0)
         qs = qmi.data(Qt.DisplayRole).toString()
-        IMC.findPanel.censusFinder(qs)
+        IMC.findPanel.censusFinder(qs,rep)
 
     # this slot gets the activated(row) signal from the combo-box.
     # Based on the row, set self.filterLambda to a lambda that will
@@ -220,8 +233,9 @@ class charsPanel(QWidget):
     def setUpTableView(self):
         self.view.sortByColumn(0,Qt.AscendingOrder)
         self.view.resizeColumnsToContents()
-        self.view.setColumnWidth(0,16+self.view.columnWidth(0))
+        self.view.setColumnWidth(0,20+self.view.columnWidth(0))
         self.view.setColumnWidth(2,8+self.view.columnWidth(2))
+        self.view.setColumnWidth(3,20+self.view.columnWidth(3))
         self.view.horizontalHeader().setStretchLastSection(True)
         self.view.resizeRowsToContents()
         self.view.setSortingEnabled(True)
@@ -248,10 +262,8 @@ if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt,QFile,QIODevice,QTextStream)
     from PyQt4.QtGui import (QApplication,QFileDialog)
-    class tricorder():
-        def __init__(self):
-            pass
-    IMC = tricorder() # create inter-module communicator
+    import pqIMC
+    IMC = pqIMC.tricorder() # create inter-module communicator
     app = QApplication(sys.argv) # create an app
     import pqMsgs
     pqMsgs.IMC = IMC
