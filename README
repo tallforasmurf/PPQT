@@ -1,0 +1,61 @@
+ PPQT is a unified tool for the task of post-processing etexts for the
+ website, Project Gutenberg Distributed Proofreaders (PGDP.net)
+ 
+ PPQT is written in Python (2.7 but should require little to make it 3)
+ with PyQt4 and Qt4.
+ 
+ PPQT itself is licensed under the Creative Commons Attribution-Share-Alike
+ terms. PyQt4 and Qt are both licensed for open-source use for nonprofits.
+ 
+ A single document file, bookname.suffix, is edited. A variety of metadata
+ is collected the first time a file is opened and is saved in a metadata file,
+ bookname.suffix.metadata. Also expected to exist at the same file path
+ as bookname.suffix:
+     bookname.suffix.meta (created on first save)
+     good_words.txt (optional)
+     bad_words.txt (optional)
+     pngs, a folder containing page scan images named nnn.png
+
+ The main window has two panes divided by a splitter. The left pane has
+ the text for editing (QPlainTextEdit). Besides the usual editing functions
+ PPQT supports highlighting words from a file of common "scannos," and also
+ underlining of words that fail the built-in spellcheck.
+ 
+ The right pane is a Qt Tabset with several panels for specific functions:
+
+    Pngs :  Shows the scan image (nnn.png) for the text at the insertion point
+	    from the pngs folder.
+
+    Find :  A variety of search/replace controls including predefined regex
+            searches in a user-programmable button array.
+
+    Notes : A QPlainTextEdit where the user can keep notes that are saved as
+	    part of the metadata.
+
+    Pages : A table of all pages with their scan (.png) numbers, folio
+            (pagination) controls, and proofer ids. Page boundaries are kept
+	    in the metadata after page delimiters are purged.
+
+    Chars : A table of the character census, showing for each its glyph,
+	    hex value, count of occurrences, HTML Entity code,
+	    and Unicode class, sortable on any column. Filterable to show
+	    non-Ascii and non-Latin-1.
+
+    Words : A table of the word census, showing for each its text, count
+            of occurrences, and properties (all-cap, fails spellcheck, etc),
+	    sortable by text and count, and filterable on properties.
+
+    Flow :  Controls for Ascii text reflow, Ascii table processing, and
+	    and HTML auto-conversion.
+
+    View :  Displays the document as rendered by QWebView.
+
+    FNote(TBS) : Controls related to footnote processing and a table of the
+	    footnotes found, with errors indicated.
+    
+    Help :   Terse documentation of all features
+
+PPQT incorporates a spellcheck system based on Myspell/OpenOffice dictionaries
+but implemented in Python code (to avoid having to include pyCharm or such).
+Besides one default dictionary for the document, it allows phrases or sections
+to be marked off to be spellchecked using a different language.
