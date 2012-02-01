@@ -41,15 +41,15 @@ from future_builtins import *
              and class info (all-cap, fails spellcheck, etc), sortable
              by text and count, and filterable on class.
     
-    Flow :   Various controls for text reflow, page delimiter removal, and
-	     ascii table processing.
-
-    FNote :  Controls related to footnote processing and a table of the
-             footnotes found, with errors indicated.
-    
-    Html :   Controls related to Html conversion.
+    Flow :   Various controls for text reflow, ascii table processing,
+             and HTML conversion.
     
     View :   Live preview of the (html) document (QWebView)
+
+    FNote(TBS) :  Controls related to footnote processing and a table of the
+             footnotes found, with errors indicated.
+    
+    Help :   Terse documentation of all features
 '''
 
 '''
