@@ -148,7 +148,7 @@ class pngDisplay(QWidget):
     def showPage(self):
         self.lastPage = QString(IMC.pageTable[self.lastIndex][1]+u".png")
         png = self.pngPath + self.lastPage
-        pxmap = QPixmap(png)
+        pxmap = QPixmap(png,'PNG',Qt.ColorOnly)
         if not pxmap.isNull(): # successfully got a pixmap from a file
             self.imLabel.setPixmap(pxmap)
             self.imLabel.resize( self.zoomFactor * pxmap.size() )
@@ -208,7 +208,7 @@ class pngDisplay(QWidget):
 
 if __name__ == "__main__":
     import sys
-    from PyQt4.QtCore import (QSettings)
+    from PyQt4.QtCore import (Qt,QSettings)
     from PyQt4.QtGui import (QApplication,QFileDialog)
     import pqIMC
     IMC = pqIMC.tricorder() # set up a fake IMC for unit test
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv) # create an app
     widj = pngDisplay()
     apng = QFileDialog.getOpenFileName(widj,"Pick a Png",".","page files (*.png)")
-    pm = QPixmap(apng)
+    pm = QPixmap(apng,'PNG',Qt.ColorOnly)
     widj.imLabel.setPixmap(pm)
     widj.imLabel.adjustSize()
     widj.show()
