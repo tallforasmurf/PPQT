@@ -552,10 +552,10 @@ class findPanel(QWidget):
             findTc = self.realSearch(doc,self.rangeTop,False)
             while self.validHit(findTc):
                 hits.insert(0,QTextCursor(findTc)) # save hits in LIFO order
-                # start the next search 1 char into the last hit. For a 
-                # greedy recursive regex this could make one cursor per char,
-                # and probably blow the program out of the water.
-                findTc.setPosition(findTc.selectionStart()+1)
+                # start the next search at the end of the previous find.
+                # For replace-all we do not want overlapping finds, because
+                # then we would have to do overlapping replaces, duh.
+                findTc.setPosition(findTc.selectionEnd())
                 findTc = self.realSearch(doc,findTc,False)
             if 0 == len(hits):
                 pqMsgs.beep()
