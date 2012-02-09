@@ -97,11 +97,18 @@ def okCancelMsg ( text, info = None ):
 # clicks Ok/Cancel. The parameters to QInputDialog.getText are:
 # * the parent widget over which it will center,
 # * title string for the dialog
-# * label for the input field and the rest are defaulted.
+# * label for the input field, and if no preset text is passed, the rest are defaulted.
+# When preset text is passed, two additional parameters:
+# * the default flag for echo mode QLineEdit::Normal
+# * prepared text to put in the input field
 # It returns a tuple of (entered-text, Ok-clicked).
 
-def getStringMsg( title, text ):
-    (ans, ok) = QInputDialog.getText(IMC.mainWindow, title, text)
+def getStringMsg( title, text, preset=None ):
+    if preset is None:
+	(ans, ok) = QInputDialog.getText(IMC.mainWindow, title, text)
+    else:
+	(ans, ok) = QInputDialog.getText(IMC.mainWindow, title, text,
+	                                 QLineEdit.Normal, preset)
     return (ans, ok)
 
 # Display a modal request for a selection from a list of options.
@@ -221,11 +228,14 @@ if __name__ == "__main__":
     import pqIMC
     IMC = pqIMC.tricorder()
     IMC.mainWindow = QWidget()
-    #beep()
-    #infoMsg("This is the message","Did you get that?")
-    #(s, b) = getStringMsg("TITLE STRING", "label text")
-    #if b : print( "got "+s)
-    #else: print("cancel")
+    beep()
+    infoMsg("This is the message","Did you hear that beep?")
+    (s, b) = getStringMsg("TITLE STRING", "label text")
+    if b : print( "got "+s)
+    else: print("cancel")
+    (s, b) = getStringMsg("TITLE STRING", "what you should enter", "prepared")
+    if b : print( "got "+s)
+    else: print("cancel")    
     #ew = QTextEdit()
     #(b,qs) = getFindMsg(ew)
     #print(b,qs)
