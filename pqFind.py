@@ -712,15 +712,28 @@ class findPanel(QWidget):
     # Method for pqMain to call to cause saving of userbuttons.
     # Saving in the settings file, we use urllib.quote() to avoid all questions
     # of quotes and other specials. But the result is just about unreadable and
-    # we want the saved file to be user-editable so we just dump the
-    # dict.__repr__() string), which may well contains Unicode letters, so the
-    # file is encoded UTF-8 (whether or not the user supplies the right suffix).
-    # Each line goes out with the number of the button followed by the dict
-    # string, on a single line. Not the most user-friendly of formats.
+    # we want the saved file to be user-editable so we put out the actual values
+    # which might contain Unicode letters, so the file is encoded UTF-8
+    # (whether or not the user supplies the right suffix).
+    #
+    # In order to make the file at least semi-editable, we spread out each
+    # definition on multiple lines, one line per dict element.
+
     def saveUserButtons(self,stream):
+        numStr = u"{0}: {{ " # first line is button# : { \t key : value
+        openStr = u"\t{0} : {1}"
+        sepStr = u",\n\t{0} : {1}" # subsequent lines are ,\n\t key : value
+        endStr = u"\n}\n\n"
+        stream << u"# use %5C for backslash, or double every backslash \n"
         for i in range(UserButtonMax):
-            if self.userButtons[i].udict['label'] != "(empty)" :
-                stream << "{0}:{1}\n".format(i,self.userButtons[i].udict.__repr__())
+            d = self.userButtons[i].udict
+            if d['label'] != "(empty)" :
+                stream << numStr.format(i)
+                puncStr = openStr
+                for key in sorted(d.keys()):
+                    stream << puncStr.format(key.__repr__(), d[key].__repr__())
+                    puncStr = sepStr
+                stream << endStr
 
     # method for pqMain to call to cause loading of all userbuttons
     # from a text file. See above for format. See userButton.loadDict
