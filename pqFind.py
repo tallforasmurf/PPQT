@@ -653,9 +653,14 @@ class findPanel(QWidget):
     # and if Cancel is not chosen, load the label and all find data into
     # the dict in the button.
     def userButtonLoad(self,butnum):
+        d = self.userButtons[butnum].udict
+        prep = None
+        if d['label'] != u'(empty)':
+            prep = d['label']
         j = butnum + 1
         (ans, ok) = pqMsgs.getStringMsg(u"Loading button {0}".format(j),
-                        u"Enter a short label for button {0}".format(j) )
+                        u"Enter a short label for button {0}".format(j),
+                        prep)
         if not ok : # Cancel was clicked, make no change
             return
         if ans.isNull(): # null label means, clear button
@@ -663,7 +668,6 @@ class findPanel(QWidget):
             self.userButtons[butnum].setText(QString(u'(empty)'))
             self.userButtons[butnum].setToolTip(QString(u'Undefined button'))
             return
-        d = self.userButtons[butnum].udict
         d.clear()
         d['label'] = unicode(ans)
         self.userButtons[butnum].setText(ans)
@@ -850,9 +854,13 @@ class findRepEdit(QLineEdit):
 # 'andnext' : True/False  &Next replace switch
 # 'andprior' : True/False  &Prior replace switch
 # 'all'    : True/False replace all switch
-# The find and rep strings are encoded as for a url to make them safe.
+# The find and rep strings are encoded as for a url so that backslashes
+# and quotes don't mess up the dict literal values.
+#
 # When the button is clicked, the signal goes to findPanel.userButtonClick
-# where the dict values are queried and used to set the fields of the panel.
+# where the dict values stored in the clicked button are queried and used
+# to set the fields of the panel.
+#
 # The button constructor takes the __repr__ string of a dict as argument
 # and converts it to a dict if it can. The requirement is only that it be
 # a good syntactic python dict literal and that it have a 'label' key.
@@ -907,7 +915,7 @@ class userButton(QPushButton):
                 raise ValueError
             # and make sure the value of dict['label'] is a string
             if not ( isinstance(okdict['label'],str) \
-                     or isinstance(okdict['label'],unicode) ):
+                    or isinstance(okdict['label'],unicode) ):
                 raise ValueError
             # all good, go ahead and use it
             self.udict = okdict
