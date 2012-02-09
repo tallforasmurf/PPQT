@@ -539,18 +539,14 @@ class PPTextEditor(QPlainTextEdit):
     # all local to the main function, which makes for a long piece of code.
 
     def doCensus(self,page=False):
-        global reMarkup, qcDash, qcApost, qcLess, qcLbr, qslcLig
+        global reLineSep, reMarkup, qcDash, qcApost, qcLess, qcLbr, qslcLig
         global qsucLig, qsLine, qsDict, i, qcThis, uiCat, inWord
         global uiWordFlags, qsWord, nextAction, parseArray
         IMC.needSpellCheck = True # after a census this is true
         IMC.needMetadataSave = True
         IMC.wordCensus.clear()
         IMC.charCensus.clear()
-        # If we are doing pages, it's for load, and the page table has been
-        # cleared. If not, we don't want to mess with the page table.
-        reLineSep = QRegExp("^-----File:\s*(\d+)\.png---(.+)(-+)$",Qt.CaseSensitive)
-        reTrailDash = QRegExp("-+$")
-        iFolio = 0 # really, page number
+        iFolio = 0 # page number for line separator records
         def GET(): # acquire the next char and category, push action
             global qcThis, uiCat, nextAction, i
             qcThis = qsLine.at(i)
@@ -699,23 +695,27 @@ class PPTextEditor(QPlainTextEdit):
                 qtb = qtb.next()
         while qtb != self.document().end(): # up to end of document
             qsLine = qtb.text() # text of line as qstring
-            if reLineSep.exactMatch(qsLine): # a page separator
-                if page : # and we are doing page seps
-                    qsfilenum = reLineSep.capturedTexts()[1]
-                    qsproofers = reLineSep.capturedTexts()[2]
-                    j = reTrailDash.indexIn(qsproofers)
-                    if j > 0: # get rid of trailing dashes
-                        qsproofers.truncate(j)
+            if reLineSep.exactMatch(qsLine): # this is a page separator line
+                if page :
+                    # We are doing page seps, it's for Open with no .meta seen,
+                    # the page table has been cleared. Store the page sep
+                    # data in the page table, with a textCursor to its start.
+                    qsfilenum = reLineSep.cap(1) # ddd from "File: ddd.png"
+                    qsproofers = reLineSep.cap(2) # \who\x\blah\etc
                     # proofer names can contain spaces, replace with en-space char
                     qsproofers.replace(QChar(" "),QChar(0x2002))
+                    # create a new TextCursor instance
                     tcursor = QTextCursor(self.document())
+                    # point it to this text block
                     tcursor.setPosition(qtb.position())
+                    # initialize this page's folio
                     iFolio += 1
+                    # dump all that in the page table
                     IMC.pageTable.append(
     [tcursor, qsfilenum, qsproofers, IMC.FolioRuleAdd1, IMC.FolioFormatArabic, iFolio]
                                       )
-                # else skip over the psep line
-            else: # ordinary text line, count chars and words
+                # else not doing pages, just ignore this psep line
+            else: # not psep, ordinary text line, count chars and words
                 i = 0
                 inWord = False
                 qsWord = QString()
@@ -732,6 +732,12 @@ class PPTextEditor(QPlainTextEdit):
                 pqMsgs.rollBar(qtb.blockNumber()) # roll the bar
         pqMsgs.endBar()
 # The following are global names referenced from inside the parsing functions
+# Regex to exactly match all of a page separator line. Note that the proofer
+# names can contain almost any junk; proofer names can be null (\name\\name);
+# and the end hyphens just fill the line out to 75 and may be absent.
+# The inner parens, cap(3), (\\[^\\]+) captures one proofer name, e.g. \JulietS
+# and the outer parens, .cap(2) capture all of however many there are.
+reLineSep = QRegExp(u'-----File: (\\d+).png---((\\\\[^\\\\]*)+)\\\\-*',Qt.CaseSensitive)
 # Regex to match html markup: < /? spaces? (tag) spaces? whoknowswhat >
 # the cap(1) is the markup verb, and cap(2) is possibly a dict tag
 reMarkup = QRegExp("\\<\\/?\\s*(\\w+)\\s*([^>]*)>",Qt.CaseInsensitive)
