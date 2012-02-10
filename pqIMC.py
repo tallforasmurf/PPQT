@@ -88,6 +88,7 @@ class tricorder():
         self.bookPath = None # path to book file
         self.bookType = None # book file suffix used to detect .hmt(l)
         self.fontFamily = None # last-chosen font
+        self.fontSize = 12 # last-chosen font size in Edit panel
         self.pngPanel = None # ref to Pngs panel
         self.notesEditor = None # ref to Notes panel
         self.findPanel = None # ref to Find panel

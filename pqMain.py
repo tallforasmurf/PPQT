@@ -84,8 +84,9 @@ class MainWindow(QMainWindow):
         # Recall a user-preferred font if any:
         IMC.fontFamily = IMC.settings.value("main/fontFamily",
                                       QString("DejaVu Sans Mono")).toString()
+        (IMC.fontSize,junk) = IMC.settings.value("main/fontSize",12).toInt()
         # create the editor for the left-hand pane
-        self.editor = PPTextEditor()
+        self.editor = PPTextEditor(self,IMC.fontSize)
         IMC.editWidget = self.editor # provide other modules access to edit members
         # set up the tab array for the right-hand pane
         self.tabSet = QTabWidget()
@@ -678,6 +679,7 @@ class MainWindow(QMainWindow):
         IMC.settings.setValue("main/scannoPath", self.scannoPath)
         IMC.settings.setValue("main/scannoSwitch",IMC.scannoHiliteSwitch)
         IMC.settings.setValue("main/fontFamily",IMC.fontFamily)
+        IMC.settings.setValue("main/fontSize",IMC.fontSize)
         IMC.spellCheck.terminate() # shut down spellcheck
         event.accept() # pass it up the line
     

@@ -262,6 +262,7 @@ class PPTextEditor(QPlainTextEdit):
                     f = self.font() # so get our font,
                     f.setPointSize(p) # change its point size +/-
                     self.setFont(f) # and put the font back
+                    IMC.fontSize = p # and remember the size for shutdown time
             elif kkey in IMC.markKeys : # ^1-9, jump to bookmark
                 bkn = kkey - IMC.ctl_1 # make it 0-8
                 if self.bookMarkList[bkn] is not None: # if that bookmark is set,
