@@ -242,6 +242,7 @@ class MainWindow(QMainWindow):
                                    self.viewSpellingAction,
                                    self.viewFontAction,
                                    self.viewDictAction))
+        self.viewScannosAction.setChecked(IMC.scannoHiliteSwitch)
         
     # This convenience function, lifted from Summerfield's examples, 
     # encapsulates the boilerplate of creating a menu action. (We are not
@@ -616,22 +617,16 @@ class MainWindow(QMainWindow):
             # Do we have a scanno file? If not, remind the user to give one.
             if self.scannoPath.isEmpty():
                 self.scannoOpen()
-            # If we still don't have a file, override the user
-            if self.scannoPath.isEmpty():
-                self.viewScannosAction.setChecked(False)
-        # set the switch the hilighter uses
-        IMC.scannoHiliteSwitch = (toggle) and (not self.scannoPath.isEmpty())
-        self.editor.setHighlight(
-            IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)   
+        willDoIt = (toggle) and (not self.scannoPath.isEmpty())
+        self.viewScannosAction.setChecked(willDoIt)
+        IMC.scannoHiliteSwitch = willDoIt
+        self.editor.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)   
     
     def viewSetSpelling(self, toggle):
-        if toggle : # the switch is going on
-            # Do we have any metadata? Because spellcheck needs it.
-            if IMC.wordCensus.size() == 0 : # no words
-                self.viewSpellingAction.setChecked(False)
-        IMC.spellingHiliteSwitch = (toggle) and (IMC.wordCensus.size()>0)
-        self.editor.setHighlight(
-            IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
+        willDoIt = (toggle) and (IMC.wordCensus.size()>0)
+        self.viewSpellingAction.setChecked(willDoIt)
+        IMC.spellingHiliteSwitch = willDoIt
+        self.editor.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
     
     # Early on we set DPCustomMono2 as the font, period, but later realized
     # it has very limited Unicode coverage, while other monos are just as
