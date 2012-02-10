@@ -58,7 +58,7 @@ class tricorder():
         self.WordMisspelt = 0x80
         # These values are used to encode folio controls for the
         # Page/folio table. Initialized in pqEdit when opening a new file,
-        # used in pqWord and pqHtml.        
+        # used in pqWord and (eventually) in html conversion.        
         self.FolioFormatArabic = 0x00
         self.FolioFormatUCRom = 0x01
         self.FolioFormatLCRom = 0x02
