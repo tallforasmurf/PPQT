@@ -152,13 +152,13 @@ import pqMsgs
 CalignLeft = 0
 CalignCenter = 1
 CalignRight = 2
-#CalignDecimal = 4 fuggedaboudit
+CalignDecimal = 4 
 
 SingleLineTable = 0
 MultiLineTable = 1
 
 class tableProperties:
-    # For instantiation we receive the /T or /M line as a qstring.
+    # For instantiation we receive the /T or /TM line as a qstring.
     # We parse it using regexes. This is not a rigorous parse. It does not
     # detect errors! Anything we recognize, we store. Anything that does not
     # match an RE is simply ignored. For example an unclosed paren will not
@@ -186,13 +186,13 @@ class tableProperties:
                 self.tProps['W'] = w
             s = self.getStringOption(topts, u'T')
             if s is not None:
-                if s == u'-':
+                if unicode(s) == u'-':
                     self.tProps[u'T'] = s
                 else:
                     pqMsgs.warningMsg(u'Only hyphen suppported for Top option')
             s = self.getStringOption(topts, u'S')
             if s is not None:
-                if s == u'|':
+                if unicode(s) == u'|':
                     self.tProps[u'S'] = s
                 else:
                     pqMsgs.warningMsg(u'Only stile supported for Side option')
@@ -221,7 +221,7 @@ class tableProperties:
     # get an Align:keyword option string returning the initial or None
     def getAlignOption(self,qs,dAllowed=False):
         #dbg = unicode(qs)
-        self.parseRE.setPattern(u'A\w*\s*\:\s*([LRC])\w*')
+        self.parseRE.setPattern(u'A\w*\s*\:\s*([LRCD])\w*')
         if -1 < self.parseRE.indexIn(qs) :
             opt = unicode(self.parseRE.cap(1).toUpper()) # u'L R C or D'
             if (opt == u'D') and (not dAllowed) :
@@ -246,28 +246,29 @@ class tableProperties:
                 wval = None
         self.parseRE.setMinimal(minimal) # restore regex
         return wval
-    # Get a Xxxx:'str' or Xxxx:"str" option and convert to a proper literal.
+    # Get a Xxxx:'str' or Xxxx:"str" option and convert to a proper literal,
+    # returning either None for no option seen, or a QString.
     # Allow single or double quotes, unfortunately QRegExp does not allow
     # back-references inside character classes, e.g. ('|")([^\1]+)\1
     # so we have to run two separate re's. Originally we were going to allow
     # multiple chars and various chars and someday might, so this is more
     # general than strictly needed.
     def getStringOption(self,qs,initial):
-        #dbg = unicode(qs)
         opt = None
         self.parseRE.setPattern(initial+u"\w*\s*\:\s*\\\'([^\\\']*)\\\'")
-        if -1 < self.parseRE.indexIn(qs) :
-            opt = self.parseRE.cap(1)
-        else:
+        self.parseRE.indexIn(qs)
+        opt = self.parseRE.cap(1)
+        if opt.isNull() : # no hit on single quote, try "-"
             self.parseRE.setPattern(initial+u'\w*\s*\:\s*\\\"([^\\\"]*)\\\"')
-            if -1 < self.parseRE.indexIn(qs) :
-                opt = self.parseRE.cap(1)
-        if opt is not None :
-            opt = unicode(opt)
-            if len(opt) > 1 :
+            self.parseRE.indexIn(qs)
+            opt = self.parseRE.cap(1)
+        if not opt.isNull() :
+            if opt.size() > 1 :
                 pqMsgs.warningMsg(u'only single-char delimiters allowed',
-                                  u'Ignoring '+qs)
+                                  u'Ignoring '+unicode(qs))
                 opt = None
+        else:
+            opt = None
         return opt
     # Given a Column(something) or <digit>(something), populate or update
     # a dict of properties with Align, Width, Bottom and Side values.
@@ -281,13 +282,13 @@ class tableProperties:
         if main:
             s = self.getStringOption(copts, u'B')
             if s is not None:
-                if s == u'-':
+                if unicode(s) == u'-':
                     propdic[u'B'] = s
                 else:
                     pqMsgs.warningMsg(u'Only hyphen suppported for Bottom option')
             s = self.getStringOption(copts, u'S')
             if s is not None:
-                if s == u'|':
+                if unicode(s) == u'|':
                     propdic[u'S'] = s
                 else:
                     pqMsgs.warningMsg(u'Only stile supported for Side option')
@@ -343,10 +344,15 @@ class tableCells:
         self.tProps = propsObject
         self.multi = self.tProps.isMultiLine()
         self.single = not self.multi
+        # columns numbered 1..columnsSeen
         self.columnsSeen = 0
+        # rows numbered 1..rowsSeen
         self.rowsSeen = 0
+        # largest single data-chunk width per column
         self.cMinWidths = []
+        # largest actual cell width seen per column
         self.cSugWidths = []
+        # concatenated string data for each column
         self.data = []
         self.lastRowIndex = None # index of current row
         self.row = None # reference to current row's list of data
@@ -354,7 +360,7 @@ class tableCells:
         # are words, hence can't use \b\w+\b, so we have to look for \s*\S+
         self.tokenRE = QRegExp(u'\s*(\S+)')
 
-    # Store the string qs as data for cell r/c. Note the minimum width it
+    # Store the string qs as data for cell r:c. Note the minimum width it
     # implies: if single-line, the trimmed length; if multi-line, the length
     # of the longest non-blank token seen so far for that cell.
     # Also note the "suggested" width, the actual size including whitespace.
@@ -363,28 +369,30 @@ class tableCells:
             if r > self.rowsSeen:
                 # new row: assert r = len(self.data)+1, i.e. rows start at 1
                 # and are only ever incremented by 1 and never skip.
-                self.rowsSeen = r
-                self.data.append([]) # new list of row values
+                if r == (len(self.data) + 1):
+                    self.rowsSeen = r
+                    self.data.append([]) # new list of row values
+                else: # should never happen
+                    raise ValueError, "cock-up in storing rows"
             self.lastRowIndex = r
             # get a reference (not a copy, this is Python) to this row's data
             self.row = self.data[r-1]
         if c > self.columnsSeen :
-            # assuming c goes up sequentially (and maxes out in row 1)
+            # assuming c goes up sequentially 
             self.columnsSeen = c
             # initialize the suggested and minimum widths for this column
             self.cSugWidths.append(0)
             w = self.tProps.columnWidth(c)
             self.cMinWidths.append(0 if w is None else w)
         if self.single : 
-            # single-line table. assert c = 1+len(row)
-            # Get a copy of the data with front & back whitespace trimmed
+            # one-line-per-row table, this string is the only data for this cell
             qst = qs.trimmed()
             # Store the un-trimmed data in the row at index c-1
             self.row.append(qst)
             # Save minimum width based on trimmed width
             self.cMinWidths[c-1] = max(self.cMinWidths[c-1],qst.size())
         else:
-            # multi-line table, c in 1..columnsSeen and data may already exist
+            # multi-line table, data for this cell may already exist
             if c > len(self.row):
                 # first sight of this column in this row, append this datum
                 self.row.append(qs)
@@ -394,27 +402,25 @@ class tableCells:
                 self.row[c-1].append(qs)
             # Calculate the minimum cell width based on the longest nonblank
             # token in the new string.
-            w = 0
+            w = self.cMinWidths[c-1] # min width seen so far
             j = self.tokenRE.indexIn(qs) # index of first nonblank sequence
             while j > -1:
-                dbg1 = unicode(self.tokenRE.cap(1))
-                dbg2 = self.tokenRE.matchedLength()
                 w = max(w, self.tokenRE.cap(1).size()) # note widest token
                 # find next token after the matched one, if any
                 j = self.tokenRE.indexIn(qs,j+self.tokenRE.matchedLength())
             # record longest token seen so far this column
-            self.cMinWidths[c-1] = max(self.cMinWidths[c-1],w)
+            self.cMinWidths[c-1] = w # put updated width back
         # for single and multi, save the actual size as suggested width
         self.cSugWidths[c-1] = max(self.cSugWidths[c-1],qs.size())
 
-    # Return the count of columns stored in any row. Note it is possible for
-    # the data for a row to be short, if one or more columns were omitted.
+    # Return the highest count of columns stored for any row. Note it is
+    # possible for some rows to be short, if one or more columns were omitted.
     def columnCount(self):
         return self.columnsSeen
 
     # Return the count of rows stored.
     def rowCount(self):
-        return len(self.data)
+        return self.rowsSeen
 
     # Return the data string for a given cell, given r and c. On the assumption
     # that rows will be read out sequentially, save the row for future use.
@@ -434,7 +440,7 @@ class tableCells:
                 return self.row[c-1]
             else:
                 # We seem to have missed this column in this row
-                return QString()
+                return QString(u'') # return empty (not null) qstring
         return self.badFetch(r,c)
 
     def badFetch(self,r,c):
@@ -457,9 +463,9 @@ class tableCells:
         return self.badColumn(c)
 
 # Reflow a table, based on the sequence of "work units" as developed in
-# pqFlow. Arguments are: tc is the textCursor over doc, a QTextDocument,
-# on which a single undo/redo macro has been started. unitList is the
-# slice of the pqFlow unitList from the /T line to the T/ line inclusive.
+# pqFlow. Arguments are: doc is a QTextDocument, tc is the textCursor over
+# it on which a single undo/redo macro has been started. unitList is the
+# slice of the pqFlow unitList from the /T[M] line to the T/ line inclusive.
 # For reference the relevant elements of a work unit are (see pqFlow for
 # the full general list):
 # 'T' : type of work unit, specifically
@@ -489,12 +495,8 @@ def tableReflow(tc,doc,unitList):
     tcells = tableCells(tprops)
     # note if the table has a hyphenated top line
     topChar = tprops.tableTopString()
-    if topChar is not None:
-        topChar = QChar(topChar)
     # note if the cells have hyphenated bottom lines
     botChar = tprops.columnBottomString()
-    if botChar is not None:
-        botChar = QChar(botChar)
     # decide what work units to process. The first and last are the markup
     # start/end units, skip those. If there is a top-line, skip that also.
     work = range(1,len(unitList)-1)
@@ -503,7 +505,7 @@ def tableReflow(tc,doc,unitList):
         if qs.size() == qs.count(topChar):
             # top string is spec'd and there is a top string of ---
             del work[0] # don't process it
-    r = 1 # current row number 1-n
+    r = 1 # current row number 1..
     for u in work:
         unit = unitList[u]
         qs = getLineQs(tc,doc,unit['A'])
@@ -512,7 +514,7 @@ def tableReflow(tc,doc,unitList):
                 # this line consists entirely of hyphens, treat as blank
                 if tprops.isMultiLine():
                     r += 1 # start a new multiline row
-                continue # ignoring the divider line
+                continue # single or multi, ignore the divider line
         # line is not all-hyphens (or hyphens not spec'd), and not all-blank
         # because all-blanks are not included as work units, but if unit['B']
         # is nonzero it was preceded by a blank line.
@@ -523,13 +525,12 @@ def tableReflow(tc,doc,unitList):
         # stow the pieces numbered sequentially as columns. When stiles are
         # used for the outer columns, .split returns null strings which we discard.
         qsl = qs.split(splitRE)
-        if qsl[0] == u'' :
+        if qsl[0].isEmpty() :
             qsl.removeAt(0)
-        if qsl[qsl.count()-1] == u'':
+        if qsl[qsl.count()-1].isEmpty():
             qsl.removeAt(qsl.count()-1)
         c = 1
         for cqs in qsl:
-            dbg1 = unicode(cqs)
             tcells.store(r,c,cqs)
             c += 1
         # If this is a single-line table, increment the row number.
@@ -540,31 +541,32 @@ def tableReflow(tc,doc,unitList):
     # The input to this is targetTableWidth, developed above for the table as a
     # whole, and targetDataWidth which we are just about to calculate:
     totalDelimiterWidths = 0
-    if tprops.columnSideString() is None:
+    cellDelimiterString = tprops.columnSideString()
+    if cellDelimiterString is None:
+        # no side stiles, delimit cells with 2 spaces
         cellDelimiterString = QString(u'  ') # internal delimiter
     else:
-        cellDelimiterString = QString(tprops.columnSideString())
-        totalDelimiterWidths += cellDelimiterString.size() # the stile on the left
+        # include the width of the left-edge stile in the delimiters
+        totalDelimiterWidths = cellDelimiterString.size()
     # add widths of internal delimiters
     totalDelimiterWidths += cellDelimiterString.size() * (tcells.columnCount() - 1)
     # add the right side delimiter
-    if tprops.tableSideString() is None:
-        tableSideString = QString()
-    else:
-        tableSideString = QString(tprops.tableSideString())
-        totalDelimiterWidths += tableSideString.size() # the stile on the right
+    tableSideString = tprops.tableSideString()
+    if tableSideString is None:
+        tableSideString = QString(u'')
+    totalDelimiterWidths += tableSideString.size() # add the stile on the right
     # Now, how much room for column data?
     tableDataWidth = targetTableWidth - totalDelimiterWidths
     # targetDataWidth is how many chars of data we ought to have. How much do
     # we really have? Develop a list of column "suggested" widths, the actual
     # width of the longest string stored in each column, and its total.
     totalSugWidth = 0
-    allSugWidths = [9999] # skip the 0th element, cols number by 1
+    allSugWidths = [9999] # junk 0th element: cols number by 1
     for c in range(1,tcells.columnCount()+1):
         csw = tcells.columnSugWidth(c)
         allSugWidths.append(csw)
         totalSugWidth += csw
-    # If the suggested width is greater than expected, adjust somehow:
+    # If the suggested width is greater than available, adjust somehow:
     if totalSugWidth > tableDataWidth:
         if tprops.isMultiLine() :
             # For a multiline table where we can fold cell contents, we can
@@ -572,9 +574,9 @@ def tableReflow(tc,doc,unitList):
             totalMinWidth = 0
             allMinWidths = [9999] # cell 0 ignored
             for c in range(1,tcells.columnCount()+1):
-                csw = tcells.columnMinWidth(c)
-                allMinWidths.append(csw)
-                totalMinWidth += csw
+                cmw = tcells.columnMinWidth(c)
+                allMinWidths.append(cmw)
+                totalMinWidth += cmw
             if totalMinWidth > tableDataWidth:
                 # The minimum (longest token) widths exceed the specified 
                 # table. We will use the min widths but warn the user.
@@ -617,29 +619,29 @@ def tableReflow(tc,doc,unitList):
     # to fit the cell data in the given width -- just one for singleline.
     tableText = QString()
     if topChar is not None: # start with top line of ---s
-        tableText.fill(topChar,targetTableWidth)
+        tableText.fill(topChar.at(0),targetTableWidth)
         tableText.append(IMC.QtLineDelim)
     rowdata = [None]*(tcells.columnCount()+1)
     lineStart = QString() if tprops.columnSideString() is None \
-                           else QString(cellDelimiterString)
-    lineEnd = QString(tableSideString)
-    dbg = unicode(lineEnd)
+                           else cellDelimiterString
+    lineEnd = tableSideString
     cellBottom = QString()
-    if botChar is not None:  # Create bottom-string of ---\n
-        cellBottom.fill(botChar,targetTableWidth)
+    if botChar is not None:  # single or multi, make cell-bottom string of ---\n
+        cellBottom.fill(botChar.at(0),targetTableWidth)
         cellBottom.append(IMC.QtLineDelim)
     else:
         if tprops.isMultiLine() :
             # if no bottom string, multi still needs empty line
             cellBottom.append(IMC.QtLineDelim)
     for r in range(1,tcells.rowCount()+1):
-        asciiLines = 0
+        asciiLines = 0 # counts how many ascii lines in this logical row
         for c in range(1,tcells.columnCount()+1):
             rowdata[c] = flowCell(
                 tcells.fetch(r,c), allSugWidths[c], tprops.columnAlignment(c)
                 )
             asciiLines = max(asciiLines,rowdata[c].count())
         for x in range(asciiLines):
+            # read out line x of each cell across a line
             qsLine = QString(lineStart) # making a copy
             for c in range(1,tcells.columnCount()+1):
                 if rowdata[c].count() > x:
@@ -649,9 +651,7 @@ def tableReflow(tc,doc,unitList):
                 qsLine.append(cqs)
                 if c < tcells.columnCount() :
                     qsLine.append(cellDelimiterString) # add internal delimiter
-                dbg = unicode(qsLine)
             # finish the line
-            dbg = unicode(qsLine)
             qsLine.append(lineEnd)
             tableText.append(qsLine)
             tableText.append(IMC.QtLineDelim)
@@ -679,10 +679,7 @@ def tableReflow(tc,doc,unitList):
 # paragraph folder in pqFlow but simpler. We are not supporting logical lengths
 # of <i/b/sc> for one thing. Sorry, get rid of those before flowing a table,
 # that's what the skip button is for.
-# It is more complex in that we may have to center or right-align. (Once we
-# had the mad notion to support decimal alignment, but you know? Screw it.
-# That would require scanning all rows of a column to find the decimals, and
-# anyway, just put in enough @'s to make shit line up.)
+# It is more complex in that we may have to center or right-align.
 chunkRE = QRegExp()
 def flowCell(qs,width,align):
     if qs.size() <= width :
@@ -697,7 +694,6 @@ def flowCell(qs,width,align):
     qsl = QStringList()
     j = chunkRE.indexIn(qs,0)
     while j > -1 :
-        dbg2 = unicode(chunkRE.cap(1))
         qsl.append(alignCell(chunkRE.cap(1),width,align))
         j += chunkRE.cap(0).size()
         j = chunkRE.indexIn(qs,j)
@@ -719,7 +715,6 @@ def alignCell(qs,width,align):
             spacesRight = spaces - spacesLeft
             qs.prepend(u' ' * spacesLeft)
             qs.append(u' ' * spacesRight)
-    dbg = unicode(qs)
     return qs
     
 # warn the user a table will be wider than expected/requested
