@@ -30,7 +30,8 @@ from my original design. Some features could perhaps be added back in future:
 
 Properties of a table as a whole:
     width: minimum count of characters,
-            default is None meaning width is whatever is needed
+            default is None meaning width is the line length F and R indents
+            applied by any containing markup (table can be nested in e.g. Q)
     top-border fill character(s)
             default is None, meaning no top border,
             option is - (hyphen)
@@ -41,14 +42,20 @@ Properties of a table as a whole:
 Properties of any single column:
     alignment: contents aligned left, center, right or decimal within the cell
             default is left
+    decimal-delimiter: when alignment is decimal, a single char that delimits
+            the fraction from the integer, e.g. a comma for a german book.
+            (we don't use the Locale because the computer Locale is not 
+            necessarily the subject book's Locale)
     width: minimum count of characters
             default is None, meaning width is whatever contents require
     bottom-border fill character
-            default is space, bottom of each row is a line of spaces
+            default is space: no division in a single-line table, in a
+                multi-line, bottom of each row is a line of spaces
             option is - (hyphen), bottom of each row is a line of ----
     right-side vertical border character
-            default is two spaces except for rightmost column, null
-            option is | (applies to all)
+            default is None, meaning put two spaces to the right of all
+                except for rightmost column
+            option is | (stile), right side of all cells consists of |
 
 In framing the table, the right vertical border and the bottom border of each
 cell are determined by the column spec. The top border of the top row and
@@ -63,6 +70,7 @@ The optional-spec syntax is:
     ]
     [   Column(
         [Align:Left|Center|Right|Decimal]
+        [Decimal:'x'] # decimal delimiter, default period
         [Width:n]
         [Bottom:'-']
         [Side:'|']
@@ -77,63 +85,53 @@ The optional-spec syntax is:
 In the above, square brackets and lowercase indicate optional items. There
 is a resemblance to Python dict literals but simplified, no commas, keys not
 quoted. The Column() spec sets defaults for all columns. The <number>() spec
-sets values for a specific column <number> 1-9 (no others supported)
+sets values for a specific column <number> 1-9. A table may have more than 9
+columns, but only columns 1-9 can be explicitly configured with this syntax.
 
-/t T(T:'-' S:'|') Col(B:'-' S:'|') 3:(A:R W:8)
-one  two  75
-three  @  200
+/t T(T:'-' S:'|') Col(B:'-' S:'|') 2(A:C) 3(A:R W:8) 4(ALIGN:DECIMAL)
+one  two  75  654321
+three  @  200  .123456
 t/
 
-This should produce the following centered table:
---------------------------    (top row of hyphens from T(T:'-')
-| one   | two  |      75 |    (T(S:'|') C(S:'|'))
---------------------------
-| three | @    |     200 |
---------------------------
+This should reflow to the following table:
+-----------------------------------------    (top row from T(T:'-')
+| one   | two |      75 | 654321        |
+-----------------------------------------
+| three |  @  |     200 |       .123456 |
+-----------------------------------------
 
-A constraint of this code is that all cells must be represented in the first
-row (this is how we find out how many columns there are). After the first row,
-data for cells on the right can be omitted. In general it is best to represent
-every line of every cell of every row. One way to do this is to provide a
-single @ character, as above. In HTML conversion, cell data consisting only of
+A constraint of this code is that all inner cells must be represented IN
+EVERY LINE. Cells on the right can be omitted, but an empty cell or line of
+a multi-line cell must filled out with a single @ when there is a non-empty
+cell to its right. In HTML conversion, cell data consisting only of
 @ is converted to &nbsp;. (If we do a "delete markup" operation for ascii,
 it could replace @s with spaces, but they are easy enough to kill manually.)
 
-A second way to represent an empty cell is to delimit it with stiles. That is,
-the regex for a column delimiter is ( *\| *| {2,}) that is, a stile with 
-any amount of spaces around it, or a sequence of 2 or more spaces. So the data
-row above, "three  @  200" could also be given as "three| |200"
-
 What is passed to the table function is a textCursor (the one with the undo/redo
 macro working) and the slice of the work unit list bounded by the opening and
-closing /t markup lines. (This lets us process only nonempty lines, and use the
+closing /T[M] markup lines. (This lets us process only nonempty lines, and use the
 B:n value to detect row boundaries in a multiline table.) The document is
 available from IMC.
 
-The code here parses the table. If errors are found it displays warnings and 
-returns. When all is well, it develops the finished text and inserts it using
-the textCursor.
-
-We define two local classes. A tableProperties instance represents the values
-defined in the /t statement, allowing the code to easily fetch information
-about alignment, defined width, border and junction characters. For example,
-    tp = tableProperties(QString("/T T(A:C T:'-' S:'|') Col(B:'-' S:'|') 3:(A:R W:8)")
-    tp.tAlign() -> TalignCenter
-    tp.cSide(1) -> '|' 
-    tp.cWidth(2) -> None
-    tp.cWidth(3) -> 8
+We define two local classes. A tableProperties instance decodes and stores
+the values defined in the /T[M] statement, allowing the code to easily fetch
+information about alignment, widths, and borders. For example,
+    tp = tableProperties(QString("/T T(T:'-' S:'|') Col(A:R) 3(W:8)")
+    tp.isMultiLine() -> False
+    tp.columnSideString(1) -> '|' 
+    tp.columnWidth(2) -> None
+    tp.columnWidth(3) -> 8
 
 A tableCells instance stores the cell values as they are discovered, and
 returns them properly formatted when the table is rewritten. The related
-tableProperties is part of initializing the tableCells, so it can return
+tableProperties is used in initializing the tableCells, so it can return
 either actual or specified widths,
-    tc = tableCells(tp,multiLine=False)
+    tc = tableCells(tp)
     tc.store(rownum,1,QString("one")) # discovering the values of the example
     tc.store(rownum,2,QString("two"))
     tc.store(rownum,3,QString("75"))
-    tc.cWidth(1) -> 4 based on len("one") + len(tp.cSide(1))
-    tc.cWidth(2) -> 4 based on len("two") + len(tp.cSide(2))
-    tc.cWidth(3) -> 10 based on tp.cWidth(3) + len(tp.cSide(3))
+    tc.store(rownum,4,QString("654321"))
+    tc.columnMinWidth(1) -> 4 based on len("one") + len(tp.cSide(1))
 
 Some would disdain classes like these as "singleton factories." True, only one
 of each is made in handling a given table, yet I think this is valid 
@@ -170,26 +168,33 @@ class tableProperties:
     def __init__(self,tqs):
         # set up default table properties
         self.tProps = {'W':None, 'T':None, 'S':None}
-        # set up default all-column properties
-        self.cProps = {'A':CalignLeft, 'W':None, 'B':None, 'S':None}
+        # set up default all-column properties: A:alignment,
+        # B:bottom-sring, S:side-string, D:decimalpoint W:width F:Fraction
+        self.cProps = {'A':CalignLeft, 'B':None, 'S':None, 'D':'.', 'W':None, 'F':None}
+        # explicit properties of specific columns 1-9 here if supplied
         self.c1to9Props = {}
         # note if this is multiline: currently /TM versus /T
         self.isMulti = tqs.startsWith(QString(u'/TM'))
         self.parseRE = QRegExp()
         self.parseRE.setCaseSensitivity(Qt.CaseInsensitive) # ignore case 
-        self.parseRE.setMinimal(True) # when looking for ) stop with the first
+        # set minimal so when looking for ), we stop with the first
+        # if any of this code changes minimal it must save and restore it.
+        self.parseRE.setMinimal(True) # when 
         # get the contents of a Table(something) if it exists
         topts = self.getMainOption(tqs,u'T')
-        if topts is not None: # yes there is a Table(something) and topts==something
-            w = self.getWidthOption(topts)
+        if topts is not None: # there is T(something), and topts has the something
+            # pull a WIDTH:n option out of it if any, ignoring any fraction
+            (w,f) = self.getWidthOption(topts)
             if w is not None:
                 self.tProps['W'] = w
+            # pull a TOP:'-' option if any
             s = self.getStringOption(topts, u'T')
             if s is not None:
                 if unicode(s) == u'-':
                     self.tProps[u'T'] = s
                 else:
                     pqMsgs.warningMsg(u'Only hyphen suppported for Top option')
+            # pull a SIDE:'|' option if any
             s = self.getStringOption(topts, u'S')
             if s is not None:
                 if unicode(s) == u'|':
@@ -199,66 +204,69 @@ class tableProperties:
         # get the contents of a Column(something) if it exists
         copts = self.getMainOption(tqs,u'C')
         if copts is not None:
-            # there is a Column(...) option so extract the bits from it
+            # there is a Column(something) and copts is the something
+            # pull default column options out of it, store in self.cProps
             self.getColumnOptions(copts,self.cProps,True)
         # collect specific column options 1()..9() if given
         for key in u'123456789':
             copts = self.getMainOption(tqs,key)
             if copts is not None:
-                # there is a <x>(something) option, extract bits from it
+                # there is a n(something) option, extract bits from it
                 # and store in the dictionary.
                 self.c1to9Props[key] = self.cProps.copy()
                 self.getColumnOptions(copts,self.c1to9Props[key])
 
     # get a major option string Xxxx(something) and return the something
     def getMainOption(self,qs,key):
-        dbg = unicode(qs)
+        # set RE pattern of Xxxxx(something)
         self.parseRE.setPattern(key + u'\w*\s*\((.+)\)')
-        dbg2 = unicode(self.parseRE.pattern())
         if -1 < self.parseRE.indexIn(qs) :
             return self.parseRE.cap(1)
         return None
     # get an Align:keyword option string returning the initial or None
-    def getAlignOption(self,qs,dAllowed=False):
-        #dbg = unicode(qs)
+    def getAlignOption(self,qs):
+        # set RE pattern of Axxxx:Left/Right/Center/Decimal
         self.parseRE.setPattern(u'A\w*\s*\:\s*([LRCD])\w*')
         if -1 < self.parseRE.indexIn(qs) :
-            opt = unicode(self.parseRE.cap(1).toUpper()) # u'L R C or D'
-            if (opt == u'D') and (not dAllowed) :
-                pqMsgs.warningMsg("ALIGN:DECIMAL not allowed for Table",
-                                  "found in " + unicode(qs) )
-                return None
-            else: return opt
-        else: return None
+            return unicode(self.parseRE.cap(1).toUpper()) # u'L R C or D'
+        return None
     # get a Width:nnn option string, returning the integer or None
     def getWidthOption(self,qs):
-        #dbg = unicode(qs)
-        self.parseRE.setPattern(u'W\w*\s*\:\s*(\d+)')
-        minimal = self.parseRE.isMinimal()
-        self.parseRE.setMinimal(False) # need to suck up all the digits
+        # set RE pattern of Wxxxx:nnn, greedy to get all digits
+        mopt = self.parseRE.isMinimal()
+        self.parseRE.setMinimal(False)
+        self.parseRE.setPattern(u'W\w*\s*\:\s*(\d+)(\.(\d+))?')
         wval = None
+        fval = None
         if -1 < self.parseRE.indexIn(qs):
+            # We have a hit on W:ddd and it may be, W:ddd.ddd
             (wval,ok) = self.parseRE.cap(1).toInt()
-            # do a sanity check on a large number
-            if wval > 75 :
+            (fval,ok) = self.parseRE.cap(3).toInt()
+            if not ok : fval = None
+            # however, do a sanity check on a large number
+            if wval > 75 or fval > 75 :
                 pqMsgs.warningMsg(u"Lines over 75 not allowed in ASCII etexts",
-                    u"Ignoring "+qs)
+                    u"Ignoring width in "+qs)
                 wval = None
-        self.parseRE.setMinimal(minimal) # restore regex
-        return wval
+                fval = None
+        self.parseRE.setMinimal(mopt)
+        return (wval,fval)
     # Get a Xxxx:'str' or Xxxx:"str" option and convert to a proper literal,
-    # returning either None for no option seen, or a QString.
+    # returning either None for no option seen, or a one-character QString.
     # Allow single or double quotes, unfortunately QRegExp does not allow
     # back-references inside character classes, e.g. ('|")([^\1]+)\1
-    # so we have to run two separate re's. Originally we were going to allow
-    # multiple chars and various chars and someday might, so this is more
-    # general than strictly needed.
+    # so we have to run two separate re's. Originally the plan was to allow
+    # multiple chars for some options and and someday might, so this is more
+    # general than strictly needed. N.B. when QRegExp.indexIn fails, the value
+    # of QRegExp.cap(1) is a null QString.
     def getStringOption(self,qs,initial):
         opt = None
+        # set pattern for Xxxx:'x'
         self.parseRE.setPattern(initial+u"\w*\s*\:\s*\\\'([^\\\']*)\\\'")
         self.parseRE.indexIn(qs)
         opt = self.parseRE.cap(1)
         if opt.isNull() : # no hit on single quote, try "-"
+            # set pattern for Xxxx:"x"
             self.parseRE.setPattern(initial+u'\w*\s*\:\s*\\\"([^\\\"]*)\\\"')
             self.parseRE.indexIn(qs)
             opt = self.parseRE.cap(1)
@@ -270,15 +278,24 @@ class tableProperties:
         else:
             opt = None
         return opt
-    # Given a Column(something) or <digit>(something), populate or update
-    # a dict of properties with Align, Width, Bottom and Side values.
+    # Given the "something" from C(something) or <digit>(something), populate or
+    # update a dict of properties with Align, Width, Bottom and Side values.
+    # main==True signals this is the C(something) where B and S are allowed.
     def getColumnOptions(self,copts,propdic,main=False):
-        a = self.getAlignOption(copts,True)
+        a = self.getAlignOption(copts)
         if a is not None:
-            propdic[u'A'] = {'L':CalignLeft,'R':CalignRight,'C':CalignCenter}[a]
-        w = self.getWidthOption(copts)
+            propdic[u'A'] = {
+        'L':CalignLeft,'R':CalignRight,'C':CalignCenter,'D':CalignDecimal
+                            }[a]
+            if a == u'D': # decimal align, look for a special delimiter
+                d = self.getStringOption(copts, u'D')
+                if d is not None:
+                    propdic[u'D'] = d.at(0) # keep the first char as a QChar
+        (w,f) = self.getWidthOption(copts)
         if w is not None:
             propdic['W'] = w
+            if f is not None:
+                propdic['F'] = f
         if main:
             s = self.getStringOption(copts, u'B')
             if s is not None:
@@ -308,51 +325,61 @@ class tableProperties:
         return self.tProps[u'S']
     def tableTopString(self):
         return self.tProps[u'T']
-    def columnAlignment(self,c):
-        c = unicode(c)
-        if c in self.c1to9Props:
-            return self.c1to9Props[c][u'A']
-        return self.cProps[u'A']
-    def columnWidth(self,c):
-        c = unicode(c)
-        if c in self.c1to9Props:
-            return self.c1to9Props[c][u'W']
-        return self.cProps[u'W']
     def columnBottomString(self):
         return self.cProps[u'B']
     def columnSideString(self):
         return self.cProps[u'S']
+    # return a specific column property is one is coded, else the generic one
+    def someColumnValue(self,c,key):
+        c = unicode(c) # convert integer column to character key
+        if c in self.c1to9Props:
+            return self.c1to9Props[c][key]
+        return self.cProps[key]
+    def columnAlignment(self,c):
+        return self.someColumnValue(c,u'A')
+    def columnFractionWidth(self,c):
+        return self.someColumnValue(c,u'F')
+    def columnIntegerWidth(self,c):
+        return self.someColumnValue(c,u'W')
+    def columnWidth(self,c):
+        return self.someColumnValue(c,u'W')+self.someColumnValue(c,u'F')
+    def columnDecimal(self,c):
+        return self.someColumnValue(c,u'D')
+        
 
-# Oh sigh, how to store cell data for easy retrieval? 
-# The obvious is a list of lists, which could be arranged by rows or
-# columns, that is, a list of which each member is a list of the cells
-# for that row across, or a list of which each member is a list of the
-# cells for that column down. (Or of course, a dict where each key is 
-# the catenation of r:c values.) All lend themselves about equally to for-loops.
-# OK, K.I.S.S., do a list ordered by rows because the data will be read in
-# and out by rows.
+# Oh sigh, how to store cell data for easy retrieval? We are doing the obvious,
+# a list of which each member is a list of the cell data  for that row across.
+# Each cell is a single QString, in a multi-line table we concatenate the
+# values from each line of a row with a space between.
 #
-# And, do we need to store metadata as well as string data? Is the record of
-# one cell a tuple, or maybe even we need a cellData class?
+# While storing we also save metadata on a per-column basis:
+# self.cMinWidths and self.cDecWidths store the necessary minimum width for
+# each column. When alignment is R/L/C, cDecWidth is zero and cMinWidth has
+# the length of the longest space-delimited token seen in that column, thus
+# the minimum width the column must have.
 #
-# No, we have metadata PER COLUMN, the minimum width needed and possibly
-# the "suggested" width, that is the width between delimiters in the input.
-# And PER TABLE, the number of columns and rows. But not per CELL, there the
-# only metadata can be derived using len().
+# When alignment is Decimal, cMinWidth has the longest nonblank string seen
+# left of a decimal point, and cDecWidth has the longest string seen right
+# of a decimal point including the point. Thus for all alignments, the 
+# required minimum is cMinWidth+cDecWidth.
+# Also stored: the "suggested" width, the longest UNtrimmed string seen for
+# any cell.
 class tableCells:
     def __init__(self,propsObject) :
         self.tProps = propsObject
         self.multi = self.tProps.isMultiLine()
-        self.single = not self.multi
+        self.single = not self.multi # save for convenient coding
         # columns numbered 1..columnsSeen
         self.columnsSeen = 0
         # rows numbered 1..rowsSeen
         self.rowsSeen = 0
-        # largest single data-chunk width per column
+        # largest single data-chunk width per column, or left of decimal
         self.cMinWidths = []
+        # largest string seen right of a decimal incl. the decimal
+        self.cDecWidths = []
         # largest actual cell width seen per column
         self.cSugWidths = []
-        # concatenated string data for each column
+        # list of cell data strings for each row
         self.data = []
         self.lastRowIndex = None # index of current row
         self.row = None # reference to current row's list of data
@@ -361,11 +388,10 @@ class tableCells:
         self.tokenRE = QRegExp(u'\s*(\S+)')
 
     # Store the string qs as data for cell r:c. Note the minimum width it
-    # implies: if single-line, the trimmed length; if multi-line, the length
-    # of the longest non-blank token seen so far for that cell.
+    # implies based on this column's alignment.
     # Also note the "suggested" width, the actual size including whitespace.
     def store(self,r,c,qs):
-        if r != self.lastRowIndex: # new row
+        if r != self.lastRowIndex: # starting a new row
             if r > self.rowsSeen:
                 # new row: assert r = len(self.data)+1, i.e. rows start at 1
                 # and are only ever incremented by 1 and never skip.
@@ -377,44 +403,66 @@ class tableCells:
             self.lastRowIndex = r
             # get a reference (not a copy, this is Python) to this row's data
             self.row = self.data[r-1]
+        dbg = unicode(qs)
         if c > self.columnsSeen :
             # assuming c goes up sequentially 
             self.columnsSeen = c
             # initialize the suggested and minimum widths for this column
             self.cSugWidths.append(0)
-            w = self.tProps.columnWidth(c)
+            w = self.tProps.columnIntegerWidth(c)
             self.cMinWidths.append(0 if w is None else w)
-        if self.single : 
-            # one-line-per-row table, this string is the only data for this cell
-            qst = qs.trimmed()
-            # Store the un-trimmed data in the row at index c-1
-            self.row.append(qst)
-            # Save minimum width based on trimmed width
-            self.cMinWidths[c-1] = max(self.cMinWidths[c-1],qst.size())
-        else:
-            # multi-line table, data for this cell may already exist
-            if c > len(self.row):
-                # first sight of this column in this row, append this datum
-                self.row.append(qs)
-            else:
-                # second or later line of a multi-line cell, append with a space
-                self.row[c-1].append(QString(u' '))
-                self.row[c-1].append(qs)
-            # Calculate the minimum cell width based on the longest nonblank
-            # token in the new string.
-            w = self.cMinWidths[c-1] # min width seen so far
-            j = self.tokenRE.indexIn(qs) # index of first nonblank sequence
-            while j > -1:
-                w = max(w, self.tokenRE.cap(1).size()) # note widest token
-                # find next token after the matched one, if any
-                j = self.tokenRE.indexIn(qs,j+self.tokenRE.matchedLength())
-            # record longest token seen so far this column
-            self.cMinWidths[c-1] = w # put updated width back
-        # for single and multi, save the actual size as suggested width
+            f = self.tProps.columnFractionWidth(c)
+            self.cDecWidths.append(0 if f is None else f)
+        # save the suggested width based on the un.simplified string
         self.cSugWidths[c-1] = max(self.cSugWidths[c-1],qs.size())
+        # get a copy of the data with leading & trailing spaces dropped
+        # and internal runs of spaces reduced to single spaces. This stripped
+        # version is what we save and return.
+        qst = qs.simplified()
+        if c > len(self.row):
+            # first sight of this column in this row, append this datum
+            self.row.append(qst)
+        else:
+            # second or later line of a multi-line cell, append with a space
+            self.row[c-1].append(QString(u' '))
+            self.row[c-1].append(qst)
+        # work out min/dec widths based on alignment
+        if CalignDecimal != self.tProps.columnAlignment(c):
+            # align L/R/C, save the longest needed width
+            if self.single :
+                # single-line table, just note trimmed size
+                self.cMinWidths[c-1] = max(self.cMinWidths[c-1],qst.size())
+            else:
+                # multi-line table, data for this cell may already exist
+                # Increase the minimum cell width if necessary, based on the
+                # longest nonblank token in the new string.
+                w = self.cMinWidths[c-1] # widest token seen so far
+                j = self.tokenRE.indexIn(qs) # index of first nonblank sequence
+                while j > -1:
+                    w = max(w, self.tokenRE.cap(1).size()) # note widest token
+                    # find next token after the matched one, if any
+                    j = self.tokenRE.indexIn(qs,j+self.tokenRE.matchedLength())
+                self.cMinWidths[c-1] = w # put possibly-updated width back
+        else:
+            # Decimal alignment. Not checking if this is the first & only 
+            # value for the cell; decimal can be used in a multi-line table,
+            # with the numeric value preceded or followed by empty "@" lines.
+            d = self.tProps.columnDecimal(c) # period or comma or whatever
+            # Find the 0-based index of the rightmost decimal delimiter in the
+            # string, and set the string size if it is not found
+            j = qst.lastIndexOf(d)
+            if j < 0 : j = qst.size()
+            # Set cDecWidths based on the position of the decimal point, this
+            # is zero if no point was seen, 1 if the point is the last char
+            # in the string, else the width of the point and following digits.
+            self.cDecWidths[c-1] = max(self.cDecWidths[c-1],qst.size()-j)
+            # and set cMinWidths based on the string left of the point
+            self.cMinWidths[c-1] = max(self.cMinWidths[c-1],j)
 
     # Return the highest count of columns stored for any row. Note it is
     # possible for some rows to be short, if one or more columns were omitted.
+    # Assumption: this won't be called until all data has been stored and so
+    # all columns have been seen.
     def columnCount(self):
         return self.columnsSeen
 
@@ -425,8 +473,9 @@ class tableCells:
     # Return the data string for a given cell, given r and c. On the assumption
     # that rows will be read out sequentially, save the row for future use.
     # In the event a row is valid but no column was stored, return an empty
-    # QString. This is not necessarily an error.
-    # In the event of an unknown cell, return a null QString and print an error.
+    # QString. This is not necessarily an error, since empty cells on the
+    # right can be omitted. But for a row or column beyond what we saw
+    # during fetching, or negative, return a null QString and print an error.
     def fetch(self,r,c):
         if r != self.lastRowIndex:
             if (r > len(self.data)) or (r < 1):
@@ -453,14 +502,22 @@ class tableCells:
     # table properties and updated with actual data.
     def columnMinWidth(self,c):
         if c <= self.columnsSeen:
-            return self.cMinWidths[c-1]
+            return self.cMinWidths[c-1] + self.cDecWidths[c-1]
         return self.badColumn(c)
     # Return the suggested width of column c, the longest actual string
     # (blanks included) that was stored; but never less than the minimum width.
     def columnSugWidth(self,c):
         if c <= self.columnsSeen:
-            return max(self.cSugWidths[c-1],self.cMinWidths[c-1])
+            return max(self.cSugWidths[c-1],self.columnMinWidth(c))
         return self.badColumn(c)
+    def columnDecWidth(self,c):
+        if c <= self.columnsSeen:
+            return self.cDecWidths[c-1]
+    # pass-thru of align and decimal values so they can be gotten via a tableCells
+    def columnAlignment(self,c):
+        return self.tProps.columnAlignment(c)
+    def columnDecimal(self,c):
+        return self.tProps.columnDecimal(c)
 
 # Reflow a table, based on the sequence of "work units" as developed in
 # pqFlow. Arguments are: doc is a QTextDocument, tc is the textCursor over
@@ -612,7 +669,7 @@ def tableReflow(tc,doc,unitList):
         allSugWidths[c] += 1
         totalSugWidth += 1
     # Now, totalSugWidth == tableDataWidth and allSugWidths is the list of
-    # target column widths. Fill the rows aligning cells as requested.
+    # target column widths. Fill the rows, aligning cell values as requested.
     # What we are going to do is, develop one whomping QString for the whole
     # table, then finally insert it using textCursor tc replacing the table.
     # flowCell returns a QStringList with one string for each ascii line needed
@@ -621,27 +678,34 @@ def tableReflow(tc,doc,unitList):
     if topChar is not None: # start with top line of ---s
         tableText.fill(topChar.at(0),targetTableWidth)
         tableText.append(IMC.QtLineDelim)
+    # this list holds the cell data for one row at a time as QStringLists
     rowdata = [None]*(tcells.columnCount()+1)
+    # set the left-side delimiter of stile or nothing
     lineStart = QString() if tprops.columnSideString() is None \
                            else cellDelimiterString
+    # set the right-side delimiter of stile or nothing
     lineEnd = tableSideString
+    # set the between-rows constant of nothing, linebreak, or hyphens+linebreak
     cellBottom = QString()
-    if botChar is not None:  # single or multi, make cell-bottom string of ---\n
+    if botChar is not None:
         cellBottom.fill(botChar.at(0),targetTableWidth)
         cellBottom.append(IMC.QtLineDelim)
     else:
         if tprops.isMultiLine() :
             # if no bottom string, multi still needs empty line
             cellBottom.append(IMC.QtLineDelim)
+    # process all logical rows in sequence top to bottom
     for r in range(1,tcells.rowCount()+1):
         asciiLines = 0 # counts how many ascii lines in this logical row
+        # process all cells in this row, left to right -- note if Python
+        # had #include that's how flowCell would be coded- nested includes
         for c in range(1,tcells.columnCount()+1):
-            rowdata[c] = flowCell(
-                tcells.fetch(r,c), allSugWidths[c], tprops.columnAlignment(c)
-                )
+            rowdata[c] = flowCell(tcells.fetch(r,c), allSugWidths[c],
+                tcells.columnAlignment(c), tcells.columnDecimal(c),
+                tcells.columnDecWidth(c))
             asciiLines = max(asciiLines,rowdata[c].count())
         for x in range(asciiLines):
-            # read out line x of each cell across a line
+            # read out line x of each cell across a line, with delimiters
             qsLine = QString(lineStart) # making a copy
             for c in range(1,tcells.columnCount()+1):
                 if rowdata[c].count() > x:
@@ -674,47 +738,58 @@ def tableReflow(tc,doc,unitList):
 
 # Given the data of one cell as a single QString, fold or stretch it into a
 # specified width, aligned as specified. Return a QStringList with one 
-# QString per ascii line of folded text -- which should be 1 for a single line
-# table, or more for a multiline table. The problem is similar to the
-# paragraph folder in pqFlow but simpler. We are not supporting logical lengths
-# of <i/b/sc> for one thing. Sorry, get rid of those before flowing a table,
-# that's what the skip button is for.
-# It is more complex in that we may have to center or right-align.
+# QString per ascii line of folded text: 1 for a single line table, 1 or more
+# for a multiline table. The problem is similar to the paragraph folder in
+# pqFlow but simpler. We are not supporting logical lengths of <i/b/sc> for one
+# thing. That's TBS, for now use the skip button to stop table reflow until the
+# markups are gone.) It is more complex in that we may have to center, right,
+# or decimal-align.
 chunkRE = QRegExp()
-def flowCell(qs,width,align):
+def flowCell(qs,width,align,decpoint,decwidth):
     if qs.size() <= width :
-        return QStringList(alignCell(qs,width,align))
+        # entire cell data fits in the width, return one-string list
+        return QStringList(alignCell(qs,width,align,decpoint,decwidth))
     # string is greater than width -- we assert this cannot occur in a 
     # single-line table. So we will fold qs into multiple strings. Now let us
     # chunk qs into whitespace-delimited chunks up to width in size.
-    dbg1 = unicode(qs)
     qs.append(u' ') # ensure terminal space: last good char is at size-2
-    chunkRE.setMinimal(False)
     chunkRE.setPattern(u'\s*(\S.{,'+str(width-1)+u'})\s')
     qsl = QStringList()
     j = chunkRE.indexIn(qs,0)
     while j > -1 :
-        qsl.append(alignCell(chunkRE.cap(1),width,align))
+        qsl.append(alignCell(chunkRE.cap(1),width,align,decpoint,decwidth))
         j += chunkRE.cap(0).size()
         j = chunkRE.indexIn(qs,j)
     return qsl    
     
 # Given a QString that fits in a width, extend it front a/o back to
 # align in that width.
-def alignCell(qs,width,align):
+def alignCell(qs,width,align,decpoint,decwidth):
     spaces = width - qs.size()
-    if spaces : 
+    if spaces > 0 : 
+        lspace = QString(u'')
+        rspace = QString(u'')
+        onespace = QChar(u' ')
         # There are some spaces to distribute, but on which side?
         if align == CalignLeft :
-            qs.append(u' ' * spaces)
+            rspace.fill(onespace, spaces)
         elif align == CalignRight :
-            qs.prepend(u' ' * spaces)
-        else :
-            # sigh - center it. put the odd space on the right.
-            spacesLeft = int(spaces/2)
-            spacesRight = spaces - spacesLeft
-            qs.prepend(u' ' * spacesLeft)
-            qs.append(u' ' * spacesRight)
+            lspace.fill(onespace, spaces)
+        elif align == CalignCenter :
+            # centering, put an odd space, if any, on the right
+            lspace.fill(onespace, int(spaces/2))
+            rspace.fill(onespace, spaces-lspace.size())
+        else:
+            # decimal alignment: add right spaces sufficient to make the
+            # decimal points line up, and left to reach the width.
+            j = qs.lastIndexOf(decpoint)
+            if j < 0 : j = qs.size()
+            rspace.fill(onespace,decwidth-(qs.size()-j))
+            lspace.fill(onespace,spaces-rspace.size())
+        dbg = unicode(qs)
+        qs.prepend(lspace)
+        qs.append(rspace)
+        dbg2 = unicode(qs)
     return qs
     
 # warn the user a table will be wider than expected/requested
