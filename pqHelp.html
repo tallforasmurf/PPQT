@@ -398,7 +398,9 @@ may produce a deep left margin.</p>
 <p>Normally you reflow after removing &lt;i>, &lt;b>, and &lt;sc> markup.
 However you can preview reflow while these are still in place by setting
 the controls on the right center. For example if &lt;sc> markup will
-be converted to uppercase, set the control to treat this markup as 0 length.</p>
+be converted to uppercase, set the control to treat this markup as 0 length.
+(This does not work for tables at this time. Set the skip button for tables
+until you have removed the i/b/sc markup from the text.)</p>
 <h4>Indents</h4>
 <p>The top row of controls set the default indents for block quotes.
 The <i>First</i> indent applies to the first line of a paragraph;
@@ -411,19 +413,17 @@ is too long to fit in 75 chars and is folded.</p>
 by writing <b>F:</b><i>nn</i> <b>L:</b><i>nn</i> <b>R:</b><i>nn</i> following
 the start of the markup. For example <tt>/Q F:8 L:6</tt> starts a 
 block-quote markup with those margins, overriding the <i>First</i> and <i>Left</i> margins set with the visible controls, but using the <i>Right</i> from the control.</p>
-<p>You can write these explicit indent values on Quote, Poetry and List markups. You can also use them on Right markup but only the <b>R:</b><i>nn</i> is used.
-You can use them on no-reflow (/*) markup but only the <b>L:</b><i>nn</i> is used.</p>
+<p>You can write these explicit indent values on Quote, Poetry and List markups. You can also use <b>R:</b><i>nn</i> on Right markup and <b>L:</b><i>nn</i>
+on no-reflow (/*) markup.</p>
 <h4>Nesting Markups</h4>
 <p>To a limited degree you can nest the markups. For example you can nest
 a /P poetry section within a /Q block quote section or a /U list section.
 You can nest a /R right align section in poetry or a quote. Multiple
 levels of nesting (/R within /P within /Q) are possible. The F/L/R indents
 for a nested section are taken relative to the indents for its containing section.</p>
-<h4>ASCII Tables</h4>
-PPQT treats tables as a special kind of reflow. You mark off the data lines
-of the table with <b>/T..T/</b>. The logical columns within a row are separated
-in one of two ways: by strings of two or more spaces, or with stiles (|).</p>
-<p>A single-line table has one table row per text line. Here is a simple table with two rows and two columns.</p>
+<h4>Table Markup</h4>
+PPQT treats tables as a special kind of reflow. The column values within a row are separated in one of two ways: by strings of two or more spaces, or with stiles (|).</p>
+<p>A single-line table has one table row per text line. It is marked up with  <b>/T..T/</b> Here is a simple table with two rows and two columns.</p>
 <pre>/T
 column 1    755.00
 another row  2000.00
@@ -440,26 +440,25 @@ Properties of Clay   29
 T/
 </pre>
 <p>By default PPQT makes a table 75 characters wide (less
-if it is nested in another markup), aligns the column text left, and divides the
-columns roughly in proportion to their contents. You can specify detailed
-controls on the opening markup line.
-Specify table properties with <b>T(</b><i>properties</i><b>)</b> where the
-<i>properties</i> can be:</p>
+if it is nested in another markup), aligns the column text left, and spaces the
+columns roughly in proportion to their contents. However, you can specify detailed controls on the opening markup line.
+Specify properties of the whole table with <b>T(</b><i>properties</i><b>)</b> where the <i>properties</i> can be:</p>
 <ul><li><b>W:</b><i>nn</i> for the width of the table.</li>
 <li><b>S:'|'</b> (a stile in single quotes) to have the right side of the finished table be a column of
 stile characters.</li>
 <li><b>T:'-'</b> to have the top line of the table be a row of hyphens.</li>
 </ul>
-<p>For example <tt>/TM T(W:50)</tt> specifies a multi-line table with a
-width of 50.</p>
-<p>Set the defaults for all columns with <b>C(</b><i>properties</i><b>)</b>, where
+<p>For example <tt>/TM T(W:50)</tt> begins a multi-line table with a width of 50.</p>
+<p>Set the default properties for all columns with <b>C(</b><i>properties</i><b>)</b>, where
 the <i>properties</i> can be:</p>
-<ul><li><b>W:</b><i>nn</i> for the minimum width of every column.</li>
-<li><b>A:R/L/C</b> for align text left, right or center in the cell.</li>
+<ul><li><b>W:</b><i>nn</i> for the minimum width of every column.
+(PPQT will give columns more width than this to fill the table width.)</li>
+<li><b>A:R/L/C/D</b> to align the cell contents left, right, centered
+or decimal.</li>
 <li><b>B:'-'</b> to have each cell have a line of hyphens under it.</li>
 <li><b>S:'|'</b> to have the left side of each column be a column of stiles.</li>
 </ul>
-<p>You can set the width and alignment properties (only) of a specific
+<p>You can set the width and alignment properties of a specific
 column <i>n</i> by writing <i>n</i><b>(</b><i>properties</i><b>)</b>.
 Here is a fully-specified table before reflow:</p>
 <pre>/TM TABLE(TOP:'-' WIDTH:40 SIDE:'|') COL(B:'-' S:'|') 2(A:R W:12)
@@ -483,7 +482,7 @@ T/</pre>
 T/</pre>
 <p>You can omit the contents of empty cells on the right end of a row. However, you cannot leave blank a cell or cells on any line within a row, or PPQT will assign
 text to the wrong column (as in the example above where "prose" fell
-from column 3 to column 1 because column 1 & 2 were left blank).
+from column 3 to column 1 because column 1 & 2 were blank).
 To fill in for a cell that is logically empty,
 use a single @ character on every line, as in the above example.</p>
 <p>PPQT assigns horizontal space to columns using some brain-dead heuristics.
@@ -492,9 +491,30 @@ of each column individually.</p>
 <p>As suggested by the example, you can spell out the names of properties,
 for example <tt>WIDTH:50</tt> instead of <tt>W:50</tt>. But actually, only
 the initial letter is checked, so <tt>WATERMELON:50</tt> works, too.</p>
+<p>Decimal alignment makes the decimal separators line up vertically in a column. When you specify <tt>A:D</tt> for a column, you can also specify
+the width in two parts, for example <tt>W:7.3</tt> where the first number (7)
+says the minimum width for the integer part, and the second (3) sets the
+minimum width for the decimal and the fraction digits. You may also
+specify <tt>D:'<i>x</i>'</tt> to set a different decimal separator character <i>x</i>, for example in a German text, where the comma is the conventional
+decimal "point". Here is a simple table with decimal alignment before reflow:</p>
+<pre>
+/T TABLE(WIDTH:30) 1(A:R) 2(A:D W:8.4 D:',')
+Persimmons   € 24,20
+Marshmallows  € 124,80
+T/</pre>
+<p>And after</p>
+<pre>
+/T TABLE(WIDTH:30) 1(A:R) 2(A:D W:8.4 D:',')
+    Persimmons        € 24,20 
+  Marshmallows       € 124,80 
+T/
+</pre>
+<p>Decimal alignment can produce odd results when applied to cells that
+contain text, especially in a multi-line table. For example you may find
+it best to format a heading row manually over a decimal table.</p>
 <h3>HTML Conversion</h3>
 <p>ASCII reflow is designed so you can do it repeatedly. HTML conversion
-is a one-shot deal, it wipes out the reflow markup lines and the spacing
+is a one-shot deal: it wipes out the reflow markup lines and the spacing
 of tables. Select a range of text and click HTML Convert: Selection, or
 click Document to do the whole thing. HTML conversion is a single
 undo/redo operation. During conversion the following changes are made
@@ -518,12 +538,14 @@ for the different markup types.</p>
 <tr><td><b>T/</b></td><td><tt>&lt;/table></tt></td>
 </table>
 <p>Within a table, the cell values are enclosed appropriately in <tt>&lt;tr></tt> and <tt>&lt;td></tt> codes. Where a specific width was given for a column, the first row of that column is coded <tt>&lt;td style="width:<i>pp</i>%;"></tt> where
-<i>pp</i> is based on the specified width divided into the table width.
+<i>pp</i> is based on the specified width divided by the table width.
 When a column has right alignment or center alignment, every cell in it is 
 coded with <tt>class="r"</tt> or <tt>class="c"</tt> respectively.
 This assumes CSS of<pre>td.r {text-align:right}
 td.c {text-align:center}</pre>
-
+<p>Decimal alignment in a table could be coded in HTML as
+<tt>&lt;td char='<i>x</i>'></tt> on each cell of a decimal column, but
+this element of the HTML 4.0 standard is not supported by any browsers, so Decimal-aligned columns just default to left-alignment. Too bad.</p>
 <p>TBS: controls for removing line separators interactively.</p>
 <h2>The Preview Panel</h2>
 <p>Click the Pvw tab to display the HTML Preview panel. Whenever
