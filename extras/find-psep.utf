@@ -1,0 +1,17 @@
+# Every backslash must be doubled!
+# Find a page separator. Note that if the proofer names are very long
+# there may be no terminal -s at all, hence the asterisk
+23: {u'all' : False,
+	u'andnext' : True,
+	u'andprior' : False,
+	u'case' : False,
+	u'find' : u'-----File:\\s*\\d+\\..*-*\\n',
+	u'greedy' : False,
+	u'insel' : False,
+	u'label' : u'pseps',
+	u'regex' : True,
+	u'rep1' : '',
+	u'rep2' : u'\\n',
+	u'rep3' : u'',
+	u'word' : False
+}
