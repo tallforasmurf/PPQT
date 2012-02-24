@@ -663,7 +663,7 @@ class findPanel(QWidget):
                         prep)
         if not ok : # Cancel was clicked, make no change
             return
-        if ans.isNull(): # null label means, clear button
+        if ans.isEmpty(): # null label means, clear button
             self.userButtons[butnum].udict = {u'label':u'(empty)',u'tooltip':u'Undefined button'}
             self.userButtons[butnum].setText(QString(u'(empty)'))
             self.userButtons[butnum].setToolTip(QString(u'Undefined button'))
@@ -724,7 +724,7 @@ class findPanel(QWidget):
         openStr = u"\t{0} : {1}"
         sepStr = u",\n\t{0} : {1}" # subsequent lines are ,\n\t key : value
         endStr = u"\n}\n\n"
-        stream << u"# use %5C for backslash, or double every backslash \n"
+        stream << u"# every backslash must be doubled! \n"
         for i in range(UserButtonMax):
             d = self.userButtons[i].udict
             if d['label'] != "(empty)" :
@@ -743,10 +743,11 @@ class findPanel(QWidget):
     # n.b. the comparison u"}" == qss.at(x) will fail because a string cannot
     # match a QChar. Or so it seems. You can do u"}" == qss[x], or what we do here.
     def loadUserButtons(self,stream):
-        leadingBit = QRegExp("^\s*(\d+)\s*:")
+        leadingBit = QRegExp("^\s*(\d+)\s*:\s*\{")
         stopper = QChar(u"}")
         while not stream.atEnd():
             qs = stream.readLine().trimmed()
+            dbg = unicode(qs)
             if 0 == leadingBit.indexIn(qs) :
                 (bn,ok) = leadingBit.cap(1).toInt() # just the digits
                 if bn == 99: # code for, highest (empty) one
@@ -756,7 +757,9 @@ class findPanel(QWidget):
                             break
                     # if loop ends with no hit, bn remains 99
                 if (bn >= 0) and (bn < UserButtonMax):
-                    qss = qs.right(qs.size()-leadingBit.cap(0).size())
+                    dbg = unicode(qs)
+                    qss = qs.right((qs.size()-leadingBit.cap(0).size())+1)
+                    dbg2 = unicode(qss)
                     while True:
                         if stopper == qss.at(qss.size()-1):
                             break
