@@ -722,14 +722,9 @@ class findPanel(QWidget):
         stgs.endGroup() # end of Find/xxx group
 
     # Method for pqMain to call to cause saving of userbuttons.
-    # Saving in the settings file, we use urllib.quote() to avoid all questions
-    # of quotes and other specials. But the result is just about unreadable and
-    # we want the saved file to be user-editable so we put out the actual values
-    # which might contain Unicode letters, so the file is encoded UTF-8
-    # (whether or not the user supplies the right suffix).
-    #
-    # In order to make the file at least semi-editable, we spread out each
-    # definition on multiple lines, one line per dict element.
+    # The saved value is a python dict literal with __repr__ strings as
+    # values. The file is encoded UTF-8 (whether or not the user supplies the
+    # right suffix), because the find/rep strings can be any characters.
 
     def saveUserButtons(self,stream):
         numStr = u"{0}: {{ " # first line is button# : { \t key : value
