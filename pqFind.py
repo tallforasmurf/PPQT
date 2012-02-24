@@ -624,28 +624,40 @@ class findPanel(QWidget):
     # Slot for the clicked signal of a userButton. The button number is 
     # passed as an argument via the actual slot, which is a lambda.
     # Move the dictionary fields from the button into the find dialog fields,
-    # changing only those that are defined in the button.
+    # Clear any controls not defined in the button.
     def userButtonClick(self,butnum):
         d = self.userButtons[butnum].udict
+        self.caseSwitch.setChecked(False)
         if 'case' in d : self.caseSwitch.setChecked(d['case'])
+        self.wholeWordSwitch.setChecked(False)
         if 'word' in d : self.wholeWordSwitch.setChecked(d['word'])
+        self.inSelSwitch.setChecked(False)
         if 'insel' in d : self.inSelSwitch.setChecked(d['insel'])
+        self.regexSwitch.setChecked(False)
         if 'regex' in d : self.regexSwitch.setChecked(d['regex'])
+        self.greedySwitch.setChecked(False)
         if 'greedy' in d : self.greedySwitch.setChecked(d['greedy'])
+        self.andNextSwitch.setChecked(False)
         if 'andnext' in d : self.andNextSwitch.setChecked(d['andnext'])
+        self.andPriorSwitch.setChecked(False)
         if 'andprior' in d : self.andPriorSwitch.setChecked(d['andprior'])
+        self.allSwitch.setChecked(False)
         if 'all' in d : self.allSwitch.setChecked(d['all'])
+        self.findText.setText(QString())
         if 'find' in d :
-            self.findText.setText(unquote(d['find']))
+            self.findText.setText(d['find'])
             self.findText.userLoad = True
+        self.repEdits[1].setText(QString())
         if 'rep1' in d :
-            self.repEdits[1].setText(QString(unquote(d['rep1'])))
+            self.repEdits[1].setText(QString(d['rep1']))
             self.repEdits[1].userLoad = True
+        self.repEdits[2].setText(QString())
         if 'rep2' in d :
-            self.repEdits[2].setText(QString(unquote(d['rep2'])))
+            self.repEdits[2].setText(QString(d['rep2']))
             self.repEdits[2].userLoad = True
+        self.repEdits[3].setText(QString())
         if 'rep3' in d :
-            self.repEdits[3].setText(QString(unquote(d['rep3'])))
+            self.repEdits[3].setText(QString(d['rep3']))
             self.repEdits[3].userLoad = True
     
     # Slot for the userButtonLoad signal coming out of a userButton when
