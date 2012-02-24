@@ -13,5 +13,6 @@
 	u'rep1' : '',
 	u'rep2' : u'\\n',
 	u'rep3' : u'',
+	u'tooltip' : u'Find and delete page-separator lines',
 	u'word' : False
 }
