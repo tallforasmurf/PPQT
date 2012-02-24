@@ -693,17 +693,19 @@ class findPanel(QWidget):
         d['insel'] = self.inSelSwitch.isChecked()
         d['all'] = self.allSwitch.isChecked()
         if not self.findText.text().isNull() :
-            d['find'] = quote(unicode(self.findText.text()))
+            d['find'] = unicode(self.findText.text())
         if not self.repEdits[1].text().isNull() :
-            d['rep1'] = quote(unicode(self.repEdits[1].text()))
+            d['rep1'] = unicode(self.repEdits[1].text())
         if not self.repEdits[2].text().isNull() :
-            d['rep2'] = quote(unicode(self.repEdits[2].text()))
+            d['rep2'] = unicode(self.repEdits[2].text())
         if not self.repEdits[3].text().isNull() :
-            d['rep3'] = quote(unicode(self.repEdits[3].text()))
+            d['rep3'] = unicode(self.repEdits[3].text())
 
     # Slot for the "shuttingDown" signal out of pqMain. Save the Find and
     # Replace popup stacks, and the current userButton values, to the
-    # settings file.
+    # settings file. Here we use url quote to protect the special chars
+    # in the find-button-dicts because we aren't sure the settings file
+    # is always unicode.
     def shuttingDown(self):
         stgs = IMC.settings
         stgs.beginGroup("Find") # all subsequent keys start with Find.
