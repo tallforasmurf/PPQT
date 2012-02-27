@@ -503,11 +503,16 @@ class findPanel(QWidget):
     # to do a replace. We replace the current selection. Arguments are 
     # the number of the replace field (1-3), and the truth of and-next,
     # and-prior, and rep-all switches. When a Replace button is clicked,
-    # these values are sampled by the lambda that is the signal slot.
-    # When called from editKeyPress below, the args are always 1,
-    # f/t, f/t, false. 
+    # these values are sampled by the lambda that is the signal slot,
+    # so repno is the button number 1/2/3, and the next three args are
+    # the checked status of the interface buttons. 
+    #
+    # When called from editKeyPress below, representing an edit keystroke,
+    # the args are always 1, f/t, f/t, false. 
+    #
     # This code also depends on self.regexSwitch, self.regexp, and the
-    # replace[repno] field.
+    # replace[repno] text field.
+    #
     # Following the replace we need to adjust the edit cursor position.
     # Qt's default on .insertText is to clear the selection and leave
     # the cursor after the last inserted char. We recreate the selection
@@ -515,7 +520,7 @@ class findPanel(QWidget):
     
     def doReplace(self,repno,andNext=False,andPrior=False, doAll=False):
         self.popups[repno].noteString() # any use gets pushed on the popup list
-        if not self.allSwitch.isChecked() : # one-shot replace
+        if not doAll : # one-shot replace
             tc = IMC.editWidget.textCursor()
             j = tc.selectionStart()
             if self.regexSwitch.isChecked() :
@@ -593,6 +598,8 @@ class findPanel(QWidget):
                     else:
                         findTc.insertText(qr)
                 findTc.endEditBlock()
+                # clear the All! after successful op
+                self.allSwitch.setChecked(False)
 
     # Slot for the editKeyPress signal from the edit panel. The key is
     # passed as an int in IMC.findKeys. Do the right thing based on it.
