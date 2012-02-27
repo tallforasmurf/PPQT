@@ -342,7 +342,12 @@ class tableProperties:
     def columnIntegerWidth(self,c):
         return self.someColumnValue(c,u'W')
     def columnWidth(self,c):
-        return self.someColumnValue(c,u'W')+self.someColumnValue(c,u'F')
+        w = self.someColumnValue(c,u'W') # specific width if given
+        f = self.someColumnValue(c,u'F') # fraction width if given
+        if f is not None:
+            # if f was defined, so was w, return the sum
+            return w + f
+        return w # return width or None
     def columnDecimal(self,c):
         return self.someColumnValue(c,u'D')
         
@@ -889,22 +894,23 @@ def tableHTML(tc,doc,unitList):
     tqs = QString(t)
     tqs.append(IMC.QtLineDelim)
     # Build up the table row by row. Handle alignment with a class,
-    # <td> for left, <td class='r'> or <td class='c'>.  In the first row,
+    # <td> for left, <td class='TR'> or <td class='TC'>.  In the first row,
     # add <style='width:pp%;'> for columns with specified widths.
-    tds = u'<td{0}{1}>'
+    tds = u'<td{0}{1}>' # template for <td class='Tx' style='width:x%'>
     for r in range(1,tcells.rowCount()+1):
         tqr = QString(u'<tr>')
         for c in range(1,tcells.columnCount()+1):
             al = tprops.columnAlignment(c)
             if al is None: al = CalignLeft
             if al == CalignLeft: al = u''
-            elif al == CalignRight: al = u' class="r"'
-            else: al = u' class="c"'
+            elif al == CalignCenter: al = u' class="TC"'
+            else: # Align right or decimal both get right
+                al = u' class="TR"'
             wd = u''
             if (r == 1) and (c in cwpct) :
                 wd = u' style="width:{0:d}%;"'.format(cwpct[c])
             cqs = tcells.fetch(r,c)
-            td = tds.format(al,wd)
+            td = tds.format(al,wd) # make <td> with align, width
             tqr.append(QString(td))
             tqr.append(cqs)
             tqr.append(QString(u'</td>'))
