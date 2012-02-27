@@ -897,6 +897,8 @@ def tableHTML(tc,doc,unitList):
     # <td> for left, <td class='TR'> or <td class='TC'>.  In the first row,
     # add <style='width:pp%;'> for columns with specified widths.
     tds = u'<td{0}{1}>' # template for <td class='Tx' style='width:x%'>
+    qat = QString(u'@')
+    qnb = QString(u'&nbsp;')
     for r in range(1,tcells.rowCount()+1):
         tqr = QString(u'<tr>')
         for c in range(1,tcells.columnCount()+1):
@@ -904,12 +906,15 @@ def tableHTML(tc,doc,unitList):
             if al is None: al = CalignLeft
             if al == CalignLeft: al = u''
             elif al == CalignCenter: al = u' class="TC"'
-            else: # Align right or decimal both get right
+            else: # right or decimal both get right, HTML has no decimal align
                 al = u' class="TR"'
             wd = u''
             if (r == 1) and (c in cwpct) :
                 wd = u' style="width:{0:d}%;"'.format(cwpct[c])
+            # get the data for the cell
             cqs = tcells.fetch(r,c)
+            # change any @ to &nbsp;
+            cqs.replace(qat,qnb)
             td = tds.format(al,wd) # make <td> with align, width
             tqr.append(QString(td))
             tqr.append(cqs)
