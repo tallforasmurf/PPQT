@@ -193,6 +193,9 @@ class findPanel(QWidget):
         findCheckHbox.addWidget(self.regexSwitch,0,Qt.AlignLeft)
         findCheckHbox.addWidget(self.greedySwitch,0,Qt.AlignLeft)
         findCheckHbox.addStretch(1) # keep switches compact to the left
+        # connect stateChanged of inSelSwitch to a slot to clear range
+        self.connect(self.inSelSwitch, SIGNAL("stateChanged(int)"),
+                     self.inSelChange)
         # make a horizontal row of a combobox and the find text lineEdit
         # the custom lineEdit and comboBox classes are defined below.
         findEditHbox = QHBoxLayout()
@@ -355,6 +358,12 @@ class findPanel(QWidget):
         if state : # &Next is now on
             if self.andNextSwitch.isChecked() :
                 self.andNextSwitch.setChecked(False)
+
+    # Slot for the stateChanged signal from the in Sel'n switch.
+    # If it has been cleared, set full search range.
+    def inSelChange(self,state):
+        if not state:
+            self.setFullRange()
 
     # Subroutine to set the search range cursors to the full document.
     # Make each a copy of the document's cursor, not merely a ref to it.
