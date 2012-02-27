@@ -19,12 +19,13 @@
 
 
 # End-quote (single, double, or >>) preceded by non-punctuation
+# (and using lookahead to ensure followed by whitespace or right bracket)
 21: { u'label': u'endqnop',
 	u'tooltip': u'Endquote without preceding punctuation',
 	u'regex': True,
 	u'case': False,
 	u'greedy': False,
-	u'find': u"[^\\.\\,;:?!][\\\'\\\"\\»]"
+	u'find': u"[^\\.\\,;:?!][\\\'\\\"\\»](?=[\s\)\]]"
 }
 
 # Forward slash - why is this a thing?
@@ -66,13 +67,16 @@
 }
 
 # find a paragraph not ending in punctuation. The regex is, 
-# some char that isn't .,?;:!] or ), optional '"», two newlines.
+# some word-char, then some char that isn't .,?;:!]/ or ),
+# optional '"», two newlines. The requirement for \w keeps it from
+# stopping on markup-open, and exclusion of / means it doesn't stop on
+# markup-close, but it does see all headings (if they don't end in .) 
 
 16: { u'label': 'paranop',
 	u'tooltip': 'No punctuation at paragraph-end',
 	u'regex': True,
 	u'greedy': False,
-	u'find': u'[^\\.\\,?;:!\\]\\>\\)][\\x0022\\x0027\\x00BB]?\\n\\n'
+	u'find': u'\w[^\\.\\,?;:!\\]\\>\\)\\/][\\x0022\\x0027\\x00BB]?\\n\\n'
 }
 
 # "non-ascii" that is any char between x80 and xff -- note this is
