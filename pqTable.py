@@ -689,7 +689,7 @@ def tableReflow(tc,doc,unitList):
     lineStart = QString() if tprops.columnSideString() is None \
                            else cellDelimiterString
     # set the right-side delimiter of stile or nothing
-    lineEnd = tableSideString
+    lineEnd = QString(tableSideString)
     # set the between-rows constant of nothing, linebreak, or hyphens+linebreak
     cellBottom = QString()
     if botChar is not None:
@@ -702,8 +702,9 @@ def tableReflow(tc,doc,unitList):
     # process all logical rows in sequence top to bottom
     for r in range(1,tcells.rowCount()+1):
         asciiLines = 0 # counts how many ascii lines in this logical row
-        # process all cells in this row, left to right -- note if Python
-        # had #include that's how flowCell would be coded- nested includes
+        # process all cells in this row, left to right. flowCell() 
+        # returns a QStringList of the flowed data for the cell given
+        # its width and alignment style.
         for c in range(1,tcells.columnCount()+1):
             rowdata[c] = flowCell(tcells.fetch(r,c), allSugWidths[c],
                 tcells.columnAlignment(c), tcells.columnDecimal(c),
@@ -720,8 +721,12 @@ def tableReflow(tc,doc,unitList):
                 qsLine.append(cqs)
                 if c < tcells.columnCount() :
                     qsLine.append(cellDelimiterString) # add internal delimiter
-            # finish the line
-            qsLine.append(lineEnd)
+            # finish the line: append the stile border, or strip trailing spaces.
+            if lineEnd.isEmpty():
+                # sadly, QString doesn't support rstrip.
+                qsLine = QString(unicode(qsLine).rstrip())
+            else:
+                qsLine.append(lineEnd)
             tableText.append(qsLine)
             tableText.append(IMC.QtLineDelim)
         # If this is not the last row, or even if it is and a bottom string
