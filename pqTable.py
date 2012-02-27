@@ -896,11 +896,12 @@ def tableHTML(tc,doc,unitList):
     # Build up the table row by row. Handle alignment with a class,
     # <td> for left, <td class='TR'> or <td class='TC'>.  In the first row,
     # add <style='width:pp%;'> for columns with specified widths.
-    tds = u'<td{0}{1}>' # template for <td class='Tx' style='width:x%'>
+    tds = u'    <td{0}{1}>' # template for <td class='Tx' style='width:x%'>
+    tdz = u'</td>'
     qat = QString(u'@')
     qnb = QString(u'&nbsp;')
     for r in range(1,tcells.rowCount()+1):
-        tqr = QString(u'<tr>')
+        tqr = QString(u'  <tr>')
         for c in range(1,tcells.columnCount()+1):
             al = tprops.columnAlignment(c)
             if al is None: al = CalignLeft
@@ -919,7 +920,8 @@ def tableHTML(tc,doc,unitList):
             tqr.append(QString(td))
             tqr.append(cqs)
             tqr.append(QString(u'</td>'))
-        tqr.append(QString(u'</tr>'))
+            tqr.append(IMC.QtLineDelim)
+        tqr.append(tdz)
         tqs.append(tqr)
         tqs.append(IMC.QtLineDelim)
     # the </table> was done by realHTML when it saw T/, so replace
