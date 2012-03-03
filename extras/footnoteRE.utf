@@ -1,0 +1,33 @@
+# every backslash must be doubled! 
+# Find a footnote markup: from [Footnote through a line that ends in ]
+19: { u'all' : False,
+ u'andnext' : False,
+ u'andprior' : False,
+ u'case' : False,
+ u'find' : u'\\[Footnote\\s+([^:]): ([^\\]]+)(?=\\]\\n)',
+ u'greedy' : False,
+ u'insel' : False,
+ u'label' : u'footnote',
+ u'tooltip' : u'Find [Footnote (key): (stuff...)], make /Q..Q/',
+ u'regex' : True,
+ u'rep1' : u'/Q F:0 L:4\\n[\\1] \\2\\nQ/',
+ u'rep2' : u'',
+ u'rep3' : u'',
+ u'word' : False
+}
+# Find a footnote reference [x],select thru the matching [Footnote x:
+18: {  u'all' : False,
+ u'andnext' : False,
+ u'andprior' : False,
+ u'case' : False,
+ u'find' : u'\\[([^\\]])\\].+\\[Footnote\\s+\\1\\:',
+ u'greedy' : False,
+ u'insel' : False,
+ u'label' : u'[x]...[footnote x:',
+ u'tooltip' : u'Finds from [x] thru matching [Footnote x:',
+ u'regex' : True,
+ u'rep1' : u'',
+ u'rep2' : u'',
+ u'rep3' : u'',
+ u'word' : False
+}

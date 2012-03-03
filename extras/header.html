@@ -1,0 +1,421 @@
+/* ************************************************************************
+ * Different browsers have different defaults when loading a new page. The
+ * following CSS Reset makes all browsers start out with the same properties.
+ * This reset is by Eric Meyer, see http://meyerweb.com/eric/tools/css/reset/
+ * v2.0 | 20110126 License: none (public domain)
+ * ********************************************************************** */
+html, body, div, span, applet, object, iframe,h1, h2, h3, h4, h5, h6, p,
+blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em,
+img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u,
+i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table,
+caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details,
+embed, figure, figcaption, footer, header, hgroup,  menu, nav, output,
+ruby, section, summary, time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font-weight: normal;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, footer, header, hgroup, menu,
+nav, section {	display: block;  }
+body {	line-height: 1; }
+ol, ul { list-style: none; }
+blockquote, q { quotes: none; }
+blockquote:before, blockquote:after, q:before, q:after {
+	content: '';
+	content: none;
+}
+table { border-collapse: collapse; border-spacing: 0; }
+/* End of Eric Meyer CSS Reset */
+/* ************************************************************************
+ * set the body margins to allow whitespace along sides of window
+ * ********************************************************************** */
+body { margin-left:5%; width:90%; /* == margin-right:5% */ }
+/* ************************************************************************
+ * set the indention, spacing, and leading for ALL paragraphs
+ * ********************************************************************** */
+p {
+	margin-top: 1em;	/* inter-paragraph space */
+	margin-bottom: 0;	/* use only top-margin for spacing */
+	line-height: 1.4em;	/* interline spacing ("leading") */
+}
+/* ************************************************************************
+ * Style the spacing and leading of all text paragraphs
+ * ********************************************************************** */
+body > p { /* body paragraphs only, not those in e.g. quotes or tables */
+	text-align: justify; /* or left?? */
+	text-indent: 2em;	/* first-line indent */
+}
+h2+p, h3+p, h4+p {	/* suppress indentation on paragraphs following heads */
+	text-indent: 0;
+}
+/* para with bigger top margin - can be used to implement a thought break */
+p.break { margin-top: 2em; }
+/* tighter spacing for list item paragraphs */
+dd, li {
+	margin-top: 0.25em;
+	margin-bottom:0;
+	line-height: 1.2em; /* a bit closer than p's */
+}
+/* ************************************************************************
+ * Small-cap font class, for use in spans.
+ * ********************************************************************** */
+.smcap {font-variant: small-caps;}
+/* ************************************************************************
+ * Mark corrected typos with <ins class="correction" title="TN text">
+ * ********************************************************************** */
+ins.correction {
+	text-decoration:none; /* replace default underline.. */
+	border-bottom: thin dotted gray; /* ..with delicate gray line */
+}
+/* ************************************************************************
+ * Head 2 is for chapter heads. 
+ * ********************************************************************** */
+h2 {
+	/* text-align:center;	left-aligned by default. */
+	margin-top:3em;			/* extra space above.. */
+	margin-bottom: 2em;		/* ..and below */
+	clear: both;			/* don't let sidebars overlap */
+	/* font-weight: bold; ? letter-spacing: 3px; ? */
+}
+/* ************************************************************************
+ * Head 3 is for section heads (delete if book has none)
+ * ********************************************************************** */
+h3 {
+	/* text-align:center;  left-aligned by default. */
+	margin-top: 2em;	/* extra space above but not below */
+	font-weight: normal; /* override default of bold */
+	clear: both;		/* don't let sidebars overlap */
+	/* font-weight: bold; ? */
+}
+/* ************************************************************************
+ * Styling the default HR and some special-purpose ones.
+ * Default rule centered and clear of floats; sized for thought-breaks
+ * <hr class="major" /> for e.g. chapters
+ * <hr class="minor" /> for e.g. epigraphs
+ * <hr class="double" /> cute double rule
+ * ********************************************************************** */
+hr {
+	width:45%;			/* adjust to ape original work */
+	margin-top: 1em;	/* space above & below */
+	margin-bottom: 1em;
+	margin-left: auto;  /* these two ensure a.. */
+	margin-right: auto; /* ..centered rule */
+	clear: both;		/* don't let sidebars & floats overlap rule */
+}
+hr.major { width:65%; margin-top:2em; margin-bottom: 2em;}
+hr.minor { width:30%; margin-top:0.5em; margin-bottom: 0.5em;}
+/* get a double rule by putting borders on a blank rule! */
+hr.double { /* width and margins inherited from default rule */
+	color:transparent;	/* conceal the actual rule */
+	padding: 4px 0 0 0; /* pad value creates inter-border space */
+	border-top: 1px solid black;
+	border-bottom: 1px solid black;
+	border-left: none; border-right:none;
+}
+/* ************************************************************************
+ * Images and captions
+ * ********************************************************************** */
+img { /* the default inline image has */
+	border: 1px solid black; /* a thin black line border.. */
+	padding: 6px; /* ..spaced a bit out from the graphic */
+} 
+img.plain { /* image with no border or padding, see float */
+	border: none; padding: 0;
+}
+p.caption {
+	margin-top: 0; /* snuggled up to its image */
+	font-size: smaller;
+	/* font-style: italic; or- font-variant:small-cap;  */
+}
+p.right { /* date of a letter aligned right */
+	text-align: right;
+}
+/* ************************************************************************
+ * Put <div class="center">...</div> around an image or a table to center
+ * it on the page. Put it around a <div class="poem"> to center-align the
+ * poem's lines.
+ * ********************************************************************** */
+.center { text-align: center; text-indent:0; }
+.center table { margin-left: auto; margin-right: auto;  text-align: left; }
+.center img { margin-left: auto; margin-right: auto; }
+/* ************************************************************************
+ * Special enumerated list styles -- use when original work uses them:
+ * <ol class="AL">  a. b. c. ...
+ * <ol class="AU">  A. B. C. ...
+ * <ol class="RL">  i. ii. iii. iv. ...
+ * <ol class="RU">  I. II. III. IV. ...
+ * ********************************************************************** */
+ol.AL { list-style-type: lower-alpha; }
+ol.AU { list-style-type: upper-alpha; }
+ol.RU { list-style-type: upper-roman; }
+ol.RL { list-style-type: lower-roman; }
+/* ************************************************************************
+ * Turn off list decoration:
+ * <li class="lsoff"> for the 2nd paragraph of a two-paragraph list item
+ * <ul class="lsoff"> for a list with no item markers at all (e.g. the Index)
+ * ********************************************************************** */
+.lsoff { list-style-type: none; }
+/* ************************************************************************
+ * A Table Of Contents (or a List of Illustrations, or any other list
+ * with titles opposite page numbers) is an unordered list with no bullets.
+ * A nested sub-list is done by nesting another ul.TOC inside a the
+ * main term's list item. The width: property is used instead of
+ * margin-right: because width: triggers Internet Explorer 6 to behave
+ * properly for the positioned page numbers.
+ * ********************************************************************** */
+ul.TOC { /* TOC as a whole, or any sub-list of sub-topics in it */
+	list-style-type: none;  /* list with no symbol */
+	position: relative;		/* makes a "container" for span.tocright */
+	width: 85%;				/* page-number margin pulls in */
+	}
+.TOC p { /* paragraph of chapter abstract inside TOC list item */
+	font-size:90%;			/* one point smaller than body */
+	margin-top: 0;			/* tight vertical spacing */
+	margin-right: 4%;		/* pull in on right */
+}
+/* ************************************************************************
+ * Surround a page# with this span to make it right-align within its
+ * "container", the TOC or the LOI (see also Drama stylings)
+ * ********************************************************************** */
+span.ralign { /* use absolute positioning to move page# right */
+	position: absolute;
+	right: 0; /* right edge against container's right edge */
+	top: auto; /* vertical align to original text baseline */
+}
+/* ************************************************************************
+ * The Index is an un-marked list also. Because it does not act as a
+ * container for right-aligned page numbers, it doesn't need a position
+ * attribute. To make a sub-list of terms under a term, just nest
+ * <ul class="IX"> under the term.
+ * ********************************************************************** */
+div.index { /* styles that apply to all text in an index */
+	font-size: 90%;  /*small type for compactness */
+}
+ul.IX {
+	list-style-type: none;
+	font-size:inherit; /* i.e. from the div class="index" container */
+}
+.IX li { /* list items in an index: compressed vertically */
+	margin-top: 0;
+}
+/* ************************************************************************
+ * Styling tables and their contents:
+ *   settings for all tables.
+ *   style text in body cells, with or w/o <p>'s inside <td>.
+ *   automatic center/bold for header and footer cells.
+ *   use class="shade" to put gray bg in a <tr> or a <td>.
+ * ********************************************************************** */
+table { /* these affect all <table> elements */
+	margin-top: 1em;	/* space above the table */
+	caption-side:		/* top; or */ bottom ;
+	empty-cells: show;	/* no need for nbsp's in empty cells */
+}
+td, td > p { /* style all text inside body cells */
+	margin-top: 0.25em;	/* compact vertical.. */
+	line-height: 1.1em;	/* ..spacing */
+	font-size: 90%;		/* smaller than book body text */
+	text-align: left;	/* left-align even if table in "center" div */
+}
+thead td, tfoot td {	/* header/footer cells: center & bold */
+	text-align: center;
+	font-weight: bold;
+	/* background-color: #ddd;  optional: gray background */
+}
+table .shade { /* class="shade" applied to <tr> or <td> */
+	background-color: #ddd;
+}
+/* ************************************************************************
+ * Style the blockquote tag and related elements:
+ *  - inset left and right
+ *	- one-point smaller font (questionable?)
+ *	- <p class="citation"> right-justified and italicized
+ *	- <p class="quotdate"> right-aligned for date or location of letter
+ *	- <p class="quotsig"> deeply indented with gimmick for 2-level indent
+ * ********************************************************************** */
+blockquote, .blkquot {
+	margin-left: 5%;
+	margin-right: 5%;
+	/*font-size: 90%;  optional: smaller font */
+}
+p.citation { /* author citation at end of blockquote or poem */
+	text-align: right;
+	font-style: italic;
+}
+p.signature { /* author signature at end of letter */
+	margin-left: 35%;
+	text-indent: -4em; /* gimmick to move 2nd line right */
+}
+/* ************************************************************************
+ * Generic floating images or sidebars: div or img class='floatr'
+ * ********************************************************************** */
+.floatr {
+	float: right;
+	clear: right;			/* don't allow floats to overlap */
+	/*text-align: center;		optional: img & caption centered in box */
+	/*border: 1px solid black;	optional thin border */
+	/*padding: 3px;  keep text in the div away from border */
+	margin: 0 0 0 4px; /* left margin to set box out from body */
+}
+.floatl, .figleft { /* just like floatr but opposite */
+	float: left;
+	clear: left;
+	/*text-align: center;		optional: img & caption centered in box */
+	/*border: 1px solid black;	optional thin border */
+	/*padding: 3px;  keep text in the div away from border */
+	margin: 0 4px 0 0; /* right margin to set box clear from body */
+	}
+/* ************************************************************************
+ * Change [Sidenote:stuff] into <div class="sidenote">stuff</div>.
+ * ********************************************************************** */
+.sidenote {
+/* the following style the look of the sidenote box: */
+	width: 5em;			/* ..fixed width, */
+	float: right;		/* ..float to the right, */
+	margin-right: -6em;	/* ..exdented into body margin */
+	margin-top: 0;		/* top even with following <p>'s top */
+	margin-left: 6px;	/* ..ensure space away from body text */
+	border: 1px dotted black; /* ..thin dotted border */
+	padding: 0 0 0 4px; /* ..ease content out from left border */
+	/*background-color: #ddd;  ..optional pale tint */
+/* the following style the look of the text inside the box: */
+	font-size: smaller;	/* ..small text; could be x-small */
+	/*color: #333;		 ..optional dark-gray text */
+	text-indent: 0;		/* ..no para indent */
+	text-align: right;	/* ..right align text in box */
+	line-height: 1.1em;	/* tight vert. spacing */
+}
+/* ************************************************************************
+ * Styling a sidebar, which should be different from a sidenote, in the
+ * event both can appear. <div class="sidebar">...contents...</div>
+ * ********************************************************************** */
+.sidebar {
+	width: 40%;				/* make 100% to force in-line */
+	float: right;			/* ..float to right */
+	border: 1px solid black; /* ..definite border */
+	padding: 0 0 0 4px;	/* ..ease content out from left border */
+	margin: 0.5em 0 0.5em 6px;	/* get border away from body text */
+	/*background-color: #ddd;  ..optional pale-gray shading */
+}
+/* ************************************************************************
+ * Footnotes and footnote references, modified from that used by Guiguts
+ * <div class="footnotes"> around a block of footnotes
+ * <div class="footnote"> around any one footnote's label and text
+ * <span class="fnlabel"> around [nn] in front of footnote text
+ *     - used here to float entire label out into left margin
+ *     - style ".footnote a" to change look of label link
+ * <a ...class="fnanchor"> around [nn] in the body text
+ * ********************************************************************** */
+.fnanchor { /* style the <a...>[nn]</a> reference in the body text */
+	font-size: 80%;			/* small - 2pts less than adjacent text */
+	text-decoration: none;	/* no underscore, blue color is enough */
+	vertical-align: 0.25em;	/* raise up from baseline a bit */
+	/*background-color: #eee;  optional pale gray background */
+}
+.footnotes { /* style border and/or color around footnote block */
+	/*border: dashed 1px gray;	optional border */
+	/*background-color: #EEE;	optional light background tint */
+	/*padding: 0 1em 1em 1em; 	optional indent note text from border */
+}
+.footnotes h3 { /* style a header FOOTNOTES: within a footnote block */
+	text-align:center;
+	margin-top: 0.5em;
+	font-weight:normal;
+	font-size:90%;
+}
+.footnote { /* style label and text within a footnote */
+	/*font-size: 90%;	optional make font 1-pt smaller than body */
+}
+.footnote .label { /* style the [nn] label left of footnote */
+	/*float:left;	optional: float left of footnote text */
+	text-align:left;	/* aligned left in span */
+	width:2.5em;		/* uniform width of [1] and [99] */
+}
+.footnote a { /* [X] is a link back to the anchor, style it */
+	text-decoration:none; /* take the underline off it */
+}
+/* ************************************************************************
+ * Styling poetry, Guiguts-compatible class names
+ * <div class="poem"> around entire poem (title outside as <h2/3>
+ * <div class="stanza"> around each stanza even if only one
+ * <span class="i?">..</span><br /> around each line
+ * the span class i? is "i0" for unindented lines, else 1/2 the count of
+ * spaces preceding the indented line.
+ * You can also use <p class="right">, <p class="signature">, and
+ *   <p class="citation"> within a poem.
+ * ********************************************************************** */
+div.poem { /* Style the entire poem */
+	text-align:left;	/* make sure no justification attempted */
+	margin-left:5%;		/* inset a bit from the left */
+	width:90%;			/* inset from the right, & fix IE6 abs.pos. bug */
+	position: relative;	/* div is a container for .linenum positions */
+}
+.poem .stanza {		/* set vertical space between stanzas */
+	margin-top: 1em;
+}
+.stanza span,	/* each line as generated by Guiguts.. */
+.stanza div,	/* ..or, a line marked as a div.. */
+.stanza p		/* ..or, a line marked as a p */
+{
+	display:block;		/* make sure span acts like div or p */
+	line-height: 1.2em;	/* set spacing between lines in stanza */
+	margin-left: 4em;	/* set the indent for the continuation..*/
+	text-indent: -4em;	/* ..of folded lines */
+	margin-top: 0;		/* stanza provides vertical break */
+}
+.stanza br { /* br's generated by Guiguts to be ignored by CSS browsers */
+	display: none; /* Lynx doesn't recognize this, so it executes br */
+}
+.stanza .hemistich { /* 'hemistich' == partial line */
+	vertical-align:-100%; /* break-down */
+	margin-left:0; /* cancel margin added by '.stanza span' above */
+	}
+.poem .i0 {display:block; margin-left: 2em;}	/* default (non-indented) line */
+.poem .i1 {display:block; margin-left: 3em;}	/* indents: recommend adding   */
+.poem .i2 {display:block; margin-left: 4em;}	/* 1em for each 2 ascii        */
+.poem .i3 {display:block; margin-left: 5em;}	/* spaces. Delete the inn      */
+.poem .i4 {display:block; margin-left: 6em;}	/* classes that are not used,  */
+.poem .i5 {display:block; margin-left: 7em;}    /* and for very deep indents   */
+.poem .i6 {display:block; margin-left: 8em;}	/* you may have to add more.   */
+.poem .i7 {display:block; margin-left: 9em;}
+.poem .i8 {display:block; margin-left: 10em;}
+.poem .i9 {display:block; margin-left: 11em;}
+.poem .linenum { /* poem line numbers */
+/* the following locate the line numbers horizontally */
+	position: absolute;	/* positioned out of text flow */
+	top:auto;
+	/*left: -2.5em; 		   ..in the LEFT margin, or.. */
+	right: -2em;		/* ..in the RIGHT margin */
+/* the following determine the look of the numbers */
+	margin: 0;
+	text-indent:0; 
+	font-size: 90%;		/* they are smaller */
+	text-align: center;	/* centered in a space... */
+	width: 2.5em;		/* ...about 3+ digits wide */
+	color: #555; background-color: #eee; /* dark gray on light gray or */
+	/* color: #fff; background-color: #777;  ..white on medium gray */
+}
+/* ************************************************************************
+ * Visible page numbers: remove comment on visibility:hidden to make
+ * the page numbers disappear.
+ * ********************************************************************** */
+.pagenum { /* right-margin page numbers */
+	/*visibility:hidden		uncomment to hide the page numbers */
+	font-size:50%;		/* tiny type.. */
+	color: #444;		/* ..dark gray.. */
+	text-align: right;	/* ..right-justified.. */
+	width: 2.5em;		/* ..in space wide enuff for 999 */
+	position: absolute;	/* out of normal flow.. */
+	right: -2.5em;		/* ..in the right margin.. */
+	padding: 0 0 0 0 ;	/* ..very compact */
+	margin: auto 0 auto 0;	
+	}
+.pagenum a {/* when pagenum is a self-reference link (see text)... */
+	text-decoration:none;	/* no underline.. */
+	color:#444;		/* same color as non-link */
+	}
+.pagenum a:hover { color:#F00; }/* turn red when hovered */
