@@ -11,27 +11,7 @@ the very lengthy task of building and laying out the panel. (The initial
 look was worked out using Qt Designer, but we implement the widgets and
 layouts manually rather than using the designer's unreadable output.)
 
-Interactions between this and the Edit widget are as follows: To
-implement Find (through the Next and Prior buttons) we just reach into
-the editor and get its document and either call its find() method for simple
-strings, or grab its text contents and apply a regex to them. When we get a
-hit we change the editor's cursor to display it. For simple replace, we use the
-editor's cursor's textInsert() method. For a regex replace we get the selection
-text out of the editor, then use a QString replace method, finally put the
-altered text back.
-
-The editor traps keyevents and when it sees the search special keys
-it emits a signal and passes the keyEvent to us here at editKeyEvent.
-Supported search keys are:
-    ctrl-f        Shift focus to the Find pane
-    ctrl-shift-f  Load selection into Find text and focus in Find pane
-    ctrl-g        Find next (of whatever is in the find lineEdit)
-    ctrl-shift-g  Find previous (ditto)
-    ctrl-=        Replace selection with Rep-1 text
-    ctrl-t        Replace selection with Rep-1 and find next
-    ctrl-shift-t  Replace selection with Rep-1 and find prior
-n.b. I can't find any standard for Windows or Unix search keys, so these are
-based on the Mac standard and BBEdit's.
+Widget Design for the Find UI
 
 At the top of the pane is a row of five checkboxes for case, whole-word,
 in-selection, regex, and greedy. Whole-word is ignored for regex (use \b\w+\b),
@@ -54,56 +34,126 @@ for a wrap-mode switch or wrap-around search.
 
 The five switches, find text, and four buttons comprise the find area. Below are
 three Replace lineEdits and three checkboxes for replace behavior: &Next, &Prior
-and ALL! Despite the dramatic checkbox name, on a replace with ALL we first
+and ALL! &Next and &Prior cause a replace to be followed by search-forward or
+backward respectively.
+
+Despite the dramatic checkbox name ALL!, on a replace with ALL checked we first
 search the whole document or selection and make a list of found cursors. Then
 pop up a confirmation query saying how many replacements will be done. This also
 is original; most editors show you the count of replacments after the fact, but
-not before. Replace all is a single undo-redo event.
+not before. Replace all is a single undo-redo event. See also note below.
 
-Beside each Find and Rep lineEdit we have a combo box that pops up a list
+Beside Find and each Rep lineEdit we have a combo box that pops up a list
 of previous strings from most recent down. The find list is updated on use
 of any search button. The Rep lists are updated on use of that Rep. The lists
 of strings are saved in the settings on shutdown and restored on startup.
 
+Editor Keystrokes
+
+The editor widget traps keyevents and when it sees the search special keys
+it emits a signal and thereby passes the keyEvent to us here at editKeyEvent.
+Supported search keys are:
+    ctrl-f        Shift focus to the Find pane
+    ctrl-shift-f  Load selection into Find text and focus in Find pane
+    ctrl-g        Find next (of whatever is in the find lineEdit)
+    ctrl-shift-g  Find previous (ditto)
+    ctrl-=        Replace selection with Rep-1 text
+    ctrl-t        Replace selection with Rep-1 and find next
+    ctrl-shift-t  Replace selection with Rep-1 and find prior
+
+n.b. I can't find any standard for Windows or Unix search keys, so these are
+based on the Mac standard and BBEdit's.
+
+User Buttons
+
 Below the find and replace widgets we have an array of pushbuttons each
 of which stores a single find/replace setup and loads it when pressed.
-(The idea is that these canned search setups can replace most of the
-guiguts special searches, and users can extend them freely.)
+The button setups can be set by the user and are saved in the settings from
+session to session. The buttons can also be saved to utf-8 text files and
+reloaded later. A number of complex searches are distributed in the "extras"
+folder for performing specific post-processing jobs.
 
-Each userButton stores the various find/replace widget values as a Python
-dict. The dict for a button can be loaded by a right-click; a left-click dumps
-the dict values into the widgets. The contents of all the user buttons is saved
-in the Settings at shutdown and reloaded at startup. The array contents can
-also be saved to a file or loaded from a file. The format for a settings string
-or for a file is one __repr__ string of a python dict, per line. The argument
-strings are URL-encoded so that we don't have to double-up backslashes
-or quotes within the find/replace, tooltip, and label strings.
+Each userButton stores the various find/replace widget values as a Python dict.
+The dict for a button can be loaded by a right-click; a left-click dumps the
+values into the widgets. The format for a settings string or for a button in a
+file is one __repr__ string of a python dict. When loading a button, we have
+python compile the string and verify it is only a literal, thus preventing
+any possible code-injection via this route.
 
-To implement an adequate regex find we have to work around a crippling
-restriction in the QTextDocument.find() method: it will not search across a
-textblock (line) boundary. Hence it can never match to \n, which kills all 
-sorts of important uses, like finding <i> markup that crosses a line. It also
-has the problem that it takes a regex as a "const" argument, meaning it never
-updates the regex's captured-text values!
+Implementing Simple Find/Replace
 
-To get around this we set a textCursor over the span of text to be searched
-(which could be the whole document) get "const" access to it as a QString,
-gaining read access to that span of the edit document in place. We apply
-QRegExp.indexIn(QString) to it. On a match, our regex is updated with capture
-values, and the search can span any number of lines. We translate the match
-back to a textCursor selection.
+To implement Find we access the editor's QTextDocument. For a non-regex find
+we call the document's find() method. When this succeeds we change the editor's
+cursor to select the match, so the user can see it. For non-regex replace,
+we use the editor's cursor's textInsert() method to replace the current
+selection with a string.
 
-While this gets around the restrictions, it introduces two new issues. One, in
-the edit document, there is no actual \n; end of line is \u2029, paragraph sep.
-We do this substitution ('\u2029' in place of '\n') invisibly on the user's
-regex find string, and also in any replace string before use.
+Implementing Regex Find/Replace
 
-Worse, searching over a span of text means that the ^ and $ assertions only
-match at the start and end of the document (or selection), never at actual
-line-end. A partial workaround is to use literal \n searches, but they don't
-match at the start/end of the document! (Conceivably we could invisibly
-replace '$' with '(?=\0x2029)', a non-capturing lookahead, but there is no
-equivalent for '^' because Qt4 doesn't support lookbehind assertions.)
+The target user population both understands and depends heavily on regex 
+find/replace. Unfortunately to to implement an adequate regex find we have to
+work around a crippling restriction in the QTextDocument.find() method: it will
+not search across a textblock (line) boundary! Hence it can never match to
+a pattern of \n, or match text on either side of \n, and that kills all 
+kinds of critical uses. The QTextDocument.find() also has the problem that it
+takes the regex as a "const" argument, meaning it will never update the 
+regex's captured-text values! The only way to do useful regex find is with a
+QRegExp.indexIn(QString) method, and the only way to do regex replacement (with
+substitution of \1 etc) is via a QString.replace(QRegExp) method. So we kludge.
+
+When the find is a regex, we get const access to the QTextDocument's data as
+a QString, and apply QRegExp.indexIn (for Next) or QRegExp.lastIndexIn (Prior).
+When the search succeeds we get the bounds of the captured text and set the
+editor's cursor to select that.
+
+For replacement when the find was a regex, we copy the selected text -- which
+we ASSUME is the text that matched the same regex at Find time -- out of the
+editor as a QString; apply QString.replace(regex); and textInsert() the
+altered text back.
+
+This works great for most cases, but it introduced three serious issues. One,
+in the edit document, there is no actual \n; end of line is \u2029, the Unicode
+paragraph sep character. We do this substitution ('\u2029' in place of '\n')
+invisibly on the user's regex pattern for find and also on the replace
+pattern string, before we use them.
+
+Two, doing search over a span of text as a single QString means that the ^ and
+$ pattern assertions only match at the start and end of the find range, never
+at a logical line-end. Effectively ^ and $ are useless. A partial workaround is
+to use literal \n searches, but they don't match at the start/end of the
+document! Conceivably we could invisibly replace '$' with '(?=\0x2029)',
+a non-capturing lookahead, but (a) there is no equivalent for '^' because Qt4
+doesn't support lookbehind assertions, and (b) the user might already have used
+a lookahead in the pattern and you can't have two.
+
+Speaking of lookahead brings us to serious issue #3: when the search pattern
+contains a lookahead at the end (very handy & useful), the text that it matched
+was not included in the matched text length which is then selected in the editor.
+But on replace, when we re-apply the regex to only the current selection, there
+will be no match because the lookahead text isn't there! The sign of the
+problem is that a search succeeds, but replacement does nothing at all.
+
+One fix would be to delete a trailing lookahead from the regex pattern before
+using it in the replace, but that could result in a match that is shorter
+than the initial find, producing highly unintuitive results. The actual kludge
+used is to extend the copied text a few extra characters, so that a lookahead
+of reasonable length will find a match when re-applied. There is no limit to
+the amount of text a lookahead could match, so there are regex patterns that
+will hit this problem.
+
+Qt 5 is supposed to offer much improved regex support with both lookahead and
+lookbehind and the whole design will have to be revisited then. Possibly the
+only answer will be to copy the whole goddam search range into Python and
+use relib.
+
+Replace ALL! Constraint
+
+When searching to make a list of matches for replace-all we restart each
+search immediately after the previous hit-string. This precludes overlapping
+hits during replace-all, even though overlapping hits ARE possible when doing
+manual replace with &Next set. The reason is that overlapping hits (a) could
+be a black hole of recursion for certain regexes, and (b) would imply doing
+overlapping replacements with probably very strange results.
 '''
 
 __version__ = "0.1.0" # refer to PEP-0008
@@ -520,30 +570,35 @@ class findPanel(QWidget):
     
     def doReplace(self,repno,andNext=False,andPrior=False, doAll=False):
         self.popups[repno].noteString() # any use gets pushed on the popup list
+        tc = IMC.editWidget.textCursor() # reference to the edit cursor
+        p = tc.selectionStart()
+        REASONABLE_KLUDGE = 8 # important lookahead is for \n, length 1
         if not doAll : # one-shot replace
-            tc = IMC.editWidget.textCursor()
-            j = tc.selectionStart()
+            wtc = QTextCursor(tc) # make a working copy of the edit cursor
+            z = wtc.selectionEnd()
             if self.regexSwitch.isChecked() :
-                # the way Qt supports regex replace is through QString::replace()
-                # which performs a match followed by a replace. Altho we presumably
-                # set the current selection by doing a regex search, the
-                # qs.replace() call will repeat the search. Presumably it will
-                # match very quickly as is started out as a match to the same
-                # regex. However nothing stops you from doing a regex find,
-                # altering the selection, clicking Replace. What happens then
-                # is highly unintuitive, the selection shrinks or expands back
-                # to cover the regex match and is replaced.
-                qs = tc.selectedText() # get current selection as QString
+                # See comments in the Prolog about regex replace.
+                # Extend the selected text by a "reasonable" amount so that a
+                # "reasonable" lookahead will find a match. I can't find a 
+                # simple QTextCursor method for extending a selection right
+                # (there is no moveAnchor() method tho there should be)
+                z = min(z+REASONABLE_KLUDGE, self.rangeBot.position())
+                wtc.setPosition(z,QTextCursor.MoveAnchor)
+                wtc.setPosition(p,QTextCursor.KeepAnchor)
+                qs = wtc.selectedText() # get selection as QString
                 qr = QString(self.repEdits[repno].text()) # copy replace string
-                qr.replace(QString("\\n"),IMC.QtLineDelim) # fix \n
-                qs.replace(self.regexp,qr)
-                tc.insertText(qs)
+                qr.replace(QString("\\n"),IMC.QtLineDelim) # fix any \n in it
+                qs.replace(self.regexp,qr) # perform the replacement!
+                wtc.insertText(qs) # put the updated text back in the doc.
+                # Adjust the edit cursor so it selects the modified text only
+                z = wtc.selectionEnd()-REASONABLE_KLUDGE
+                tc.setPosition(z,QTextCursor.MoveAnchor)
+                tc.setPosition(p,QTextCursor.KeepAnchor)
             else: # plain replace, just update the selection with new text
                 tc.insertText(self.repEdits[repno].text())
-            # "drag" backward to reselect the inserted text
-            tc.setPosition(IMC.editWidget.textCursor().position())
-            tc.setPosition(j,QTextCursor.KeepAnchor)
-            IMC.editWidget.setTextCursor(tc)
+                # QTextEdit leaves cursor at end of insert;
+                # "drag" backward to reselect the inserted text
+                tc.setPosition(p,QTextCursor.KeepAnchor)
             if andNext : 
                 self.doSearch(0) # Next button
             if andPrior :
@@ -551,29 +606,21 @@ class findPanel(QWidget):
         else: # replace all!
             # For replace all we assume the bounds were set by a prior First
             # button. We loop doing finds from the top boundary until no-match,
-            # saving a text cursors for each. After each hit, resume the search
-            # at the top of the hit+1, thus allowing overlapping matches. That
-            # is potentially a black hole for certain pathological regexes!
-            # If we find any matches we show an ok/cancel dialog saying how many.
-            # On OK, we loop doing all the replaces on the found text cursors.
-            # The edit cursor is not updated so none of this shows on the edit panel.
-            # Note: we apply the replacements in reverse order, from bottom to
-            # top, so that changes in document length will not affect the position
-            # of the textcursors. Apparently cursors aren't updated during a
-            # single edit block.
+            # saving a text cursors for each.
             hits = []
             doc = IMC.editWidget.document()
             findTc = self.realSearch(doc,self.rangeTop,False)
             while self.validHit(findTc):
-                hits.insert(0,QTextCursor(findTc)) # save hits in LIFO order
-                # start the next search at the end of the previous find.
-                # For replace-all we do not want overlapping finds, because
-                # then we would have to do overlapping replaces, duh.
+                # we have a match, save a copy of the textCursor that
+                # describes it -- in LIFO order, note.
+                hits.insert(0,QTextCursor(findTc))
+                # do the next search from the end of the previous match.
                 findTc.setPosition(findTc.selectionEnd())
                 findTc = self.realSearch(doc,findTc,False)
             if 0 == len(hits):
                 pqMsgs.beep()
                 return
+            # We have at least 1 hit, ask the user for permission to fire.
             m1 = pqMsgs.trunc(self.findText.text(),25)
             qr = QString(self.repEdits[repno].text()) # copy replace string
             m2 = pqMsgs.trunc(qr,25)
@@ -583,20 +630,31 @@ class findPanel(QWidget):
                 # user says ok do it. In order to make it one undoable operation
                 # we have to use a single textCursor for all. We use findTc
                 # and we transfer the position of each hit into it with moves.
-                qr.replace(QString("\\n"),IMC.QtLineDelim) # fix \n
                 findTc = QTextCursor(doc)
                 findTc.beginEditBlock() # start undoable operation
+                # The hits were stored in LIFO order, so this applies changes
+                # from the end of the document up, keeping later positions valid.
                 for tc in hits:
-                    # transfer the position and anchor of tc into findTc
-                    findTc.setPosition(tc.anchor(),QTextCursor.MoveAnchor)
-                    findTc.setPosition(tc.position(),QTextCursor.KeepAnchor)
-                    if self.regexSwitch.isChecked():
+                    if not self.regexSwitch.isChecked():
+                        # simple replace: transfer the selection of this match
+                        # to findTc and insert the changed text over it.
+                        findTc.setPosition(tc.selectionEnd(),QTextCursor.MoveAnchor)
+                        findTc.setPosition(tc.selectionStart(),QTextCursor.KeepAnchor)
+                        findTc.insertText(qr)
+                    else :
+                        # For regex, we support replacing newlines
+                        qr.replace(QString("\\n"),IMC.QtLineDelim)
+                        # make findTc select enough text that hopefully any
+                        # final lookahead will find its match
+                        z = min(tc.selectionEnd()+REASONABLE_KLUDGE,
+                                self.rangeBot.position())
+                        findTc.setPosition(z,QTextCursor.MoveAnchor)
+                        findTc.setPosition(tc.selectionStart(),QTextCursor.KeepAnchor)
+                        # get the selected text as a string
                         qs = findTc.selectedText()
                         if self.regexp.indexIn(qs) > -1 : # should always be
                             qs.replace(self.regexp, qr)
                             findTc.insertText(qs)
-                    else:
-                        findTc.insertText(qr)
                 findTc.endEditBlock()
                 # clear the All! after successful op
                 self.allSwitch.setChecked(False)
