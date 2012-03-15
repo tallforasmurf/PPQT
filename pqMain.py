@@ -273,9 +273,11 @@ class MainWindow(QMainWindow):
     def createAction(self, text, parent, slot=None, shortcut=None,
                      tip=None, checkable=False, signal="triggered()"):
         # create the action with a parent as specified
-        if parent is not None :
+        if parent is None :
+            # give this action self, i.e. the main window, as parent
             action = QAction(text, self)
         else :
+            # give this action the specified parent and make it apply to that
             action = QAction(text, parent)
             action.setShortcutContext(Qt.WidgetShortcut)
         if shortcut is not None:
@@ -297,6 +299,7 @@ class MainWindow(QMainWindow):
                 target.addSeparator()
             else:
                 target.addAction(action)
+                action.setShortcutContext(Qt.WidgetShortcut)
 
     # Called just before the File menu is displayed, load some recent files
     # into the file menu. Point those items at the recentFile() function.

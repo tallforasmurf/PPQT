@@ -221,6 +221,22 @@ class lineLabel(QLineEdit):
         bn = IMC.editWidget.textCursor().blockNumber()
         self.setText(QString(repr(bn)))
 
+# debugging function to display a keyevent on the console
+from PyQt4.QtCore import (QEvent)
+from PyQt4.QtGui import (QKeyEvent)
+def printKeyEvent(event):
+    key = int(event.key())
+    mods = int(event.modifiers())
+    if key & 0x01000000 : # special/standard key
+	print('standard key: mods {0:08X} key {1:08X}'.format(mods,key))
+    else:
+	cmods = u''
+	if mods & Qt.ControlModifier : cmods += u'Ctl + '
+	if mods & Qt.AltModifier: cmods += u'Alt + '
+	if mods & Qt.ShiftModifier : cmods += u'Shft '
+	cmods += "'{0:c}'".format(key)
+	print(u'data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
+    
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv) # create an app
@@ -245,3 +261,6 @@ if __name__ == "__main__":
     (s, b) = getChoiceMsg("TITLE STRING", "label text",qsl)
     if b : print ("Choice "+unicode(s))
     else: print ("Cancel "+unicode(s))
+    printKeyEvent(
+        QKeyEvent(QEvent.KeyPress,43,Qt.AltModifier|Qt.ControlModifier) )
+    

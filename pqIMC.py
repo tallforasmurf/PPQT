@@ -105,7 +105,8 @@ class tricorder():
         # ^F start search with selection
         # ^= replace,
         # ^-alt-1-9 set bookmarks
-        # ^+/- zoom also ctrl-shift-equal which is how plus comes in usually
+        # ^+ and ^- for zoom in/out
+        # ctl-plus can also appear as ctl-shft-equal and ctl-sht-plus!
         # ^l and ^-alt-l, ^p and ^-alt-p for the Notes panel
         # Define these in a way easy to check in a keyEvent slot, and also put
         # them in python lists for quick lookup.
@@ -137,6 +138,7 @@ class tricorder():
         self.ctl_equal = Qt.ControlModifier | Qt.Key_Equal
         self.ctl_plus = Qt.ControlModifier | Qt.Key_Plus
         self.ctl_shft_equal = Qt.ShiftModifier | self.ctl_equal
+        self.ctl_shft_plus = Qt.ShiftModifier | self.ctl_plus
         self.ctl_L = Qt.ControlModifier | Qt.Key_L
         self.ctl_alt_L = Qt.AltModifier | self.ctl_L
         self.ctl_P = Qt.ControlModifier | Qt.Key_P
@@ -149,6 +151,7 @@ class tricorder():
                 self.ctl_alt_4,  self.ctl_alt_5,  self.ctl_alt_6,  self.ctl_alt_7,
                 self.ctl_alt_8,  self.ctl_alt_9,
                 self.ctl_minus, self.ctl_plus, self.ctl_shft_equal,
+                self.ctl_shft_plus,
                 self.ctl_L,self.ctl_alt_L,self.ctl_P,self.ctl_alt_P]
         self.findKeys = [self.ctl_G, self.ctl_shft_G, self.ctl_F, self.ctl_shft_F,
                         self.ctl_T, self.ctl_equal, self.ctl_shft_T]
@@ -157,6 +160,8 @@ class tricorder():
         self.markSetKeys = [self.ctl_alt_1, self.ctl_alt_2, self.ctl_alt_3,
                 self.ctl_alt_4,  self.ctl_alt_5,  self.ctl_alt_6,  self.ctl_alt_7,
                 self.ctl_alt_8,  self.ctl_alt_9]
+        self.zoomKeys = [self.ctl_minus, self.ctl_plus,
+                         self.ctl_shft_equal, self.ctl_shft_plus]
         # A list of the 252 Named Entities of HTML 4. The names are indexed
         # by the unicode characters they translate. To complete an entity
         # prepend & and append ;, thus quot -> &quot; (This list was lifted from

@@ -129,8 +129,7 @@ class htmlPreview(QWidget):
 	    #self.doFind()
 	#else: # not ctl/cmd f so,
 	    #event.ignore()
-        ## ignored or accepted, pass the event along.
-        #super(helpDisplay, self).keyPressEvent(event)
+	    #super(htmlPreview, self).keyPressEvent(event)
 
     ## Do a simple find. getFindMsg returns (ok,find-text). This is a VERY
     ## simple find from the present cursor position downward, case-insensitive.
@@ -138,10 +137,11 @@ class htmlPreview(QWidget):
     #def doFind(self):
 	#(ok, findText) = pqMsgs.getFindMsg(self)
 	#if ok and (not findText.isNull()) :
-	    #if not self.find(findText): # no hits going down
-		#self.moveCursor(QTextCursor.Start) # go to top
-		#if not self.find(findText): # still no hit
-		    #pqMsgs.beep()
+	    #findFlags = int(QWebPage.FindCaseSensitively) \
+	              #+ int(QWebPage.FindWrapsAroundDocument)
+	    #if not self.preview.findText(findText,findFlags):
+		## no hits at all even wrapping around
+		#pqMsgs.beep()
 
 if __name__ == "__main__":
     import sys

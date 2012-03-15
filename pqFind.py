@@ -923,8 +923,7 @@ class findRepEdit(QLineEdit):
     # font size though over a smaller range
     def keyPressEvent(self, event):
         kkey = event.key() + int(event.modifiers())
-        if (kkey == IMC.ctl_minus) or (kkey == IMC.ctl_plus) \
-        or (kkey == IMC.ctl_shft_equal) :
+        if kkey in IMC.zoomKeys :
             event.accept()
             n = (-1) if (kkey == IMC.ctl_minus) else 1
             p = self.fontInfo().pointSize() + n
@@ -932,10 +931,9 @@ class findRepEdit(QLineEdit):
                 f = self.font() # so get our font,
                 f.setPointSize(p) # change its point size +/-
                 self.setFont(f) # and put the font back
-            else: # not ctl-+/-
-                event.ignore()
-        # ignored or accepted, pass the event along.
-        super(findRepEdit, self).keyPressEvent(event)
+        else: # not ctl-+/-, pass to parent widget
+            event.ignore()
+            super(findRepEdit, self).keyPressEvent(event)
 
 # Class of the user-programmable push buttons. Each button can store the values
 # of all the fields of the upper part of the panel.
@@ -985,9 +983,9 @@ class userButton(QPushButton):
         if 2 == int(event.button()) : # right- or control-click
             event.accept()
             self.emit(SIGNAL("userButtonLoad"))
-        else :
+        else : # not a right-click, pass it to parent widget
             event.ignore()
-        super(userButton, self).mouseReleaseEvent(event) # pass it up
+            super(userButton, self).mouseReleaseEvent(event)
 
     # Subroutine to load our values from a string that purports to be
     # the Python source of a dictionary - such as is created by

@@ -39,10 +39,9 @@ class helpDisplay(QTextEdit):
 	if kkey == IMC.ctl_F: # ctl/cmd f
 	    event.accept()
 	    self.doFind()
-	else: # not ctl/cmd f so,
+	else: # not ctl/cmd-f, so pass to parent widget
 	    event.ignore()
-        # ignored or accepted, pass the event along.
-        super(helpDisplay, self).keyPressEvent(event)
+	    super(helpDisplay, self).keyPressEvent(event)
 
     # Do a simple find. getFindMsg returns (ok,find-text). This is a VERY
     # simple find from the present cursor position downward, case-insensitive.
@@ -556,14 +555,14 @@ specify <tt>D:'<i>x</i>'</tt> to set a different decimal separator character <i>
 decimal "point". Here is a simple table with decimal alignment before reflow:</p>
 <pre>
 /T TABLE(WIDTH:30) 1(A:R) 2(A:D W:8.4 D:',')
-Persimmons   € 24,20
-Marshmallows  € 124,80
+Persimmons   &euro; 24,20
+Marshmallows  &euro; 124,80
 T/</pre>
 <p>And after</p>
 <pre>
 /T TABLE(WIDTH:30) 1(A:R) 2(A:D W:8.4 D:',')
-    Persimmons        € 24,20 
-  Marshmallows       € 124,80 
+    Persimmons        &euro; 24,20 
+  Marshmallows       &euro; 124,80 
 T/
 </pre>
 <p>Decimal alignment can produce odd results when applied to cells that

@@ -169,42 +169,33 @@ class pngDisplay(QWidget):
     # seems best, come over to Pngs and page ahead to see what's coming, then
     # back to the editor to read or type.
     def keyPressEvent(self, event):
+        # assume we will not handle this key and clear its accepted flag
+        event.ignore()
         # If we are initialized and have displayed some page, look at the key
         if (self.ready) and (IMC.currentPageIndex is not None):
-            code = int(event.key())
-            mods = int(event.modifiers())
-            # print('key {0:X} mod {1:X}'.format(code,mods))
-            if (mods & Qt.ControlModifier):
-                # ctl/cmd-something 
-                if (code == Qt.Key_Equal) \
-                or (code == Qt.Key_Plus) or (code == Qt.Key_Minus):
-                    # ctl/cmd + or -, do the zoom
-                    event.accept()
-                    fac = (0.8) if (code == Qt.Key_Minus) else (1.25)
-                    fac *= self.zoomFactor # target zoom factor
-                    if (fac >= 0.2) and (fac <= 3.0): # keep in bounds
-                        self.imLabel.resize( fac * self.imLabel.pixmap().size() )
-                        self.zoomFactor = fac
-                        self.txLabel.setText(
-                    u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
-                        )
-                else: # control-something but not one of ours
-                    event.ignore()
-            else: # not ctl/cmd modifier
-                if (code == Qt.Key_PageUp) or (code == Qt.Key_PageDown) :
-                    # real pgUp or pgDn
-                    event.accept()
-                    fac = 1 if (code == Qt.Key_PageDown) else -1
-                    fac += self.lastIndex
-                    if (fac >= 0) and (fac < len(IMC.pageTable)) : 
-                        # not off the end of the book, so,
-                        self.lastIndex = fac
-                        IMC.currentPageIndex = fac
-                        self.showPage()
-                else: # some other key
-                    event.ignore()
-        # ignored or accepted, pass the event along.
-        super(pngDisplay, self).keyPressEvent(event)
+            kkey = int(event.modifiers())+int(event.key())
+            if kkey in IMC.zoomKeys :
+                # ctl/cmd + or -, do the zoom
+                event.accept()
+                fac = (0.8) if (kkey == IMC.ctl_minus) else (1.25)
+                fac *= self.zoomFactor # target zoom factor
+                if (fac >= 0.2) and (fac <= 3.0): # keep in bounds
+                    self.imLabel.resize( fac * self.imLabel.pixmap().size() )
+                    self.zoomFactor = fac
+                    self.txLabel.setText(
+                u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
+                                         )
+            elif (event.key() == Qt.Key_PageUp) or (event.key() == Qt.Key_PageDown) :
+                event.accept() # real pgUp or pgDn, we do it
+                fac = 1 if (event.key() == Qt.Key_PageDown) else -1
+                fac += self.lastIndex
+                if (fac >= 0) and (fac < len(IMC.pageTable)) : 
+                    # not off the end of the book, so,
+                    self.lastIndex = fac
+                    IMC.currentPageIndex = fac
+                    self.showPage()
+        if not event.isAccepted() : # we don't do those, pass them on
+            super(pngDisplay, self).keyPressEvent(event)
 
 if __name__ == "__main__":
     import sys

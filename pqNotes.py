@@ -67,11 +67,12 @@ class notesEditor(QPlainTextEdit):
     # ctl-P looks for a nearby [nnn] (brackets required), selects it, and
     # tells the main editor to jump to that page position.
     def keyPressEvent(self, event):
+	#pqMsgs.printKeyEvent(event)
 	kkey = int(event.modifiers())+int(event.key())
 	if kkey in IMC.keysOfInterest :
-	    if (kkey == IMC.ctl_plus) or (kkey == IMC.ctl_minus) \
-	    or (kkey == IMC.ctl_shft_equal) :
-                event.accept()
+	    # tentatively assume we will process this key
+	    event.accept()
+	    if kkey in IMC.zoomKeys :
                 n = (-1) if (kkey == IMC.ctl_minus) else 1
                 p = self.fontInfo().pointSize() + n
                 if (p > 3) and (p < 65): # don't let's get ridiculous, hmm?
@@ -79,26 +80,21 @@ class notesEditor(QPlainTextEdit):
                     f.setPointSize(p) # change its point size +/-
                     self.setFont(f) # and put the font back
 	    elif (kkey == IMC.ctl_alt_L): # ctrl/cmd-l with shift
-		event.accept()
 		self.insertLine()
 	    elif (kkey == IMC.ctl_L): # ctrl/cmd-l (no shift)
-		event.accept()
 		self.goToLine()
 	    elif (kkey == IMC.ctl_alt_P): # ctl/cmd-p
-		event.accept()
 		self.insertPage()
 	    elif (kkey == IMC.ctl_P): #ctl/cmd-P
-		event.accept()
 		self.goToPage()
 	    elif (kkey == IMC.ctl_F): # ctl/cmd f
-		event.accept()
 		self.doFind()
             else: # one of the keys we support but not in this panel
-                event.ignore()
+                event.ignore() # so clear the accepted flag
         else: # not one of our keys at all
-            event.ignore()
-        # ignored or accepted, pass the event along.
-        super(notesEditor, self).keyPressEvent(event)
+            event.ignore() # ensure the accepted flag is off
+	if not event.isAccepted() : # if we didn't handle it, pass it up
+	    super(notesEditor, self).keyPressEvent(event)
 
     # on ctl-alt-l (mac: opt-cmd-l), insert the current edit line number in
     # notes as {nnn}

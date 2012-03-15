@@ -244,13 +244,12 @@ class PPTextEditor(QPlainTextEdit):
         #print('key {0:x} mod {1:x}'.format(int(event.key()),int(event.modifiers())))
         kkey = int(event.modifiers())+int(event.key())
         # add as little overhead as possible: if it isn't ours, pass it on.
-        if kkey in IMC.keysOfInterest : # trusting python to do this quickly
+        if kkey in IMC.keysOfInterest : # we trust python to do this quickly
             event.accept() # we handle this one
             if kkey in IMC.findKeys:
                 # ^f, ^g, etc. -- just pass them straight to the Find panel
                 self.emit(SIGNAL("editKeyPress"),kkey)
-            elif (kkey == IMC.ctl_plus) or (kkey == IMC.ctl_minus) \
-                or (kkey == IMC.ctl_shft_equal) :
+            elif kkey in IMC.zoomKeys :
                 # n.b. the self.font and setFont methods inherit from QWidget
                 # Point increment by which to change.
                 n = (-1) if (kkey == IMC.ctl_minus) else 1
@@ -272,10 +271,9 @@ class PPTextEditor(QPlainTextEdit):
                 self.bookMarkList[bkn] = self.textCursor()
                 self.bookMarkList[bkn].clearSelection() # don't save the selection
                 IMC.needMetadataSave = True # need to save metadata
-        else: # not in keysOfInterest
+        else: # not in keysOfInterest, so pass it up to parent
             event.ignore()
-        # ignored or accepted, pass the event along.
-        super(PPTextEditor, self).keyPressEvent(event)
+            super(PPTextEditor, self).keyPressEvent(event)
      
     # Implement save: the main window opens the files for output using 
     # QIODevice::WriteOnly, which wipes the contents (contrary to the doc)
