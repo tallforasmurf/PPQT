@@ -41,12 +41,14 @@ class notesEditor(QPlainTextEdit):
 	# get same font as main editor uses
         self.setFont(pqMsgs.getMonoFont(12,False))
 	self.connect(self.document(), SIGNAL("modificationChanged(bool)"),self.eek)
+	self.findText = QString()
 
     # called from pqEdit.clear()
     def clear(self):
 	self.clearing = True
         self.document().clear()
 	self.document().setModified(False)
+	self.findText = QString()
 	self.clearing = False
 
     # slot to receive the modificationChanged(bool) signal from our document.
@@ -87,8 +89,8 @@ class notesEditor(QPlainTextEdit):
 		self.insertPage()
 	    elif (kkey == IMC.ctl_P): #ctl/cmd-P
 		self.goToPage()
-	    elif (kkey == IMC.ctl_F): # ctl/cmd f
-		self.doFind()
+	    elif (kkey == IMC.ctl_F) or (kkey == IMC.ctl_G): # ctl/cmd f/g
+		self.doFind(kkey)
             else: # one of the keys we support but not in this panel
                 event.ignore() # so clear the accepted flag
         else: # not one of our keys at all
@@ -173,11 +175,15 @@ class notesEditor(QPlainTextEdit):
     # Do a simple find. getFindMsg returns (ok,find-text). This is a VERY
     # simple find from the present cursor position downward, case-insensitive.
     # If we get no hit we try once more from the top, thus in effect wrapping.    
-    def doFind(self):
-	prepText = self.textCursor().selectedText()
-	(ok, findText) = pqMsgs.getFindMsg(self,prepText)
-	if ok and (not findText.isNull()) :
-	    if not self.find(findText): # no hits going down
+    def doFind(self,kkey):
+	if (kkey == IMC.ctl_F) or (self.findText.isEmpty()) :
+	    # ctl+F, or ctl+G but no previous find done, show the find dialog
+	    # with a COPY of current selection as pqMsgs might truncate it
+	    prepText = QString(self.textCursor().selectedText())
+	    (ok, self.findText) = pqMsgs.getFindMsg(self,prepText)
+	# dialog or no dialog, we should have some findText now
+	if not self.findText.isEmpty() :
+	    if not self.find(self.findText): # no hits going down
 		self.moveCursor(QTextCursor.Start) # go to top
-		if not self.find(findText): # still no hit
+		if not self.find(self.findText): # still no hit
 		    pqMsgs.beep()

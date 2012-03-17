@@ -31,14 +31,15 @@ class helpDisplay(QTextEdit):
         super(helpDisplay, self).__init__(parent)
         self.setHtml(QString(TheHelpText))
         self.setReadOnly(True)
+	self.findText = QString()
     
     # Re-implement the parent's keyPressEvent in order to provide a simple
     # find function only.
     def keyPressEvent(self, event):
 	kkey = int(event.modifiers())+int(event.key())
-	if kkey == IMC.ctl_F: # ctl/cmd f
+	if (kkey == IMC.ctl_F) or (kkey == IMC.ctl_G) : # ctl/cmd f/g
 	    event.accept()
-	    self.doFind()
+	    self.doFind(kkey)
 	else: # not ctl/cmd-f, so pass to parent widget
 	    event.ignore()
 	    super(helpDisplay, self).keyPressEvent(event)
@@ -46,13 +47,17 @@ class helpDisplay(QTextEdit):
     # Do a simple find. getFindMsg returns (ok,find-text). This is a VERY
     # simple find from the present cursor position downward, case-insensitive.
     # If we get no hit we try once more from the top, thus in effect wrapping.    
-    def doFind(self):
-	prepText = self.textCursor().selectedText()
-	(ok, findText) = pqMsgs.getFindMsg(self,prepText)
-	if ok and (not findText.isNull()) :
-	    if not self.find(findText): # no hits going down
+    def doFind(self,kkey):
+	if (kkey == IMC.ctl_F) or (self.findText.isEmpty()) :
+	    # ctl+F, or ctl+G but no previous find done, show the find dialog
+	    # with a COPY of current selection as pqMsgs might truncate it
+	    prepText = QString(self.textCursor().selectedText())
+	    (ok, self.findText) = pqMsgs.getFindMsg(self,prepText)
+	# dialog or no dialog, we should have some findText now
+	if not self.findText.isEmpty() :
+	    if not self.find(self.findText): # no hits going down
 		self.moveCursor(QTextCursor.Start) # go to top
-		if not self.find(findText): # still no hit
+		if not self.find(self.findText): # still no hit
 		    pqMsgs.beep()
 
 TheHelpText = '''<html>
