@@ -56,6 +56,7 @@ class tricorder():
         self.WordHasHyphen = 0x08
         self.WordHasApostrophe = 0x10
         self.WordMisspelt = 0x80
+
         # These values are used to encode folio controls for the
         # Page/folio table. Initialized in pqEdit when opening a new file,
         # used in pqWord and (eventually) in html conversion.        
@@ -65,10 +66,12 @@ class tricorder():
         self.FolioRuleAdd1 = 0x00
         self.FolioRuleSet = 0x01
         self.FolioRuleSkip = 0x02
+
         # Controls on the edit syntax hiliter, queried in the editor and
         # set by the Main window View menu actions:
         self.scannoHiliteSwitch = False
         self.spellingHiliteSwitch = False
+
         # Pointers initialized in ppqt, filled in in pqEdit,
         # and referenced everywhere else
         self.settings = None # QSettings for global save/restore app values
@@ -84,6 +87,7 @@ class tricorder():
         self.editWidget = None # main QPlainTextEdit set up in pqMain
         self.spellCheck = None # spellcheck object from pqSpell
         self.mainWindow = None # ref to main window
+
         # Pointers initialized in pqMain to various major objects
         self.bookPath = None # path to book file
         self.bookType = None # book file suffix used to detect .hmt(l)
@@ -94,8 +98,10 @@ class tricorder():
         self.findPanel = None # ref to Find panel
         self.statusBar = None # ref to status bar of main window
         self.progressBar = None # ref to progress bar in status bar
+
         # constant value for the line-delimiter used by QPlainTextEdit
         self.QtLineDelim = QChar(0x2029)
+
         # Keystrokes checked by editor and other panels that monitor KeyEvent signals.
         # In rough order of frequency of use, we support:
         # ^g and ^G, search again forward/backward,
@@ -162,6 +168,7 @@ class tricorder():
                 self.ctl_alt_8,  self.ctl_alt_9]
         self.zoomKeys = [self.ctl_minus, self.ctl_plus,
                          self.ctl_shft_equal, self.ctl_shft_plus]
+
         # A list of the 252 Named Entities of HTML 4. The names are indexed
         # by the unicode characters they translate. To complete an entity
         # prepend & and append ;, thus quot -> &quot; (This list was lifted from
@@ -422,3 +429,14 @@ u'\u2663' : u'clubs', # black club suit (= shamrock)[f]
 u'\u2665' : u'hearts', # black heart suit (= valentine)[f]
 u'\u2666' : u'diams' # black diamond suit[f]            
                         }
+        # Identify the operating system, in case we find a reason to care
+        from PyQt4.QtCore import QSysInfo
+        try:
+            junk = QSysInfo.WindowsVersion
+            self.osType = 'Win'
+        except: # that static var does not exist, so,
+            try:
+                junk = QSysInfo.MacintoshVersion
+                self.osType = 'Mac'
+            except: # that doesn't exist either, ergo:
+                self.osType = 'Linux'
