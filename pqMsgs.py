@@ -128,28 +128,27 @@ def getChoiceMsg( title, text, qsl):
                                      0,False)
     return (ans, ok)
 
-# Do a simple find for the Notes or Help panel. What is passed here is
-# the Q[Plain]TextEdit on which the find will be done. We use that for the
-# parent widget, so the dialog will center on that. Also we use the
-# property-based api to QInputDialog so we can prime the input field with
-# the currently selected edit text.
+# This is the UI to a simple find, used by the Notes, Preview, and Help panels.
+# What is passed is:
+# * parent widget over which to center the dialog
+# * QString to initialize the dialog, typically the current selection
+# We use the property-based api to QInputDialog so we can prime the input
+# field with the provided text.
 
-def getFindMsg( editWidget ):
-    qd = QInputDialog(editWidget)
+def getFindMsg( parentWidget, prepText = None ):
+    qd = QInputDialog(parentWidget)
     qd.setInputMode(QInputDialog.TextInput)
-    qd.setOkButtonText(QString("Find"))
-    qd.setLabelText(QString("Text to find"))
-    tc = editWidget.textCursor()
-    if tc.hasSelection():
-	qs = tc.selectedText()
-	if qs.size() > 40 :
-	    qs.truncate(40)
-	qd.setTextValue(qs)
+    qd.setOkButtonText(QString('Find'))
+    qd.setLabelText(QString('Text to find'))
+    if (prepText is not None):
+	if prepText.size() > 40 :
+	    prepText.truncate(40)
+	qd.setTextValue(prepText)
     b = (QDialog.Accepted == qd.exec_() )
     if b :
 	return (True, qd.textValue())
     else:
-	return (False, QString("") )
+	return (False, QString() )
 
     
 # Functions to create and manage a progress bar in our status bar

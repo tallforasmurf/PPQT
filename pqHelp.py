@@ -47,7 +47,8 @@ class helpDisplay(QTextEdit):
     # simple find from the present cursor position downward, case-insensitive.
     # If we get no hit we try once more from the top, thus in effect wrapping.    
     def doFind(self):
-	(ok, findText) = pqMsgs.getFindMsg(self)
+	prepText = self.textCursor().selectedText()
+	(ok, findText) = pqMsgs.getFindMsg(self,prepText)
 	if ok and (not findText.isNull()) :
 	    if not self.find(findText): # no hits going down
 		self.moveCursor(QTextCursor.Start) # go to top
@@ -625,6 +626,8 @@ if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt)
     from PyQt4.QtGui import (QApplication)
+    import pqIMC
+    IMC = pqIMC.tricorder()
     app = QApplication(sys.argv) # create an app
     W = helpDisplay()
     W.show()
