@@ -67,6 +67,7 @@ class htmlPreview(QWidget):
 	self.connect(self.preview,SIGNAL("loadProgress(int)"),self.loadProgresses )
 	self.connect(self.preview,SIGNAL("loadFinished(bool)"),self.loadEnds )
 	self.scrollPosition = QPoint(0,0)
+	self.findText = QString()
     
     # refresh button clicked. Get the current scroll position (a QPoint that
     # reflects the position of the scrollbar "thumb" in the webview)
@@ -107,42 +108,46 @@ class htmlPreview(QWidget):
 	base = QUrl.fromLocalFile(qsp)
 	self.preview.setHtml(qs,base)
 
-    # return a "const" pointer to the plain text of the web page. Since the
-    # point is "const" it is live, if we change the selection, the text 
-    # changes. So we can't just select-all, grab a pointer, and then clear
-    # the selection; the caller would just get an empty string. We select-all
-    # and return the pointer, then when the caller is finished, he calls back
-    # to doneWithText() and we clear the selection.
-    def getSimpleText(self):
-	self.preview.page().triggerAction(QWebPage.SelectAll)
-	return self.preview.page().selectedText()
-    # findText() of a null string clears the selection
-    def doneWithText(self):
-	self.preview.page().findText(QString())
+    ## return a "const" pointer to the plain text of the web page. Since the
+    ## point is "const" it is live, if we change the selection, the text 
+    ## changes. So we can't just select-all, grab a pointer, and then clear
+    ## the selection; the caller would just get an empty string. We select-all
+    ## and return the pointer, then when the caller is finished, he calls back
+    ## to doneWithText() and we clear the selection.
+    #def getSimpleText(self):
+	#self.preview.page().triggerAction(QWebPage.SelectAll)
+	#return self.preview.page().selectedText()
+    ## findText() of a null string clears the selection
+    #def doneWithText(self):
+	#self.preview.page().findText(QString())
     
-    ## Re-implement the parent's keyPressEvent in order to provide a simple
-    ## find function only.
-    #def keyPressEvent(self, event):
-	#kkey = int(event.modifiers())+int(event.key())
-	#if kkey == IMC.ctl_F: # ctl/cmd f
-	    #event.accept()
-	    #self.doFind()
-	#else: # not ctl/cmd f so,
-	    #event.ignore()
-	    #super(htmlPreview, self).keyPressEvent(event)
+    # Re-implement the parent's keyPressEvent in order to provide a simple
+    # find function only.
+    def keyPressEvent(self, event):
+	kkey = int(event.modifiers())+int(event.key())
+	if (kkey == IMC.ctl_F) or (kkey == IMC.ctl_G) : # ctl/cmd f/g
+	    event.accept()
+	    self.doFind(kkey)
+	else: # not ctl/cmd f so,
+	    event.ignore()
+	    super(htmlPreview, self).keyPressEvent(event)
 
-    ## Do a simple find. getFindMsg returns (ok,find-text). This is a VERY
-    ## simple find from the present cursor position downward, case-insensitive.
-    ## If we get no hit we try once more from the top, thus in effect wrapping.    
-    #def doFind(self):
-	#(ok, findText) = pqMsgs.getFindMsg(self)
-	#if ok and (not findText.isNull()) :
-	    #findFlags = int(QWebPage.FindCaseSensitively) \
-	              #+ int(QWebPage.FindWrapsAroundDocument)
-	    #if not self.preview.findText(findText,findFlags):
-		## no hits at all even wrapping around
-		#pqMsgs.beep()
-
+    # Implement a simple Find/Find-Next, same logic as in pqNotes, pqHelp,
+    # but adjusted for our widget being a webview, and that it does the
+    # wraparound for us.
+    def doFind(self,kkey):
+	if (kkey == IMC.ctl_F) or (self.findText.isEmpty()) :
+	    # ctl+F, or ctl+G but no previous find done, show the find dialog
+	    # with a COPY of current selection as pqMsgs might truncate it
+	    prepText = QString(self.preview.page().selectedText())
+	    (ok, self.findText) = pqMsgs.getFindMsg(self,prepText)
+	# dialog or no dialog, we should have some findText now
+	if not self.findText.isEmpty() :
+	    if not self.preview.page().findText(
+	        self.findText, QWebPage.FindWrapsAroundDocument
+	    ) :
+		pqMsgs.beep()
+    
 if __name__ == "__main__":
     import sys
     import os
