@@ -898,22 +898,27 @@ def tableHTML(tc,doc,unitList):
         t = u'<table style="width:{0:d}%;">'.format(twpct)
     tqs = QString(t)
     tqs.append(IMC.QtLineDelim)
-    # Build up the table row by row. Handle alignment with a class,
-    # <td> for left, <td class='TR'> or <td class='TC'>.  In the first row,
-    # add <style='width:pp%;'> for columns with specified widths.
+    # Build up the table row by row.
     tds = u'    <td{0}{1}>' # template for <td class='Tx' style='width:x%'>
-    tdz = u'</td>'
+    tdz = QString(u'</td>')  # constant end of table cell
+    trz = QString(u'  </tr>')  # constant end of table row
+    tac = u' class="TC"' # constant for align-center
+    tar = u' class="TR"' # constant for align-right
     qat = QString(u'@')
     qnb = QString(u'&nbsp;')
     for r in range(1,tcells.rowCount()+1):
-        tqr = QString(u'  <tr>')
+        tqr = QString(u'  <tr>') # constant to start a row, indented
+        tqr.append(IMC.QtLineDelim) # linebreak before data cells
+        #  Build one row cell by cell. Handle alignment with a class,
+        # <td> for left, <td class='TR'> or <td class='TC'>.  In the first row,
+        # add <style='width:pp%;'> for columns with specified widths.
         for c in range(1,tcells.columnCount()+1):
             al = tprops.columnAlignment(c)
             if al is None: al = CalignLeft
             if al == CalignLeft: al = u''
-            elif al == CalignCenter: al = u' class="TC"'
+            elif al == CalignCenter: al = tac
             else: # right or decimal both get right, HTML has no decimal align
-                al = u' class="TR"'
+                al = tar
             wd = u''
             if (r == 1) and (c in cwpct) :
                 wd = u' style="width:{0:d}%;"'.format(cwpct[c])
@@ -922,11 +927,11 @@ def tableHTML(tc,doc,unitList):
             # change any @ to &nbsp;
             cqs.replace(qat,qnb)
             td = tds.format(al,wd) # make <td> with align, width
-            tqr.append(QString(td))
-            tqr.append(cqs)
-            tqr.append(QString(u'</td>'))
+            tqr.append(QString(td)) # <td...>
+            tqr.append(cqs) # ..stuff .. 
+            tqr.append(tdz) # </td>
             tqr.append(IMC.QtLineDelim)
-        tqr.append(tdz)
+        tqr.append(trz) # </tr>
         tqs.append(tqr)
         tqs.append(IMC.QtLineDelim)
     # the </table> was done by realHTML when it saw T/, so replace
