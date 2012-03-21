@@ -203,7 +203,8 @@ class lineLabel(QLineEdit):
         self.setMaximumWidth(6*pxs)
     # This slot receives the ReturnPressed signal from our widget, meaning
     # the user has finished editing the number. Move the editor's cursor
-    # to the start of that line, or to the end of the document.
+    # to the start of that line, or to the end of the document. Then put the
+    # keyboard focus back in the editor so the cursor can be seen.
     def moveCursor(self):
         doc = IMC.editWidget.document()
         (bn, flag) = self.text().toInt()
@@ -213,6 +214,7 @@ class lineLabel(QLineEdit):
         tc = IMC.editWidget.textCursor()
         tc.setPosition(tb.position())
         IMC.editWidget.setTextCursor(tc)
+	IMC.editWidget.setFocus(Qt.TabFocusReason)
 
     # This slot is connected to the editor's cursorPositionChanged signal.
     # Change the contents of the line number display to match the new position.
