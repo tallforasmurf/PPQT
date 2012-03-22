@@ -807,7 +807,7 @@ class findPanel(QWidget):
         openStr = u"\t{0} : {1}"
         sepStr = u",\n\t{0} : {1}" # subsequent lines are ,\n\t key : value
         endStr = u"\n}\n\n"
-        stream << u"# every backslash must be doubled! \n"
+        stream << u"# every backslash witin a string must be doubled! \n"
         for i in range(UserButtonMax):
             d = self.userButtons[i].udict
             if d['label'] != "(empty)" :
@@ -840,9 +840,7 @@ class findPanel(QWidget):
                             break
                     # if loop ends with no hit, bn remains 99
                 if (bn >= 0) and (bn < UserButtonMax):
-                    dbg = unicode(qs)
                     qss = qs.right((qs.size()-leadingBit.cap(0).size())+1)
-                    dbg2 = unicode(qss)
                     while True:
                         if stopper == qss.at(qss.size()-1):
                             break
@@ -987,23 +985,24 @@ class userButton(QPushButton):
             event.ignore()
             super(userButton, self).mouseReleaseEvent(event)
 
-    # Subroutine to load our values from a string that purports to be
-    # the Python source of a dictionary - such as is created by
+    # Subroutine to load this button's values from a )ython string that purports
+    # to be the Python source of a dictionary, such as is created by
     # findPanel.userButtonLoad() above, and saved in the settings in
     # findPanel.shutDown(), and saved by File>Save Find Buttons.
     # This is called on button creation, or when doing File> Load Find Buttons
     # from a file. Since it might come from a user-edited file, we treat it with
-    # grave suspicion. We require it to have a 'label':'string'
-    # entry. We do not check other entries, and in fact you could
-    # sneak in bad stuff e.g. 'andnext':'foobar' which would only cause
-    # an error message to the console when the userbutton is clicked.
-    # The strings are not executed, so there's nothing like sql injection here.
+    # grave suspicion. We require it to be a valid Python literal form of a
+    # a dict type having a 'label':'string' entry. We do not check other
+    # entries, and in fact you could sneak in bad stuff e.g. 'andnext':'foobar'
+    # which would only cause an error message to the console when the button
+    # is clicked.
     def loadDict(self,dictrepr):
         try:
             # validate dictrepr as being strictly a literal dictionary: ast
             # will throw ValueError if it isn't a good literal and only a literal,
-            # thus avoiding possible code injection
-            okdict = ast.literal_eval(dictrepr)
+            # thus avoiding possible code injection. The compiler chokes on 
+            # literal tabs so replace tabs with spaces.
+            okdict = ast.literal_eval(dictrepr.replace(u'\t',u' '))
             # now make sure it was a dict not a list or whatever
             if not isinstance(okdict,dict) : 
                 raise ValueError
