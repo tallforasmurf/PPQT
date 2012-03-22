@@ -757,6 +757,7 @@ class flowPanel(QWidget):
     #  /T[M] -->  <table>
     #  */, X/, C/  --> </pre>
     #  /*, /X, /C  --> <pre>
+    # <tb> --> <hr />
     #
     # We "enter" a markup at its end (Q/, T/, etc) and on entering push the
     # prior markup type. Within a markup we insert bookend texts around each
@@ -804,6 +805,7 @@ class flowPanel(QWidget):
 	# keep track of the current markup code and allow nesting
 	markupCode = u' ' # state: open text; no markup active
 	markStack = []
+	qtb = QString(u'<tb>')
 	# process units from last to first
 	for u in reversed(range(len(unitList))):
 	    unit = unitList[u]
@@ -813,13 +815,21 @@ class flowPanel(QWidget):
 	    if 0x0 == (unit['A'] & 0x0f) :
 		pqMsgs.rollBar(endBlockNumber - unit['A'])
 	    if unit['T'] == 'P' :
-		# this is a paragraph (or line) of text. Get first, last QTextBlocks.
-		# select bookend strings based on current markup
+		# This is a paragraph (or line) of text (i.e. not markup)
+		# Select bookend strings based on the current markup context.
 		bA = bookendA[markupCode]
 		bZ = bookendZ[markupCode]
 		if bA is not None:
-		    # not in * or C or X, so insert bookends on this paragraph
-		    if markupCode == ' ': # or, if len(markStack)==0
+		    # not in * or C or T or X, so collecting paragraphs. However,
+		    # this could be a <tb> by itself, valid in these contexts.
+		    if unit['A'] == unit['Z'] \
+		       and unitBlockA.text().startsWith(qtb) :
+			# In all other cases we merely insert markup, we do
+			# not replace the text. To avoid breaking that pattern
+			# we just insert bookends that comment out the <tb>
+			bA = u'<hr /> <!-- '
+			bZ = U' -->'
+		    elif markupCode == ' ': # or, if len(markStack)==0
 			# this is open text, check for headers
 			if (unit['B'] == 2) and (u) and (unitList[u-1]['B'] != 4):
 			    bA = bookendA['3']
@@ -827,7 +837,7 @@ class flowPanel(QWidget):
 			if unit['B'] == 4 :
 			    bA = bookendA['2']
 			    bZ = bookendZ['2']
-		    if markupCode == 'P':
+		    elif markupCode == 'P':
 			# line of poetry, we have to, one, modify bA for the indent,
 			F = int((unit['F']-2)/2) # number of nominal ems
 			if F :
@@ -946,7 +956,7 @@ def tokGen(tc, itbosc):
         # back to spaces, return this token
         yield( (tok, ll) )
 
-# Opening and closing bookends for theRealHTML indexed by markup code.
+# Opening and closing bookends for theRealHTML indexed by active markup code.
 # These are Python strings rather than QStrings mainly so the P string
 # can have a format code.
 bookendA = {
@@ -1024,6 +1034,8 @@ if __name__ == "__main__":
 This lengthy quote is the unit-test document. It contains representative
 samples of all the reflow markup types. This is a sample of an open paragraph
 to be reflowed.
+
+<tb>
 
 The types of reflow markup are as follows, which is an example of a list. The list
 for ascii reflow is exactly like a block quote with FLR of 2,4,4, which exdents
