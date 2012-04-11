@@ -216,16 +216,16 @@ class spellDict():
     de-affixing test words. Read the dictionary and store it as
     a big Python dict whose values are the affix-flags for each word.
     Since Python stores dict keys as a hash -- hopefully one that expands
-    appropriately as tags are added -- this gives us hashtable lookup for words.
+    as tags are added -- this gives us fast hashed lookup for known words.
     '''
     def __init__(self,dicPath,affPath):
-	# set up regex for numeric words like 101st, 22nd, 33rd, 184th, 290th
+	# set up regex for numeric words like 101st, 22nd, 33rd, 44th, 40th
 	self.numericWord = QRegExp('(\d*1st)|(\d*2nd)|(\d*3rd)|(\d*[4567890]th)')
 	# sadly, python's unicode .isdecimal() doesn't actually recognize
 	# signs or decimal points! Not going to attempt scientific notation.
 	self.decimalWord = QRegExp(u'(\-|\+)?\d*\.?\d+')
-	# open the affix file as Latin-1, and find out how to read the dic.
-	# Not that this is accurate, the OpenOffice Latin dictionary has
+	# open the affix file as Latin-1, and find out how the .dic is encoded.
+	# Not that this is certain: the OpenOffice Latin dictionary had
 	# SET UTF-8 but the dict was saved in Win CP1251, grrr.
 	uaf = codecs.open(affPath,'r','ISO8859-1')
 	setCodec = "ISO8859-1"
@@ -238,11 +238,11 @@ class spellDict():
 	# read the affix file and save the PFX and SFX rules. We do not
 	# do suggestions so ignore TRY and REP lines. We do not support
 	# any Hunspell compounding option lines, either.
-	uaf.seek(0) # might have read right through it, rewind .aff
+	uaf.seek(0) # might have read right to the end, so rewind .aff
 	self.pfxRules = self.readAffRules('PFX',uaf)
-	uaf.seek(0) # rewind once more, heck it's all in memory now
+	uaf.seek(0) # rewind once more; heck, it's all in memory now
 	self.sfxRules = self.readAffRules('SFX',uaf)
-	# read the dictionary and store it. A typical dictionary line
+	# Now read the dictionary and store it. A typical dictionary line
 	# would be aardvark/S that is, word-string and an optional
 	# /X... where the Xs are the classids of affix rules. The dic
 	# is not necessarily sorted. The first line is a number, the size.
@@ -250,14 +250,14 @@ class spellDict():
 	dSize = int(udf.readline().strip())
 	# Process the rest of the dictionary into a list of two-ples,
 	# ('wordtext', 'affixflags'). Sort the entire list on the word texts.
-	# Note any encoding errors or i/o errors here will trap up to the 
+	# Any encoding errors or i/o errors here will trap up to the 
 	# caller's try statement.
 	self.dictData = {}
 	for line in udf:
-	    if len(line) and (line[0].isalnum()): # skip nulls, comments
+	    if len(line) and (line[0].isalnum()): # ignoring nulls, comments
 		(word,slash,aflags) = unicode(line).strip().partition(u'/')
 		self.dictData[word] = aflags
-	# And that is all there is to loading a dictionary.
+	# And that is all there is to loading a dictionary!
 
     '''
     Read all the lines in a tag.aff file and save the PFX or SFX rules
@@ -315,7 +315,7 @@ class spellDict():
 			if self.stripAndLookup(xw,depth+1): # try to shorten it more
 			    return True # shorter word was a hit
 		    # else keep trying suffixes
-	# We have run through all the suffixes, try prefixes
+	# We have run through all the suffixes with no luck; try prefixes
 	for (cadd,ladd,cstrip,classid) in self.pfxRules:
 	    if tw[:ladd] == cadd: # word has this prefix e.g. 'un'
 		xw = cstrip+tw[ladd:]
@@ -349,13 +349,13 @@ class spellDict():
     def spell(self,tw):
 	if len(tw): # null string is not valid
 	    if (tw in self.dictData) :
-		# hopefully the majority of words exit here
-		return True
+		return True # hopefully the majority of words exit right here
 	    if tw[0] in '.-+0123456789' : # starts with a digit
-		if self.decimalWord.exactMatch(tw) : # numbers are ok 
+		qtw = QString(tw) # to QString-land for QRegExp tests
+		if self.decimalWord.exactMatch(qtw) : # numbers are ok 
 		    return True
 		else: # check for 1st, 2nd, 3rd, 4th... 1001st...
-		    return self.numericWord.exactMatch(QString(tw))
+		    return self.numericWord.exactMatch(qtw)
 	    if tw.islower() :
 		# all-lowercase, try stripping affixes
 		return self.stripAndLookup(tw,0)
@@ -367,7 +367,7 @@ class spellDict():
 		return True
 	    if tw.istitle(): # title-case, try stripping it as-is
 		return self.stripAndLookup(tw,0)
-	return False
+	return False # can't say we didn't try...
 
 if __name__ == "__main__":
     from PyQt4.QtCore import (QSettings)
@@ -386,16 +386,16 @@ if __name__ == "__main__":
 	print("Junk as main: ", sp.setMainDict(u"Foobar"))
 	print("en_GB as main: ",sp.setMainDict(u"en_GB"))
 	wl = ['-8.7', 'AND','bazongas','101st', 'run-of-the-mill', 'basse-terre', '  ','lait','fraise',
-	      'Englishman', 'oiseaux','Paris']
-	print("Main dict")
+	      'Englishman', 'oiseau', 'oiseaux','Paris']
+	print("==Main dict==")
 	for w in wl:
             if sp.check(w):
                 print(w + " is a word")
             else:
                 print(w + " is not")
-	print("Alt dict")
+	print("==Alt dict==")
 	for w in wl:
-	    if sp.check(w,'la'):
+	    if sp.check(w,'fr_FR'):
                 print(w + " is a word")
             else:
                 print(w + " is not")
