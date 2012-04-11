@@ -92,14 +92,16 @@ class makeSpellCheck():
 	self.altDict = None
 	self.mainTag = u''
 	self.mainDict = None
+	# tag of a not-found dict so we don't keep repeating a message
+	self.errTag = u''
 	# populate our list of available dictionaries by finding
 	# all the files of the form <tag>.dic and <tag>.aff in the folder
 	# passed by the parent module and store the
 	# dict tags (file names) into the string list self.listOfDicts.
 	self.listOfDicts = QStringList()
-	print('Looking for dicts in:{0}'.format(IMC.dictPath))
+	#print('Looking for dicts in:{0}'.format(IMC.dictPath))
 	# list all files in that folder. We don't need to sort them, we
-	# use the "in" operator to find the X.dic to match an X.aff
+	# use the "in" operator to find the X.dic matching an X.aff
 	fnames = os.listdir(IMC.dictPath)
 	for fn in fnames:
 	    if u'.aff' == fn[-4:] :
@@ -108,7 +110,8 @@ class makeSpellCheck():
 		if (dn + u'.dic') in fnames:
 		    self.listOfDicts.append(QString(dn))
         # initialize our main dictionary to the one last-chosen by the user
-        deftag = IMC.settings.value(u"main/spellDictTag",
+	# with a default of en_US.
+	deftag = IMC.settings.value(u"main/spellDictTag",
                                           QString(u"en_US")).toString()
 	# try to load the main dictionary
 	self.setMainDict(deftag)
@@ -137,33 +140,37 @@ class makeSpellCheck():
 	    self.mainTag = self.altTag
 	    self.mainDict = self.altDict
 	    return True
-        try:
-            self.mainDict = self.loadDict(tag)
+        dictobj = self.loadDict(tag)
+	if dictobj is not None :
+	    self.mainDict = dictobj
 	    self.mainTag = tag
 	    return True
-        except: # on any error just set None
-	    # query - worthwhile popping up a message?
-	    exctype, value = sys.exc_info()[:2]
-            self.mainDict = None # spelling is not up
+	else:
+	    self.mainDict = None
 	    self.mainTag = u''
-	    pqMsgs.warningMsg("Dictionary {0} not loaded".format(tag))
 	    return False
     
     # Load a dictionary specified by its tag, if it appears in our list.
-    # If it doesn't, or any other problem comes up, just raise an error,
-    # hence, this function should be called in a try statement.
-    # develop the complete paths to the two files and use them to 
-    # instantiate a spellDict object (see below).
+    # If it doesn't, or any other problem comes up, trap with a warning
+    # message. Only warn about a given dict tag once, not repeatedly.
+    # Either returns the dictionary object or None on failure.
     def loadDict(self,tag):
 	p = self.listOfDicts.indexOf(tag)
-	if p > -1 : # the tag is in our list of valid dicts
-	    fn = unicode(tag) # get qstring to python string
-	    fa = os.path.join(IMC.dictPath,fn+u'.aff')
-	    fd = os.path.join(IMC.dictPath,fn+u'.dic')
-	    obj = spellDict(fd,fa)
-	    return obj # success
-	else:
-	    raise ValueError
+	try:
+	    if p > -1 : # the tag is in our list of valid dicts
+		fn = unicode(tag) # get qstring to python string
+		fa = os.path.join(IMC.dictPath,fn+u'.aff')
+		fd = os.path.join(IMC.dictPath,fn+u'.dic')
+		obj = spellDict(fd,fa)
+		return obj # success
+	    else:
+		raise LookupError('dictionary tag {0} not found'.format(tag))
+        except (LookupError, IOError, OSError) as err:
+	    if tag != self.errTag :
+		pqMsgs.warningMsg(u'Could not open dictionary',str(err))
+		self.errTag = tag
+	    return None
+
     
     # Check one word, a python u-string, against the main or some alt dictionary.
     # If an alt dict is specified, it is likely the same as the last one 
@@ -176,24 +183,17 @@ class makeSpellCheck():
 	if 0 == len(dicTag):
 	    d = self.mainDict # which, if we are not up, is None
 	else:
-	    if self.altTag == dicTag:
+	    if dicTag == self.altTag :
 		d = self.altDict # same alt as the last one
 	    else:
-		try:
-		    d = self.loadDict(dicTag)
-		    self.altDict = d # ok that worked, save it
+		d = self.loadDict(dicTag)
+		if d is not None :
+		    self.altDict = d # ok that worked, save alt dict
 		    self.altTag = dicTag
-		except:
-		    # something went wrong reading a dict -- possible encoding
-		    # error (when supposed utf is actually cp1252, e.g.)
-		    # should we show a message? otherwise it is silently ignored
-		    # and the word with the alt dict is marked misspelled
-		    exctype, value = sys.exc_info()[:2]
-		    d = None
         if d is not None: # one way or another we have a dict
             if len(aword.strip()) : # nonempty text
 		if (u'-' in aword) and (aword[0] != u'-'):
-		    # hyphenated word, check each unit, and the results
+		    # hyphenated word, check each unit, AND the results
 		    l = aword.split(u'-') # list of 1 or more tokens
 		    b = True
 		    for w in l:
@@ -219,7 +219,7 @@ class spellDict():
     appropriately as tags are added -- this gives us hashtable lookup for words.
     '''
     def __init__(self,dicPath,affPath):
-	# set up a regex for numeric words like "1001st"
+	# set up regex for numeric words like 101st, 22nd, 33rd, 184th, 290th
 	self.numericWord = QRegExp('(\d*1st)|(\d*2nd)|(\d*3rd)|(\d*[4567890]th)')
 	# sadly, python's unicode .isdecimal() doesn't actually recognize
 	# signs or decimal points! Not going to attempt scientific notation.
@@ -377,11 +377,13 @@ if __name__ == "__main__":
     import pqIMC
     IMC = pqIMC.tricorder()
     IMC.settings = QSettings()
+    base = os.path.dirname(__file__)
+    IMC.dictPath = os.path.join(base,u"dict")
     IMC.spellCheck = makeSpellCheck()
     sp = IMC.spellCheck
     print("spellcheck is up: ",sp.isUp())
     if sp.isUp():
-	#print("Junk as main: ", sp.setMainDict(u"Foobar"))
+	print("Junk as main: ", sp.setMainDict(u"Foobar"))
 	print("en_GB as main: ",sp.setMainDict(u"en_GB"))
 	wl = ['-8.7', 'AND','bazongas','101st', 'run-of-the-mill', 'basse-terre', '  ','lait','fraise',
 	      'Englishman', 'oiseaux','Paris']
