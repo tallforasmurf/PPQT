@@ -5,6 +5,30 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
+__version__ = "0.1.0" # refer to PEP-0008
+__author__  = "David Cortesi"
+__copyright__ = "Copyright 2011, 2012 David Cortesi"
+__maintainer__ = "?"
+__email__ = "tallforasmurf@yahoo.com"
+__status__ = "first-draft"
+__license__ = '''
+ License (GPL-3.0) :
+    This file is part of PPQT.
+    PPQT is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You can find a copy of the GNU General Public License in the file
+    extras/COPYING.TXT included in the distribution of this program, or see:
+    <http://www.gnu.org/licenses/>.
+'''
+
 '''
 Implement the find/replace panel. The findPanel class constructor has
 the very lengthy task of building and laying out the panel. (The initial
@@ -169,16 +193,6 @@ be a black hole of recursion for certain regexes, and (b) would imply doing
 overlapping replacements with probably very strange results.
 '''
 
-__version__ = "0.1.0" # refer to PEP-0008
-__author__  = "David Cortesi"
-__copyright__ = "Copyright 2011, David Cortesi"
-__maintainer__ = "?"
-__email__ = "nobody@pgdp.net"
-__status__ = "first-draft"
-__license__ = '''
-Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
-http://creativecommons.org/licenses/by-nc-sa/3.0/
-'''
 
 from urllib import (quote, unquote) # for safely encoding find/rep strings
 import pqMsgs

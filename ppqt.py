@@ -5,14 +5,36 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
+__version__ = "0.1.0" # refer to PEP-0008
+__author__  = "David Cortesi"
+__copyright__ = "Copyright 2011, 2012 David Cortesi"
+__maintainer__ = "?"
+__email__ = "tallforasmurf@yahoo.com"
+__status__ = "first-draft"
+__license__ = '''
+ License (GPL-3.0) :
+    This file is part of PPQT.
+    PPQT is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You can find a copy of the GNU General Public License in the file
+    extras/COPYING.TXT included in the distribution of this program, or see:
+    <http://www.gnu.org/licenses/>.
 '''
- A PGDP Post-processing tool in Python and PyQt.
- 
+
+'''
  A single document file, bookname.suffix, is edited. A variety of metadata
  is collected the first time a file is opened and is saved in a metadata file,
- bookname.suffix.metadata. Also expected to exist at the same file path
+ bookname.suffipqLists.metadata. Also expected to exist at the same file path
  as bookname.suffix:
-     bookname.suffix.meta (created on first save)
+     bookname.suffipqLists.meta (created on first save)
      good_words.txt (optional)
      bad_words.txt (optional)
      pngs, a folder containing scan images named nnn.png
@@ -62,16 +84,6 @@ Second to Mark Summerfield for the book "Rapid GUI Development with PyQt"
 without which we couldn't have done this.
 '''
 
-__version__ = "0.1.0" # refer to PEP-0008
-__author__  = "David Cortesi"
-__copyright__ = "Copyright 2011, David Cortesi"
-__maintainer__ = "?"
-__email__ = "tallforasmurf@yahoo.com"
-__status__ = "first-draft"
-__license__ = '''
-Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
-http://creativecommons.org/licenses/by-nc-sa/3.0/
-'''
 import os # for dict path manipulations
 import sys # for argv, passed to QApplication
 import platform # for mac detection
@@ -121,20 +133,31 @@ from PyQt4.QtGui import ( QApplication )
 #  pqView.py  defines the live html preview widget
 #
 #  pgHelp.py  displays the program manual (whose text is in pqHelp.html).
-#
 # Some modules have unit-test code that runs if they are executed stand-alone.
 # Each module imports whatever classes of PyQt.Qtxx it needs. This causes
 # some duplication; we trust Python to not import duplicate code.
+
+# Display copyright and version on the console, which may or may not be visible
+print('PPQT Version {0}'.format(__version__))
+print(__copyright__)
+
+# Create the Inter-Module Communicator
 import pqIMC
+if pqIMC.__version__ != __version__ :
+    print('pqIMC.py version {0}'.format(pqIMC.__version__))
 IMC = pqIMC.tricorder()
 
-# Import each submodule and stick a reference to IMC in it.
+# Import each submodule and stick a reference to IMC into it.
 import pqMsgs # misc message and font routines
+if pqMsgs.__version__ != __version__ :
+    print('pqMsgs.py version {0}'.format(pqMsgs.__version__))
 pqMsgs.IMC = IMC
 
 import pqLists # implements ordered lists of words for quick lookup
-# instantiate all our lists empty
+if pqLists.__version__ != __version__ :
+    print('pqLists.py version {0}'.format(pqLists.__version__))
 pqLists.IMC = IMC
+# instantiate all our lists empty
 IMC.scannoList = pqLists.wordList()
 IMC.goodWordList = pqLists.wordList()
 IMC.badWordList = pqLists.wordList()
@@ -143,44 +166,66 @@ IMC.charCensus = pqLists.vocabList()
 IMC.pageTable = []
 
 import pqEdit # the main edit widget plus save and load metadata
+if pqEdit.__version__ != __version__ :
+    print('pqEdit.py version {0}'.format(pqEdit.__version__))
 pqEdit.IMC = IMC
 
 import pqPngs # scan image display
+if pqPngs.__version__ != __version__ :
+    print('pqPngs.py version {0}'.format(pqPngs.__version__))
 pqPngs.IMC = IMC
 
 import pqNotes # notes
+if pqNotes.__version__ != __version__ :
+    print('pqNotes.py version {0}'.format(pqNotes.__version__))
 pqNotes.IMC = IMC
 
 import pqFind # find/replace
+if pqFind.__version__ != __version__ :
+    print('pqFind.py version {0}'.format(pqFind.__version__))
 pqFind.IMC = IMC
 
 import pqChars # character census table
+if pqChars.__version__ != __version__ :
+    print('pqChars.py version {0}'.format(pqChars.__version__))
 pqChars.IMC = IMC
 
 import pqWords # word census table
+if pqWords.__version__ != __version__ :
+    print('pqWords.py version {0}'.format(pqWords.__version__))
 pqWords.IMC = IMC
 
 import pqPages # page and folio table
+if pqPages.__version__ != __version__ :
+    print('pqPages.py version {0}'.format(pqPages.__version__))
 pqPages.IMC = IMC
 
 import pqFlow # text reflow
+if pqFlow.__version__ != __version__ :
+    print('pqFlow.py version {0}'.format(pqFlow.__version__))
 pqFlow.IMC = IMC
-import pqTable
+
+import pqTable # flow's partner in crime, table reflow
+if pqTable.__version__ != __version__ :
+    print('pqTable.py version {0}'.format(pqTable.__version__))
 pqTable.IMC = IMC
 
 #import pqFoot # footnote management
 # pqFoot.IMC = IMC
 
-#import pqHtml # html conversion
-# pqHtml.IMC = IMC
-
 import pqView # html preview
+if pqView.__version__ != __version__ :
+    print('pqView.py version {0}'.format(pqView.__version__))
 pqView.IMC = IMC
 
-import pqHelp
+import pqHelp # help panel
+if pqHelp.__version__ != __version__ :
+    print('pqHelp.py version {0}'.format(pqHelp.__version__))
 pqHelp.IMC = IMC
 
 import pqMain # code to create the main window and all menus
+if pqMain.__version__ != __version__ :
+    print('pqMain.py version {0}'.format(pqMain.__version__))
 pqMain.IMC = IMC
 
 # and awayyyyyy we go:
@@ -191,8 +236,8 @@ app.setOrganizationName("PGDP")
 app.setOrganizationDomain("pgdp.net")
 app.setApplicationName("PPQT")
 
-# Create a default settings object, which will be stored using
-# the app and organization names set just above. It is stored in:
+# Create a default settings object, or access an existing one. Settings
+# are stored using the app and organization names defined just above in:
 # * Mac OS : ~/Library/Preferences/com.pgdp.org
 # * Linux : ~/.config/PGDP
 # * Windows : in the Registry under /Software/PGDP.
@@ -204,14 +249,20 @@ IMC.settings = QSettings()
 # on whether we are running in development or bundled by pyinstaller.
 if hasattr(sys, 'frozen') : # bundled by pyinstaller?
 	base = os.path.dirname(sys.executable)
-else: # running normally
+else: # running under normal python e.g. from command line or an IDE
 	base = os.path.dirname(__file__)
 IMC.dictPath = os.path.join(base,u"dict")
 
 import pqSpell # Spell-check routines (which use the settings)
+if pqSpell.__version__ != __version__ :
+    print('pqSpell.py version {0}'.format(pqSpell.__version__))
 pqSpell.IMC = IMC
+
+# create the spellcheck, loading the last-set dictionary
 IMC.spellCheck = pqSpell.makeSpellCheck()
 
-IMC.mainWindow = pqMain.MainWindow() # create the main window and all tabs
+# Create the main window and all the tabs in it
+IMC.mainWindow = pqMain.MainWindow()
+# Display and execute!
 IMC.mainWindow.show()
 app.exec_()
