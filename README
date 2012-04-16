@@ -1,6 +1,23 @@
- PPQT is a unified tool for the task of post-processing etexts for the
- website, Project Gutenberg Distributed Proofreaders (PGDP.net)
+ PPQT is an integrated application for post-processing etexts by the
+ volunteers who contribute to Project Gutenberg Distributed Proofreaders (PGDP.net)
+
+ PPQT is Copyright(C) 2011, 2012 David Cortesi (email: tallforasmurf@yahoo.com)
  
+ License (GPL-3.0) :
+    PPQT is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You can find a copy of the GNU General Public License in the file
+    extras/COPYING.TXT included in the distribution of this program, or see:
+    <http://www.gnu.org/licenses/>.
+
  PPQT is written in Python (2.7 but should require little to make it 3)
  with PyQt4 and Qt4.
  
