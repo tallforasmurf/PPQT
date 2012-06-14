@@ -251,6 +251,7 @@ if hasattr(sys, 'frozen') : # bundled by pyinstaller?
 	base = os.path.dirname(sys.executable)
 else: # running under normal python e.g. from command line or an IDE
 	base = os.path.dirname(__file__)
+IMC.appBasePath = base
 IMC.dictPath = os.path.join(base,u"dict")
 
 import pqSpell # Spell-check routines (which use the settings)

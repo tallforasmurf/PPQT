@@ -89,6 +89,7 @@ class tricorder():
         # Pointers initialized in ppqt, filled in in pqEdit,
         # and referenced everywhere else
         self.settings = None # QSettings for global save/restore app values
+        self.appBasePath = None # path to the modules of the app
         self.dictPath = None # path to folder where we look for dictionaries
         self.scannoList = None # list loaded from a scannos file for hiliting
         self.goodWordList = None # good words
