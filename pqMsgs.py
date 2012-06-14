@@ -76,9 +76,8 @@ def trunc(qs,maxl):
     q2 = q2.replace(QString("<"),QString("&lt;"))
     return q2
 
-# Display a modal info message, blocking until the user clicks OK
-# No return value. The first line of text is required. The second
-# line, displayed in a smaller size, is optional.
+# Internal function to initialize a Qt message-box object with an icon,
+# a main message line, and an optional second message line.
 
 def makeMsg ( text, icon, info = None):
     mb = QMessageBox( )
@@ -88,19 +87,22 @@ def makeMsg ( text, icon, info = None):
 	mb.setInformativeText( info )
     return mb
 
+# Display a modal info message, blocking until the user clicks OK.
+# No return value.
+
 def infoMsg ( text, info = None ):
-    mb = makeMsg(text,QMessageBox.Information,info)
+    mb = makeMsg(text, QMessageBox.Information, info)
     mb.exec_()
 
-# Display a modal warning message, blocking until the user clicks OK
-# No return value.
+# Display a modal warning message, blocking until the user clicks OK.
+# No return value
 
 def warningMsg ( text, info = None ):
     mb = makeMsg(text, QMessageBox.Warning, info)
     mb.exec_()
 
 # Display a modal query message, blocking until the user clicks OK/Cancel
-# Return True for OK
+# Return True for OK, False for Cancel.
 
 def okCancelMsg ( text, info = None ):
     mb = makeMsg ( text, QMessageBox.Question, info)
@@ -111,7 +113,8 @@ def okCancelMsg ( text, info = None ):
 # clicks Ok/Cancel. The parameters to QInputDialog.getText are:
 # * the parent widget over which it will center,
 # * title string for the dialog
-# * label for the input field, and if no preset text is passed, the rest are defaulted.
+# * label for the input field
+# If no preset text is passed, the rest are defaulted.
 # When preset text is passed, two additional parameters:
 # * the default flag for echo mode QLineEdit::Normal
 # * prepared text to put in the input field
