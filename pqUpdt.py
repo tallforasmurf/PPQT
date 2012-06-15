@@ -235,10 +235,8 @@ def checkForUpdates():
 
     # There are one or more modules needing updating. Ask the user
     # if we should proceed.
-    m = 'There is one updated module to fetch.' if len(updaTab)==1 \
-      else 'There are {0} updated modules to fetch.'.format(len(updaTab))
-    
-    ans = pqMsgs.okCancelMsg(m, 'Shall we proceed?')
+    ans = pqMsgs.okCancelMsg('{0} module(s) can be updated.'.format(len(updaTab)),
+                       'Shall we proceed?')
     if not ans:
         pqMsgs.infoMsg('PPQT remains unchanged.')
         return

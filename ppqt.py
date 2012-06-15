@@ -223,11 +223,6 @@ if pqHelp.__version__ != __version__ :
     print('pqHelp.py version {0}'.format(pqHelp.__version__))
 pqHelp.IMC = IMC
 
-import pqUpdt
-if pqUpdt.__version__ != __version__ :
-    print('pqUpdt.py version {0}'.format(pqHelp.__version__))
-pqUpdt.IMC = IMC
-
 import pqMain # code to create the main window and all menus
 if pqMain.__version__ != __version__ :
     print('pqMain.py version {0}'.format(pqMain.__version__))
@@ -269,7 +264,6 @@ IMC.spellCheck = pqSpell.makeSpellCheck()
 
 # Create the main window and all the tabs in it
 IMC.mainWindow = pqMain.MainWindow()
-
 # Display and execute!
 IMC.mainWindow.show()
 app.exec_()
