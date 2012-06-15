@@ -64,6 +64,7 @@ import pqPages
 import pqFlow
 import pqView
 import pqHelp
+import pqUpdt
 # The parent module begins execution by instantiating one of these.
 # in the __init__ we create every other widget we own.
 
@@ -194,14 +195,17 @@ class MainWindow(QMainWindow):
                 self.buttonLoad, None, "Read user-defined buttons in Find Panel")
         fileButtonSaveAction = self.createAction("Save Find buttons...", None,
                 self.buttonSave, None, "Save user-defined buttons in Find Panel")
+        fileUpdateAction = self.createAction("Check for Updates", None,
+                pqUpdt.checkForUpdates, None, "See if PPQT can be updated with new code")
         fileQuitAction = self.createAction("&Quit", None, self.close,
                 QKeySequence.Quit, "Close the application")
         # Create the File menu but don't populate it yet, do that on the
         # fly adding recent files to it. Save the prepared actions as a tuple.
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenuActions = (fileNewAction, fileOpenAction,
-                fileSaveAction, fileSaveAsAction, fileScannosAction,
-                fileButtonLoadAction, fileButtonSaveAction, None, 
+                fileSaveAction, fileSaveAsAction, None, fileScannosAction,
+                fileButtonLoadAction, fileButtonSaveAction, None,
+                fileUpdateAction,
                 fileQuitAction)
         # When the File menu is about to be opened, update its contents:
         self.connect(self.fileMenu, SIGNAL("aboutToShow()"),

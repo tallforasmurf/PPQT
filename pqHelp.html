@@ -25,6 +25,7 @@ __license__ = '''
 -->
 <html>
 <head>
+<meta charset="iso-8859-1" />
 </head>
 <body>
 <h1>PPQT Information</h1>
@@ -32,20 +33,27 @@ __license__ = '''
 <h3>Licenses</h3>
 <p>Qt is licensed for noncommercial use under the LGPL.
 PyQt4 is licensed for noncommercial use under the GPL v2 and the GPL v3.
-The source code of PPQT is released under the Creative Commons
-Attribution-NonCommercial-ShareAlike license.</p>
+The source code of PPQT is licensed for noncommercial use under the GPL.</p>
 <h3>Acknowledgements</h3>
-<p>First a deep bow of respect to Steve Shulz (Thundergnat) who created and maintained Guiguts, the program from which PPQT takes inspiration and lots of ideas. Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Developement with PyQt</i>.</p>
+<p>First a deep bow of respect to Steve Shulz (Thundergnat) who created and maintained Guiguts, the program from which PPQT takes inspiration and lots of ideas. Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Developement with PyQt</i> which made building a large application easier.</p>
 <h3>Mac Users Note</h3><p> Throughout this Help, when you read <b>ctl-</b>
 you think <b>cmd-</b>. And when you read <b>alt-</b>, you think <b>opt-</b>.
 (For example, to set bookmark 1, you key cmd-opt-1 although the help says ctl-alt-1.)
 Qt is quite consistent in these mappings. However, when you see <b>control-</b>, that really means, the Control key.</p>
 <p>Try it now: key ctl-f for a simple Find dialog for searching in this help text.</p>
+<h2>Applying Updates</h2>
+<p>Use the menu command File > Check for Updates. PPQT queries github, where
+its source is maintained, to see if any of the program modules have been updated. If so, it displays a count of the changed modules and asks if you
+want to download them. If you approve, it downloads the altered source modules
+and installs them. The next time you start PPQT the updated code is in effect.</p>
+<p>The update process checks for a number of possible errors and exits safely under most conditions. However, it is remotely possible that an update could end partially incomplete, with the PPQT code in an inconsistent state. In this case a message tells you to download a complete new PPQT distribution. (Alternatively, restore the complete PPQT folder from a backup source.)</p>
+<p>At this time automatic update only operates on Python source modules and
+the Help html text. It does not update dictionary files or the extras folder.</p>
 <h2>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>.
 <h3>File Encodings and Suffixes</h3>
 <p>PPQT is entirely Unicode internally. The text file is converted to Unicode
-on input, and back to some byte code on output, based on the file suffix. Rename a new file as needed to get these encodings:</p>
+on input and back to some byte code on output. The conversion is based on the file suffix. Rename a new file as needed to get these encodings:</p>
 <table border='1'>
 <tr><td><tt>.txt</tt></td><td>Latin-1 or 7-bit Ascii (PPQT cannot distinguish between these)</td></tr>
 <tr><td><tt>.utf</tt></td><td>UTF-8 encoding of Unicode, preferred for text with non-latin characters</td></tr>
@@ -55,13 +63,12 @@ on input, and back to some byte code on output, based on the file suffix. Rename
 <tr><td><tt>.kir</tt></td><td>KOI8-R, Cyrillic-Russian.</td></tr>
 <tr><td><tt>.kiu</tt></td><td>KOI8-U, Cyrillic-Ukranian.</td></tr>
 </table>
-<p>When saving, prefer <tt>.utf</tt> if there is any chance the text contains non-Latin-1 characters; prefer <tt>.txt</tt> when you are sure it is pure Latin-1 or ASCII. However, PPQT will save to any of the above encodings based on the file suffix of the output file.</p>
+<p>PPQT will save to any of the above encodings based on the file suffix of the output file. However <tt>.utf</tt> is preferred if the text contains non-Latin-1 characters and <tt>.txt</tt> when you are sure it is Latin-1 or strict ASCII.</p>
 <h3>Metadata</h3>
-When opening  <tt>afinebook.txt</tt>, PPQT looks for a file named  <tt>afinebook.txt.meta</tt> in the same location (i.e. the full book name
-plus <tt>.meta</tt>). If the meta file
+When opening a book, PPQT looks for a file of metadata in the same location. The metadata file has the full book name plus <tt>.meta</tt>, for example <tt>afinebook.txt.meta</tt> If this meta file
 is not found, PPQT assumes this is the first time it has opened this book.
-It scans the text gathering information including the location of page separator lines, and counting words and characters. These metadata will be stored in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
-exist, PPQT loads the metadata items from it.</p>
+It scans the book text gathering information including the location of page separator lines. These metadata will be stored in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
+exist, PPQT loads metadata information from it.</p>
 <p>Feel free to examine or edit the metadata file, but be aware that it is written in UTF-8 format. If strange characters appear, your editor app did not use the utf-encoding to load it. Do not save the metadata file unless you are sure you are loading and saving it in UTF-8 format.</p>
 <h3>Page Images</h3>
 <p>PPQT expects to find a folder named <tt>pngs</tt> in the same location as
@@ -70,9 +77,8 @@ the Pngs panel.</p>
 <h2>The Main Window</h2>
 <p>When launched, PPQT displays a single window divided in two by a vertical bar. The left side is the Edit Panel where you edit the document. The right side
 is a tabbed set of panels for different functions. All these panels are described below.</p>
-<p>You can adjust the size and location of the main window and you can drag
-the vertical "splitter" left and right. These adjustments are remembered from
-session to session.</p>
+<p>You can adjust the size and location of the main window, and you can drag
+the vertical "splitter" between the halves left and right. These adjustments are remembered from session to session.</p>
 <h2>The Edit Panel</h2>
 <p>The left-side panel is a typical modern plain text line-editor.
 It uses a monospaced font, defaulting to Deja Vu Mono (dejavu-fonts.org)
@@ -90,6 +96,7 @@ tripleclick (line). Extend a selection by holding the shift key and
 using an arrow key. Move text by dragging the selection,
 or copy text by alt-dragging. PPQT does not support rectangular selections or discontinuous selections.</p>
 <h3>Edit Keys</h3>
+<p>The following key commands are available when keyboard focus is in the Edit panel.</p>
 <ul>
 <li>up/dn/left/right: move cursor</li>
 <li>Home, also ctl-up: Top of text</li>
@@ -97,7 +104,7 @@ or copy text by alt-dragging. PPQT does not support rectangular selections or di
 <li>PgUp/PgDn: move cursor one editor screen up/dn</li>
 <li>ctl-left and ctl-right: beginning and end of line</li>
 <li>alt-left and alt-right: word-left, word-right</li>
-<li>Add shift key to any of the above: extends selection</li>
+<li>Add shift key to any of the above: extend selection</li>
 <li>ctl-c/ctl-x/ctl-v: copy/cut/paste</li>
 <li>ctl-z: undo</li>
 <li>ctl-y, also shift-ctl-z: redo</li>
@@ -110,7 +117,7 @@ or copy text by alt-dragging. PPQT does not support rectangular selections or di
 <li>ctl-=: replace selection (same as Find panel replace #1)</li>
 <li>ctl-t: replace selection and repeat find forward</li>
 <li>shift-ctl-t: replace selection and repeat find backward</li>
-<li>ctl-u, ctl-l, ctl-i: change selection to uppercase, lowercase, titlecase (Unicode compliant)</li>
+<li>ctl-u, ctl-l, ctl-i: change selection to uppercase, lowercase, titlecase (Unicode aware)</li>
 <li>ctl-1 through ctl-9: jump to bookmark 1-9</li>
 <li>ctl-alt-1 through ctl-alt-9: set bookmark 1-9 to cursor (bookmarks
 are saved in the metadata file)</li>
@@ -120,22 +127,31 @@ are saved in the metadata file)</li>
 <p>Use the View > Scannos menu to turn on scanno highlighting, putting
 a plum-colored background on any word that appears in the scannos file. (Be patient, this may take several seconds to appear in a large book.)</p>
 <h3>Spellcheck</h3>
-<p>PPQT looks for a file <tt>good_words.</tt> (<tt>txt</tt> or <tt>utf</tt>) when it opens the text for the first time, and loads its contents. It looks for a file <tt>bad_words.</tt> (<tt>txt</tt> or <tt>utf</tt>)  also. The lists of "good" and "bad" words are saved in the metadata file thereafter. More "good" words can be added from the Words panel.</p>
-<p>When building or refreshing its metadata, PPQT checks all words for spelling. A "bad" word is assumed to be misspelt; a "good" word is assumed to be correct. Any word not in those lists is presented to the spell-checker and noted as correct or misspelt based on the current dictionary.</p>
-<p>Select View&nbsp;>&nbsp;Spelling to turn on red-underlining of misspelt words (may take some seconds in a large book). Use View&nbsp;>&nbsp;Dictionary to select a dictionary for the main language of the book. Use the Refresh button of the Words panel to spellcheck with the new dictionary. Dictionaries for several languages are included; more can be added by a procedure documented elsewhere.</p>
+<h4>Good and Bad Word Files</h4>
+<p>The first time PPQT opens a book (i.e. when no metadata file exists), it
+looks for a file <tt>good_words.txt</tt> (or <tt>.utf</tt>) and loads its contents. It also looks for a file <tt>bad_words.txt</tt> (or <tt>.utf</tt>). The "good" and "bad" words are saved in the metadata file thereafter. More "good" words can be added from the Words panel.</p>
+<h4>Spellcheck Operation</h4>
+<p>When building or refreshing its metadata, PPQT checks all words for spelling. A word in the "bad" list is assumed to be misspelt; one in the "good" list is assumed to be correct. A word not in those lists is presented to the spell-checker and noted as correct or misspelt based on the current dictionary.</p>
+<h4>Displaying Misspelt Words</h4>
+<p>Select View&nbsp;>&nbsp;Spelling to turn on or off red-underlining of misspelt words. Turning it on may take some seconds in a large book.</p>
+<h4>Dictionaries</h4>
+Use View&nbsp;>&nbsp;Dictionary to select a dictionary for the main language of the book. Use the Refresh button of the Words panel to spellcheck with the new dictionary. Dictionaries for several languages are included. To add another dictionary, place Myspell/OpenOffice compatible <tt>.aff</tt> and <tt>.dic</tt> dictionary files in the <tt>dict</tt> folder in the PPQT folder.</p>
 <p>You can mark any word, phrase or section for
-spell-check with an alternate dictionary with the nonstandard tag <b><tt>&lt;sd</tt></b>&nbsp;<i>dictag</i><b>&gt;</b>...<b><tt>&lt;/sd></tt></b>, for example <tt>He whispered &lt;sd fr_FR>&lt;i>Je t'aime&lt;/i>&lt;/sd></tt>. During spellcheck, switching to and from the alternate dictionary may introduce a noticeable pause.</tt>
+spell-check with an alternate dictionary with the nonstandard tag <b><tt>&lt;sd</tt></b>&nbsp;<i>dictag</i><b>&gt;</b>...<b><tt>&lt;/sd></tt></b>, for example<br />
+<tt>He whispered &lt;sd fr_FR>&lt;i>Je t'aime&lt;/i>&lt;/sd></tt>.<br />
+Using alternate dictionary tags can make spellcheck take significantly longer.</tt>
 <h2>Pngs Panel</h2>
 <p>Click the Pngs tab. This panel displays the scan image from the <tt>pngs</tt> folder that corresponds to the present edit cursor position. When the focus is in the Pngs panel (click in it) ctl-hyphen zooms out and ctl-plus zooms in. The current zoom setting is remembered from session to session.</p>
 <p>You can use the PgUp and PgDn keys in the Pngs panel to see preceding and following scan images. However as soon as you move the text edit cursor,
 the Pngs panel snaps back to the image corresponding to the cursor.</p>
 <h2>Notes Panel</h2>
 <p>Click the Notes tab. This panel is a simple plain-text editor to hold notes on the book in progress. Whatever contents you type here are saved
-in the <tt>.meta</tt> file and reloaded with the book.</p>
+in the metadata file and reloaded with the book.</p>
 <p>When the focus is in the Notes panel, the alt-ctl-L key causes the
-current line number of the Edit panel cursor position to be entered, in curly braces: <tt>{1475}</tt>. (Note: under Ubuntu, alt-ctl-L may be the keyboard shortcut for Lock Screen. Use Ubuntu's Preferences &gt; Keyboard Shortcuts to change this to, e.g., shift-alt-ctl-L.)</p><p>The alt-ctl-P key causes the current book page
+current line number of the Edit panel cursor position to be entered, in curly braces: <tt>{1475}</tt>. (Note: under Ubuntu, alt-ctl-L may be the keyboard shortcut for Lock Screen. Use Ubuntu's Preferences &gt; Keyboard Shortcuts to change this to some other combination.)</p>
+<p>The alt-ctl-P key causes the current book page
 number to be entered in square brackets: <tt>[214]</tt>. Use these keys
-to relate your notes to locations in the book, for example <tt>oe lig near {1475}; big table on [214]</tt>.
+to relate your notes to locations in the book, for example <tt>oe lig on {1475}; big table starts on [214]</tt>.
 </p><p>
 Place the cursor in or to the right of a {nnn} line number in the notes and key ctl-L. The Edit panel cursor jumps to that line. Place the cursor in or to the right of a [ppp] page number and key ctl-p. The Edit panel cursor jumps to the top of that page's text.</p>
 <p>Key ctl-f for a simple Find dialog for searching in the notes.
@@ -165,8 +181,8 @@ containing the last 10 find values you explicitly typed in the field.
 The Find text field turns pink when Regex is checked and the syntax is not valid.</p>
 <p>Below the text field are four buttons that perform searches:</p>
 <table border='1'>
-<tr><td style='width:4em;'>Next</td><td>Search for the Find text beginning at the edit cursor and going toward the bottom boundary. Pressing Return in the Find text field is the same as clicking Next.</td></tr>
-<tr><td>Prior</td><td>Search for the Find text beginning at the edit cursor and going back toward the top boundary.</td></tr>
+<tr><td style='width:4em;'>Next</td><td>Search for the Find text beginning at the edit cursor and going toward the bottom boundary. Pressing Return in the Find text field, or keying ctl-g in the Edit panel, is the same as clicking Next.</td></tr>
+<tr><td>Prior</td><td>Search for the Find text beginning at the edit cursor and going back toward the top boundary. Keying ctl-shift-g in the Edit panel is the same as clicking Prior.</td></tr>
 <tr><td>First</td><td>If In Sel'n is checked, set the top and bottom of the
 current selection as the search boundaries; otherwise set to the whole document.
 Search for the Find text beginning at the top boundary and going forward.</td></tr>
@@ -193,7 +209,7 @@ causes all instances of the Find text within the search boundaries
 to be looked up and replaced.
 Before the replacement is done, a message is shown: "Replace <i>nn</i>
 occurrences of <i>find-text</i> with <i>repl-text</i>?" and you
-have the option of cancelling the operation. The replace-all 
+have the option of cancelling the operation. This replace-all 
 operation is a single undo/redo step.</p>
 <h3>User-defined Buttons</h3>
 <p>Below the Replace controls is an array of 24 pushbuttons. 
@@ -207,12 +223,13 @@ repeat that search, click the button. All the find/replace
 controls are returned to the stored settings.
 The button contents are remembered from session to session.</p>
 <p>To clear the contents of a button, right-click it, clear the label field to empty, and click OK.</p>
-<p>To save the button settings to a file select File>Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (so a suffix of .utf is a good idea). In the saved file each non-empty button is represented on a single line.</p>
+<p>To save the button settings to a file, select File>Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (so a suffix of .utf is a good idea).</p>
 <p>To load button settings from a file, select File>Load Find Buttons.
-Any button definitions in the file are assigned to the buttons.
+Choose the file to load.
+Any valid button definitions in the file are assigned to the buttons.
 The intent of saving and loading buttons is to be able to save
 and re-use complex search operations, and exchange them with other
-users. The file syntax is documented elsewhere.</p>
+users.</p>
 <p></p>
 <h3>Regex Syntax</h3>
 <p>The Qt regex support is similar to but has fewer features than the Perl regexes used in guiguts. The following forms are used to match text.</p>
@@ -382,8 +399,6 @@ HTML folios in the side margin is:</p><blockquote>
 <tt>\n&lt;span class='pgnum'>&lt;a id='Page_%f' name='Page_%f'>&lt;/a>[Pg&amp;nbsp;%f]&lt;/span>\n</tt>
 </blockquote>
 <p>Inserting folio text is a single undo/redo operation.</p>
-<p>TBS: some way to open a proofer's profile page at pgdp.net 
-by clicking in the proofer column.</p>
 <h2>The Reflow Panel</h2>
 <p>Click the Flow tab to display the Reflow panel.
 This panel has controls related to reflowing paragraphs and marked-up
@@ -399,10 +414,9 @@ supported as follows:</p>
 within left and right indents as set in the top row of controls.</td></tr>
 <tr><td><b>/U..U/</b></td><td>Unsigned list: text is reflowed by paragraphs
 with the first line of each paragraph indented 2 and others indented 4.</td></tr>
-<tr><td><b>/P..P/</b></td><td>Poetry:single lines are indented as given
+<tr><td><b>/P..P/</b></td><td>Poetry: single lines are indented as given
 in the second row of controls.</td></tr>
-<tr><td><b>/R..R/</b></td><td>Each line is aligned right, for the
-heading of a letter, a signature or the source of a quote.
+<tr><td><b>/R..R/</b></td><td>Each line is aligned to the current right margin.</td></tr>
 <tr><td><b>/*..*/</b></td><td>No-flow: the entire section may be indented
 by an amount specified in the third control, otherwise no change.</td></tr>
 <tr><td><b>/C..C/</b></td><td>Centering: single lines are indented so
@@ -428,12 +442,12 @@ be converted to uppercase, set the control to treat this markup as 0 length.
 (This does not work for tables at this time. Set the skip button for tables
 until you have removed the i/b/sc markup from the text.)</p>
 <h4>Indents</h4>
-<p>The top row of controls set the default indents for block quotes.
+<p>The top row of controls set the default indents for block quotes (/Q..Q/).
 The <i>First</i> indent applies to the first line of a paragraph;
 <i>Left</i> to the other lines. The <i>Right</i> indent causes lines to
 be shorter than 75 by this amount.</p>
-<p>The second row of controls set the indents for poetry, in which the <i>First</i>
-indent applies to every line; the <i>Left</i> indent is used only if a line
+<p>The second row of controls set the indents for poetry, in which the <i>First</i> indent applies to every line.
+The <i>Left</i> indent is used only if a line
 is too long to fit in 75 chars and is folded.</p>
 <p>You can specify the First, Left and/or Right indent for any section
 by writing <b>F:</b><i>nn</i> <b>L:</b><i>nn</i> <b>R:</b><i>nn</i> following
@@ -521,18 +535,18 @@ the initial letter is checked, so <tt>WATERMELON:50</tt> works, too.</p>
 the width in two parts, for example <tt>W:7.3</tt> where the first number (7)
 says the minimum width for the integer part, and the second (3) sets the
 minimum width for the decimal and the fraction digits. You may also
-specify <tt>D:'<i>x</i>'</tt> to set a different decimal separator character <i>x</i>, for example in a German text, where the comma is the conventional
+specify <tt>D:'<i>x</i>'</tt> to set a different decimal separator character <i>x</i>, for example in some European texts the comma is the conventional
 decimal "point". Here is a simple table with decimal alignment before reflow:</p>
 <pre>
 /T TABLE(WIDTH:30) 1(A:R) 2(A:D W:8.4 D:',')
-Persimmons   € 24,20
-Marshmallows  € 124,80
+Persimmons   &#8364; 24,20
+Marshmallows  &#8364; 124,80
 T/</pre>
 <p>And after</p>
 <pre>
 /T TABLE(WIDTH:30) 1(A:R) 2(A:D W:8.4 D:',')
-    Persimmons        € 24,20 
-  Marshmallows       € 124,80 
+    Persimmons        &#8364; 24,20 
+  Marshmallows       &#8364; 124,80 
 T/
 </pre>
 <p>Decimal alignment can produce odd results when applied to cells that
@@ -560,11 +574,11 @@ for the different markup types.</p>
 <tr><td><b>/X</b>, <b>/C</b>, <b>/*</b></td><td><tt>&lt;pre></tt></td></tr>
 <tr><td>text in these</td><td>not touched</td></tr>
 <tr><td><b>X/</b>, <b>C/</b>, <b>*/</b></td><td><tt>&lt;/pre></tt></td></tr>
-<tr><td><b>/T</b>, <b>/TM</b></td><td><tt>&lt;table></tt> or <tt>&lt;table style="width:<i>pp</i>%;"></tt> where <i>pp</i> is the specified table width/75</tt></td></tr>
+<tr><td><b>/T</b>, <b>/TM</b></td><td><tt>&lt;table></tt> or <tt>&lt;table style="width:<i>pp</i>%;"></tt> where <i>pp</i> is the specified table width as a percent of 75.</tt></td></tr>
 <tr><td><b>T/</b></td><td><tt>&lt;/table></tt></td>
 </table>
 <p>Within a table, the cell values are enclosed appropriately in <tt>&lt;tr></tt> and <tt>&lt;td></tt> codes. Where a specific width was given for a column, the first row of that column is coded <tt>&lt;td style="width:<i>pp</i>%;"></tt> where
-<i>pp</i> is based on the specified width divided by the table width.
+<i>pp</i> is the specified width as a percent of the table width.
 When a column has right alignment or center alignment, every cell in it is 
 coded with <tt>class="r"</tt> or <tt>class="c"</tt> respectively.
 This assumes CSS of<pre>td.r {text-align:right}
@@ -572,16 +586,24 @@ td.c {text-align:center}</pre>
 <p>Decimal alignment in a table could be coded in HTML as
 <tt>&lt;td char='<i>x</i>'></tt> on each cell of a decimal column, but
 this element of the HTML 4.0 standard is not supported by any browsers, so Decimal-aligned columns just default to left-alignment. Too bad.</p>
-<p>TBS: controls for removing line separators interactively.</p>
 <h2>The Preview Panel</h2>
 <p>Click the Pvw tab to display the HTML Preview panel. Whenever
 you click the Refresh button on this panel, the complete contents of the
 Edit document are copied into this panel and displayed as HTML.
 The HTML rendering is done by the open-source WebKit (www.webkit.org), the same HTML engine used by Apple's Safari and by KDE. It fully supports CSS and
 standard HTML code.</p>
-<p>The base URL for image references is the base path of the book text file,
-so the <tt>images</tt> folder should be located at the same place as the book text.</p>
+<p>The base URL for image references is the base path of the book text file.
+Put the normal PG <tt>images</tt> folder at the same place as the book text
+and images should be found.</p>
+<p>When keyboard focus is in the Preview Panel, keying ctl-f opens a 
+minimal Find dialog so you can search for text in the displayed page.
+The selected text is preloaded in the dialog. The dialog goes forward and
+wraps around at the end of the page.</p>
+<p>You can click a link in the Preview panel and the linked page or image
+will load. There is no Back button as on a normal browser. However,
+ctl-left-arrow should perform the Back function. Otherwise, click Refresh
+to redisplay the book text.</p>
 <h2>The Footnote Panel</h2>
-<p>TBS Mucho! Controls for validating and formatting footnotes.</p>
+<p>TBS.</p>
 </body>
 </html>
