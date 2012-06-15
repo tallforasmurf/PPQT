@@ -79,7 +79,7 @@ TheHelpText = '''<html>
 </head>
 <body>
 <h1>PPQT Information</h1>
-<p>PPQT is a tool for post-processing books for Project Gutenberg Distributed Proofreaders. PPQT is based on Qt by Nokia (qt.nokia.com). It is coded in Python using PQt4 (riverbankcomputing.co.uk). It is packaged for release using pyinstaller (pyinstaller.org).</p>
+<p>PPQT is a tool for post-processing books for Project Gutenberg Distributed Proofreaders. PPQT is based on Qt by Nokia (qt-project.org). It is coded in Python using PQt4 (riverbankcomputing.co.uk). It is packaged for release using pyinstaller (pyinstaller.org).</p>
 <h3>Licenses</h3>
 <p>Qt is licensed for noncommercial use under the LGPL.
 PyQt4 is licensed for noncommercial use under the GPL v2 and the GPL v3.
@@ -89,6 +89,7 @@ Attribution-NonCommercial-ShareAlike license.</p>
 <p>First a deep bow of respect to Steve Shulz (Thundergnat) who created and maintained Guiguts, the program from which PPQT takes inspiration and lots of ideas. Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Developement with PyQt</i>.</p>
 <h3>Mac Users Note</h3><p> Throughout this Help, when you read <b>ctl-</b>
 you think <b>cmd-</b>. And when you read <b>alt-</b>, you think <b>opt-</b>.
+(For example, to set bookmark 1, you key cmd-opt-1 although the help says ctl-alt-1.)
 Qt is quite consistent in these mappings. However, when you see <b>control-</b>, that really means, the Control key.</p>
 <p>Try it now: key ctl-f for a simple Find dialog for searching in this help text.</p>
 <h2>Files and Folders</h2>
@@ -162,7 +163,7 @@ or copy text by alt-dragging. PPQT does not support rectangular selections or di
 <li>shift-ctl-t: replace selection and repeat find backward</li>
 <li>ctl-u, ctl-l, ctl-i: change selection to uppercase, lowercase, titlecase (Unicode compliant)</li>
 <li>ctl-1 through ctl-9: jump to bookmark 1-9</li>
-<li>shift-ctl-1 through shift-ctl-9: set bookmark 1-9 to cursor (bookmarks
+<li>ctl-alt-1 through ctl-alt-9: set bookmark 1-9 to cursor (bookmarks
 are saved in the metadata file)</li>
 </ul>
 <h3>Scanno Highlighting</h3>
@@ -575,14 +576,14 @@ specify <tt>D:'<i>x</i>'</tt> to set a different decimal separator character <i>
 decimal "point". Here is a simple table with decimal alignment before reflow:</p>
 <pre>
 /T TABLE(WIDTH:30) 1(A:R) 2(A:D W:8.4 D:',')
-Persimmons   &euro; 24,20
-Marshmallows  &euro; 124,80
+Persimmons   â¬ 24,20
+Marshmallows  â¬ 124,80
 T/</pre>
 <p>And after</p>
 <pre>
 /T TABLE(WIDTH:30) 1(A:R) 2(A:D W:8.4 D:',')
-    Persimmons        &euro; 24,20 
-  Marshmallows       &euro; 124,80 
+    Persimmons        â¬ 24,20 
+  Marshmallows       â¬ 124,80 
 T/
 </pre>
 <p>Decimal alignment can produce odd results when applied to cells that
@@ -631,10 +632,6 @@ The HTML rendering is done by the open-source WebKit (www.webkit.org), the same 
 standard HTML code.</p>
 <p>The base URL for image references is the base path of the book text file,
 so the <tt>images</tt> folder should be located at the same place as the book text.</p>
-<h2>The Footnote Panel</h2>
-<p>TBS Mucho! Controls for validating and formatting footnotes.</p>
-</body>
-</html>ocated at the same place as the book text.</p>
 <h2>The Footnote Panel</h2>
 <p>TBS Mucho! Controls for validating and formatting footnotes.</p>
 </body>
