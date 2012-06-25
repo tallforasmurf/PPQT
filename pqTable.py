@@ -51,12 +51,11 @@ Note this syntax has been considerably simplified and reduced in function
 from my original design. Some features could perhaps be added back in future:
   * ability to specify more elaborate cell-border strings than '-'
   * ability to specify junction characters e.g. '+' or a set of box-drawing ones.
-  * decimal alignment for cell contents.
 
-Properties of a table as a whole:
+Configurable properties of a table as a whole:
     width: minimum count of characters,
-            default is None meaning width is the line length F and R indents
-            applied by any containing markup (table can be nested in e.g. Q)
+            default is None meaning width is the line length after F and R
+            indents as set by containing markup (table can be nested in e.g. Q)
     top-border fill character(s)
             default is None, meaning no top border,
             option is - (hyphen)
@@ -65,14 +64,18 @@ Properties of a table as a whole:
             option is | (stile)
 
 Properties of any single column:
-    alignment: contents aligned left, center, right or decimal within the cell
+    alignment: content alignment within the cell
+            options are left, center, right or decimal
             default is left
     decimal-delimiter: when alignment is decimal, a single char that delimits
-            the fraction from the integer, e.g. a comma for a german book.
-            (we don't use the Locale because the computer Locale is not 
+            the fraction from the integer, e.g. a comma for a german book
+            default is .
+            (we don't try to query the Locale because the computer Locale is not 
             necessarily the subject book's Locale)
     width: minimum count of characters
             default is None, meaning width is whatever contents require
+            specified larger minimum gets space-fill based on the alignment
+            specified minimum less than longest token is overridden
     bottom-border fill character
             default is space: no division in a single-line table, in a
                 multi-line, bottom of each row is a line of spaces
@@ -96,27 +99,31 @@ The optional-spec syntax is:
     [   Column(
         [Align:Left|Center|Right|Decimal]
         [Decimal:'x'] # decimal delimiter, default period
-        [Width:n]
+        [Width:ww[.ff]]
         [Bottom:'-']
         [Side:'|']
         )
     ]
     [
-        <number>(
+        <1-9>(
         [Align:Left|Center|Right|Decimal]
-        [Width:n]
+        [Width:ww[.ff] ]
         ) ...
     ]
-In the above, square brackets and lowercase indicate optional items. There
-is a resemblance to Python dict literals but simplified, no commas, keys not
-quoted. The Column() spec sets defaults for all columns. The <number>() spec
+In the above, square brackets and lowercase indicate optional items.
+The Column() spec sets defaults for all columns. The <number>() spec
 sets values for a specific column <number> 1-9. A table may have more than 9
 columns, but only columns 1-9 can be explicitly configured with this syntax.
+The Width sets the minimum width. When both integer and fraction widths are
+given (W:ww.ff) the minimum width is ww+ff+1.
 
-/t T(T:'-' S:'|') Col(B:'-' S:'|') 2(A:C) 3(A:R W:8) 4(ALIGN:DECIMAL)
+The /T line is not "parsed", items are just recognized using REs. Only the 
+initials are looked for. Unrecognized params are simply ignored!
+
+/T T(T:'-' S:'|') Col(B:'-' S:'|') 2(A:C) 3(A:R W:8) 4(ALIGN:DECIMAL)
 one  two  75  654321
 three  @  200  .123456
-t/
+T/
 
 This should reflow to the following table:
 -----------------------------------------    (top row from T(T:'-')
@@ -125,8 +132,8 @@ This should reflow to the following table:
 | three |  @  |     200 |       .123456 |
 -----------------------------------------
 
-A constraint of this code is that all inner cells must be represented IN
-EVERY LINE. Cells on the right can be omitted, but an empty cell or line of
+A constraint of this code is that all inner cells must be represented by content
+IN EVERY LINE. Cells on the right can be omitted, but an empty cell or line of
 a multi-line cell must filled out with a single @ when there is a non-empty
 cell to its right. In HTML conversion, cell data consisting only of
 @ is converted to &nbsp;. (If we do a "delete markup" operation for ascii,
@@ -134,9 +141,8 @@ it could replace @s with spaces, but they are easy enough to kill manually.)
 
 What is passed to the table function is a textCursor (the one with the undo/redo
 macro working) and the slice of the work unit list bounded by the opening and
-closing /T[M] markup lines. (This lets us process only nonempty lines, and use the
-B:n value to detect row boundaries in a multiline table.) The document is
-available from IMC.
+closing /T[M] markup lines. (This lets us process only nonempty lines, and use
+the B:n value to detect row boundaries in a multiline table.)
 
 We define two local classes. A tableProperties instance decodes and stores
 the values defined in the /T[M] statement, allowing the code to easily fetch
@@ -158,11 +164,11 @@ either actual or specified widths,
     tc.store(rownum,4,QString("654321"))
     tc.columnMinWidth(1) -> 4 based on len("one") + len(tp.cSide(1))
 
-Some would disdain classes like these as "singleton factories." True, only one
-of each is made in handling a given table, yet I think this is valid 
-design for two reasons. One, it allows me to encapsulate all the work of
+Some would disdain class definitions like these as "singleton factories."
+True, only one of each is made in handling a given table, yet I think this is
+valid  design for two reasons. One, it allows me to encapsulate all the work of
 parsing and recalling the optional-specs in one place, and all of the
-work of storing and recalling cell data in another, considering them separately
+work of storing and recalling cell data in another, and to code these separately
 and apart from the general issue of scanning and replacing table text. And two,
 the identical classes are useful for both ascii and html table processing,
 so they are genuine abstractions.
@@ -171,7 +177,7 @@ from PyQt4.QtCore import (Qt, QChar, QString, QStringList, QRegExp)
 from PyQt4.QtGui import(QTextBlock, QTextCursor, QTextDocument)
 import pqMsgs
 
-# Global definitions used and returned by these classes:
+# Global definitions used and returned by the classes below:
 CalignLeft = 0
 CalignCenter = 1
 CalignRight = 2
@@ -190,25 +196,27 @@ class tableProperties:
     # spelling of keywords beyond the initial, so ALIGN:CENTER is the same as
     # AZIMUTH:CORPOREAL or of course, A:C.
     #
-    def __init__(self,tqs):
+    def __init__(self,tqs,tlnum):
+        self.tLineNumber = tlnum # note line number for messages if any
         # set up default table properties
         self.tProps = {'W':None, 'T':None, 'S':None}
         # set up default all-column properties: A:alignment,
         # B:bottom-sring, S:side-string, D:decimalpoint W:width F:Fraction
         self.cProps = {'A':CalignLeft, 'B':None, 'S':None, 'D':'.', 'W':None, 'F':None}
-        # explicit properties of specific columns 1-9 here if supplied
+        # explicit properties of specific columns 1-9 stored here if supplied
         self.c1to9Props = {}
-        # note if this is multiline: currently /TM versus /T
+        # note if this is multiline: /TM versus /T
         self.isMulti = tqs.startsWith(QString(u'/TM'))
         self.parseRE = QRegExp()
         self.parseRE.setCaseSensitivity(Qt.CaseInsensitive) # ignore case 
         # set minimal so when looking for ), we stop with the first
-        # if any of this code changes minimal it must save and restore it.
-        self.parseRE.setMinimal(True) # when 
+        # if any of this code changes parseRE.minimal it must save and restore it.
+        self.parseRE.setMinimal(True) 
         # get the contents of a Table(something) if it exists
         topts = self.getMainOption(tqs,u'T')
         if topts is not None: # there is T(something), and topts has the something
             # pull a WIDTH:n option out of it if any, ignoring any fraction
+            # (fraction is only valid for a column spec)
             (w,f) = self.getWidthOption(topts)
             if w is not None:
                 self.tProps['W'] = w
@@ -218,14 +226,14 @@ class tableProperties:
                 if unicode(s) == u'-':
                     self.tProps[u'T'] = s
                 else:
-                    pqMsgs.warningMsg(u'Only hyphen suppported for Top option')
+                    self.badTableParm(u'Only hyphen suppported for Top option')
             # pull a SIDE:'|' option if any
             s = self.getStringOption(topts, u'S')
             if s is not None:
                 if unicode(s) == u'|':
                     self.tProps[u'S'] = s
                 else:
-                    pqMsgs.warningMsg(u'Only stile supported for Side option')
+                    self.badTableParm(u'Only stile supported for Side option')
         # get the contents of a Column(something) if it exists
         copts = self.getMainOption(tqs,u'C')
         if copts is not None:
@@ -233,13 +241,13 @@ class tableProperties:
             # pull default column options out of it, store in self.cProps
             self.getColumnOptions(copts,self.cProps,True)
         # collect specific column options 1()..9() if given
-        for key in u'123456789':
-            copts = self.getMainOption(tqs,key)
+        for cnum in u'123456789':
+            copts = self.getMainOption(tqs,cnum)
             if copts is not None:
                 # there is a n(something) option, extract bits from it
                 # and store in the dictionary.
-                self.c1to9Props[key] = self.cProps.copy()
-                self.getColumnOptions(copts,self.c1to9Props[key])
+                self.c1to9Props[cnum] = self.cProps.copy()
+                self.getColumnOptions(copts,self.c1to9Props[cnum])
 
     # get a major option string Xxxx(something) and return the something
     def getMainOption(self,qs,key):
@@ -255,23 +263,23 @@ class tableProperties:
         if -1 < self.parseRE.indexIn(qs) :
             return unicode(self.parseRE.cap(1).toUpper()) # u'L R C or D'
         return None
-    # get a Width:nnn option string, returning the integer or None
+    # get a Width:www[.fff] option string, returning (None, None) if not found,
+    # or (w, None) if not decimal, or (w, f) if decimal given.
     def getWidthOption(self,qs):
-        # set RE pattern of Wxxxx:nnn, greedy to get all digits
+        # set RE pattern of Wxxxx:www.fff, greedy to get all digits
         mopt = self.parseRE.isMinimal()
         self.parseRE.setMinimal(False)
         self.parseRE.setPattern(u'W\w*\s*\:\s*(\d+)(\.(\d+))?')
         wval = None
         fval = None
         if -1 < self.parseRE.indexIn(qs):
-            # We have a hit on W:ddd and it may be, W:ddd.ddd
-            (wval,ok) = self.parseRE.cap(1).toInt()
-            (fval,ok) = self.parseRE.cap(3).toInt()
-            if not ok : fval = None
-            # however, do a sanity check on a large number
-            if wval > 75 or fval > 75 :
-                pqMsgs.warningMsg(u"Lines over 75 not allowed in ASCII etexts",
-                    u"Ignoring width in "+qs)
+            # We have a definite hit on W:www, and it may be W:www.fff
+            (wval,ok) = self.parseRE.cap(1).toInt() # ok is True
+            (fval,ok) = self.parseRE.cap(3).toInt() # ok may be False
+            if not ok :
+                fval = None # cap(3) was null, no .fff found
+            if (wval > 75) or (fval is not None and (74 < wval+fval)) :
+                self.badTableParm(u"Widths over 75 not supported in tables")
                 wval = None
                 fval = None
         self.parseRE.setMinimal(mopt)
@@ -290,15 +298,16 @@ class tableProperties:
         self.parseRE.setPattern(initial+u"\w*\s*\:\s*\\\'([^\\\']*)\\\'")
         self.parseRE.indexIn(qs)
         opt = self.parseRE.cap(1)
-        if opt.isNull() : # no hit on single quote, try "-"
+        if opt.isNull() : # no hit on single quote, try "x"
             # set pattern for Xxxx:"x"
             self.parseRE.setPattern(initial+u'\w*\s*\:\s*\\\"([^\\\"]*)\\\"')
             self.parseRE.indexIn(qs)
             opt = self.parseRE.cap(1)
         if not opt.isNull() :
             if opt.size() > 1 :
-                pqMsgs.warningMsg(u'only single-char delimiters allowed',
-                                  u'Ignoring '+unicode(qs))
+                self.badTableParm(
+                    u'only single-char delimiters allowed, ignoring '+unicode(qs)
+                )
                 opt = None
         else:
             opt = None
@@ -327,13 +336,17 @@ class tableProperties:
                 if unicode(s) == u'-':
                     propdic[u'B'] = s
                 else:
-                    pqMsgs.warningMsg(u'Only hyphen suppported for Bottom option')
+                    self.badTableParm(u'Only hyphen suppported for Bottom option')
             s = self.getStringOption(copts, u'S')
             if s is not None:
                 if unicode(s) == u'|':
                     propdic[u'S'] = s
                 else:
-                    pqMsgs.warningMsg(u'Only stile supported for Side option')
+                    self.badTableParm(u'Only stile supported for Side option')
+    # Error message to user about a problem with the /T line
+    def badTableParm(self,msg):
+        pqMsgs.warningMsg(
+            u'Problem with Table at line {0}'.format(self.tLineNumber), msg)
     #
     # Here follow all the accessor methods to retrieve the stored properties.
     # This class only returns defined properties, so e.g. width can come back
@@ -354,7 +367,8 @@ class tableProperties:
         return self.cProps[u'B']
     def columnSideString(self):
         return self.cProps[u'S']
-    # return a specific column property is one is coded, else the generic one
+    # return a column property for a given column: the one specified for that
+    # column alone, or the generic one from C(xx) if not.
     def someColumnValue(self,c,key):
         c = unicode(c) # convert integer column to character key
         if c in self.c1to9Props:
@@ -370,21 +384,22 @@ class tableProperties:
         w = self.someColumnValue(c,u'W') # specific width if given
         f = self.someColumnValue(c,u'F') # fraction width if given
         if f is not None:
-            # if f was defined, so was w, return the sum
-            return w + f
+            # if f was defined, so was w, return the width including decimal
+            return w + f +1
         return w # return width or None
     def columnDecimal(self,c):
         return self.someColumnValue(c,u'D')
         
 
 # Oh sigh, how to store cell data for easy retrieval? We are doing the obvious,
-# a list of which each member is a list of the cell data  for that row across.
-# Each cell is a single QString, in a multi-line table we concatenate the
-# values from each line of a row with a space between.
+# a list, of which each member is a list of the cell data for that row across.
+# Each cell is a single QString. In a multi-line table it is the concatenation
+# of the values from each line of that cell, with a space between.
 #
-# While storing we also save metadata on a per-column basis:
+# While storing content we also save metadata on a per-column basis:
 # self.cMinWidths and self.cDecWidths store the necessary minimum width for
-# each column. When alignment is R/L/C, cDecWidth is zero and cMinWidth has
+# each column, in case that should exceed what the user specified.
+# When alignment is R/L/C, cDecWidth is zero and cMinWidth has
 # the length of the longest space-delimited token seen in that column, thus
 # the minimum width the column must have.
 #
@@ -396,13 +411,13 @@ class tableProperties:
 # any cell.
 class tableCells:
     def __init__(self,propsObject) :
-        self.tProps = propsObject
+        self.tProps = propsObject # save a reference to table properties
         self.multi = self.tProps.isMultiLine()
         self.single = not self.multi # save for convenient coding
-        # columns numbered 1..columnsSeen
-        self.columnsSeen = 0
-        # rows numbered 1..rowsSeen
-        self.rowsSeen = 0
+        # columns are numbered 1..columnsSeen
+        self.columnsSeen = 0 # haven't seen any as yet
+        # rows are numbered 1..rowsSeen
+        self.rowsSeen = 0 # none of those as yet
         # largest single data-chunk width per column, or left of decimal
         self.cMinWidths = []
         # largest string seen right of a decimal incl. the decimal
@@ -416,26 +431,27 @@ class tableCells:
         # an RE used to find nonblank tokens. We can't assume the tokens
         # are words, hence can't use \b\w+\b, so we have to look for \s*\S+
         self.tokenRE = QRegExp(u'\s*(\S+)')
+        self.tokenRE.setMinimal(False) # greedy to get whole token
 
     # Store the string qs as data for cell r:c. Note the minimum width it
     # implies based on this column's alignment.
     # Also note the "suggested" width, the actual size including whitespace.
     def store(self,r,c,qs):
-        if r != self.lastRowIndex: # starting a new row
-            if r > self.rowsSeen:
-                # new row: assert r = len(self.data)+1, i.e. rows start at 1
-                # and are only ever incremented by 1 and never skip.
-                if r == (len(self.data) + 1):
-                    self.rowsSeen = r
-                    self.data.append([]) # new list of row values
-                else: # should never happen
-                    raise ValueError, "cock-up in storing rows"
-            self.lastRowIndex = r
-            # get a reference (not a copy, this is Python) to this row's data
-            self.row = self.data[r-1]
         dbg = unicode(qs)
+        if r != self.lastRowIndex: # starting a new row
+            if (r > self.rowsSeen) and (r == (len(self.data) + 1)):
+                self.rowsSeen = r
+                self.data.append([]) # new list of row values
+                self.lastRowIndex = r
+                # save a reference (not a copy, this is Python) to the row's data
+                self.row = self.data[r-1]
+            else: # should never happen
+                raise ValueError, "major cock-up in storing table rows"
         if c > self.columnsSeen :
-            # assuming c goes up sequentially 
+            if c != (self.columnsSeen+1) :
+                print("minor cock-up storing table columns")
+                c = self.columnsSeen+1
+            # first data stored for this column  
             self.columnsSeen = c
             # initialize the suggested and minimum widths for this column
             self.cSugWidths.append(0)
@@ -482,8 +498,8 @@ class tableCells:
             # string, and set the string size if it is not found
             j = qst.lastIndexOf(d)
             if j < 0 : j = qst.size()
-            # Set cDecWidths based on the position of the decimal point, this
-            # is zero if no point was seen, 1 if the point is the last char
+            # Set cDecWidths based on the position of the decimal point: set
+            # to zero if no point was seen, 1 if the point is the last char
             # in the string, else the width of the point and following digits.
             self.cDecWidths[c-1] = max(self.cDecWidths[c-1],qst.size()-j)
             # and set cMinWidths based on the string left of the point
@@ -496,7 +512,8 @@ class tableCells:
     def columnCount(self):
         return self.columnsSeen
 
-    # Return the count of rows stored.
+    # Return the count of rows stored. Again, assume that all data has been
+    # collected before this is called.
     def rowCount(self):
         return self.rowsSeen
 
@@ -568,16 +585,16 @@ class tableCells:
 
 # global regex used to split data line on delimiters which are either
 # 2+ spaces or a stile with optional spaces.
-splitRE = QRegExp(u'( {2,}| *\| *)')
+splitRE = QRegExp(u'( {2,}|\s*\|\s*)')
 
 def tableReflow(tc,doc,unitList):
     # Note the properties of the table including specified width, multiline etc.
-    tprops = tableProperties(getLineQs(tc,doc,unitList[0]['A']))
+    tprops = tableProperties(getLineQs(tc,doc,unitList[0]['A']),unitList[0]['A'])
     # If the width wasn't spec'd then develop a target width based on 75 less
-    # any indent in the first work unit.
+    # any indents in the first work unit.
     targetTableWidth = tprops.tableWidth()
     if targetTableWidth is None:
-        targetTableWidth = 75 - unitList[0]['F']
+        targetTableWidth = 75 - (unitList[0]['F'] + unitList[0]['R'])
     # make a table cells storage object
     tcells = tableCells(tprops)
     # note if the table has a hyphenated top line
@@ -602,7 +619,7 @@ def tableReflow(tc,doc,unitList):
                 if tprops.isMultiLine():
                     r += 1 # start a new multiline row
                 continue # single or multi, ignore the divider line
-        # line is not all-hyphens (or hyphens not spec'd), and not all-blank
+        # line is not all-hyphens (or botchars not spec'd), and not all-blank
         # because all-blanks are not included as work units, but if unit['B']
         # is nonzero it was preceded by a blank line.
         if tprops.isMultiLine() and (unit['B'] > 0):
@@ -674,7 +691,9 @@ def tableReflow(tc,doc,unitList):
                 targetTableWidth = totalMinWidth+totalDelimiterWidths
             else:
                 # totalMinWidth < (or equal) to tableDataWidth. Reduce the columns
-                # with the most flexibility until totalSugWidth == tableDataWidth.
+                # with the most flexibility (the greatest difference between
+                # suggested width and min width) by 1, until
+                # totalSugWidth == tableDataWidth.
                 spaceRatios = [0.1]
                 for c in range(1,tcells.columnCount()+1):
                     spaceRatios.append(allSugWidths[c]/allMinWidths[c])
@@ -776,11 +795,12 @@ def tableReflow(tc,doc,unitList):
 # QString per ascii line of folded text: 1 for a single line table, 1 or more
 # for a multiline table. The problem is similar to the paragraph folder in
 # pqFlow but simpler. We are not supporting logical lengths of <i/b/sc> for one
-# thing. That's TBS, for now use the skip button to stop table reflow until the
+# thing. (That's TBS, for now use the skip button to stop table reflow until the
 # markups are gone.) It is more complex in that we may have to center, right,
-# or decimal-align.
+# or decimal-align, and deal with @ place-holders.
 chunkRE = QRegExp()
 def flowCell(qs,width,align,decpoint,decwidth):
+    qs = expandAt(qs,width,align) # deal with @ tokens
     if qs.size() <= width :
         # entire cell data fits in the width, return one-string list
         return QStringList(alignCell(qs,width,align,decpoint,decwidth))
@@ -796,7 +816,29 @@ def flowCell(qs,width,align,decpoint,decwidth):
         j += chunkRE.cap(0).size()
         j = chunkRE.indexIn(qs,j)
     return qsl    
-    
+
+# The user is told to stick in @ as a place-holder in any row where there
+# is no real data. However the input process (using splitRE above) strips
+# spaces. So if we don't put the spaces back, the @s from successive lines
+# get flowed into a single line and then the table can't be flowed twice
+# which violates our desire that any markup be re-flowable over and over.
+# So, find any @+ sequence and expand it to be width chars long as the
+# user presumably wrote it in the first place.
+findAtRE = QRegExp(u'\s*@+\s*')
+def expandAt(qs,width,align):
+    dbg = unicode(qs)
+    j = findAtRE.indexIn(qs,0)
+    if j < 0 : return qs # there were no @s
+    q2 = QString()
+    w = width-1
+    while j > -1 :
+        if j > 0 :
+            q2 = qs.left(j)
+        q2.append(QString( (u' '*w)+u'@') )
+        qs.remove(0,j+findAtRE.cap(0).size())
+        j = findAtRE.indexIn(qs,0)
+    dbg = unicode(q2)
+    return q2        
 # Given a QString that fits in a width, extend it front a/o back to
 # align in that width.
 def alignCell(qs,width,align,decpoint,decwidth):

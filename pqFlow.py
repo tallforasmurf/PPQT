@@ -1094,16 +1094,16 @@ Here are our thoughts, voyagers' thoughts,
 Here not the land, firm land, alone appears, may then by them be said,
 The sky o'erarches here, we feel the undulating deck beneath our feet,
 We feel the long pulsation, ebb and flow of endless motion,
-The tones of unseen mystery, the vague and vast suggestions of the      briny world, the liquid-flowing syllables,
+The tones of unseen mystery, the vague and vast suggestions of the briny world, the liquid-flowing syllables,
 The perfume, the faint creaking of the cordage, the melancholy rhythm,
 The boundless vista and the horizon far and dim are all here,
 And this is ocean's poem.
 
 Then falter not O book, fulfil your destiny,
 You not a reminiscence of the land alone,
-You too as a lone bark cleaving the ether, purpos'd I know not      whither, yet ever full of faith,
+You too as a lone bark cleaving the ether, purpos'd I know not whither, yet ever full of faith,
 Consort to every ship that sails, sail you!
-Bear forth to them folded my love, (dear mariners, for you I fold it      here in every leaf;)
+Bear forth to them folded my love, (dear mariners, for you I fold it here in every leaf;)
 Speed on my book! spread your white sails my little bark athwart the  imperious waves,
 Chant on, sail on, bear o'er the boundless blue from me to every sea,
 This song for mariners and all their ships.
@@ -1142,8 +1142,12 @@ T/
 |one  | two  |  good parties to end     |
 ------------------------------------------
 |row 2 cell | @ | some more exciting     |
-|           |   |  prose |
+|    @      | @ |  prose |
 ------------------------------------------
+T/
+
+/T T(W:30) 1(A:L) 2(A:C) 3(A:R)
+@  @  @
 T/
 
     ''')
