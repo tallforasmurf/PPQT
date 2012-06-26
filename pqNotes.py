@@ -83,6 +83,7 @@ class notesEditor(QPlainTextEdit):
     def eek(self,modval):
 	if not self.clearing :
 	    IMC.needMetadataSave |= modval
+	IMC.mainWindow.setWinModStatus()
 
     # Re-implement the parent's keyPressEvent in order to provide zoom:
     # ctrl-plus and ctrl-minus step the font size one point. Other keys:

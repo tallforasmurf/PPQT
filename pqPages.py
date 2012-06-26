@@ -219,6 +219,7 @@ class myTableModel(QAbstractTableModel):
                 raise Error
         self.endResetModel()
         IMC.needMetadataSave = True
+        IMC.mainWindow.setWinModStatus()
 
 # A quick summary of WTF a custom delegate is: an object that represents a
 # type of data when an instance of that type needs to be displayed or edited.
@@ -243,6 +244,7 @@ class formatDelegate(QItemDelegate):
     def setModelData(self,cb,model,index):
         IMC.pageTable[index.row()][4] = cb.currentIndex()
         IMC.needMetadataSave = True
+        IMC.mainWindow.setWinModStatus()
 
 # Implement a custom delegate for column 2, folio action.
 # The editor is a combobox with the three choices in it.
@@ -258,6 +260,7 @@ class actionDelegate(QItemDelegate):
     def setModelData(self,cb,model,index):
         IMC.pageTable[index.row()][3] = cb.currentIndex()
         IMC.needMetadataSave = True
+        IMC.mainWindow.setWinModStatus()
 
 # Implement a custom delegate for column 3, the folio value,
 # as a spinbox - why not, likely only small adjustments are needed.

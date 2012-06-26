@@ -263,6 +263,7 @@ class myTableView(QTableView):
                 flag &= 0xfff - IMC.WordMisspelt
                 self.model().setData(findex,flag,Qt.UserRole)
                 IMC.needMetadataSave = True
+                IMC.mainWindow.setWinModStatus()
         
     # The actual code of First and Second Harmonic. Run through the word list
     # and make a sublist of just the ones that are a Levenshtein distance of 1

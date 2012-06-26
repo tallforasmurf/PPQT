@@ -72,6 +72,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
         # file paths and stuff used by our methods:
+        IMC.mainWindow = self
         # self.bookFile is the full path to the current document; when
         # bookFile.isEmpty() there is no current document.
         # IMC.bookPath is the leading part of bookFile, used to
@@ -100,11 +101,13 @@ class MainWindow(QMainWindow):
         # create the editor for the left-hand pane
         self.editor = PPTextEditor(self,IMC.fontSize)
         IMC.editWidget = self.editor # provide other modules access to edit members
+        self.connect(self.editor, SIGNAL("modificationChanged(bool)"),
+                     self.ohModificationChanged)
         # set up the tab array for the right-hand pane
         self.tabSet = QTabWidget()
         # format our window as a split between editor and tab array
         self.hSplitter = QSplitter(Qt.Horizontal)
-        self.hSplitter.addWidget(IMC.editWidget)
+        self.hSplitter.addWidget(self.editor)
         self.hSplitter.addWidget(self.tabSet)
         self.setCentralWidget(self.hSplitter)
         # Populate the tab set with the different panel objects
@@ -120,7 +123,7 @@ class MainWindow(QMainWindow):
         self.tabSet.addTab(IMC.notesEditor, u"No&tes")
         # Create the find panel
         IMC.findPanel = pqFind.findPanel()
-        self.connect(IMC.editWidget, SIGNAL("editKeyPress"),
+        self.connect(self.editor, SIGNAL("editKeyPress"),
                      IMC.findPanel.editKeyPress)
         self.connect(self, SIGNAL("shuttingDown"), IMC.findPanel.shuttingDown)
         self.tabSet.addTab(IMC.findPanel, u"&Find")
@@ -348,6 +351,20 @@ class MainWindow(QMainWindow):
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.fileMenuActions[-1])
 
+    # Set the main window's windowModified status, based on whether
+    # the edited doc has been modified or if any metadata has changed.
+    # IMC.needMetadataSave is set by pqNotes, pqPages, and pqWords (and
+    # cleared in pqEdit). Setting windowModified true in Mac OS sets the
+    # modified dot in the red close gumdrop, and on other platforms, 
+    # displays an asterisk after the filename in the titlebar.
+    def setWinModStatus(self):
+        self.setWindowModified(
+            self.editor.document().isModified() | IMC.needMetadataSave
+            )        
+    # Slot to receive the modificationChanged signal from the main editor.
+    def ohModificationChanged(self,newValue):
+        self.setWinModStatus()
+
     # Called by a tab that wants to be visible (currently only the Find panel
     # responding to ^f in the editor), make the calling widget visible
     def makeMyPanelCurrent(self,widg):
@@ -482,12 +499,12 @@ class MainWindow(QMainWindow):
             self.editor.clear()
             try:
                 self.editor.load(bookStream, metaStream, goodStream, badStream)
-                self.setWindowTitle(u"PPQT - {0}".format(finf.fileName()))
+                self.setWindowTitle(u"PPQT - {0}[*]".format(finf.fileName()))
                 IMC.bookPath = self.bookPath
                 IMC.bookType = finf.suffix()
             except (IOError, OSError), e:
                 pqMsgs.warningMsg(u"Error during load: {0}".format(e))
-                self.setWindowTitle(u"PPQT - new file")
+                self.setWindowTitle(u"PPQT - new file[*]")
             finally:
                 bfh.close()
                 if metaStream is not None: mfh.close()
@@ -535,7 +552,7 @@ class MainWindow(QMainWindow):
             finf = QFileInfo(savename)
             self.bookPath = finf.path()
             IMC.bookPath = self.bookPath
-            self.setWindowTitle("PPQT - {0}".format(finf.fileName()))
+            self.setWindowTitle("PPQT - {0}[*]".format(finf.fileName()))
             # with file path set up, we can go on to the real Save
             return self.fileSave()
         # oops, user cancelled out of the dialog
@@ -552,7 +569,7 @@ class MainWindow(QMainWindow):
         self.bookPath = QString()
         IMC.bookPath = self.bookPath
         self.filePath = QString()
-        self.setWindowTitle("PPQT - new file")
+        self.setWindowTitle("PPQT - new file[*]")
 
     # Called from File>Save (as) and File>Open, stuff the current bookpath
     # onto the front of the list of recent files, and drop the oldest one
@@ -636,7 +653,7 @@ class MainWindow(QMainWindow):
         willDoIt = (toggle) and (not self.scannoPath.isEmpty())
         self.viewScannosAction.setChecked(willDoIt)
         IMC.scannoHiliteSwitch = willDoIt
-        self.editor.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)   
+        self.editor.setHighlight(scannoHiliteSwitch or IMC.spellingHiliteSwitch)   
     
     def viewSetSpelling(self, toggle):
         willDoIt = (toggle) and (IMC.wordCensus.size()>0)
