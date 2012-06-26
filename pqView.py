@@ -65,14 +65,25 @@ class htmlPreview(QWidget):
 	hbox.addStretch(1)
 	vbox = QVBoxLayout()
 	vbox.addLayout(hbox,0)
-	settings = QWebSettings.globalSettings()
-	settings.setFontFamily(QWebSettings.StandardFont, 'Palatino')
-	settings.setFontSize(QWebSettings.DefaultFontSize, 16)
 	self.preview = QWebView(self)
 	vbox.addWidget(self.preview,1)
 	self.setLayout(vbox)
 	# make the web preview uneditable
 	self.preview.page().setContentEditable(False)
+	# Set a common available serif font as default
+	self.settings = self.preview.settings()
+	self.settings.setFontFamily(QWebSettings.StandardFont, 'Palatino')
+	self.settings.setFontSize(QWebSettings.DefaultFontSize, 16)
+	self.settings.setFontSize(QWebSettings.MinimumFontSize, 6)
+	self.settings.setFontSize(QWebSettings.MinimumLogicalFontSize, 6)
+	self.textZoomFactor = 1.0
+	self.preview.setTextSizeMultiplier(self.textZoomFactor)
+	# Disable everything but bog-standard html, appropriate for PP
+	self.settings.setAttribute(QWebSettings.JavascriptEnabled, False)
+	self.settings.setAttribute(QWebSettings.JavaEnabled, False)
+	self.settings.setAttribute(QWebSettings.PluginsEnabled, False)
+	self.settings.setAttribute(QWebSettings.ZoomTextOnly, True)
+	self.settings.setAttribute(QWebSettings.SiteSpecificQuirksEnabled, False)
 	# hook up the refresh button
 	self.connect(self.refreshButton, SIGNAL("clicked()"),self.refresh)
 	# hook up the load status signals
@@ -141,7 +152,15 @@ class htmlPreview(QWidget):
 	if (kkey == IMC.ctl_F) or (kkey == IMC.ctl_G) : # ctl/cmd f/g
 	    event.accept()
 	    self.doFind(kkey)
-	else: # not ctl/cmd f so,
+	elif (kkey in IMC.zoomKeys) : # ctrl-plus/minus
+	    zfactor = 1.2 # zoom in
+	    if (kkey == IMC.ctl_minus) :
+		zfactor = 0.80 # zoom out
+	    zfactor *= self.textZoomFactor
+	    if (zfactor > 0.19) and (zfactor < 4.0) :
+		self.textZoomFactor = zfactor
+		self.preview.setTextSizeMultiplier(self.textZoomFactor)
+	else: # not ctl/cmd f or ctl/cmd-plus/minus, so,
 	    event.ignore()
 	    super(htmlPreview, self).keyPressEvent(event)
 
