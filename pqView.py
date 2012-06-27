@@ -146,18 +146,23 @@ class htmlPreview(QWidget):
 	#self.preview.page().findText(QString())
     
     # Re-implement the parent's keyPressEvent in order to provide a simple
-    # find function only.
+    # find function and font-zoom from ctl-plus/minus. We start the view at
+    # 16 points and textSizeMultiplier of 1.0. Each time the user hits ctl-minus
+    # we deduct 0.0625 from the multiplier, and for each ctl-+ we add 0.0625
+    # (1/16) to the multiplier. This ought to cause the view to change up or
+    # down by one point. We set a limit of 0.375 (6 points) at the low
+    # end and 4.0 (64 points) at the top.
     def keyPressEvent(self, event):
 	kkey = int(event.modifiers())+int(event.key())
 	if (kkey == IMC.ctl_F) or (kkey == IMC.ctl_G) : # ctl/cmd f/g
 	    event.accept()
 	    self.doFind(kkey)
 	elif (kkey in IMC.zoomKeys) : # ctrl-plus/minus
-	    zfactor = 1.2 # zoom in
+	    zfactor = 0.0625 # zoom in
 	    if (kkey == IMC.ctl_minus) :
-		zfactor = 0.80 # zoom out
-	    zfactor *= self.textZoomFactor
-	    if (zfactor > 0.19) and (zfactor < 4.0) :
+		zfactor = -zfactor # zoom out
+	    zfactor += self.textZoomFactor
+	    if (zfactor > 0.374) and (zfactor < 4.0) :
 		self.textZoomFactor = zfactor
 		self.preview.setTextSizeMultiplier(self.textZoomFactor)
 	else: # not ctl/cmd f or ctl/cmd-plus/minus, so,
