@@ -90,8 +90,17 @@ class htmlPreview(QWidget):
 	self.connect(self.preview,SIGNAL("loadStarted()"),self.loadStarts )
 	self.connect(self.preview,SIGNAL("loadProgress(int)"),self.loadProgresses )
 	self.connect(self.preview,SIGNAL("loadFinished(bool)"),self.loadEnds )
+	# here we store the scroll position to return to after reloading
 	self.scrollPosition = QPoint(0,0)
+	# here save the user's find text for ctl-g use
 	self.findText = QString()
+	# here store the base URL for the current book.
+	self.baseURL = QUrl()
+	# save a shortcut reference to the browser history object 
+	self.history = self.preview.page().history()
+	# we do NOT initialize the preview (e.g. by calling self.refresh)
+	# at construction time. It may be many hours before the user wants
+	# to preview html. So require an explicit refresh click to do it.	
     
     # refresh button clicked. Get the current scroll position (a QPoint that
     # reflects the position of the scrollbar "thumb" in the webview)
@@ -99,8 +108,20 @@ class htmlPreview(QWidget):
     # QWebView -- and save it. See loadEnds() for use.
     # Then reload the HTML contents from the editor.
     def refresh(self):
+	# this could be first refresh for this book file, so set the
+	# base URL for its images.
+	sep = QChar(u'/')
+	qsp = QString(IMC.bookPath)
+	if not qsp.endsWith(sep):
+	    qsp.append(sep)
+	self.baseURL = QUrl.fromLocalFile(qsp)
+	# this might be the second or nth refresh of the book, note the
+	# scroll position so we can restore it in loadEnds below. This
+	# means that when you make a little edit at the end of a book, and
+	# refresh the preview, you won't have to scroll down to the end
+	# for the 500th time to see your changes.
 	self.scrollPosition = self.preview.page().mainFrame().scrollPosition()
-	self.setHtml(IMC.editWidget.toPlainText()) # see setHtml below!
+	self.preview.setHtml(IMC.editWidget.toPlainText(),self.baseURL) 
 
     # handle the load-in-progress signals by running our main window's
     # progress bar
@@ -116,38 +137,11 @@ class htmlPreview(QWidget):
 	else:
 	    pqMsgs.warningMsg("Some problem loading html")
 		
-
-
-    # provide simpler access to the web view's setHtml method. Provide a base
-    # url which is the file path to where the image subdirectory should be.
-    # The path (originally from QFileInfo.absolutePath) lacks a terminal slash
-    # and without it, the URL won't work as a base for e.g.  the images folder.
-    # So add one. Since it's a URL we are dealing with we don't have to worry
-    # about using '\' in windows and '/' in unix, it's '/' always.
-    def setHtml(self,qs):
-	sep = QChar(u'/')
-	qsp = QString(IMC.bookPath)
-	if not qsp.endsWith(sep):
-	    qsp.append(sep)
-	base = QUrl.fromLocalFile(qsp)
-	self.preview.setHtml(qs,base)
-
-    ## return a "const" pointer to the plain text of the web page. Since the
-    ## point is "const" it is live, if we change the selection, the text 
-    ## changes. So we can't just select-all, grab a pointer, and then clear
-    ## the selection; the caller would just get an empty string. We select-all
-    ## and return the pointer, then when the caller is finished, he calls back
-    ## to doneWithText() and we clear the selection.
-    #def getSimpleText(self):
-	#self.preview.page().triggerAction(QWebPage.SelectAll)
-	#return self.preview.page().selectedText()
-    ## findText() of a null string clears the selection
-    #def doneWithText(self):
-	#self.preview.page().findText(QString())
     
     # Re-implement the parent's keyPressEvent in order to provide a simple
-    # find function and font-zoom from ctl-plus/minus. We start the view at
-    # 16 points and textSizeMultiplier of 1.0. Each time the user hits ctl-minus
+    # find function, font-zoom from ctl-plus/minus, and browser "back".
+    # For the font size, we initialize the view at 16 points and
+    # the textSizeMultiplier at 1.0. Each time the user hits ctl-minus
     # we deduct 0.0625 from the multiplier, and for each ctl-+ we add 0.0625
     # (1/16) to the multiplier. This ought to cause the view to change up or
     # down by one point. We set a limit of 0.375 (6 points) at the low
@@ -165,7 +159,19 @@ class htmlPreview(QWidget):
 	    if (zfactor > 0.374) and (zfactor < 4.0) :
 		self.textZoomFactor = zfactor
 		self.preview.setTextSizeMultiplier(self.textZoomFactor)
-	else: # not ctl/cmd f or ctl/cmd-plus/minus, so,
+	elif (kkey in IMC.backKeys) :
+	    if self.history.canGoBack() :
+		self.history.back()
+	    else :
+		# reload the html of the book text, but don't call refresh
+		# because it would capture the scroll position as of now,
+		# and that relates to the linked page we are coming back from.
+		# The scroll position noted the last time Refresh was clicked
+		# will be instantiated in the loadEnds slot.
+		self.history.clear()
+		self.preview.setHtml(IMC.editWidget.toPlainText(),self.baseURL)
+	    
+	else: # not a key we support, so,
 	    event.ignore()
 	    super(htmlPreview, self).keyPressEvent(event)
 
