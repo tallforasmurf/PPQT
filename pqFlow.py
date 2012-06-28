@@ -493,7 +493,10 @@ class flowPanel(QWidget):
 	    # set up a text cursor that selects the text to be flowed: 
             # set the virtual insertion point after the end of the last line
             blockZ = doc.findBlockByNumber(blockNumberZ)
-            tc.setPosition(blockZ.position()+blockZ.length())
+	    if blockZ != doc.lastBlock():
+		tc.setPosition(blockZ.position()+blockZ.length())
+	    else:
+		tc.setPosition(blockZ.position()+blockZ.length()-1)
 	    # drag to select up to the beginning of the first line
             blockA = blockZ if blockNumberA == blockNumberZ \
 	           else doc.findBlockByNumber(blockNumberA)
@@ -529,7 +532,7 @@ class flowPanel(QWidget):
                     currentLength += (L + tl + 1)
             # used up all the tokens, replace the old text with reflowed text
             flowText.replace(flowText.size()-1,1,IMC.QtLineDelim) # terminate last line
-            tc.insertText(flowText) # replace selection with reflow
+	    tc.insertText(flowText) # replace selection with reflow
 	    # end of for u in reversed range of unitList loop
         pqMsgs.endBar() # wipe out the progress bar
         tc.endEditBlock() # close the single undo/redo macro
