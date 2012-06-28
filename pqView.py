@@ -169,8 +169,8 @@ class htmlPreview(QWidget):
 	    event.ignore()
 	    super(htmlPreview, self).keyPressEvent(event)
 
-    # Implement a simple Find/Find-Next, same logic as in pqNotes, pqHelp,
-    # but adjusted for our widget being a webview, and that it does the
+    # Implement a simple Find/Find-Next, same logic as in pqNotes,
+    # but adjusted for our widget being a webview, and it does the
     # wraparound for us.
     def doFind(self,kkey):
 	if (kkey == IMC.ctl_F) or (self.findText.isEmpty()) :
