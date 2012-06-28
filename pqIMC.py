@@ -164,6 +164,11 @@ class tricorder():
         self.ctl_alt_L = Qt.AltModifier | self.ctl_L
         self.ctl_P = Qt.ControlModifier | Qt.Key_P
         self.ctl_alt_P = Qt.AltModifier | self.ctl_P
+        self.ctl_Left = Qt.ControlModifier | Qt.Key_Left
+        self.ctl_left_pad = self.ctl_Left | Qt.KeypadModifier
+        self.ctl_LBracket = Qt.ControlModifier | Qt.Key_BracketLeft
+        self.ctl_B = Qt.ControlModifier | Qt.Key_B
+        self.backKeys = [self.ctl_B, self.ctl_Left, self.ctl_LBracket, self.ctl_left_pad]
         self.keysOfInterest = [self.ctl_G, self.ctl_shft_G, self.ctl_F, self.ctl_T,
                               self.ctl_equal, self.ctl_shft_T,
                 self.ctl_1, self.ctl_2, self.ctl_3, self.ctl_4, self.ctl_5,

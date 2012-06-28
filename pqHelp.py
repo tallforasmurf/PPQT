@@ -36,6 +36,7 @@ is read from pqHelp.html in the app folder.
 
 from PyQt4.QtCore import ( Qt, QFile, QString, QIODevice, QTextStream)
 from PyQt4.QtWebKit import(QWebPage, QWebView, QWebSettings)
+from PyQt4.QtGui import (QAction, QKeySequence)
 import pqMsgs
 import os
 
@@ -52,7 +53,7 @@ class helpDisplay(QWebView):
     def __init__(self, parent=None ):
         super(helpDisplay, self).__init__(parent)
 	# make page unmodifiable
-	self.page().setContentEditable(False)
+	#self.page().setContentEditable(False)
 	# initialize settings (copied from pqView)
 	self.settings().setFontFamily(QWebSettings.StandardFont, 'Palatino')
 	self.settings().setFontSize(QWebSettings.DefaultFontSize, 16)
@@ -67,22 +68,24 @@ class helpDisplay(QWebView):
 	self.settings().setAttribute(QWebSettings.SiteSpecificQuirksEnabled, False)
 	self.userFindText = QString()
 	# Look for pqHelp.html in the app folder and copy its text into
-	# our HTML buffer. If it isn't found, put a message there instead.
+	# a local buffer. If it isn't found, put a message there instead.
+	# We need to keep it in order to implement the "back" function.
 	helpPath = os.path.join(IMC.appBasePath,u'pqHelp.html')
 	helpFile = QFile(helpPath)
 	if not helpFile.exists():
-	    self.setHTML(QString('''<p>Unable to locate pqHelp.html.</p>
+	    self.HTMLstring = QString('''<p>Unable to locate pqHelp.html.</p>
 	    <p>Looking in {0}'''.format(helpPath)
-                            ) )
-	    return
-	if not helpFile.open(QIODevice.ReadOnly) :
-	    self.setHTML(QString('''<p>Unable to open pqHelp.html.</p>
+                            )
+	elif not helpFile.open(QIODevice.ReadOnly) :
+	    self.HTMLstring = QString('''<p>Unable to open pqHelp.html.</p>
 	    <p>Looking in {0}</p><p>Error code {1}</p>'''.format(helpPath,
 	                                                helpFile.error())
-	                                                 ))
-	helpStream = QTextStream(helpFile)
-	helpStream.setCodec('ISO8859-1')
-	self.setHtml(helpStream.readAll())
+	                                                 )
+	else:
+	    helpStream = QTextStream(helpFile)
+	    helpStream.setCodec('ISO8859-1')
+	    self.HTMLstring = helpStream.readAll()
+	self.setHtml(self.HTMLstring)
 	
     # Re-implement the parent's keyPressEvent in order to provide a simple
     # find function and font-zoom from ctl-plus/minus. We start the view at
@@ -93,10 +96,11 @@ class helpDisplay(QWebView):
     # end and 4.0 (64 points) at the top.
     def keyPressEvent(self, event):
 	kkey = int(event.modifiers())+int(event.key())
+	#print('key {0:X}'.format(kkey))
 	if (kkey == IMC.ctl_F) or (kkey == IMC.ctl_G) : # ctl/cmd f/g
 	    event.accept()
 	    self.doFind(kkey)
-	elif (kkey in IMC.zoomKeys) : # ctrl-plus/minus
+	elif (kkey in IMC.zoomKeys) : # ctl-plus/minus
 	    zfactor = 0.0625 # zoom in
 	    if (kkey == IMC.ctl_minus) :
 		zfactor = -zfactor # zoom out
@@ -104,6 +108,12 @@ class helpDisplay(QWebView):
 	    if (zfactor > 0.374) and (zfactor < 4.0) :
 		self.textZoomFactor = zfactor
 		self.setTextSizeMultiplier(self.textZoomFactor)
+	elif (kkey in IMC.backKeys) : # ctl-B/[/left
+	    if self.page().history().canGoBack() :
+		self.page().history().back()
+	    else :
+		self.setHtml(self.HTMLstring)
+		self.page().history().clear()
 	else: # not ctl/cmd f or ctl/cmd-plus/minus, so,
 	    event.ignore()
 	    super(helpDisplay, self).keyPressEvent(event)
