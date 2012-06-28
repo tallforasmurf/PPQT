@@ -182,17 +182,19 @@ def makeBarIn(status):
 
 # Initialize the bar at the beginning of some lengthy task, maxval is the
 # number the lengthy task is working toward (e.g. count of lines) and msg
-# goes in the status area to say what we're doing.
+# goes in the status area to say what we're doing. Guard against callers
+# e.g. pqFlow with a maxval of 0.
 def startBar(maxval,msg):
     IMC.progressBar.reset()
-    IMC.progressBar.setMaximum(maxval)
+    IMC.progressBar.setMaximum(max(maxval,10))
     IMC.statusBar.showMessage(QString(msg))
     QApplication.processEvents() # force graphic update
 
 # Move the progress bar presumably higher, and force a round of app processing
-# otherwise we never see the bar move.
+# otherwise we never see the bar move. Guard against callers who don't
+# really advance the bar.
 def rollBar(newval):
-    IMC.progressBar.setValue(newval)
+    IMC.progressBar.setValue(max(newval,IMC.progressBar.value()))
     QApplication.processEvents() # force graphic update
 
 # The big job is finished, clear the bar and its message.
