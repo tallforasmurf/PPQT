@@ -401,7 +401,10 @@ class flowPanel(QWidget):
     # 'A' : text block number of start of the unit
     # 'Z' : text block number of end of the unit
     # 'F', 'L', 'R': the desired First, Left and Right margins for this unit,
-    # 'W' : valid only in end of markup unit, the smallest existing text indent
+    # 'W' : in a paragraph ('T':'P'), the smallest actual indent thus far
+    #       in the unit; in end of markup ('T':'/') the smallest in the unit.
+    # 'K' : in a line of a poem ('T':'P' && 'M':'P'), an empty QString or
+    #       the poem line number as a decimal digits.
     # seen in a *, P, or C markup. Lines of a * or P markup, or C markup with
     # "longest line" checked, are indented by F-W (which may be negative) thus
     # removing any existing indent installed from a previous reflow.
@@ -517,21 +520,40 @@ class flowPanel(QWidget):
             lineLength = 75 - unit['R']
 	    lineLimit = lineLength # how big flow can get before we break it
 	    currentLength = F # line space used so far
+	    wholeLineLength = 0 # length of whole lines accumulated
             for (tok,tl) in tokGen(tc,self.itbosc):
                 if lineLimit >= (currentLength + tl): # room for this token
                     flowText.append(tok)
                     flowText.append(oneSpace) # assume there'll be another token
                     currentLength += (tl + 1)
                 else: # time to break the line.
-                    # replace superfluous space with linebreak code
-                    flowText.replace(flowText.size()-1,1,IMC.QtLineDelim)
                     lineLimit = currentLength + lineLength # set new limit
-                    flowText.append(leftIndent) # insert left indent
+                    # replace superfluous space with linebreak code
+                    flowText.replace(currentLength-1,1,IMC.QtLineDelim)
+                    flowText.append(leftIndent) # insert new left indent
                     flowText.append(tok) # and now the token on a new line
                     flowText.append(oneSpace) # assume there'll be another token
                     currentLength += (L + tl + 1)
-            # used up all the tokens, replace the old text with reflowed text
-            flowText.replace(flowText.size()-1,1,IMC.QtLineDelim) # terminate last line
+            # used up all the tokens of this paragraph or line. If this was a
+	    # line of a poem, and it ended with a line number, push that out
+	    flowText.chop(1) # drop superfluous final space
+	    if markupCode == u'P' and (not unit['K'].isEmpty()) :
+		# there was a line number seen on this poem line
+		available = lineLimit - currentLength
+		if available < 1 :
+		    # not room to put a second space ahead of the 
+		    # line number, which we must do to maintain the ability
+		    # to recognize a line number.
+		    pqMsgs.warningMsg(
+		        u'Poem line number does not fit in line length',
+		        u'Near line {0}'.format(blockNumberA)  )
+		    available = 1 # so push it past the limit by 1
+		insertPoint = currentLength - unit['K'].size() - 1
+		dbg = unicode(flowText)
+		flowText.insert(insertPoint,b' '*available)
+		
+	    # replace the old text with reflowed text
+            flowText.append(IMC.QtLineDelim) # terminate last line
 	    tc.insertText(flowText) # replace selection with reflow
 	    # end of for u in reversed range of unitList loop
         pqMsgs.endBar() # wipe out the progress bar
@@ -549,6 +571,7 @@ class flowPanel(QWidget):
     # F, L, R: current first, left, right indents
     # W, shortest existing indent seen in a no-reflow section
     # B, count of blank lines skipped ahead of this line/para
+    # K, poem line number when seen
     # Many of these items get copied into each work unit.
     # 
     # We permit nesting markups pretty much arbitrarily (nothing can nest
@@ -557,10 +580,14 @@ class flowPanel(QWidget):
     # PSW onto a stack when entering a markup, and pop it on exit.
     def parseText(self,topBlock,endBlock):
 	unitList = []
-	PSW = { 'S': True, 'Z':None, 'M':' ', 'P':True, 'F':0, 'L':0, 'R':0, 'W':75, 'B':0 }
+	PSW = { 'S': True, 'Z':None, 'M':' ', 'P':True, 'F':0, 'L':0, 'R':0, 'W':75, 'B':0}
 	stack = []
 	# We recognize the start of markup with this RE    
-	markupRE = QRegExp("^/(P|Q|\\*|C|X|U|R|T)")
+	markupRE = QRegExp(u'^/(P|Q|\\*|C|X|U|R|T)')
+	# We recognize a poem line number with this RE: at least 2 spaces,
+	# then decimal digits followed by the end of the line. Note: because
+	# we apply to a line as qstring we can use the $ for end of line
+	poemNumberRE = QRegExp(u' {2,}(\d+) *$')
 	# We step through QTextBlocks using the next() method but we take the
 	# block numbers to set up the progress bar:
 	topBlockNumber = topBlock.blockNumber()
@@ -662,7 +689,7 @@ class flowPanel(QWidget):
 			    firstBlockNumber = thisBlockNumber
 			    PSW['S'] = False # go to other half of the if-stack
 			else:
-			    # we are not doing paragraphs, e.g. we are in /C
+			    # we are not doing paragraphs, we are in /C, /P etc
 			    # create a work unit to describe this line
 			    u = self.makeUnit('P',PSW,thisBlockNumber,thisBlockNumber)
 			    lineText = unicode(qs) # get text to python-land
@@ -681,6 +708,10 @@ class flowPanel(QWidget):
 				# spaces plus F (possibly adjusted later)
 				lineIndent = len(lineText)-len(lineText.lstrip())
 				u['F'] = lineIndent + PSW['F']
+				# look for and save poem line number (if this is
+				# not a poem it will be ignored)
+				if 0 < poemNumberRE.indexIn(qs):
+				    u['K'] = QString(poemNumberRE.cap(1))
 			    else :  # indent for X is 0, for T is ignored
 				lineIndent = 0
 				u['F'] = 0
@@ -769,7 +800,7 @@ class flowPanel(QWidget):
     	# a unit record based on the PSW, a type code, and start and end blocks.
     	return { 'T':type, 'M':PSW['M'], 'A':ab, 'Z':zb,
                 'F':PSW['F'], 'L':PSW['L'], 'R':PSW['R'],
-                'W':PSW['W'], 'B':PSW['B']}
+                'W':PSW['W'], 'B':PSW['B'], 'K':QString() }
 
     # Do HTML conversion. Use the textParse method to make a list of units.
     # Process the list of units from bottom up, replacing as we go:
@@ -785,7 +816,7 @@ class flowPanel(QWidget):
     #  /T[M] -->  <table>
     #  */, X/, C/  --> </pre>
     #  /*, /X, /C  --> <pre>
-    # <tb> --> <hr />
+    # <tb> --> <hr /> (no classname, so set your CSS for this as default case)
     #
     # We "enter" a markup at its end (Q/, T/, etc) and on entering push the
     # prior markup type. Within a markup we insert bookend texts around each
@@ -800,7 +831,7 @@ class flowPanel(QWidget):
     # With poetry, B>0 means inserting </div><div class='stanza'>
     # In open text, B==4 means using <h2> and </h2> as paragraph bookends;
     # but B==2 when the next-higher unit has B!=4 means use <h3> and </h3>
-    # Globals bookendA etc are below.
+    # Globals bookendA, etc are below.
     #
     # Note on inserting bookends and other markup: QTextBlock.length() does
     # include the line-delim at the end of the block. We include our own
@@ -852,29 +883,43 @@ class flowPanel(QWidget):
 		    # this could be a <tb> by itself, valid in these contexts.
 		    if unit['A'] == unit['Z'] \
 		       and unitBlockA.text().startsWith(qtb) :
-			# In all other cases we merely insert markup, we do
-			# not replace the text. To avoid breaking that pattern
-			# we just insert bookends that comment out the <tb>
+			# Convert <tb>: in other cases we insert markup, we do
+			# not replace the text. To continue that pattern
+			# we just insert bookends that provide an <hr> and also
+			# comment out the <tb> but retain it.
 			bA = u'<hr /> <!-- '
 			bZ = U' -->'
 		    elif markupCode == ' ': # or, if len(markStack)==0
 			# this is open text, check for headers
 			if (unit['B'] == 2) and (u) and (unitList[u-1]['B'] != 4):
+			    # two-line blank not at top of reflow selection and
+			    # not following a head-2, make a head-3
 			    bA = bookendA['3']
 			    bZ = bookendZ['3']
-			if unit['B'] == 4 :
+			if unit['B'] == 4 : # four-line blank, make head-2
 			    bA = bookendA['2']
 			    bZ = bookendZ['2']
 		    elif markupCode == 'P':
-			# line of poetry, we have to, one, modify bA for the indent,
+			# line of poetry, bA is <span class="i{0:02d}">
+			# we have to, one, modify bA for the indent,
 			F = int((unit['F']-2)/2) # number of nominal ems
-			if F :
-			    bA = bA.format(F) # the ascii 2 is included
-			else :
+			if F : # some nonzero indent dd
+			    bA = bA.format(F) # class="idd"
+			else : # no indent, default span
 			    bA = u'<span>'
-			# and two, look for a stanza break
-			if unit['B'] > 0:
+			# Then, two, look for a stanza break preceding this line
+			if unit['B'] > 0: # some blank lines preceded
 			    bA = u'</div><div class="stanza">\u2029' + bA
+			# And, three, look for a poem line number and wrap
+			# it in <span class='linenum'>..<span>. Note this is
+			# the only place we have to actually modify the text.
+			if not unit['K'].isEmpty() :
+			    tc.setPosition(unitBlockZ.position()+unitBlockZ.length()-1)
+			    tc.insertText(bookendLZ)
+			    tc.setPosition(
+    unitBlockZ.position()+unitBlockZ.length()-(1+len(bookendLZ)+unit['K'].size())
+			                           )
+			    tc.insertText(bookendLA)
 		    bA = QString(bA)
 		    # Minimal check for user error of re-marking
 		    if not unitBlockA.text().startsWith(bA):
@@ -1013,6 +1058,9 @@ bookendZ = {
             '2':u'</h2>',
             '3':u'</h3>'
             }
+# bookend markup for poem line number
+bookendLA = u"<span class='linenum'>"
+bookendLZ = u"</span>"
 # Similarly, markup open/close strings indexed by markup code letter
 markupA = {
             ' ':None,
@@ -1097,18 +1145,18 @@ Here are our thoughts, voyagers' thoughts,
 Here not the land, firm land, alone appears, may then by them be said,
 The sky o'erarches here, we feel the undulating deck beneath our feet,
 We feel the long pulsation, ebb and flow of endless motion,
-The tones of unseen mystery, the vague and vast suggestions of the briny world, the liquid-flowing syllables,
+The tones of unseen mystery, the vague and vast suggestions of the briny world, the liquid-flowing syllables,  5
 The perfume, the faint creaking of the cordage, the melancholy rhythm,
 The boundless vista and the horizon far and dim are all here,
 And this is ocean's poem.
 
 Then falter not O book, fulfil your destiny,
-You not a reminiscence of the land alone,
+You not a reminiscence of the land alone,   10
 You too as a lone bark cleaving the ether, purpos'd I know not whither, yet ever full of faith,
 Consort to every ship that sails, sail you!
 Bear forth to them folded my love, (dear mariners, for you I fold it here in every leaf;)
 Speed on my book! spread your white sails my little bark athwart the  imperious waves,
-Chant on, sail on, bear o'er the boundless blue from me to every sea,
+Chant on, sail on, bear o'er the boundless blue from me to every sea,      315
 This song for mariners and all their ships.
 P/
 
