@@ -436,7 +436,7 @@ within left and right indents as set in the top row of controls.</td></tr>
 <tr><td><b>/U..U/</b></td><td>Unsigned list: text is reflowed by paragraphs
 with the first line of each paragraph indented 2 and other lines indented 4.</td></tr>
 <tr><td><b>/P..P/</b></td><td>Poetry:single lines are indented as given
-in the second row of controls.</td></tr>
+in the second row of controls. Line numbers are pushed to the right margin.</td></tr>
 <tr><td><b>/R..R/</b></td><td>Each line is aligned right.</td></tr>
 <tr><td><b>/*..*/</b></td><td>No-flow: the entire section may be indented
 by an amount specified in the third control, otherwise no change.</td></tr>
@@ -593,6 +593,11 @@ for the different markup types.</p>
 <tr><td><b>/R</b></td><td><tt>&lt;div class="ralign"></tt></tr>
 <tr><td>text in /R..R/</td><td><tt>&lt;p></tt><i>each line of text</i><tt>&lt;/p></tt></td></tr>
 <tr><td><b>R/</b></td><td><tt>&lt;/div></tt></tr>
+<tr><td><b>/P</b></td><td>&lt;div class="poetry">&lt;div class="stanza"></td></tr>
+<tr><td>blank lines in /P..P/</td><td>&lt;/div>&lt;div class="stanza"></td></tr>
+<tr><td>text lines in /P..P/</td><td>&lt;span class="i<i>nn</i>"><i>text of line</i>&lt;/span>&lt;br /></td></tr>
+<tr><td>poem line #s</td><td>&lt;span class='linenum'><i>nbr</i>&lt;/span></td></tr>
+<tr><td><b>P/</b></td><td>&lt;/div>&lt;/div></td></tr>
 <tr><td><b>/X</b>, <b>/C</b>, <b>/*</b></td><td><tt>&lt;pre></tt></td></tr>
 <tr><td>text in these</td><td>not touched</td></tr>
 <tr><td><b>X/</b>, <b>C/</b>, <b>*/</b></td><td><tt>&lt;/pre></tt></td></tr>
