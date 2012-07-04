@@ -20,10 +20,9 @@
 
  PPQT is written in Python (2.7 but should require little to make it 3)
  with PyQt4 and Qt4.
- 
- PPQT itself is licensed under the Creative Commons Attribution-Share-Alike
- terms. PyQt4 and Qt are both licensed for open-source use for nonprofits.
- 
+
+Features:
+
  A single document file, bookname.suffix, is edited. A variety of metadata
  is collected the first time a file is opened and is saved in a metadata file,
  bookname.suffix.metadata. Also expected to exist at the same file path
