@@ -253,7 +253,7 @@ ClassREs = (
     u'[ivxlcd]{1,15}', # roman to whatever
     u'[a-z]{1,2}',     # alpha to zz (?)
     u'\d{1,3}',       # decimal to 999
-    u'[\*\u00a4\u00a7\u2020\u2021]' # star para currency dagger dbl-dagger
+    u'[\*\u00a4\u00a7\u00b6\u2020\u2021]' # star currency section para dagger dbl-dagger
     )
 
 # The regex for finding a Ref to any possible Key class.
@@ -382,6 +382,8 @@ def insertUnmatchedNote(notetc):
 
 # Based on the above spadework, do the Refresh operation
 def theRealRefresh():
+    global TheFootnoteList
+    TheFootnoteList = [] # wipe the slate
     doc = IMC.editWidget.document() # get handle of document
     # initialize status message and progress bar
     barCount = doc.characterCount()
@@ -648,7 +650,7 @@ class fnotePanel(QWidget):
         hbxxx.addLayout(vbns)
         hbxxx.addStretch(1)
         mainLayout.addLayout(hbxxx)
-        # Finally, two important buttons on the bottom in a frame.
+        # Finally, the action buttons on the bottom in a frame.
         doitgb = QGroupBox("Actions")
         doithb = QHBoxLayout()
         self.renumberButton = QPushButton("Renumber")
@@ -656,11 +658,15 @@ class fnotePanel(QWidget):
         doithb.addWidget(self.renumberButton,0)
         doithb.addStretch(1)
         doithb.addWidget(self.moveButton)
+        doithb.addStretch(1)
+        self.htmlButton = QPushButton("HTML Convert")
+        doithb.addWidget(self.htmlButton)
         doitgb.setLayout(doithb)
         mainLayout.addWidget(doitgb)
         # and connect the buttons to actions
         self.connect(self.renumberButton, SIGNAL("clicked()"), self.renClick)
         self.connect(self.moveButton, SIGNAL("clicked()"), self.movClick)
+        self.connect(self.htmlButton, SIGNAL("clicked()"), self.htmClick)
 
     def makeStreamMenu(self,choice=5):
         cb = QComboBox()
@@ -757,6 +763,9 @@ class fnotePanel(QWidget):
     def movClick(self):
         pass
 
+    # The slot for the HTML button
+    def htmClick(self):
+        pass
    
 if __name__ == "__main__":
     import sys
@@ -796,5 +805,3 @@ three lines]
     IMC.mainWindow = MW
     IMC.editWidget.show()
     app.exec_()
-    
-
