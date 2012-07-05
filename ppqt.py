@@ -210,8 +210,8 @@ if pqTable.__version__ != __version__ :
     print('pqTable.py version {0}'.format(pqTable.__version__))
 pqTable.IMC = IMC
 
-#import pqFoot # footnote management
-# pqFoot.IMC = IMC
+import pqFnote # footnote management
+pqFnote.IMC = IMC
 
 import pqView # html preview
 if pqView.__version__ != __version__ :

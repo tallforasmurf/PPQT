@@ -62,6 +62,7 @@ import pqChars
 import pqWords
 import pqPages
 import pqFlow
+import pqFnote
 import pqView
 import pqHelp
 # The parent module begins execution by instantiating one of these.
@@ -143,10 +144,16 @@ class MainWindow(QMainWindow):
         self.tabSet.addTab(self.pagePanel, u"&Pages")
         self.connect(self, SIGNAL("docWillChange"), self.pagePanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.pagePanel.docHasChanged)   
+        # Create Flow panel
         self.flowPanel = pqFlow.flowPanel()
         IMC.flowPanel = self.flowPanel # make flow globally accessible
         self.tabSet.addTab(self.flowPanel, u"Fl&ow")
         self.connect(self, SIGNAL("shuttingDown"), self.flowPanel.shuttingDown)
+        # Create Footnote Panel
+        self.fnotePanel = pqFnote.fnotePanel()
+        self.tabSet.addTab(self.fnotePanel, u"F&note")
+        self.connect(self, SIGNAL("docWillChange"), self.fnotePanel.docWillChange)
+        self.connect(self, SIGNAL("docHasChanged"), self.fnotePanel.docHasChanged)   
         # Create the html Preview Panel - it's simple, needs no signals
         self.pvwPanel = pqView.htmlPreview()
         self.tabSet.addTab(self.pvwPanel, u"P&vw")
