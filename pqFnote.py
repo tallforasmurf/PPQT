@@ -269,6 +269,7 @@ NoteFinderRE = QRegExp( u'\[Footnote\s+(' + u'|'.join(ClassREs) + u')\s*\:' )
 # "positioned" at the end of the selection, the anchor at the start.
 
 # Given a QTextCursor that selects a Reference, return its line number.
+# (Also used for text cursors that index /F and F/ lines.)
 def refLineNumber(tc):
     if tc is not None:
         return tc.block().blockNumber() # block number for tc.position()
@@ -337,15 +338,13 @@ def textFromNote(tc):
 # by the Refresh button.
 
 TheFootnoteList = [ ]
+TheCountOfUnpairedKeys = 0
 
 # Make a database item given ref and note cursors as available.
 # Note we copy the text cursors so the caller doesn't have to worry about
 # overwriting, reusing, or letting them go out of scope afterward.
 def makeDBItem(reftc,notetc):
     keyqs = reftc.selectedText() if reftc is not None else keyFromNote(notetc)
-    dbg = unicode(keyqs)
-    dbg2 = noteLineNumber(notetc)
-    dbg1 = refLineNumber(reftc)
     item = {'K': keyqs,
             'C': classOfKey(keyqs),
             'R': QTextCursor(reftc) if reftc is not None else None,
@@ -358,32 +357,36 @@ def makeDBItem(reftc,notetc):
 # a top-to-bottom sequential scan so entries will be added in line# sequence.
 
 def addMatchedPair(reftc,notetc):
+    global TheFootnoteList
     TheFootnoteList.append(makeDBItem(reftc,notetc))
 
 # insert an unmatched reference into the db in ref line number sequence.
 # unmatched refs and notes are expected to be few, so a sequential scan is ok.
 def insertUnmatchedRef(reftc):
+    global TheFootnoteList
     item = makeDBItem(reftc,None)
     j = refLineNumber(reftc)
     for i in range(len(TheFootnoteList)):
         if j <= refLineNumber(TheFootnoteList[i]['R']) :
             TheFootnoteList.insert(i,item)
             return
-    TheFootnoteList.append(item)
+    TheFootnoteList.append(item) # unmatched ref after all other refs
+
 # insert an unmatched note in note line number sequence.
 def insertUnmatchedNote(notetc):
+    global TheFootnoteList
     item = makeDBItem(None,notetc)
     j = noteLineNumber(notetc)
     for i in range(len(TheFootnoteList)):
         if j <= noteLineNumber(notetc) :
             TheFootnoteList.insert(i,item)
             return
-        TheFootnoteList.append(item)
 
 # Based on the above spadework, do the Refresh operation
 def theRealRefresh():
-    global TheFootnoteList
+    global TheFootnoteList,TheCountOfUnpairedKeys
     TheFootnoteList = [] # wipe the slate
+    TheCountOfUnpairedKeys = 0
     doc = IMC.editWidget.document() # get handle of document
     # initialize status message and progress bar
     barCount = doc.characterCount()
@@ -463,6 +466,7 @@ def theRealRefresh():
         insertUnmatchedRef(reftc)
     for notetc in listOnotes:
         insertUnmatchedNote(notetc)
+    TheCountOfUnpairedKeys = len(listOfOrphanRefs)+len(listOnotes)
     # clear the status and progress bar
     pqMsgs.endBar()
 
@@ -495,19 +499,20 @@ class myTableModel(QAbstractTableModel):
         # The brushes to painting the background of good and questionable rows
         self.whiteBrush = QBrush(QColor(QString('transparent')))
         self.pinkBrush = QBrush(QColor(QString('lightpink')))
+        self.greenBrush = QBrush(QColor(QString('palegreen')))
         # Here save the expansion of one database item for convenient fetching
         self.lastRow = -1
         self.lastTuple = ()
         self.brushForRow = QBrush()
-        
+
     def columnCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
         return 6
 
     def flags(self,index):
         f = Qt.ItemIsEnabled
-        if index.column() ==1 :
-            f |= Qt.ItemIsEditable # column 1 *only) editable
+        #if index.column() ==1 :
+            #f |= Qt.ItemIsEditable # column 1 only editable
         return f
     
     def rowCount(self,index):
@@ -531,19 +536,24 @@ class myTableModel(QAbstractTableModel):
             # We TRUST it will go horizontally, hitting a row multiple times,
             # before going on to the next row.
             r = index.row()
-            self.brushForRow = self.whiteBrush
             rtc = TheFootnoteList[r]['R']
             ntc = TheFootnoteList[r]['N']
-            if (rtc is None) or (ntc is None):
-                self.brushForRow = self.pinkBrush
+            rln = refLineNumber(rtc)
+            nln = noteLineNumber(ntc)
+            nll = noteLineLength(ntc) # None if ntc is None
             self.lastTuple = (
                 TheFootnoteList[r]['K'], # key as a qstring
                 KeyClassNames[TheFootnoteList[r]['C']], # class as qstring
-                QString(unicode(refLineNumber(rtc))) if rtc is not None else QString("?"),
-                QString(unicode(noteLineNumber(ntc))) if ntc is not None else QString("?"),
-                QString(unicode(noteLineLength(ntc))),
+                QString(unicode(rln)) if rtc is not None else QString("?"),
+                QString(unicode(nln)) if ntc is not None else QString("?"),
+                QString(unicode(nll)),
                 textFromNote(ntc)
                 )
+            self.brushForRow = self.whiteBrush
+            if (rtc is None) or (ntc is None):
+                self.brushForRow = self.pinkBrush
+            elif 10 < nll or 50 < (nln-rln) :
+                self.brushForRow = self.greenBrush
         # Now, what was it you wanted?
         if role == Qt.DisplayRole : # wants actual data
             return self.lastTuple[index.column()] # so give it.
@@ -562,7 +572,7 @@ class myTableModel(QAbstractTableModel):
 
 # Used during renumbering: given an integer, return an upper- or
 # lowercase roman numeral. Cribbed from Mark Pilgrim's "Dive Into Python".
-romanNumeralMap = (('M',  1000),
+RomanNumeralMap = (('M',  1000),
                    ('CM', 900),
                    ('D',  500),
                    ('CD', 400),
@@ -578,18 +588,34 @@ romanNumeralMap = (('M',  1000),
 def toRoman(n,lc):
     """convert integer to Roman numeral"""
     if not (0 < n < 5000):
-        raise OutOfRangeError, "number out of range (must be 1..4999)"
+        raise ValueError, "number out of range (must be 1..4999)"
     if int(n) <> n:
-        raise NotIntegerError, "decimals can not be converted"
+        raise TypError, "decimals can not be converted"
     result = ""
-    for numeral, integer in romanNumeralMap:
+    for numeral, integer in RomanNumeralMap:
         while n >= integer:
             result += numeral
             n -= integer
     qs = QString(result)
     if lc : return qs.toLower()
     return qs
+AlphaMap = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+def toAlpha(n,lc=False):
+    '''convert integer to alpha A..ZZ'''
+    if not (0 < n < 17577):
+        raise ValueError, "number out of range (must be 1..17577)"
+    if int(n) <> n:
+        raise TypeError, "decimals can not be converted"
+    result = ''
+    while True :
+        (n,m) = divmod(n-1,26)
+        result = AlphaMap[m]+result
+        if n == 0 : break
+    qs = QString(result)
+    if lc : return qs.toLower()
+    return qs
 
+    
 class fnotePanel(QWidget):
     def __init__(self, parent=None):
         super(fnotePanel, self).__init__(parent)
@@ -655,31 +681,53 @@ class fnotePanel(QWidget):
         doithb = QHBoxLayout()
         self.renumberButton = QPushButton("Renumber")
         self.moveButton = QPushButton("Move Notes")
+        self.asciiButton = QPushButton("ASCII Cvt")
+        self.htmlButton = QPushButton("HTML Cvt")
         doithb.addWidget(self.renumberButton,0)
         doithb.addStretch(1)
         doithb.addWidget(self.moveButton)
         doithb.addStretch(1)
-        self.htmlButton = QPushButton("HTML Convert")
+        doithb.addWidget(self.asciiButton)
+        doithb.addStretch(1)
         doithb.addWidget(self.htmlButton)
         doitgb.setLayout(doithb)
         mainLayout.addWidget(doitgb)
         # and connect the buttons to actions
-        self.connect(self.renumberButton, SIGNAL("clicked()"), self.renClick)
-        self.connect(self.moveButton, SIGNAL("clicked()"), self.movClick)
-        self.connect(self.htmlButton, SIGNAL("clicked()"), self.htmClick)
-
+        self.connect(self.renumberButton, SIGNAL("clicked()"), self.doRenumber)
+        self.connect(self.moveButton, SIGNAL("clicked()"), self.doMove)
+        self.connect(self.asciiButton, SIGNAL("clicked()"), self.doASCII)
+        self.connect(self.htmlButton, SIGNAL("clicked()"), self.doHTML)
+        # The renumber streams and a set of lambdas for getting the
+        # next number in sequence from them. The lambdas are selected by the
+        # value in a stream menu combo box, 0-4 or 5 meaning no-renumber.
+        self.streams = [0,0,0,0,0,0]
+        self.streamLambdas = [
+            lambda s : toRoman(s,False),
+            lambda s : toAlpha(s,False),
+            lambda s : toRoman(s,True),
+            lambda s : toAlpha(s,True),
+            lambda s : QString(unicode(s)),
+            lambda s : None]
+        self.streamMenuList = [
+            self.pickIVX,self.pickABC,self.pickivx,
+            self.pickabc,self.pick123,self.picksym]
+        # Note a count of items over which it is worthwhile to run a 
+        # progress bar during renumber, move, etc. Reconsider later: 100? 200?
+        self.enoughForABar = 50
+    # Convenience function to shorten code when instantiating
     def makeStreamMenu(self,choice=5):
         cb = QComboBox()
         cb.addItems(StreamNames)
         cb.setCurrentIndex(choice)
         return cb
-    
+    # Convenience function to shorten code when instantiating
     def makePair(self,qs,cb):
         hb = QHBoxLayout()
         hb.addWidget(QLabel(qs))
         hb.addWidget(cb)
         hb.addStretch(1)
         return hb
+    # Convenience function to shorten code when instantiating
     def makeStack(self,pair1,pair2):
         vb = QVBoxLayout()
         vb.addLayout(pair1)
@@ -695,8 +743,8 @@ class fnotePanel(QWidget):
         self.table.endResetModel()
         self.view.resizeColumnsToContents()
     
-    # These slots are invoked when a stream choice is made for an ambiguous
-    # class. They ensure that contradictory choices can't be made.
+    # These slots are invoked when a choice is made in the stream popup menu
+    # for an ambiguous class, to ensure that contradictory choices aren't made.
 
     # If the user sets the IVX stream to the same as the ABC stream, or
     # to no-renumber, fine. Otherwise, she is asserting that she has valid
@@ -705,8 +753,8 @@ class fnotePanel(QWidget):
         if (pick != self.pickABC.currentIndex()) or (pick != 5) :
             self.pickABC.setCurrentIndex(5)
     # If the user sets the ABC stream to anything but no-renumber, she is
-    # asserting that there are valid ABC keys in which case, (keys we have
-    # classed as) IVX need to use the same stream.
+    # asserting that there are valid ABC keys in which case, keys we have
+    # classed as IVX need to use the same stream.
     def ABCpick(self,pick):
         if pick != 5 :
             self.pickIVX.setCurrentIndex(pick)
@@ -723,6 +771,8 @@ class fnotePanel(QWidget):
     #   the ref line in which case we jump to the note line (ping-pong).
     # * column 2 (ref line) we jump to the ref line.
     # * column 3, 4, 5 (note line or note) we jump to the note line.
+    # In each case, to "jump" means, set the document cursor to the reftc
+    # or the notetc, making the ref or note the current selection.
     def tableClick(self,index):
         r = index.row()
         c = index.column()
@@ -734,39 +784,436 @@ class fnotePanel(QWidget):
             targtc = ntc
         elif c == 2 :
             targtc = rtc
-        else:
+        else:  # c == 0 or 1
             dln = dtc.blockNumber()
-            rln = refLineNumber(rtc) # None, if rtc is
-            if dln == rln :
-                targtc = ntc
-            else:
+            rln = refLineNumber(rtc) # None, if rtc is None
+            if dln == rln : # True if there is a ref line and we are on it
+                targtc = ntc # go to the note
+            else: # there isn't a ref line (rtc is None) or there is and we want it
                 targtc = rtc
         if targtc is not None:
             IMC.editWidget.setTextCursor(targtc)
     
     # The slots for the main window's docWill/HasChanged signals.
     # Right now, just clear the footnote database, the user can hit
-    # hit refresh when he wants the info. If the refresh proves to be
+    # refresh when he wants the info. If the refresh proves to be
     # very small performance hit even in a very large book, we could
-    # look at doing the refresh automatically after docHasChanged.
+    # look at calling doRefresh automatically after docHasChanged.
     def docWillChange(self):
         self.table.beginResetModel()
     def docHasChanged(self):
         TheFootnoteList = []
         self.table.endResetModel()
 
-    # The slot for the Renumber button
-    def renClick(self):
-        pass
+    # Subroutine to check if it is ok to do a major revision such as renumber
+    # or move: if there are unpaired keys, display a message and return false.
+    def canWeRevise(self,action):
+        global TheCountOfUnpairedKeys
+        if TheCountOfUnpairedKeys is not 0 :
+            pqMsgs.warningMsg(
+        "Cannot {0} with orphan notes and anchors".format(action),
+        "The count of unpaired anchors and notes is: {0}".format(TheCountOfUnpairedKeys)
+                            )
+            return False # dinna do it, laddie!
+        return True # ok to go ahead
+        
+    # The slot for the Renumber button. Check to see if any unpaired keys and
+    # don't do it if there are any. But if all are matched, go through the
+    # database top to bottom (because that is the direction the user expects
+    # the number streams to increment). For each key, develop a new key string
+    # based on its present class and the stream selection for that class.
+    def doRenumber(self):
+        global TheFootnoteList
+        if not self.canWeRevise(u"Renumber") :
+            return
+        # If the database is actually empty, just do nothing.
+        dbcount = len(TheFootnoteList)
+        if dbcount < 1 : return
+        # OTOH, if there is significant work to do, start the progress bar.
+        if dbcount >= self.enoughForABar : 
+            pqMsgs.startBar(dbcount,"Renumbering footnotes...")
+        # clear the number streams
+        self.streams = [0,0,0,0,0,0]
+        # Tell the table model that things are gonna change
+        self.docWillChange()
+        # create a working cursor and start an undo macro on it.
+        worktc = QTextCursor(IMC.editWidget.textCursor())
+        worktc.beginEditBlock()
+        for i in range(dbcount) : # there's a reason this isn't "for item in..."
+            item = TheFootnoteList[i]
+            # Note this key's present string value and class number.
+            oldkeyqs = item['K']
+            oldclass = item['C']
+            # Get the renumber stream index for the present class
+            renchoice = self.streamMenuList[oldclass].currentIndex()
+            # Increment that stream (if no-renumber, increment is harmless)
+            self.streams[renchoice] += 1
+            # Format the incremented value as a string based on stream choice
+            # This produces None if renchoice is 5, no-renumber.
+            newkeyqs = self.streamLambdas[renchoice](self.streams[renchoice])
+            if newkeyqs is not None: # not no-renumber, so we do it
+                # infer the key class of the new key string
+                newclass = classOfKey(newkeyqs)
+                # ## Replace the key in the note text:
+                # First, make a pattern to match the old key. Do it by making
+                # a COPY of the old key and appending : to the COPY. We need
+                # the colon because the key text might be e.g. "o" or "F".
+                targqs = QString(oldkeyqs).append(u':')
+                # Cause worktc to select the opening text of the note through
+                # the colon, from notetc. Don't select the whole note as we will
+                # use QString::replace which replaces every match it finds.
+                notetc = item['N']
+                worktc.setPosition(notetc.anchor())
+                worktc.setPosition(notetc.anchor()+10+targqs.size(),QTextCursor.KeepAnchor)
+                # Get that selected text as a QString
+                workqs = worktc.selectedText()
+                # Find the offset of the old key (s.b. 10 but not anal about spaces)
+                targix = workqs.indexOf(targqs,0,Qt.CaseSensitive)
+                # Replace the old key text with the new key text
+                workqs.replace(targix,oldkeyqs.size(),newkeyqs)
+                # put the modified text back in the document, replacing just
+                # [Footnote key:. Even this will make Qt mess with the anchor
+                # and position of notetc, so set up to recreate that.
+                selstart = notetc.anchor()
+                selend = notetc.position()-oldkeyqs.size()+newkeyqs.size()
+                worktc.insertText(workqs)
+                notetc.setPosition(selstart)
+                notetc.setPosition(selend,QTextCursor.KeepAnchor)
+                # ## Replace the key in the anchor, a simpler job, although
+                # we again have to recover the selection
+                reftc = item['R']
+                selstart = reftc.anchor()
+                sellen = newkeyqs.size()
+                worktc.setPosition(selstart)
+                worktc.setPosition(reftc.position(),QTextCursor.KeepAnchor)
+                worktc.insertText(newkeyqs)
+                reftc.setPosition(selstart)
+                reftc.setPosition(selstart+sellen,QTextCursor.KeepAnchor)
+                # Update the database item. The two cursors are already updated.
+                # Note that this is Python; "item" is a reference to 
+                # TheFootnoteList[i], ergo we are updating the db in place.
+                item['K'] = newkeyqs
+                item['C'] = newclass
+                # end of "newkeyqs is not None"
+            if dbcount >= self.enoughForABar and 0 == (i & 3):
+                pqMsgs.rollBar(dbcount - i)
+            # end of "for i in range(dbcount)"
+        # Clean up:
+        worktc.endEditBlock()  # End the undo macro
+        self.docHasChanged()   # tell the table the data has stabilized
+        if dbcount > self.enoughForABar :
+            pqMsgs.endBar()    # clear the progress bar
 
-    # The slot for the Move button
-    def movClick(self):
-        pass
+    # The slot for the Move button. Check to see if any unpaired keys and
+    # don't do it if there are any. But if all are matched, first find all
+    # footnote sections in the document and make a list of them in the form
+    # of textcursors. Get user permission, showing section count as a means
+    # of validating markup, then move each note that is not in a section,
+    # into the section next below it. Update the note cursors in the db.
+    def doMove(self):
+        global TheFootnoteList
+        if not self.canWeRevise(u"Move Notes to /F..F/") :
+            return
+        # If the database is actually empty, just do nothing.
+        dbcount = len(TheFootnoteList)
+        if dbcount < 1 : return
+        # Create a working text cursor.
+        worktc = QTextCursor(IMC.editWidget.textCursor())
+        # Search the whole document and find the /F..F/ sections. We could look
+        # for lines starting /F and then after finding one, for the F/ line, but
+        # the logic gets messy when the user might have forgotten or miscoded
+        # the F/. So we use a regex that will cap(0) the entire section. We are
+        # not being Mr. Nice Guy and allowing \s* spaces either, it has to be
+        # zackly \n/F\n.*\nF/\n.
+        sectRegex = QRegExp('\\n/F.*\\nF/\\n')
+        sectRegex.setMinimal(True) # minimal match for the .* above
+        sectRegex.setCaseSensitivity(Qt.CaseSensitive)
+        wholeDocQs = IMC.editWidget.toPlainText() # whole doc as qstring
+        sectList = []
+        j = sectRegex.indexIn(wholeDocQs,0)
+        while j > -1:
+            # initialize text cursors to record the start and end positions
+            # of each section. Note, cursors point between characters:
+            #          sectcA----v
+            #          sectcI----v         sectcB---v
+            # ... \2029 / F \2029 ..whatever.. \2029 F / \2029
+            # Notes are inserted at sectcI which is moved ahead each time. Qt
+            # takes care of updating sectcB and other cursors on inserts.
+            # The line number of sectcA is that of the first line after /F,
+            # and that of sectcB is that of the F/ for comparison.
+            sectcA = QTextCursor(worktc)
+            sectcA.setPosition(j+4)
+            sectcB = QTextCursor(worktc)
+            sectcB.setPosition(j+sectRegex.matchedLength()-3)
+            sectcI = QTextCursor(sectcA)
+            sectList.append( (sectcA,sectcI,sectcB) )
+            j = sectRegex.indexIn(wholeDocQs,j+1)
+        # Let wholeDocQs go out of scope just in case it is an actual copy
+        # of the document. (Should just be a const reference but who knows?)
+        wholeDocQs = QString()
+        # Did we in fact find any footnote sections?
+        if len(sectList) == 0:
+            pqMsgs.warningMsg(u"Found no /F..F/ footnote sections.")
+            return
+        # Since this is a big deal, and /F is easy to mis-code, let's show
+        # the count found and get approval.
+        if not pqMsgs.okCancelMsg(
+            u"Found {0} footnote sections".format(len(sectList)),
+            "OK to proceed with the move?") :
+            return
+        # Right, we're gonna do stuff. If there is significant work to do,
+        # start the progress bar.
+        if dbcount >= self.enoughForABar : 
+            pqMsgs.startBar(dbcount,"Moving Notes to /F..F/ sections")
+        # Tell the table model that things are gonna change
+        self.docWillChange()
+        # Start an undo macro on the working cursor.
+        worktc = QTextCursor(IMC.editWidget.textCursor())
+        worktc.beginEditBlock()
+        # loop over all notes.
+        for i in range(dbcount):
+            notetc = TheFootnoteList[i]['N']
+            nln = noteLineNumber(notetc)
+            # Look for the first section whose last line is below nln
+            for s in range(len(sectList)):
+                (sectcA,sectcI,sectcB) = sectList[s]
+                if nln >= refLineNumber(sectcB):
+                    # this note starts below this section
+                    continue
+                # this note starts above the end of this section,
+                if nln >= refLineNumber(sectcA):
+                    # this note is inside this section already
+                    break
+                # this note is above and not within the current section,
+                # so do the move. Start saving the length of the note as
+                # currently known.
+                notelen = notetc.position() - notetc.anchor()
+                # Extend the note selection over the \2029 after the right bracket.
+                notetc.movePosition(QTextCursor.Right,1,QTextCursor.KeepAnchor)
+                # point our worktc at the insertion point in this section
+                worktc.setPosition(sectcI.position())
+                # copy the note text inserting it in the section
+                worktc.insertText(notetc.selectedText())
+                # save the ending position as the new position of sectcI -- the
+                # next inserted note goes there
+                sectcI.setPosition(worktc.position())
+                # clear the old note text. Have to do this using worktc for
+                # the undo-redo macro to record it. When the text is removed,
+                # Qt adjusts all cursors that point below it, including sectcI.
+                worktc.setPosition(notetc.anchor())
+                worktc.setPosition(notetc.position(),QTextCursor.KeepAnchor)
+                worktc.removeSelectedText()
+                # reset notetc to point to the new note location
+                notepos = sectcI.position()-notelen-1
+                notetc.setPosition(notepos)
+                notetc.setPosition(notepos+notelen,QTextCursor.KeepAnchor)
+                break # all done scanning sectList for this note
+                # end of "for s in range(len(sectList))"
+            if dbcount >= self.enoughForABar and 0 == (i & 3) :
+                pqMsgs.rollBar(dbcount - i)
+            # end of "for i in range(dbcount)"
+        # Clean up:
+        worktc.endEditBlock()  # End the undo macro
+        self.docHasChanged()   # tell the table the data has stabilized
+        if dbcount > self.enoughForABar :
+            pqMsgs.endBar()    # clear the progress bar
 
-    # The slot for the HTML button
-    def htmClick(self):
-        pass
-   
+
+    # The slot for the HTML button. Make sure the db is clean and there is work
+    # to do. Then go through each item and update as follows:
+    # Around the reference put:
+    # <a id='FA_key' name='FA_key' href='#FN_key' class='fnanchor'>[key]</a>
+    # Replace "[Footnote key:" with
+    # <div class='footnote' id='FN_key' name='FN_key'>\n\n
+    # <span class="fnlabel"><a href='FA_key'>[key]</a></span> text..
+    # Replace the final ] with \n\n</div>
+    # The idea is that the HTML conversion in pqFlow will see the  \n\n
+    # and insert <p> and </p> as usual.
+    # We work the list from the bottom up because of nested references.
+    # Going top-down, we would rewrite a Note containing a Reference, and
+    # that unavoidably messes up the reftc pointing to the nested reference.
+    # Going bottom-up, we rewrite the nested Reference before the Note that
+    # contains it is rewritten.
+    
+    def doHTML(self):
+        global TheFootnoteList
+        if not self.canWeRevise(u"Convert Footnotes to HTML") :
+            return
+        # If the database is actually empty, just do nothing.
+        dbcount = len(TheFootnoteList)
+        if dbcount < 1 : return
+        # Just in case the user had a spastic twitch and clicked in error,
+        if not pqMsgs.okCancelMsg(
+            "Going to convert {0} footnotes to HTML".format(dbcount),
+            "(Symbol class keys will be skipped)"):
+            return
+        # Set up a boilerplate string for the Reference replacements.
+        # We'll use QString.replace to install the key over $#$
+        keyPattern = QString(u"$#$")
+        refPattern = QString(u"<a id='FA_$#$' name='FA_$#$' href='#FN_$#$' class='fnanchor'>[$#$]</a>")
+        # Set up a regex pattern to recognize [Footnote key:, being forgiving
+        # about extra spaces and absorbing spaces after the colon.
+        fntPattern = QString(u"\[Footnote\s+$#$\s*:\s*")
+        fntRE = QRegExp()
+        # Set up a replacement boilerplate for [Footnote key:
+        fntRep = QString(u"<div class='footnote' id='FN_$#$' name='FN_$#$'>\u2029\u2029<span class='fnlabel'><a href='FA_$#$>[$#$]</a></span>")
+        # Make a working textcursor, start the undo macro, advise the table
+        worktc = QTextCursor(IMC.editWidget.textCursor())
+        worktc.beginEditBlock()
+        self.docWillChange()
+        if dbcount >= self.enoughForABar : 
+            pqMsgs.startBar(dbcount,"Converting notes to HTML...")
+        for i in reversed(range(dbcount)):
+            item = TheFootnoteList[i]
+            # Don't even try to convert symbol-class keys
+            if item['C'] == KeyClass_sym :
+                continue
+            keyqs = item['K']
+            reftc = item['R']
+            # note the start position of the anchor, less 1 to include the [
+            refstart = reftc.anchor() - 1
+            # note the end position, plus 1 for the ]
+            refend = reftc.position()+1
+            # Copy the ref boilerplate and install the key in it
+            refqs = QString(refPattern).replace(keyPattern,keyqs,Qt.CaseSensitive)
+            dbg = unicode(refqs)
+            # Replace the reference text, using the work cursor.
+            worktc.setPosition(refstart)
+            worktc.setPosition(refend,QTextCursor.KeepAnchor)
+            worktc.insertText(refqs)
+            # That also repositioned reftc to the end of the string, bring
+            # it back to the beginning again, but now with no selection.
+            reftc.setPosition(refstart)
+            # Note the start position of the note
+            notetc = item['N']
+            notestart = notetc.anchor()
+            # Note its end position, which includes the closing ]
+            noteend = notetc.position()
+            # Copy the note boilerplates and install the key in them.
+            notepat = QString(fntPattern).replace(keyPattern,keyqs,Qt.CaseSensitive)
+            dbg = unicode(notepat)
+            noteqs = QString(fntRep).replace(keyPattern,keyqs,Qt.CaseSensitive)
+            dbg = unicode(noteqs)
+            # Point the work cursor at the note.
+            worktc.setPosition(notestart)
+            worktc.setPosition(noteend,QTextCursor.KeepAnchor)
+            # get the note as a string, truncate the closing ] and put it back.
+            oldnote = worktc.selectedText()
+            oldnote.chop(1)
+            oldnote.append(QString(u"\u2029\u2029</div>"))
+            dbg = unicode(oldnote)
+            worktc.insertText(oldnote) # worktc now positioned after note
+            # use the note string to recognize the length of [Footnote key:sp
+            fntRE.setPattern(notepat)
+            dbg = fntRE.isValid()
+            dbg = unicode(fntRE.pattern())
+            j = fntRE.indexIn(oldnote) # assert j==0
+            j = fntRE.cap(0).size() # size of the target portion
+            # set the work cursor to select just that, and replace it.
+            worktc.setPosition(notestart)
+            worktc.setPosition(notestart+j,QTextCursor.KeepAnchor)
+            worktc.insertText(noteqs)
+            # reset notetc to the start of the note, but with no selection
+            notetc.setPosition(notestart)
+            
+            if dbcount >= self.enoughForABar and 0 == (i & 3):
+                pqMsgs.rollBar(dbcount - i)
+            # end of "for i in range(dbcount)"
+        # Clean up:
+        worktc.endEditBlock()  # End the undo macro
+        self.docHasChanged()   # tell the table the data has stabilized
+        if dbcount > self.enoughForABar :
+            pqMsgs.endBar()    # clear the progress bar
+        
+ 
+    # The slot for the ASCII button. Make sure the db is clean and there is work
+    # to do. Then go through each item and note the longest string for each
+    # footnote class. Leaving Refs along, update all Notes as follows:
+    # Replace "[Footnote key:" with
+    # /Q F:2 L:max+5 R:2\n  [key]
+    # where max is the width of the widest key of this class, and 5 allows for
+    # a two-space indent plus the [] and a space.
+    # Replace the final ] with \nQ/\n
+    # The idea is to change a footnote into a block quote with exdented [key]
+    
+    def doASCII(self):
+        global TheFootnoteList
+        if not self.canWeRevise(u"Convert Footnotes to /Q..Q/") :
+            return
+        # If the database is actually empty, just do nothing.
+        dbcount = len(TheFootnoteList)
+        if dbcount < 1 : return
+        # Just in case the user had a spastic twitch and clicked in error,
+        if not pqMsgs.okCancelMsg(
+            "Going to convert {0} footnotes to /Q..Q/".format(dbcount),
+            ""):
+            return
+        # Find the widest key string for each class.
+        maxwids = [0,0,0,0,0,0]
+        for item in TheFootnoteList:
+            maxwids[item['C']] = max(maxwids[item['C']],item['K'].size())
+        # Set up a boilerplate string for the replacements.
+        keyPattern = QString(u"$#$")
+        # Set up a regex pattern to recognize [Footnote key:, being forgiving
+        # about extra spaces and absorbing spaces after the colon.
+        fntPattern = QString(u"\[Footnote\s+$#$\s*:\s*")
+        fntRE = QRegExp()
+        # Set up a replacement boilerplate for [Footnote key:
+        fntRep = QString(u"/Q F:2 L:### R:2\u2029  [$#$] ")
+        # Make a working textcursor, start the undo macro, advise the table
+        worktc = QTextCursor(IMC.editWidget.textCursor())
+        worktc.beginEditBlock()
+        self.docWillChange()
+        if dbcount >= self.enoughForABar : 
+            pqMsgs.startBar(dbcount,"Converting notes to ASCII...")
+        for i in range(dbcount):
+            item = TheFootnoteList[i]
+            keyqs = item['K']
+            # Note the start position of the note
+            notetc = item['N']
+            notestart = notetc.anchor()
+            # Note its end position, which includes the closing ]
+            noteend = notetc.position()
+            # Copy the note boilerplates and install the key in them.
+            notepat = QString(fntPattern).replace(keyPattern,keyqs,Qt.CaseSensitive)
+            dbg = unicode(notepat)
+            noteqs = QString(fntRep)
+            noteqs.replace(keyPattern,keyqs,Qt.CaseSensitive)
+            noteqs.replace(QString(u'###'),QString(unicode(5+maxwids[item['C']])))
+            dbg = unicode(noteqs)
+            # Point the work cursor at the note.
+            worktc.setPosition(notestart)
+            worktc.setPosition(noteend,QTextCursor.KeepAnchor)
+            # get the note as a string, truncate the closing ], add the 
+            # newline Q/, and put it back.
+            oldnote = worktc.selectedText()
+            oldnote.chop(1)
+            oldnote.append(QString(u'\u2029Q/\u2029'))
+            dbg = unicode(oldnote)
+            worktc.insertText(oldnote) # worktc now positioned after note
+            # use the note string to recognize the length of [Footnote key:sp
+            fntRE.setPattern(notepat)
+            dbg = fntRE.isValid()
+            dbg = unicode(fntRE.pattern())
+            j = fntRE.indexIn(oldnote) # assert j==0
+            j = fntRE.cap(0).size() # size of the target portion
+            # set the work cursor to select just that, and replace it.
+            worktc.setPosition(notestart)
+            worktc.setPosition(notestart+j,QTextCursor.KeepAnchor)
+            worktc.insertText(noteqs)
+            # reset notetc to the start of the note, but with no selection
+            notetc.setPosition(notestart)
+            
+            if dbcount >= self.enoughForABar and 0 == (i & 3):
+                pqMsgs.rollBar(dbcount - i)
+            # end of "for i in range(dbcount)"
+        # Clean up:
+        worktc.endEditBlock()  # End the undo macro
+        self.docHasChanged()   # tell the table the data has stabilized
+        if dbcount > self.enoughForABar :
+            pqMsgs.endBar()    # clear the progress bar
+       
+        
 if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt,QFile,QIODevice,QTextStream,QSettings)
@@ -788,18 +1235,27 @@ if __name__ == "__main__":
     utqs = QString('''
 This is text[A] with footnotes[2].
 This is another[DCCCCLXXXXVIII] reference.
-This is another[q] reference and[x] another.
+This is another[q] reference.
+/F
+F/
 A lame symbol[\u00a7] reference.
-Ref to unmatched key[yy]
+Ref to unmatched key[]
+/F
+this gets no notes
+F/
 [Footnote A: footnote A which
 extends onto 
 three lines]
-[Footnote zz: orphan note]
+[Footnot zz: orphan note]
 [Footnote 2: footnote 2 which has[A] a nested note]
 [Footnote A: nested ref in note 2]
 [Footnote DCCCCLXXXXVIII: footnote DCCCCLXXXXVIII]
 [Footnote q: footnote q]
 [Footnote \u00a7: footnote symbol]
+
+/F
+F/
+
     ''')
     IMC.editWidget.setPlainText(utqs)
     IMC.mainWindow = MW

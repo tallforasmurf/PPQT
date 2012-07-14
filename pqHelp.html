@@ -445,6 +445,7 @@ as to center on the 75-char line, with at least a 2-space indent.</td></tr>
 <tr><td><b>/T..T/</b><br /><b>/TM../T</b></td>
 <td>Table formatting, see discussion below</td>
 <tr><td><b>/X..X/</b></td><td>Left entirely alone.</td></tr>
+<tr><td><b>/F..F/</b></td><td>Left entirely alone.</td></tr>
 </table>
 <h3>ASCII Reflow</h3>
 <p>Select a portion of text and click Reflow Now: Selection, or 
@@ -593,11 +594,14 @@ for the different markup types.</p>
 <tr><td><b>/R</b></td><td><tt>&lt;div class="ralign"></tt></tr>
 <tr><td>text in /R..R/</td><td><tt>&lt;p></tt><i>each line of text</i><tt>&lt;/p></tt></td></tr>
 <tr><td><b>R/</b></td><td><tt>&lt;/div></tt></tr>
-<tr><td><b>/P</b></td><td>&lt;div class="poetry">&lt;div class="stanza"></td></tr>
-<tr><td>blank lines in /P..P/</td><td>&lt;/div>&lt;div class="stanza"></td></tr>
-<tr><td>text lines in /P..P/</td><td>&lt;span class="i<i>nn</i>"><i>text of line</i>&lt;/span>&lt;br /></td></tr>
-<tr><td>poem line #s</td><td>&lt;span class='linenum'><i>nbr</i>&lt;/span></td></tr>
-<tr><td><b>P/</b></td><td>&lt;/div>&lt;/div></td></tr>
+<tr><td><b>/P</b></td><td><tt>&lt;div class="poetry">&lt;div class="stanza"></tt></td></tr>
+<tr><td>blank lines in /P..P/</td><td><tt>&lt;/div>&lt;div class="stanza"></tt></td></tr>
+<tr><td>text lines in /P..P/</td><td><tt>&lt;span class="i<i>nn</i>"></tt><i>text of line</i><tt>&lt;/span>&lt;br&nbsp;/></tt></td></tr>
+<tr><td>poem line #s</td><td><tt>&lt;span class='linenum'></tt><i>nbr</i><tt>&lt;/span></tt></td></tr>
+<tr><td><b>P/</b></td><td><tt>&lt;/div>&lt;/div></tt></td></tr>
+<tr><td><b>/F</b></td><td><tt>&lt;/div class='footnotes'></tt></td></tr>
+<tr><td>text lines in /F..F/</td><td>not touched</td></tr>
+<tr><td><b>F/</b></td><td><tt>&lt;/div></tt></tr>
 <tr><td><b>/X</b>, <b>/C</b>, <b>/*</b></td><td><tt>&lt;pre></tt></td></tr>
 <tr><td>text in these</td><td>not touched</td></tr>
 <tr><td><b>X/</b>, <b>C/</b>, <b>*/</b></td><td><tt>&lt;/pre></tt></td></tr>
@@ -628,6 +632,81 @@ the browser follows the link and displays the linked page or image.
 To return to the book preview, key ctl-B or ctl-[ (control-left bracket).</p>
 <p>Key ctl-F in the Preview panel to open a simple Find dialog. Key ctl-G to search again for the found text.</p>
 <h2 id='Foot'>The Footnote Panel</h2>
-<p>TBS Mucho! Controls for validating and formatting footnotes.</p>
+<p>Click the Fnote tab to display the Footnote management panel.</p>
+<h3>Definitions</h3>
+<p>The following terms are important. A <i>Note</i> is a section of text that begins with <tt>[Footnote</tt> and ends with a right-bracket, for example,</p>
+<pre>[Footnote <b>z</b>: ... some text possibly mutiple lines,
+ending with -- ]</pre>
+<p>A Note is only recognized when  <tt>[Footnote</tt> begins in column zero  and the final right-bracket is the last character on its line. (Additional square brackets within a Note are not a problem so long as they don't come at the end of a line.)</p>
+<p>An <i>Anchor</i> is a reference to a Note enclosed in brackets thus<tt>[<b>z</b>]</tt>. An Anchor is never found in column zero, although
+it may come at the end of a line.</p>
+<p>A <i>Key</i> is the bit of text that relates an Anchor to its Note, <tt><b>z</b></tt> in these examples. A key falls into one of several <i>Classes</i>:</p>
+<ul>
+<li>The letters <tt>IVXLCD</tt> are in the Upper Roman class</li>
+<li>The letters <tt>ABCDEFGHIJKLMNOPQRSTUVWXYZ</tt> are Upper Alpha Class</li>
+<li>The letters <tt>ivxlcd</tt> are Lower Roman class</li>
+<li>The letters <tt>abcdefghijklmnopqrstuvwxyz</tt> are Lower Alpha Class</li>
+<li>The digits <tt>0123456789</tt> are Decimal Class</li>
+<li>The six symbols <tt>*&curren;&sect;&para;&dagger;&Dagger;</tt> (asterisk, currency, section, paragraph, dagger and double-dagger) are Symbol Class</li>
+</ul>
+<p>Only the Latin alphabet, digits, and the symbols shown are recognized as Key values. (Most PGDP books are proofed using only the letters A, B and occasionally C; some scholarly books might have lowercase roman keys or decimal keys as well.)</p>
+<p>The alphabetic classes are ambiguous; that is, a letter Key might be either
+an alpha or a roman, depending on how you want your book to work. This is
+resolved when renumbering, see below.</p>
+<h3>The Footnote Table</h3>
+<p>When you click the Refresh button at the top of the panel, PPQT scans the document for Anchors and Notes. It matches the anchors and notes and displays the result in the table. The columns of the table are:</p>
+<ul>
+<li>Key: the letters or numbers of the key.</li>
+<li>Class: the Key Class PPQT has assigned based on the Key.</li>
+<li>Ref Line: the line number where the Anchor was seen.</li>
+<li>Note Line: the first line number of the Note.</li>
+<li>Length: the number of lines in the Note.</li>
+<li>Text: the first few characters of the Note text.</li>
+</ul>
+<p>When PPQT finds an Anchor but cannot match it to a Note, the Note Line column has a question mark. When it found a Note but no Anchor refers to it, the Ref Line column has a question mark. In these unmatched cases, the row of the table is pink to show there is a problem. You must resolve these problems before the action buttons at the bottom of the panel will work.</p>
+<p>When a Note has more than 10 text lines, or an Anchor is more than 50 lines from its Note, the table row is pale green to suggest a possible problem. You should check these cases to make sure PPQT has recognized the Note properly and matched it to the correct Anchor.</p>
+<p>When you click on a Ref Line cell, the document jumps to the line with that Anchor, with the Key selected. Click on a Note Line cell; the document jumps to that Note with the Note selected. Click repeatedly on a Key cell and the document jumps back and forth between the Anchor and the Note.</p>
+<p>A Note may contain other types of markup, for example quotes, poems or tables. A Note may also contain an Anchor to another Note (that is, a footnote to the footnote), but the Note bodies cannot be nested. The referenced Note to the Note must be outside the referring Note, perhaps immediately after it.</p>
+<p>Anchors may appear in tables, quotes, and poetry. However, a Note should not be coded inside /Q or /T or any other markup section that gets indented, because after reflow the <tt>[Footnote</tt> will no longer be at the left margin, and the note won't be recognized. Place Notes after the end of the markup containing their Anchors.</p>
+<h3>Renumbering</h3>
+<p>When you click the Renumber button, provided there are no pink lines in the table, PPQT sweeps through all the Keys in the document and renumbers them sequentially according to their Class. PPQT has five counters that are set to zero when you click Renumber, and that are increased by 1 each time they are used. The number streams are:</p>
+<ul>
+<li><b>1,2,..999</b> produces a series of decimal numbers.</li>
+<li><b>A,B,..ZZ</b> produces a series of uppercase letters.</li>
+<li><b>a,b,..zz</b> produces a series of lowercase letters.</li>
+<li><b>I,II,..M</b> produces a series of uppercase Roman numerals.</li>
+<li><b>i,ii,..m</b> produces a series of lowercase Roman numerals.</li>
+</ul>
+<p>Below the table are six popup menus that let you specify how the Keys of each Class are to be renumbered. If the book has only uppercase alpha keys (the usual situation) then set Classes ABC and IVX both to use the A,B..ZZ stream.
+However, if the book has a separate set of lowercase Roman keys, set that Class
+to use the i,ii,..m stream. You could also use renumbering to change the Class of keys in use. If the book has only uppercase alpha, you could set that Class to use the 1,2,..999 stream; after renumbering, those keys will be Decimal class.</p>
+<p>Renumbering is a single-undo operation. After renumbering, examine the results; if they are not satisfactory, click in the text and key ctl-z.</p>
+<h3>Footnote Sections and Moving Footnotes</h3>
+<p>Proofers leave Notes on the page where they appear. You move them to follow the paragraph that references them. However for some books you want to move all Notes to a special section at the end of each chapter, or at the end of the book.</p>
+<p>To do this, you must edit the book to show where the footnotes are to go using the markup codes <tt>/F</tt> and <tt>F/</tt>. For example, a section of notes at the end of a chapter might be coded:</p>
+<pre>...last line of chapter text.
+
+
+NOTES
+
+
+/F
+F/</pre><p>Here, NOTES represents a subhead, so it is preceded and followed by two blank lines. The <tt>/F..F/</tt> markup codes tell where the Notes from the preceding chapter should move. Alternatively you might have a FOOTNOTES chapter (preceded by four blank lines) at the end of the book text.</p>
+<p>When you click the Move Notes button, PPQT scans the document and locates all the <tt>/F..F/</tt> sections you have coded. (If it cannot find any, it displays an error.) Then it goes through the footnote table and finds any Notes that are not already enclosed in a <tt>/F..F/</tt> section. It moves these into the Footnote section next below them in the document. (If there is no section below  a Note, it is not moved.)</p>
+<p>Moving notes is a single-undo operation. Inspect the result and use ctl-z if it is not satisfactory.</p>
+<h3>ASCII Conversion</h3>
+<p>Click ASCII Cvt in the Footnote Panel to convert all Notes to block-quote /Q..Q/ markup. Each note is changed from:<pre>
+[Footnote key: Text of the note... ]</pre> into:<pre>/Q F:2 L:<i>w</i> R:2
+  [key] Text of the note...
+Q/</pre>The left-indent <i>w</i> is based on the widest key of that key class.
+</p>
+<p>Do this as the very last footnote operation in the plain text fork of the book. Afterward, the Footnote Panel is of no use because the Notes can no
+longer be recognized.</p>
+<p>In the <a href='#Flow'>Reflow Panel</a> ASCII reflow, the markup tags the remaining markup is resolved.</p>
+  
+<h3>HTML Conversion</h3>
+<p>HTML conversion of footnotes is divided between the Footnote Panel and the Reflow Panel.</p>
+<p>Click HTML Cvt in the Footnote Panel to convert all Anchors and Notes to HTML. This is a single-undo operation. Do this as the very last footnote operation in the HTML fork of the book. Afterward, the Footnote Panel is of no use, because the Notes can no longer be recognized.</p>
+<p>In the <a href='#Flow'>Reflow Panel</a> HTML conversion, the markup tags <tt>/F..F/</tt> are converted in HTML <tt>&lt;div></tt> markup.</p>
 </body>
 </html>

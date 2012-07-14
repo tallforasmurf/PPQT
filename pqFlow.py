@@ -391,6 +391,7 @@ class flowPanel(QWidget):
     # 'M' : the type of markup starting, in effect, or ending:
     #    ' ' no active markup, open text
     #    'Q' block quote
+    #    'F' like Q but zero indents
     #    'P' poetry
     #    '*' no-reflow but indent as per UI
     #    'C' no-reflow but center as per UI
@@ -467,7 +468,7 @@ class flowPanel(QWidget):
 		pqMsgs.rollBar(endBlockNumber - blockNumberA)
 	    # is this a reflow block or not?
 	    if markupCode == u'X' or markupCode == u'T':
-		# line of /X which we skip, or /T which we defer
+		# line of /X or /F which we skip, or /T which we defer
 		continue # don't touch it
 	    if (markupCode == u'*') or (markupCode == u'C') or (markupCode == u'R') :
 		# non-reflow block; adjust leading spaces. F is how many
@@ -583,7 +584,7 @@ class flowPanel(QWidget):
 	PSW = { 'S': True, 'Z':None, 'M':' ', 'P':True, 'F':0, 'L':0, 'R':0, 'W':75, 'B':0}
 	stack = []
 	# We recognize the start of markup with this RE    
-	markupRE = QRegExp(u'^/(P|Q|\\*|C|X|U|R|T)')
+	markupRE = QRegExp(u'^/(P|Q|\\*|C|X|F|U|R|T)')
 	# We recognize a poem line number with this RE: at least 2 spaces,
 	# then decimal digits followed by the end of the line. Note: because
 	# we apply to a line as qstring we can use the $ for end of line
@@ -627,6 +628,12 @@ class flowPanel(QWidget):
 			    PSW['P'] = True # collect paragraphs
 			    self.getIndents(qs,PSW,self.bqIndent[0].value(),
 			    self.bqIndent[1].value(), self.bqIndent[2].value() )
+			    # don't care about W
+			elif PSW['M'] == u'F' : # footnote section
+			    PSW['P'] = True # collect paragraphs
+			    PSW['F'] = 0 # with 0 margins
+			    PSW['L'] = 0
+			    PSW['R'] = 0
 			    # don't care about W
 			elif PSW['M'] == u'P' and (not self.skipPoCheck.isChecked()) :
 			    # Enter a poetry section
@@ -814,6 +821,8 @@ class flowPanel(QWidget):
     #  /P   -->   <div class='poetry'><div class='stanza'>
     #  T/   -->   </table>
     #  /T[M] -->  <table>
+    #  /F  -->  <div class='footnotes'>
+    #  F/  -->  </div>
     #  */, X/, C/  --> </pre>
     #  /*, /X, /C  --> <pre>
     # <tb> --> <hr /> (no classname, so set your CSS for this as default case)
@@ -865,6 +874,8 @@ class flowPanel(QWidget):
 	markupCode = u' ' # state: open text; no markup active
 	markStack = []
 	qtb = QString(u'<tb>')
+	qdiva = QString(u'<div')
+	qdivz = QString(u'</div')
 	# process units from last to first
 	for u in reversed(range(len(unitList))):
 	    unit = unitList[u]
@@ -921,8 +932,11 @@ class flowPanel(QWidget):
 			                           )
 			    tc.insertText(bookendLA)
 		    bA = QString(bA)
-		    # Minimal check for user error of re-marking
-		    if not unitBlockA.text().startsWith(bA):
+		    # Minimal check for user error of re-marking, and 
+		    # over-marking divs (spans are ok)
+		    if not unitBlockA.text().startsWith(bA) \
+		    and not unitBlockA.text().startsWith(qdiva) \
+		    and not unitBlockA.text().startsWith(qdivz) :
 			bA.append(IMC.QtLineDelim)
 			bZ = QString(bZ)
 			bZ.append(IMC.QtLineDelim)
@@ -1039,6 +1053,7 @@ bookendA = {
             'P':u'<span class="i{0:02d}">', # indent filled in
             'U':u'<li>',
             'T':None,
+            'F':u'<p>',
             'X':None,
             'C':None,
             '*':None,
@@ -1052,6 +1067,7 @@ bookendZ = {
             'P':u'</span><br />',
             'U':u'</li>',
             'T':None,
+            'F':u'</p>',
             'X':None,
             'C':None,
             '*':None,
@@ -1069,6 +1085,7 @@ markupA = {
             'P':u'<div class="poetry"><div class="stanza">',
             'U':u'<ul>',
             'T':u'<table>',
+            'F':u"<div class='footnotes'>",
             'X':u'<pre>',
             'C':u'<pre>',
             '*':u'<pre>'
@@ -1080,6 +1097,7 @@ markupZ = {
             'P':u'</div></div>',
             'U':u'</ul>',
             'T':u'</table>',
+            'F':u'</div>',
             'X':u'</pre>',
             'C':u'</pre>',
             '*':u'</pre>'
@@ -1107,6 +1125,13 @@ if __name__ == "__main__":
     pqMsgs.makeBarIn(MW.statusBar())
     MW.show()
     utqs = QString('''
+/U
+Edit Flow to skip /F..F/ in ascii reflow
+
+Edit Flow to handle /F..F/ in html convert
+
+U/
+
 This lengthy quote is the unit-test document. It contains representative
 samples of all the reflow markup types. This is a sample of an open paragraph
 to be reflowed.
