@@ -550,7 +550,6 @@ class flowPanel(QWidget):
 		        u'Near line {0}'.format(blockNumberA)  )
 		    available = 1 # so push it past the limit by 1
 		insertPoint = currentLength - unit['K'].size() - 1
-		dbg = unicode(flowText)
 		flowText.insert(insertPoint,b' '*available)
 		
 	    # replace the old text with reflowed text
@@ -783,7 +782,6 @@ class flowPanel(QWidget):
     # the UI, but for some markup types, defined literals), or from the optional
     # F:n L:n R:n syntax after the markup.
     def getIndents(self, qs, PSW, dfltF, dfltL, dfltR):
-	dbg = unicode(qs)
 	F_RE = QRegExp(u' F\\w*:(\\d+)')
 	L_RE = QRegExp(u' L\\w*:(\\d+)')
 	R_RE = QRegExp(u' R\\w*:(\\d+)')

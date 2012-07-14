@@ -1076,7 +1076,6 @@ class fnotePanel(QWidget):
             refend = reftc.position()+1
             # Copy the ref boilerplate and install the key in it
             refqs = QString(refPattern).replace(keyPattern,keyqs,Qt.CaseSensitive)
-            dbg = unicode(refqs)
             # Replace the reference text, using the work cursor.
             worktc.setPosition(refstart)
             worktc.setPosition(refend,QTextCursor.KeepAnchor)
@@ -1091,9 +1090,7 @@ class fnotePanel(QWidget):
             noteend = notetc.position()
             # Copy the note boilerplates and install the key in them.
             notepat = QString(fntPattern).replace(keyPattern,keyqs,Qt.CaseSensitive)
-            dbg = unicode(notepat)
             noteqs = QString(fntRep).replace(keyPattern,keyqs,Qt.CaseSensitive)
-            dbg = unicode(noteqs)
             # Point the work cursor at the note.
             worktc.setPosition(notestart)
             worktc.setPosition(noteend,QTextCursor.KeepAnchor)
@@ -1101,12 +1098,9 @@ class fnotePanel(QWidget):
             oldnote = worktc.selectedText()
             oldnote.chop(1)
             oldnote.append(QString(u"\u2029\u2029</div>"))
-            dbg = unicode(oldnote)
             worktc.insertText(oldnote) # worktc now positioned after note
             # use the note string to recognize the length of [Footnote key:sp
             fntRE.setPattern(notepat)
-            dbg = fntRE.isValid()
-            dbg = unicode(fntRE.pattern())
             j = fntRE.indexIn(oldnote) # assert j==0
             j = fntRE.cap(0).size() # size of the target portion
             # set the work cursor to select just that, and replace it.
@@ -1176,11 +1170,9 @@ class fnotePanel(QWidget):
             noteend = notetc.position()
             # Copy the note boilerplates and install the key in them.
             notepat = QString(fntPattern).replace(keyPattern,keyqs,Qt.CaseSensitive)
-            dbg = unicode(notepat)
             noteqs = QString(fntRep)
             noteqs.replace(keyPattern,keyqs,Qt.CaseSensitive)
             noteqs.replace(QString(u'###'),QString(unicode(5+maxwids[item['C']])))
-            dbg = unicode(noteqs)
             # Point the work cursor at the note.
             worktc.setPosition(notestart)
             worktc.setPosition(noteend,QTextCursor.KeepAnchor)
@@ -1189,12 +1181,9 @@ class fnotePanel(QWidget):
             oldnote = worktc.selectedText()
             oldnote.chop(1)
             oldnote.append(QString(u'\u2029Q/\u2029'))
-            dbg = unicode(oldnote)
             worktc.insertText(oldnote) # worktc now positioned after note
             # use the note string to recognize the length of [Footnote key:sp
             fntRE.setPattern(notepat)
-            dbg = fntRE.isValid()
-            dbg = unicode(fntRE.pattern())
             j = fntRE.indexIn(oldnote) # assert j==0
             j = fntRE.cap(0).size() # size of the target portion
             # set the work cursor to select just that, and replace it.
