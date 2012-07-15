@@ -895,8 +895,8 @@ class fnotePanel(QWidget):
                 item['K'] = newkeyqs
                 item['C'] = newclass
                 # end of "newkeyqs is not None"
-            if dbcount >= self.enoughForABar and 0 == (i & 3):
-                pqMsgs.rollBar(dbcount - i)
+            if dbcount >= self.enoughForABar and 0 == (i & 7):
+                pqMsgs.rollBar(i)
             # end of "for i in range(dbcount)"
         # Clean up:
         worktc.endEditBlock()  # End the undo macro
@@ -1009,8 +1009,8 @@ class fnotePanel(QWidget):
                 notetc.setPosition(notepos+notelen,QTextCursor.KeepAnchor)
                 break # all done scanning sectList for this note
                 # end of "for s in range(len(sectList))"
-            if dbcount >= self.enoughForABar and 0 == (i & 3) :
-                pqMsgs.rollBar(dbcount - i)
+            if dbcount >= self.enoughForABar and 0 == (i & 7) :
+                pqMsgs.rollBar(i)
             # end of "for i in range(dbcount)"
         # Clean up:
         worktc.endEditBlock()  # End the undo macro
@@ -1110,7 +1110,7 @@ class fnotePanel(QWidget):
             # reset notetc to the start of the note, but with no selection
             notetc.setPosition(notestart)
             
-            if dbcount >= self.enoughForABar and 0 == (i & 3):
+            if dbcount >= self.enoughForABar and 0 == (i & 7):
                 pqMsgs.rollBar(dbcount - i)
             # end of "for i in range(dbcount)"
         # Clean up:
@@ -1193,8 +1193,8 @@ class fnotePanel(QWidget):
             # reset notetc to the start of the note, but with no selection
             notetc.setPosition(notestart)
             
-            if dbcount >= self.enoughForABar and 0 == (i & 3):
-                pqMsgs.rollBar(dbcount - i)
+            if dbcount >= self.enoughForABar and 0 == (i & 7):
+                pqMsgs.rollBar(i)
             # end of "for i in range(dbcount)"
         # Clean up:
         worktc.endEditBlock()  # End the undo macro
