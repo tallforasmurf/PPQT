@@ -157,7 +157,6 @@ class MainWindow(QMainWindow):
         # Create the html Preview Panel - it's simple, needs no signals
         self.pvwPanel = pqView.htmlPreview()
         self.tabSet.addTab(self.pvwPanel, u"P&vw")
-        # Other panels as required here
         # Help panel last:
         self.helpPanel = pqHelp.helpDisplay()
         self.tabSet.addTab(self.helpPanel, u"&Help")
@@ -660,7 +659,7 @@ class MainWindow(QMainWindow):
         willDoIt = (toggle) and (not self.scannoPath.isEmpty())
         self.viewScannosAction.setChecked(willDoIt)
         IMC.scannoHiliteSwitch = willDoIt
-        self.editor.setHighlight(scannoHiliteSwitch or IMC.spellingHiliteSwitch)   
+        self.editor.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)   
     
     def viewSetSpelling(self, toggle):
         willDoIt = (toggle) and (IMC.wordCensus.size()>0)
