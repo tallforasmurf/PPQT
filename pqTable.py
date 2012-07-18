@@ -619,10 +619,11 @@ def tableReflow(tc,doc,unitList):
                 if tprops.isMultiLine():
                     r += 1 # start a new multiline row
                 continue # single or multi, ignore the divider line
-        # line is not all-hyphens (or botchars not spec'd), and not all-blank
-        # because all-blanks are not included as work units, but if unit['B']
-        # is nonzero it was preceded by a blank line.
-        if tprops.isMultiLine() and (unit['B'] > 0):
+        # line is not all-hyphens (or botchars not spec'd) (and not all-blank
+        # because all-blanks are not included as work units), however if
+        # if unit['B'] is nonzero it was preceded by a blank line, and that
+        # indicates a new row in a multiline table -- except the first line!
+        if (unit['B'] > 0) and tprops.isMultiLine() and u != work[0]:
             r += 1 # start a new multiline row
 
         # Bust the line into pieces based on spaces and/or stiles, and
