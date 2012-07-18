@@ -413,14 +413,25 @@ class wordsPanel(QWidget):
 
     # This slot receives a double-click on the table. Figure out which
     # word it is and get the Find panel set up to search for it. Some words
-    # have /dictag, get rid of that before going to the search.
+    # have /dictag, get rid of that before going to the search. qmi is a
+    # table index to the cell receiving the double-click.
     def findThis(self,qmi):
         if qmi.column() != 0 :
+            # the double-click wasn't on column 0, so get an index to column 0
             qmi = qmi.sibling(qmi.row(),0)
+        # get the word text as a qstring
         qs = qmi.data(Qt.DisplayRole).toString()
+        # If it contains a /tag, split that off and keep just the word
         if qs.contains(QChar(u'/')) :
             qs = qs.split(QChar(u'/'))[0]
-        IMC.findPanel.censusFinder(qs)
+        rex = False
+        if qs.contains(QChar(u'-')) :
+            # Replace hyphen with [\-\s]* and do a regex search so that to-day
+            # also matches today.
+            qs.replace(QChar(u'-'),QString(u'[\-\s]*'))
+            rex = True
+        dbg = unicode(qs)
+        IMC.findPanel.censusFinder(qs,None,rex)
 
     # This slot receives a change of the respect case checkbox. Set the
     # case sensitivity of the sort proxy model accordingly.
