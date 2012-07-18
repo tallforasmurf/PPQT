@@ -34,10 +34,11 @@ Implement the Footnote managament panel, whose chief feature is a table
 of footnotes that is re/built with a Refresh button. Important nomenclature:
 A footnote KEY is a symbol that links a REFERENCE to a NOTE.
 A Reference
-* appears in text but never in column 0,
+* appears in text but never in column 0 (never at start of line),
+* never appears inside a word, so [oe] is not an Reference,
 * has a Key in square brackets with no superfluous spaces, e.g. [A] or [2].
 A Note
-* begins on a line following its matching reference
+* begins on a line that follows its matching reference
 * always begins in column 0 with [Footnote k: where k is a Key.
 * always ends with a right square bracket at end of line.
 
@@ -258,7 +259,7 @@ ClassREs = (
 
 # The regex for finding a Ref to any possible Key class.
 # (This is so pythonic I want to choke...)
-RefFinderRE = QRegExp( u'\[(' + u'|'.join(ClassREs) + u')\]' )
+RefFinderRE = QRegExp( u'\[(' + u'|'.join(ClassREs) + u')\](?=\W)' )
 # The similar regex for finding the head of a Note of any Key class.
 NoteFinderRE = QRegExp( u'\[Footnote\s+(' + u'|'.join(ClassREs) + u')\s*\:' )
 
