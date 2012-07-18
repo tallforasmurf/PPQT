@@ -32,36 +32,36 @@ __license__ = '''
 '''
 Implement the Footnote managament panel, whose chief feature is a table
 of footnotes that is re/built with a Refresh button. Important nomenclature:
-A footnote KEY is a symbol that links a REFERENCE to a NOTE.
-A Reference
+A footnote KEY is a symbol that links an ANCHOR to a NOTE.
+An Anchor
 * appears in text but never in column 0 (never at start of line),
-* never appears inside a word, so [oe] is not an Reference,
+* never appears inside a word, so [oe] is not an anchor,
 * has a Key in square brackets with no superfluous spaces, e.g. [A] or [2].
 A Note
-* begins on a line that follows its matching reference
+* begins on a line that follows its matching anchor
 * always begins in column 0 with [Footnote k: where k is a Key.
 * always ends with a right square bracket at end of line.
 
 It is not required that Keys be unique. (It is normal for most Keys in a PG
 text to be proofed as "A" and a few as "B".) However it is expected and required
-that (a) the Reference with Key k precedes the Note with the matching Key k,
-and (b) Notes with the same Key appear in the same sequence as their references.
+that (a) the Anchor with Key k precedes the Note with the matching Key k,
+and (b) Notes with the same Key appear in the same sequence as their anchors.
 
-A Note may contain a Reference, but Notes may NOT be nested. A Note ref'd from
+A Note may contain an Anchor, but Notes may NOT be nested. A Note anchored in
 another Note must be outside the other note. A note may contain square brackets
 so long as the contained brackets do not end a line. This is valid:
 
   Text[A] and more text[A]
   ...
-  [Footnote A: this note has[i] a reference.]
+  [Footnote A: this note has[i] an anchor.]
   [Footnote A: this is the second note A and runs
   to multiple -- [text in brackets but not at end of line] --
   lines]
-  [Footnote i: inner note referenced from A.]
+  [Footnote i: inner note anchored in first note A.]
   
-After a Refresh, the table has these columns:
+The footnote table has these columns:
 
-Key:        The key symbol from a footnote, e.g. A or i or 1.
+Key:        The key text from a footnote, e.g. A or iv or 92.
 
 Class:      The class of the key, one of:
                 ABC     uppercase alpha
@@ -71,9 +71,9 @@ Class:      The class of the key, one of:
                 ivx     lowercase roman numeral
                 *\u00A4\u00A5 symbols
 
-Ref Line:   The text block (line) number containing the key, e.g. [A]
+Ref Line:   The text block (line) number containing the anchor
 
-Note Line:   The text block number of the matching [Footnote A: if found
+Note Line:   The text block number of the matching Note
 
 Length:    The length in lines of the matched Note
 
@@ -90,27 +90,27 @@ The table interacts as follows.
 
 * Clicking Key jumps the edit text to the Ref line, unless it is on the ref
   line in which case it jumps to the Note line, in other words, click/click
-  to cycle between the Ref and the Note.
+  the Key to ping-pong between the Ref and the Note.
 
 * Clicking Ref Line jumps the edit text to that line with the Key
-(not the whole Reference) selected.
+(not the whole Anchor) selected.
 
 * Clicking Note line jumps the edit text to that line with the Note selected.
 
-* Doubleclicking Class gets a popup list of classes (see Pages Folio Action)
-  and the user can select a different class which is noted.
-
 * When a Key or a Note is not matched, its row is pink.
 
+* When the Lines value is >10, or Note Line minus Ref Line is >50, the row 
+is pale green
+
 The actual data behind the table is a Python list of dicts where each dict
-describes one Key and/or Note (both when they match), with these fields:
+describes one Key and/or Note (both, when they match), with these elements:
 
 'K' :  Key symbol as a QString
 'C' :  Key class number
 'R' :  QTextCursor with position/anchor selecting the Key in the Ref, or None
 'N' :  QTextCursor selecting the Note, or None
 
-If a Reference is found, K has the Key and R selects the Key.
+If an Anchor is found, K has the Key and R selects the Key.
 If a Note is found, K has the key and N selects the Note.
 When a Ref and a Note are matched, all fields are set.
 
@@ -120,11 +120,9 @@ is edited, so edits that don't modify Refs or Notes don't need Refresh to keep
 the table current.
 
 When Refresh is clicked, this list of dicts is rebuilt by scanning the whole
-document with regexs to find References and Notes, and matching them.
-The progress bar is used during this process.
-
+document with regexs to find Anchors and Notes, and matching them.
 During Refresh, found Keys are assigned to a number class based on their
-values expressed as regular expressions:
+values, with classes expressed as regular expressions:
     Regex               Assumed class
     [IVXLCDM]{1,15}       IVX
     [A-Z]{1,2}            ABC
@@ -133,25 +131,26 @@ values expressed as regular expressions:
     [a-z]{1,2}            abc
     [*\u00a4\u00a7\u00b6\u2020\u20221] symbols *, para, currency, dagger, dbl-dagger
 
-(Note these are NOT unicode-aware. In Qt5 it may be possible to code a regex
-to detect any Unicode uppercase, and we can revisit allowing e.g. Keys with
-Greek or Cyrillic letters. For now, only latin-1 key values allowed.)
+(Apart from the symbols these tests are not unicode-aware, e.g. the ABC class
+does not encompass uppercase Cyrillic, only the Latin-1 letters. In Qt5 it may
+be possible to code a regex to detect Unicode upper- or lowercase, and we can
+revisit allowing e.g. Keys with Greek letters.)
 
 Other controls supplied at the bottom of the panel are:
 
 Renumber Streams: a box with the six Key classes and for each, a popup
 giving the choice of renumber stream:
 
-  no renumber
   1,2,..999
   A,B,..ZZ
   I,II,..M
   a,b,..zz
   i,ii,..m
+  no renumber
 
 There are five unique number streams, set to 0 at the start of a renumber
 operation and incremented before use, and formatted in one of five ways.
-The initial settings of classes to streams are:
+The initial assignment of classes to streams is:
 
   123 : 1,2,..999
   ABC : A,B,..ZZ
@@ -168,7 +167,7 @@ for roman is initialized to the alpha number stream.
 In other words, the ambiguity is resolved in favor of treating all alphas
 as alphas. If the user actually wants a roman stream, she can e.g. set
 class ivx to use stream i,ii..m. Setting either roman Class to use a
-roman Stream causes the alpha class of that case to be set to no-renumber.
+roman Stream causes the alpha class of that case to change to no-renumber.
 Setting an alpha class to use any stream causes the roman stream of that
 case to also use the same stream. Thus we will not permit a user to try
 to have both an alpha stream AND a roman stream of the same letter case
@@ -269,7 +268,7 @@ NoteFinderRE = QRegExp( u'\[Footnote\s+(' + u'|'.join(ClassREs) + u')\s*\:' )
 # but we take pains herein that .anchor() < .position(), i.e. the cursor is
 # "positioned" at the end of the selection, the anchor at the start.
 
-# Given a QTextCursor that selects a Reference, return its line number.
+# Given a QTextCursor that selects an Anchor, return its line number.
 # (Also used for text cursors that index /F and F/ lines.)
 def refLineNumber(tc):
     if tc is not None:
@@ -306,7 +305,7 @@ def classOfKey(qs):
             return keyclass
     return None
 
-# Given a QTextCursor that selects a Key (as in a Reference)
+# Given a QTextCursor that selects a Key (typically an Anchor)
 # return the class of the Key.
 def classOfRefKey(tc):
     return classOfKey(tc.selectedText())
@@ -354,7 +353,7 @@ def makeDBItem(reftc,notetc):
     return item
 
 # Append a new matched footnote to the end of the database, given the
-# cursors for the reference and the note. It is assumed this is called on
+# cursors for the Anchor and the Note. It is assumed this is called on
 # a top-to-bottom sequential scan so entries will be added in line# sequence.
 
 def addMatchedPair(reftc,notetc):
@@ -391,16 +390,16 @@ def theRealRefresh():
     doc = IMC.editWidget.document() # get handle of document
     # initialize status message and progress bar
     barCount = doc.characterCount()
-    pqMsgs.startBar(barCount * 2,"Scanning for notes and references")
+    pqMsgs.startBar(barCount * 2,"Scanning for notes and anchors")
     barBias = 0 
-    # scan the document from top to bottom finding References and make a
+    # scan the document from top to bottom finding Anchors and make a
     # list of them as textcursors. doc.find(re,pos) returns a textcursor
     # that .isNull on no hit.
     listOrefs = []
     findtc = QTextCursor(doc) # cursor that points to top of document
     findtc = doc.find(RefFinderRE,findtc)
     while not findtc.isNull() : # while we keep finding things
-        # findtc now selects the whole reference [xx] but we want to only
+        # findtc now selects the whole anchor [xx] but we want to only
         # select the key. This means incrementing the anchor and decrementing
         # the position; the means to do this are a bit awkward.
         a = findtc.anchor()+1
@@ -437,7 +436,7 @@ def theRealRefresh():
             listOnotes.append(QTextCursor(findtc))
         findtc = doc.find(NoteFinderRE,findtc) # find next, fail at end of doc
 
-    # Now, listOrefs is all the References and listOnotes is all the Notes,
+    # Now, listOrefs is all the Anchors and listOnotes is all the Notes,
     # both in sequence by document position. Basically, merge these lists.
     # For each Ref in sequence, find the first Note with a matching key at
     # a higher line number. If there is one, add the matched pair to the db,
@@ -492,10 +491,10 @@ class myTableModel(QAbstractTableModel):
         # The values for tool/status tips for data and headers
         self.tipDict = { 0: "Actual key text",
                          1: "Assumed class of key for renumbering",
-                         2: "Line number of the Reference",
-                         3: "First line of the Footnote",
-                         4: "Number of lines in the Footnote",
-                         5: "Initial text of the Footnote" 
+                         2: "Line number of the Anchor",
+                         3: "First line number of the Note",
+                         4: "Number of lines in the Note",
+                         5: "Initial text of the Note" 
                          }
         # The brushes to painting the background of good and questionable rows
         self.whiteBrush = QBrush(QColor(QString('transparent')))
@@ -1022,7 +1021,7 @@ class fnotePanel(QWidget):
 
     # The slot for the HTML button. Make sure the db is clean and there is work
     # to do. Then go through each item and update as follows:
-    # Around the reference put:
+    # Around the anchor put:
     # <a id='FA_key' name='FA_key' href='#FN_key' class='fnanchor'>[key]</a>
     # Replace "[Footnote key:" with
     # <div class='footnote' id='FN_key' name='FN_key'>\n\n
@@ -1031,10 +1030,10 @@ class fnotePanel(QWidget):
     # The idea is that the HTML conversion in pqFlow will see the  \n\n
     # and insert <p> and </p> as usual.
     # We work the list from the bottom up because of nested references.
-    # Going top-down, we would rewrite a Note containing a Reference, and
-    # that unavoidably messes up the reftc pointing to the nested reference.
-    # Going bottom-up, we rewrite the nested Reference before the Note that
-    # contains it is rewritten.
+    # Going top-down, we would rewrite a Note containing an Anchor, and
+    # that unavoidably messes up the reftc pointing to that Anchor.
+    # Going bottom-up, we rewrite the nested Anchor before we rewrite the
+    # Note that contains it.
     
     def doHTML(self):
         global TheFootnoteList
@@ -1048,7 +1047,7 @@ class fnotePanel(QWidget):
             "Going to convert {0} footnotes to HTML".format(dbcount),
             "(Symbol class keys will be skipped)"):
             return
-        # Set up a boilerplate string for the Reference replacements.
+        # Set up a boilerplate string for the Anchor replacements.
         # We'll use QString.replace to install the key over $#$
         keyPattern = QString(u"$#$")
         refPattern = QString(u"<a id='FA_$#$' name='FA_$#$' href='#FN_$#$' class='fnanchor'>[$#$]</a>")
@@ -1077,7 +1076,7 @@ class fnotePanel(QWidget):
             refend = reftc.position()+1
             # Copy the ref boilerplate and install the key in it
             refqs = QString(refPattern).replace(keyPattern,keyqs,Qt.CaseSensitive)
-            # Replace the reference text, using the work cursor.
+            # Replace the anchor text, using the work cursor.
             worktc.setPosition(refstart)
             worktc.setPosition(refend,QTextCursor.KeepAnchor)
             worktc.insertText(refqs)
