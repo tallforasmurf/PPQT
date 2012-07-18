@@ -266,8 +266,7 @@ class charsPanel(QWidget):
     def refresh(self):
         self.view.setSortingEnabled(False)
         self.model.beginResetModel()
-        if IMC.editWidget.document().isModified():
-            IMC.editWidget.doCensus()
+        IMC.editWidget.rebuildMetadata()
         self.model.endResetModel()
         self.setUpTableView()
 

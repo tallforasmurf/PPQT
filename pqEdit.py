@@ -468,10 +468,13 @@ class PPTextEditor(QPlainTextEdit):
                         "Metadata may be incomplete, suggest quit")
                 break
 
-    # rebuild as much of the char/word census and spellcheck as we need to.
-    # We could need just a spellcheck, if e.g. the dictionary has changed but
-    # the document has not. If page=True is passed this is the first open of
-    # a document (anyway, no metadata) we do it all.
+    # Rebuild as much of the char/word census and spellcheck as we need to.
+    # This is called from load, above, and from the Char and Word panels
+    # Refresh buttons. If page=True we are loading a doc for which there is
+    # no metadata file, so cache page definitions; otherwise just skip the
+    # page definitions (see doCensus). If the doc has changed we need to
+    # rerun the full char/word census. But if not, we might still need a
+    # spellcheck, if the dictionary has changed.
     def rebuildMetadata(self,page=False):
         if page or self.document().isModified() :
             self.doCensus(page)
