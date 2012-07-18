@@ -468,7 +468,7 @@ class flowPanel(QWidget):
 		pqMsgs.rollBar(endBlockNumber - blockNumberA)
 	    # is this a reflow block or not?
 	    if markupCode == u'X' or markupCode == u'T':
-		# line of /X or /F which we skip, or /T which we defer
+		# line of /X which we skip, or /T which we defer
 		continue # don't touch it
 	    if (markupCode == u'*') or (markupCode == u'C') or (markupCode == u'R') :
 		# non-reflow block; adjust leading spaces. F is how many
@@ -643,8 +643,7 @@ class flowPanel(QWidget):
 			elif PSW['M'] == u'*' and (not self.skipNfCheck.isChecked()) :
 			    # Enter a no-reflow indent section
 			    PSW['P'] = False # collect by lines
-			    self.getIndents(qs,PSW,self.nfLeftIndent.value(),
-			        self.nfLeftIndent.value(), 0 )
+			    self.getIndents(qs,PSW,0,self.nfLeftIndent.value(), 0 )
 			    PSW['W'] = 75 # initialize to find shortest indent
 			elif PSW['M'] == u'C' and (not self.skipCeCheck.isChecked()) :
 			    # Enter a centering section
