@@ -519,20 +519,25 @@ class flowPanel(QWidget):
 	    oneSpace = QString(u' ') # one space between tokens
 	    leftIndent = QString(u' '*L) # left-indent space
             lineLength = 75 - unit['R']
-	    lineLimit = lineLength # how big flow can get before we break it
-	    currentLength = F # line space used so far
-	    wholeLineLength = 0 # length of whole lines accumulated
+	    # In the following, lineLimit is the accumulated text length at
+	    # which we next need to insert a linebreak and indent; currentLength
+	    # is the accumulated length of text added so far. Both are LOGICAL
+	    # lengths, because <i/b/sc> markups may have credited with different
+	    # logical than physical lengths.
+	    lineLimit = lineLength
+	    currentLength = F
             for (tok,tl) in tokGen(tc,self.itbosc):
-                if lineLimit >= (currentLength + tl): # room for this token
+                if lineLimit >= (currentLength + tl):
+		    # there is room for this token's logical length
                     flowText.append(tok)
                     flowText.append(oneSpace) # assume there'll be another token
                     currentLength += (tl + 1)
                 else: # time to break the line.
                     lineLimit = currentLength + lineLength # set new limit
-                    # replace superfluous space with linebreak code
-                    flowText.replace(currentLength-1,1,IMC.QtLineDelim)
-                    flowText.append(leftIndent) # insert new left indent
-                    flowText.append(tok) # and now the token on a new line
+                    flowText.chop(1) # drop the space we added after last token
+                    flowText.append(IMC.QtLineDelim) # add a linebreak
+                    flowText.append(leftIndent) # add a new Left indent
+                    flowText.append(tok) # and now add the current token
                     flowText.append(oneSpace) # assume there'll be another token
                     currentLength += (L + tl + 1)
             # used up all the tokens of this paragraph or line. If this was a
