@@ -861,7 +861,6 @@ class findPanel(QWidget):
         stopper = QChar(u"}")
         while not stream.atEnd():
             qs = stream.readLine().trimmed()
-            dbg = unicode(qs)
             if 0 == leadingBit.indexIn(qs) :
                 (bn,ok) = leadingBit.cap(1).toInt() # just the digits
                 if bn == 99: # code for, highest (empty) one

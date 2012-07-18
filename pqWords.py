@@ -430,7 +430,6 @@ class wordsPanel(QWidget):
             # also matches today.
             qs.replace(QChar(u'-'),QString(u'[\-\s]*'))
             rex = True
-        dbg = unicode(qs)
         IMC.findPanel.censusFinder(qs,None,rex)
 
     # This slot receives a change of the respect case checkbox. Set the

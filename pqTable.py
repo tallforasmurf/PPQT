@@ -437,7 +437,6 @@ class tableCells:
     # implies based on this column's alignment.
     # Also note the "suggested" width, the actual size including whitespace.
     def store(self,r,c,qs):
-        dbg = unicode(qs)
         if r != self.lastRowIndex: # starting a new row
             if (r > self.rowsSeen) and (r == (len(self.data) + 1)):
                 self.rowsSeen = r
@@ -827,7 +826,6 @@ def flowCell(qs,width,align,decpoint,decwidth):
 # user presumably wrote it in the first place.
 findAtRE = QRegExp(u'\s*@+\s*')
 def expandAt(qs,width,align):
-    dbg = unicode(qs)
     j = findAtRE.indexIn(qs,0)
     if j < 0 : return qs # there were no @s
     q2 = QString()
@@ -838,7 +836,6 @@ def expandAt(qs,width,align):
         q2.append(QString( (u' '*w)+u'@') )
         qs.remove(0,j+findAtRE.cap(0).size())
         j = findAtRE.indexIn(qs,0)
-    dbg = unicode(q2)
     return q2        
 # Given a QString that fits in a width, extend it front a/o back to
 # align in that width.
@@ -864,10 +861,8 @@ def alignCell(qs,width,align,decpoint,decwidth):
             if j < 0 : j = qs.size()
             rspace.fill(onespace,decwidth-(qs.size()-j))
             lspace.fill(onespace,spaces-rspace.size())
-        dbg = unicode(qs)
         qs.prepend(lspace)
         qs.append(rspace)
-        dbg2 = unicode(qs)
     return qs
     
 # warn the user a table will be wider than expected/requested

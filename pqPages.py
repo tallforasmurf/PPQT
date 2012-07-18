@@ -397,7 +397,6 @@ class pagesPanel(QWidget):
                         f = toRoman(page[5], page[4] == IMC.FolioFormatLCRom)
                     qf = QString(qi)
                     qf.replace(QString(u'%f'),f,Qt.CaseInsensitive)
-                    dbg = unicode(qf)
                     tc.insertText(qf)
             tc.endEditBlock() # wrap up the undo op
 
