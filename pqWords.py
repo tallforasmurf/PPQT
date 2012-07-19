@@ -487,7 +487,6 @@ class wordsPanel(QWidget):
         self.view.setSortingEnabled(False)
         self.tableModel.beginResetModel()
         IMC.editWidget.rebuildMetadata()
-        IMC.editWidget.doSpellcheck()
         self.tableModel.endResetModel()
         self.setUpTableView()
 
