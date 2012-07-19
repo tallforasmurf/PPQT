@@ -264,6 +264,8 @@ class myTableView(QTableView):
                 self.model().setData(findex,flag,Qt.UserRole)
                 IMC.needMetadataSave = True
                 IMC.mainWindow.setWinModStatus()
+            # and, having done it, spellcheck is now appropriate
+            IMC.needSpellCheck = True
         
     # The actual code of First and Second Harmonic. Run through the word list
     # and make a sublist of just the ones that are a Levenshtein distance of 1
