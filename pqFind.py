@@ -722,9 +722,10 @@ class findPanel(QWidget):
         if repl is not None:
             self.repEdits[1].setText(rep)
         if not self.isVisible() :
-            IMC.mainWindow.makeMyPanelCurrent(self) 
+            IMC.mainWindow.makeMyPanelCurrent(self)
         self.findText.setFocus() # get keyboard focus to find string
         self.findText.userLoad = True # don't save it in the pushdown list
+        self.doSearch(2) # do the First search for the word.
 
     # Slot for the clicked signal of a userButton. The button number is 
     # passed as an argument via the actual slot, which is a lambda.

@@ -423,6 +423,8 @@ class wordsPanel(QWidget):
             qmi = qmi.sibling(qmi.row(),0)
         # get the word text as a qstring
         qs = qmi.data(Qt.DisplayRole).toString()
+        # Put the text in the paste buffer
+        QApplication.clipboard().setText(qs)
         # If it contains a /tag, split that off and keep just the word
         if qs.contains(QChar(u'/')) :
             qs = qs.split(QChar(u'/'))[0]
