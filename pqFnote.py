@@ -257,8 +257,13 @@ ClassREs = (
     )
 
 # The regex for finding a Ref to any possible Key class.
-# (This is so pythonic I want to choke...)
-RefFinderRE = QRegExp( u'\[(' + u'|'.join(ClassREs) + u')\](?=\W)' )
+RefClassMatch = u'\[(' + u'|'.join(ClassREs) + u')\]'
+# In order to not find [oe] as an anchor we accept anchors only when followed
+# by a non-word character (are there any words that end in oe lig?)
+RefExp1 = RefClassMatch + u'(?=\W)'
+# however that excludes anchors at the ends of lines!
+RefExp2 = RefClassMatch + u'$'
+RefFinderRE = QRegExp( u'(' + RefExp1 + u'|' + RefExp2 + u')' )
 # The similar regex for finding the head of a Note of any Key class.
 NoteFinderRE = QRegExp( u'\[Footnote\s+(' + u'|'.join(ClassREs) + u')\s*\:' )
 
@@ -1222,7 +1227,7 @@ if __name__ == "__main__":
     pqMsgs.makeBarIn(MW.statusBar())
     MW.show()
     utqs = QString('''
-This is text[A] with footnotes[2].
+This is text[A] with two anchors one at end of line.[2]
 This is another[DCCCCLXXXXVIII] reference.
 This is another[q] reference.
 /F
