@@ -720,7 +720,7 @@ class findPanel(QWidget):
         self.findText.setText(qs)
         self.regexSwitch.setChecked(rex)
         if repl is not None:
-            self.repEdits[1].setText(rep)
+            self.repEdits[1].setText(repl)
         if not self.isVisible() :
             IMC.mainWindow.makeMyPanelCurrent(self)
         self.findText.setFocus() # get keyboard focus to find string
