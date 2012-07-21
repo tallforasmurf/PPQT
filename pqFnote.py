@@ -999,6 +999,8 @@ class fnotePanel(QWidget):
                 worktc.setPosition(sectcI.position())
                 # copy the note text inserting it in the section
                 worktc.insertText(notetc.selectedText())
+                # insert one more \n to put a blank line after the footnote
+                worktc.insertText(IMC.QtLineDelim)
                 # save the ending position as the new position of sectcI -- the
                 # next inserted note goes there
                 sectcI.setPosition(worktc.position())
