@@ -672,12 +672,12 @@ class flowPanel(QWidget):
 			    PSW['P'] = False # collect by lines
 			    self.getIndents(qs,PSW,0,0,0)
 			    # don't care about W
-			elif PSW['M'] == u'T' :
+			elif PSW['M'] == u'T' and (not self.skipTbCheck.isChecked()) :
 			    # start a table section /T or /TM
 			    PSW['P'] = False # collect by lines
-			    # table will fit in current F and R values
+			    # table will fit in current L and R values
 			else : 
-			    # one of the sections is being skipped: consume
+			    # markup of this type is to be skipped: consume
 			    # lines until we see the end of the section.
                             while thisBlock.next() != endBlock:
                                 thisBlock = thisBlock.next()
