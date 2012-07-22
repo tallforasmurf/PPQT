@@ -1,22 +1,11 @@
-# All backslash must be doubled \\
-# Find <tb>, change to 5-star string
+# All backslashes must be doubled \\ in u'..' strings
+# Whitespace \s* does match newlines, use [ \t]* for spaces only 
+#
+# These searches are for cleaning up text markups:
+#
+# Convert italics:
+# Find <i>stuff</i> change to _stuff_ or just stuff
 23: {  u'all' : False,
- u'andnext' : True,
- u'andprior' : False,
- u'case' : False,
- u'find' : u'[ \\t]*<tb>[ \\t]*',
- u'greedy' : False,
- u'insel' : False,
- u'label' : u'tb -> *****',
- u'tooltip' : u'Find &lt;tb>, replace with 5-star string',
- u'regex' : True,
- u'rep1' : u'       *       *       *       *       *',
- u'rep2' : u'',
- u'rep3' : u'',
- u'word' : False
-}
-# Find <i>stuff</i> change to _stuff_
-22: {  u'all' : False,
  u'andnext' : True,
  u'andprior' : False,
  u'case' : False,
@@ -31,9 +20,10 @@
  u'rep3' : u'',
  u'word' : False
 }
+# Convert bold:
 # Find <b>stuff</b> change to $stuff$ or just stuff
 # To capitalize, use Find-First, then repeat: ctl-u ctl-t
-21: {  u'all' : False,
+22: {  u'all' : False,
  u'andnext' : True,
  u'andprior' : False,
  u'case' : False,
@@ -48,9 +38,10 @@
  u'rep3' : u'',
  u'word' : False
 }
+# Convert smallcap:
 # Find <sc>stuff</sc> change to $stuff$ or just stuff
 # To capitalize, use Find-First, then repeat: ctl-u ctl-t
-20: {  u'all' : False,
+21: {  u'all' : False,
  u'andnext' : True,
  u'andprior' : False,
  u'case' : False,
@@ -65,8 +56,9 @@
  u'rep3' : u'',
  u'word' : False
 }
-# Find special dictionary markups <sd xxx> and </sd>, delete
-19: {  u'all' : False,
+# Delete alt-spell-dict markups:
+# Find <sd xxx> and </sd>, delete
+20: {  u'all' : False,
  u'andnext' : True,
  u'andprior' : False,
  u'case' : False,
@@ -81,52 +73,55 @@
  u'rep3' : u'',
  u'word' : False
 }
-# Find [typo:correct:original] markup, make correct only
+# Convert typo markup to corrected value only
+# Find [typo:original:corrected] markup, leave corrected only
+19: {  u'all' : False,
+ u'andnext' : True,
+ u'andprior' : False,
+ u'case' : False,
+ u'find' : u'\\[typo:([^:]+):([^\\]]+)\\]',
+ u'greedy' : False,
+ u'insel' : False,
+ u'label' : u'undo [typo]',
+ u'tooltip' : u'Find [typo:] markup and replace with corrected word',
+ u'regex' : True,
+ u'rep1' : u'\\2',
+ u'rep2' : u'',
+ u'rep3' : u'',
+ u'word' : False
+}
+# Delete any block markup - apply ONLY AFTER FINAL REFLOW
+# Find newline, /, letter or newline, letter, / followed by anything
+# at all, ending in a newline. Use a lookahead so as not to capture
+# and replace the closing newline. Only the opening newline goes.
 18: {  u'all' : False,
  u'andnext' : True,
  u'andprior' : False,
  u'case' : False,
- u'find' : u'\\[typo:([^:]+):[^\\]]+\\]',
+ u'find' : u'\\n(/[CFQRPTUX\\*]|[CFQRPTUX\\*]/).*(?=\\n)',
  u'greedy' : False,
  u'insel' : False,
- u'label' : u'undo [typo]',
- u'tooltip' : u'Find [typo:] markup and replace with correct word',
+ u'label' : u'kill /CFQRPTUX*',
+ u'tooltip' : u'Delete block markup codes <b>only after final reflow</b>',
  u'regex' : True,
- u'rep1' : u'\\1',
+ u'rep1' : u'',
  u'rep2' : u'',
  u'rep3' : u'',
  u'word' : False
 }
-# Change [Footnote X: stuff] to /Q F:2 L:6\n[X] stuff\nQ/
+# Convert thought breaks - apply ONLY AFTER FINAL REFLOW
+# Find <tb>, change to 5-star string
 17: {  u'all' : False,
  u'andnext' : True,
  u'andprior' : False,
  u'case' : False,
- u'find' : u'\\[Footnote (.):\s*([^\\]]+)(?=\\]\\n)',
+ u'find' : u'[ \\t]*<tb>[ \\t]*',
  u'greedy' : False,
  u'insel' : False,
- u'label' : u'fnote->/Q',
- u'tooltip' : u'Change [Footnote X: stuff] to /Q F:2 L:6,[X] stuff,Q/',
+ u'label' : u'tb -> *****',
+ u'tooltip' : u'Find &lt;tb>, replace with 5-star string',
  u'regex' : True,
- u'rep1' : u'/Q F:2 L:6\\n[\\1] \\2\\nQ/',
- u'rep2' : u'',
- u'rep3' : u'',
- u'word' : False
-}
-# Find any block markup code and delete - ONLY AFTER FINAL REFLOW
-# temporary - find should be \\n(/[CQRPTUX]|[CQRPTUX]/).*(?=\\n) and greedy False,
-# but due to a bug can't use lookahead with replace
-16: {  u'all' : False,
- u'andnext' : True,
- u'andprior' : False,
- u'case' : False,
- u'find' : u'\\n(/[CQRPTUX]|[CQRPTUX]/)[^\\n]*',
- u'greedy' : True,
- u'insel' : False,
- u'label' : u'kill /CQRPTUX',
- u'tooltip' : u'Delete block markup codes <b>only after final reflow</b>',
- u'regex' : True,
- u'rep1' : u'',
+ u'rep1' : u'       *       *       *       *       *',
  u'rep2' : u'',
  u'rep3' : u'',
  u'word' : False
