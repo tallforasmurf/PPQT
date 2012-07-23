@@ -917,7 +917,7 @@ def tableHTML(tc,doc,unitList):
     twasc = 75 - unitList[1]['L'] - unitList[1]['R']
     twidth = twasc
     if tprops.tableWidth() is not None:
-        twidth = min(twasc,tprops.tableWidth()/twasc)
+        twidth = min(twasc,tprops.tableWidth())
     if twidth != twasc :
         twpct = int(100*twidth/twasc)
     # Get percent widths for any columns that were given a W: spec
