@@ -579,6 +579,7 @@ class tableCells:
 #    'T'
 # 'A' : text block number of start of the unit (line number)
 # 'L' : left margin when markup started (table might conceivably be nested),
+# 'R' : right margin indent if in a nested section
 # 'B' : the count of blank lines that preceded this unit - used to spot
 #       break between rows in a multiline table
 
@@ -590,10 +591,15 @@ def tableReflow(tc,doc,unitList):
     # Note the properties of the table including specified width, multiline etc.
     tprops = tableProperties(getLineQs(tc,doc,unitList[0]['A']),unitList[0]['A'])
     # If the width wasn't spec'd then develop a target width based on 75 less
-    # any indents in the first work unit.
+    # any indents in the first work unit. Take L and R from the first "real"
+    # work unit, as the markup-start unit doesn't get the indent.
     targetTableWidth = tprops.tableWidth()
-    if targetTableWidth is None:
-        targetTableWidth = 75 - (unitList[0]['F'] + unitList[0]['R'])
+    availableTableWidth = 75 - unitList[1]['L'] - unitList[1]['R']
+    if targetTableWidth is None: # user did not spec T(W:)
+        targetTableWidth = availableTableWidth
+    else:
+        # user did spec it but maybe was too optimistic - use the lesser value
+        targetTableWidth = min(targetTableWidth,availableTableWidth)
     # make a table cells storage object
     tcells = tableCells(tprops)
     # note if the table has a hyphenated top line
@@ -719,30 +725,37 @@ def tableReflow(tc,doc,unitList):
         totalSugWidth += 1
     # Now, totalSugWidth == tableDataWidth and allSugWidths is the list of
     # target column widths. Fill the rows, aligning cell values as requested.
-    # What we are going to do is, develop one whomping QString for the whole
-    # table, then finally insert it using textCursor tc replacing the table.
-    # flowCell returns a QStringList with one string for each ascii line needed
-    # to fit the cell data in the given width -- just one for singleline.
-    tableText = QString()
-    if topChar is not None: # start with top line of ---s
-        tableText.fill(topChar.at(0),targetTableWidth)
-        tableText.append(IMC.QtLineDelim)
+    # We will accumulate one whomping QString for the whole table, and
+    # finally insert it using textCursor tc replacing the table.
+    # flowCell returns a QStringList with one string for each text line needed
+    # to fit the cell data in the width, just one string for a single line table.
+    tableText = QString() # Accumulates whole table a line at a time    
     # this list holds the cell data for one row at a time as QStringLists
     rowdata = [None]*(tcells.columnCount()+1)
-    # set the left-side delimiter of stile or nothing
-    lineStart = QString() if tprops.columnSideString() is None \
-                           else cellDelimiterString
+    # set the head of each text line, indent with optional stile
+    leftIndent = QString(u' ' * unitList[1]['L']) # indent by L
+    lineStart = QString(leftIndent)
+    dbg = unicode(lineStart)
+    if tprops.columnSideString() is not None:
+        lineStart.append(cellDelimiterString) # plus optional stile
     # set the right-side delimiter of stile or nothing
     lineEnd = QString(tableSideString)
+    dbg = unicode(lineEnd)
     # set the between-rows constant of nothing, linebreak, or hyphens+linebreak
-    cellBottom = QString()
+    cellBottom = QString() # nothing, for a single-line table with no botChar
     if botChar is not None:
-        cellBottom.fill(botChar.at(0),targetTableWidth)
+        cellBottom = QString(leftIndent) # divider starts with indent
+        cellBottom.append(botChar.repeated(targetTableWidth))
         cellBottom.append(IMC.QtLineDelim)
-    else:
-        if tprops.isMultiLine() :
-            # if no bottom string, multi still needs empty line
+    else: # even if no botChar, multiline table still needs empty lines
+        if tprops.isMultiLine() :            
             cellBottom.append(IMC.QtLineDelim)
+    dbg = unicode(cellBottom)
+    # accumulate the table top delimiter if requested
+    if topChar is not None:
+        tableText.append(leftIndent)
+        tableText.append(topChar.repeated(targetTableWidth))
+        tableText.append(IMC.QtLineDelim)
     # process all logical rows in sequence top to bottom
     for r in range(1,tcells.rowCount()+1):
         asciiLines = 0 # counts how many ascii lines in this logical row
@@ -755,22 +768,23 @@ def tableReflow(tc,doc,unitList):
                 tcells.columnDecWidth(c))
             asciiLines = max(asciiLines,rowdata[c].count())
         for x in range(asciiLines):
-            # read out line x of each cell across a line, with delimiters
-            qsLine = QString(lineStart) # making a copy
+            # read out line x of each cell across a text line, with delimiters
+            qsLine = QString(lineStart) # start with a copy of the indent
             for c in range(1,tcells.columnCount()+1):
-                if rowdata[c].count() > x:
+                if rowdata[c].count() > x: # this cell has data on line x
                     cqs = rowdata[c][x]
-                else:
+                else: # this cell is empty on line x, fill with spaces
                     cqs = QString(u' ' * allSugWidths[c])
-                qsLine.append(cqs)
                 if c < tcells.columnCount() :
-                    qsLine.append(cellDelimiterString) # add internal delimiter
+                    cqs.append(cellDelimiterString) # add internal delimiter
+                qsLine.append(cqs)
             # finish the line: append the stile border, or strip trailing spaces.
             if lineEnd.isEmpty():
                 # sadly, QString doesn't support rstrip.
                 qsLine = QString(unicode(qsLine).rstrip())
             else:
                 qsLine.append(lineEnd)
+            dbg = unicode(qsLine)
             tableText.append(qsLine)
             tableText.append(IMC.QtLineDelim)
         # If this is not the last row, or even if it is and a bottom string
@@ -900,16 +914,19 @@ def tableHTML(tc,doc,unitList):
     # if the table width was specified, figure its percentage based
     # on the line width in effect (the table might be nested, e.g.).
     twpct = None
-    twasc = 75 - unitList[0]['F']
+    twasc = 75 - unitList[1]['L'] - unitList[1]['R']
+    twidth = twasc
     if tprops.tableWidth() is not None:
-        twpct = int(100*tprops.tableWidth()/twasc)
+        twidth = min(twasc,tprops.tableWidth()/twasc)
+    if twidth != twasc :
+        twpct = int(100*twidth/twasc)
     # Get percent widths for any columns that were given a W: spec
     # syntax only supports cols 1-9. Use a dict, not a list, so if the actual
     # data has >9 cols we don't try to test it.
     cwpct = {}
     for c in range(1,10):
         if tprops.columnWidth(c) is not None:
-            cwpct[c] = int(100*tprops.columnWidth(c)/twasc)
+            cwpct[c] = int(100*tprops.columnWidth(c)/twidth)
     # create a tcells object to store column data
     tcells = tableCells(tprops)
     # note if the table has a hyphenated top line or cell dividers

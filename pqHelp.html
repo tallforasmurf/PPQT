@@ -43,7 +43,7 @@ It is packaged for distribution using <a href="http://pyinstaller.org">pyinstall
 PyQt4 is licensed for noncommercial use under the GPL v2 and the GPL v3.
 The source code of PPQT is licensed under the GPL v3; see the file <tt>extras/COPYING.TXT</tt> in the distribution folder.</p>
 <h2>Acknowledgements</h2>
-<p>First, a deep bow of respect to Steve Shulz (Thundergnat) who created and maintained Guiguts, the program from which PPQT takes its inspiration and lots of ideas. Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Developement with PyQt</i> that showed how to build PPQT.</p>
+<p>First, a deep bow of respect to Steve Shulz (Thundergnat) who created, and to all who maintain, Guiguts, the program from which PPQT takes its inspiration and lots of ideas. Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Developement with PyQt</i> that showed how to build PPQT.</p>
 <h2>Contents</h2>
 <p>After clicking a link, use ctl-B or ctl-[ (control-left bracket) for
 the Back function.</p>
@@ -59,7 +59,7 @@ the Back function.</p>
 <li><a href='#Chars'>The Characters Panel</a> tells how to use the character census.</li>
 <li><a href='#Words'>The Words Panel</a> tells how to find words, similar words, and misspelt words.</li>
 <li><a href='#Pages'>The Pages Panel</a> tells how to paginate the HTML etext.</li>
-<li><a href='#Flow'>The Reflow Panel</a> tells how to mark-up the text for format, and how to format the ASCII and HTML etexts</li>
+<li><a href='#Flow'>The Reflow Panel</a> tells how to mark-up the text for format, including <a href='#Table'>Table markup</a> and <a href='#html'>HTML conversion</a></li>
 <li><a href='#View'>The Preview Panel</a> tells how to preview the HTML conversion.</li>
 <li><a href='#Foot'>The Footnote Panel</a> tells how to find, number and convert footnotes.</li>
 </ul>
@@ -482,7 +482,7 @@ block-quote markup with those margins, overriding the <i>First</i> and <i>Left</
 a /P poetry section within a /Q block quote section or a /U list section.
 You can nest a /R right align section in poetry or a quote. Multiple
 levels of nesting (/R within /P within /Q) are possible. The First, Left and Right indents for a nested section are taken relative to the indents for its containing section.</p>
-<h3>Table Markup</h3>
+<h3 id='Table'>Table Markup</h3>
 PPQT treats tables as a special kind of reflow. You mark up the table text with <b>/T...T/</b> and some other parameters. During reflow the table is formatted. If the result is not perfect, undo, adjust the markup, try again.</p>
 <p>Within a table, the column values within a row are separated in one of two ways: by strings of two or more spaces, or with stiles (|).</p>
 <p>A single-line table has one table row per text line. It is marked up with  <b>/T..T/</b> Here is a simple table with two rows and two columns.</p>
@@ -501,8 +501,8 @@ Chapter IV. The Nature and
 Properties of Clay   29
 T/
 </pre>
-<p>By default PPQT makes a table 75 characters wide (less
-if it is nested in another markup), aligns the column text left, and spaces the
+<p>PPQT indents a table two spaces (an etext requirement for formatted text), more if the table is nested in another markup. By default it makes the table fill the line, 73 characters, less if contained in a markup with a RIGHT indent.</p>
+By default it aligns column text left and spaces the
 columns roughly in proportion to their contents. However, you can specify detailed controls on the opening markup line.
 Specify properties of the whole table with <b>T(</b><i>properties</i><b>)</b> where the <i>properties</i> can be:</p>
 <ul><li><b>W:</b><i>nn</i> for the width of the table.</li>
@@ -532,19 +532,19 @@ row 2 cell  @  some more exciting
 T/</pre>
 <p>and after reflow:</p>
 <pre>/TM TABLE(TOP:'-' WIDTH:40 SIDE:'|') COL(B:'-' S:'|') 2(A:R W:12)
-----------------------------------------
-|cell one |    cell two|now is the time|
-|         |            |for all good   |
-|         |            |parties to end |
-----------------------------------------
-|row 2    |           @|some more      |
-|cell     |            |exciting       |
-|prose    |            |               |
-----------------------------------------
+  ----------------------------------------
+  |cell one |    cell two|now is the time|
+  |         |            |for all good   |
+  |         |            |parties to end |
+  ----------------------------------------
+  |row 2    |           @|some more      |
+  |cell     |            |exciting       |
+  |prose    |            |               |
+  ----------------------------------------
 T/</pre>
 <p>You can omit the contents of empty cells on the right end of a row. However, you cannot leave blank a cell or cells on any line within a row, or PPQT will assign
 text to the wrong column (as in the example above where "prose" fell
-from column 3 to column 1 because column 1 & 2 were blank).
+from column 3 to column 1 because columns 1 & 2 were blank).
 To fill in for a cell that is logically empty,
 use a single @ character on every line, as in the above example.</p>
 <p>PPQT assigns horizontal space to columns using some brain-dead heuristics.
@@ -574,7 +574,7 @@ T/
 <p>Decimal alignment can produce odd results when applied to cells that
 contain text, especially in a multi-line table. For example you may find
 it best to format a heading row manually over a decimal table.</p>
-<h3>HTML Conversion</h3>
+<h3 id='html'>HTML Conversion</h3>
 <p>ASCII reflow is designed so you can do it repeatedly. HTML conversion
 is a one-shot deal: it wipes out the reflow markup lines and the spacing
 of tables. Select a range of text and click HTML Convert: Selection, or
@@ -605,7 +605,7 @@ for the different markup types.</p>
 <tr><td><b>/X</b>, <b>/C</b>, <b>/*</b></td><td><tt>&lt;pre></tt></td></tr>
 <tr><td>text in these</td><td>not touched</td></tr>
 <tr><td><b>X/</b>, <b>C/</b>, <b>*/</b></td><td><tt>&lt;/pre></tt></td></tr>
-<tr><td><b>/T</b>, <b>/TM</b></td><td><tt>&lt;table></tt> or <tt>&lt;table style="width:<i>pp</i>%;"></tt> where <i>pp</i> is the specified table width/75</tt></td></tr>
+<tr><td><b>/T</b>, <b>/TM</b></td><td><tt>&lt;table></tt> or <tt>&lt;table style="width:<i>pp</i>%;"></tt> where <i>pp</i> is based on the indents and the specified table width.</tt></td></tr>
 <tr><td><b>T/</b></td><td><tt>&lt;/table></tt></td>
 </table>
 <p>Within a table, the cell values are enclosed appropriately in <tt>&lt;tr></tt> and <tt>&lt;td></tt> codes. Where a specific width was given for a column, the first row of that column is coded <tt>&lt;td style="width:<i>pp</i>%;"></tt> where
