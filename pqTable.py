@@ -982,8 +982,8 @@ def tableHTML(tc,doc,unitList):
     tds = u'    <td{0}{1}>' # template for <td class='Tx' style='width:x%'>
     tdz = QString(u'</td>')  # constant end of table cell
     trz = QString(u'  </tr>')  # constant end of table row
-    tac = u' class="TC"' # constant for align-center
-    tar = u' class="TR"' # constant for align-right
+    tac = u' class="c"' # constant for align-center
+    tar = u' class="r"' # constant for align-right
     qat = QString(u'@')
     qnb = QString(u'&nbsp;')
     for r in range(1,tcells.rowCount()+1):
