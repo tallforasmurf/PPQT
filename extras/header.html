@@ -6,7 +6,7 @@
     <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
     <meta http-equiv="Content-Style-Type" content="text/css" />
     <title>
-      The Project Gutenberg eBook of BOOK TITLE HERE! by AUTHOR HERE!.
+      The Project Gutenberg eBook of !BOOK!TITLE!HERE! by !AUTHOR!HERE!.
     </title>
     <style type="text/css">
 /*<![CDATA[  XML blockout */
@@ -14,8 +14,7 @@
 /* ************************************************************************
  * Different browsers have different defaults when loading a new page. The
  * following CSS Reset makes all browsers start out with the same properties.
- * This reset is based on one by Eric Meyer,
- * see http://meyerweb.com/eric/tools/css/reset/ License: none (public domain)
+ * See meyerweb.com/eric/tools/css/reset/ License: none (public domain)
  * ********************************************************************** */
 html, body, div, span, applet, object, iframe,h1, h2, h3, h4, h5, h6, p,
 blockquote, a, abbr, acronym, address, big, cite, code, del, dfn, em,
@@ -37,13 +36,12 @@ nav, section {	display: block;  }/* HTML5 display-role for older browsers */
 body {	line-height: 1; }
 blockquote, q { quotes: none; }
 blockquote:before, blockquote:after, q:before, q:after {
-	content: '';
-	content: none;
-}
+	content: ''; content: none; }
 table { border-collapse: collapse; border-spacing: 0; }
 /* End of CSS Reset */
 /* ************************************************************************
- * set the body margins to allow whitespace along sides of window
+ * set the body margins to allow whitespace along sides of window - use
+ * width rather than margin-right to get IE5 to behave itself.
  * ********************************************************************** */
 body { margin-left:4%; width:90%; /* == margin-right:6% */ }
 /* ************************************************************************
@@ -52,31 +50,34 @@ body { margin-left:4%; width:90%; /* == margin-right:6% */ }
 p {
 	margin-top: 1em;	/* inter-paragraph space */
 	margin-bottom: 0;	/* use only top-margin for spacing */
-	line-height: 1.4em;	/* interline spacing ("leading") */
+	line-height: 1.4em;	/* generous interline spacing ("leading") */
 }
-/* para with bigger top margin - can be used to implement a thought break */
+/* para with wide top margin - can be used to implement a thought break
+ * as a gap, like the original book, instead of using a rule */
 p.break { margin-top: 2em; }
 /* ************************************************************************
- * Style text paragraphs, not e.g. quotes or table cells
+ * Style paragraphs of open text, not e.g. quotes or table cells
  * ********************************************************************** */
 body > p {
 	text-align: justify; /* or left?? */
-	text-indent: 2em;	/* first-line indent */
+	text-indent: 2em;	/* first-line indent, could be 0em */
 }
 /* suppress indentation on paragraphs following heads and in tables */
-h2+p, h3+p, h4+p, td, td > p {	
-	text-indent: 0;
-}
+h2+p, h3+p, h4+p, td, td > p { text-indent: 0; }
 /* tighter spacing for list item paragraphs */
 dd, li, li > p {
 	margin-top: 0.25em;
 	margin-bottom:0;
-	line-height: 1.2em; /* a bit closer than p's */
+	line-height: 1.2em; /* leading a bit tighter than p's */
 }
 /* ************************************************************************
  * Small-cap font class, for use in spans.
  * ********************************************************************** */
 .smcap {font-variant: small-caps;}
+/* ************************************************************************
+ * right-alignment of special text, span or para.
+ * ********************************************************************** */
+.right { text-align: right; }
 /* ************************************************************************
  * Mark corrected typo with:
  *  <ins class="correction" title="Original: typu">typo</ins>
@@ -114,7 +115,7 @@ h3 {
  * <hr class="double" /> cute double rule
  * ********************************************************************** */
 hr {
-	width:45%;			/* good size for a <tb> */
+	width:45%;			/* good width for a <tb> */
 	margin-top: 1em;	/* space above & below */
 	margin-bottom: 1em;
 	margin-left: auto;  /* these two ensure a.. */
@@ -134,7 +135,7 @@ hr.double { /* width and margins inherited from default rule */
 /* ************************************************************************
  * Images and captions
  * ********************************************************************** */
-img { /* the default inline image has */
+img { /* style the default inline image here, e.g. */
 	/* border: 1px solid black; a thin black line border.. */
 	/* padding: 6px; ..spaced a bit out from the graphic */
 } 
@@ -144,11 +145,8 @@ img.plain { /* image with no border or padding, see float */
 p.caption {
 	margin-top: 0; /* snuggled up to its image */
 	font-size: smaller;
-	/* font-style: italic; 		match to orginal */
-	/* font-variant: small-caps;  */
-}
-.right { /* span, paragraph, etc with text aligned right */
-	text-align: right;
+	/* font-style: italic; 		match style to orginal */
+	/* font-variant: small-caps; ditto */
 }
 /* ************************************************************************
  * Put <div class="center">...</div> around an image or a table to center
@@ -172,7 +170,7 @@ ol.RL { list-style-type: lower-roman; }
 /* ************************************************************************
  * Turn off list decoration:
  * <li class="lsoff"> for the 2nd paragraph of a two-paragraph list item
- * <ul class="lsoff"> for a list with no item markers at all (e.g. the Index)
+ * <ul class="lsoff"> for a list with no item markers at all (e.g. an Index)
  * ********************************************************************** */
 .lsoff { list-style-type: none; }
 /* ************************************************************************
@@ -221,30 +219,18 @@ table .shade { /* class="shade" applied to <tr> or <td> */
  * Style the blockquote tag and related elements:
  *  - inset left and right
  *	- one-point smaller font (questionable?)
- *	- <p class="citation"> right-justified and italicized
- *	- <p class="quotdate"> right-aligned for date or location of letter
- *	- <p class="quotsig"> deeply indented with gimmick for 2-level indent
  * ********************************************************************** */
 blockquote, .blkquot {
 	margin-left: 5%;
 	margin-right: 5%;
 	/*font-size: 90%;  optional: smaller font */
 }
-p.citation { /* author citation at end of blockquote or poem */
-	text-align: right;
-	font-style: italic;
-}
-p.signature { /* author signature at end of letter */
-	margin-left: 35%;
-	text-indent: -4em; /* gimmick to move any 2nd line right */
-	/* font-variant: small-caps;  sometimes seen in signatures */
-}
 /* ************************************************************************
  * Generic floating images or sidebars: div or img class='floatr'
  * ********************************************************************** */
 .floatr {
 	float: right;
-	clear: right;			/* don't allow floats to overlap */
+	clear: right;			/* don't allow right-floats to overlap */
 	/*text-align: center;		optional: img & caption centered in box */
 	/*border: 1px solid black;	optional thin border */
 	/*padding: 3px;  keep text in the div away from border */
@@ -272,7 +258,7 @@ p.signature { /* author signature at end of letter */
 	padding: 0 0 0 4px; /* ..ease content out from left border */
 	/*background-color: #ddd;  ..optional pale tint */
 /* the following style the look of the text inside the box: */
-	font-size: smaller;	/* ..small text; could be x-small */
+	font-size: smaller;	/* ..small text; could be font-size:x-small */
 	/*color: #333;		 ..optional dark-gray text */
 	text-indent: 0;		/* ..no para indent */
 	text-align: right;	/* ..right align text in box */
@@ -291,7 +277,7 @@ p.signature { /* author signature at end of letter */
 	/*background-color: #ddd;  ..optional pale-gray shading */
 }
 /* ************************************************************************
- * Footnotes and footnote references, modified from that used by Guiguts
+ * Footnotes and footnote anchors
  * <div class="footnotes"> around a block of footnotes
  * <div class="footnote"> around any one footnote's label and text
  * <span class="fnlabel"> around [nn] in front of footnote text
@@ -390,8 +376,7 @@ div.poem { /* Style the entire poem */
 	/* color: #fff; background-color: #777;  ..white on medium gray */
 }
 /* ************************************************************************
- * Visible page numbers: remove comment on visibility:hidden to make
- * the page numbers disappear.
+ * Visible page numbers in right margin.
  * ********************************************************************** */
 .pagenum { /* right-margin page numbers */
 	/*visibility:hidden	uncomment to hide the page numbers */
