@@ -714,16 +714,27 @@ def tableReflow(tc,doc,unitList):
             tableDataWidth = totalSugWidth
             targetTableWidth = tableDataWidth+totalDelimiterWidths
     # One way or another, totalSugWidth is now <= tableDataWidth. The above
-    # labored logic dealt with it being greater. Now, if it is LESS, we need
-    # to pad the columns until it is equal. Pad the smallest
-    # leftmost columns first, simply because that is easier to calculate!
-    # N.B. if you don't like these automatic adjustments, just specify the
-    # table and column widths you want.
-    while totalSugWidth < tableDataWidth:
-        c = allSugWidths.index(min(allSugWidths))
-        allSugWidths[c] += 1
-        totalSugWidth += 1
-    # Now, totalSugWidth == tableDataWidth and allSugWidths is the list of
+    # labored logic dealt with it being greater. Now, if it is LESS, we will
+    # pad the columns until it is equal. Which columns to pad? The columns
+    # that don't have specific widths assigned to them. If all columns have
+    # specific widths, totalSugWidth will remain < tableDataWidth.
+    if totalSugWidth < tableDataWidth :
+        colsWithoutSpecWidth = []
+        for c in range(1,tcells.columnCount()+1):
+            if tprops.columnWidth(c) is None :
+                colsWithoutSpecWidth.append(c)
+        n = len(colsWithoutSpecWidth)
+        if 0 < n :
+            x = int((tableDataWidth-totalSugWidth)/n)
+            for c in colsWithoutSpecWidth :
+                allSugWidths[c] += x
+                totalSugWidth += x
+            x = tableDataWidth - totalSugWidth
+            if x : # fraction left over, dump in the first
+                allSugWidths[colsWithoutSpecWidth[0]] += x
+                totalSugWidth += x
+
+    # Now, totalSugWidth <= tableDataWidth and allSugWidths is the list of
     # target column widths. Fill the rows, aligning cell values as requested.
     # We will accumulate one whomping QString for the whole table, and
     # finally insert it using textCursor tc replacing the table.
