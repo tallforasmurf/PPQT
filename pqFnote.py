@@ -1063,7 +1063,7 @@ class fnotePanel(QWidget):
         fntPattern = QString(u"\[Footnote\s+$#$\s*:\s*")
         fntRE = QRegExp()
         # Set up a replacement boilerplate for [Footnote key:
-        fntRep = QString(u"<div class='footnote' id='FN_$#$' name='FN_$#$'>\u2029\u2029<span class='fnlabel'><a href='FA_$#$'>[$#$]</a></span>")
+        fntRep = QString(u"<div class='footnote' id='FN_$#$' name='FN_$#$'>\u2029\u2029<span class='fnlabel'><a href='#FA_$#$'>[$#$]</a></span>")
         # Make a working textcursor, start the undo macro, advise the table
         worktc = QTextCursor(IMC.editWidget.textCursor())
         worktc.beginEditBlock()
