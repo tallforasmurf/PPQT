@@ -575,6 +575,7 @@ class MainWindow(QMainWindow):
         self.bookPath = QString()
         IMC.bookPath = self.bookPath
         self.filePath = QString()
+        self.bookFile = QString()
         self.setWindowTitle("PPQT - new file[*]")
 
     # Called from File>Save (as) and File>Open, stuff the current bookpath
