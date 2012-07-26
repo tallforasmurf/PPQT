@@ -123,12 +123,12 @@ class myTableModel(QAbstractTableModel):
             elif 1 == index.column():
                 return count
             else:
-                features = 'A' if flag & IMC.WordHasUpper else '-'
-                features += 'a' if flag & IMC.WordHasLower else '-'
-                features += '9' if flag & IMC.WordHasDigit else '-'
-                features += 'h' if flag & IMC.WordHasHyphen else '-'
-                features += 'p' if flag & IMC.WordHasApostrophe else '-'
-                features += 'X' if flag & IMC.WordMisspelt else '-'
+                features = u'A' if flag & IMC.WordHasUpper else u'-'
+                features += u'a' if flag & IMC.WordHasLower else u'-'
+                features += u'9' if flag & IMC.WordHasDigit else u'-'
+                features += u'h' if flag & IMC.WordHasHyphen else u'-'
+                features += u'p' if flag & IMC.WordHasApostrophe else u'-'
+                features += u'X' if flag & IMC.WordMisspelt else u'-'
                 return QString(features)
         elif (role == Qt.TextAlignmentRole) :
             return self.alignDict[index.column()]
@@ -372,6 +372,7 @@ class wordsPanel(QWidget):
         self.proxy = mySortFilterProxy(self)
         self.proxy.setSourceModel(self.tableModel)
         self.view.setModel(self.proxy)
+        self.view.setSortingEnabled(True)
         # Hook up the refresh button clicked signal to refresh below
         self.connect(self.refreshButton, SIGNAL("clicked()"),self.refresh)
         # Populate the filter popup with rows:
@@ -461,19 +462,18 @@ class wordsPanel(QWidget):
     # This slot receives the main window's docWillChange signal.
     # It comes with a file path but we can ignore that.
     def docWillChange(self):
-        self.view.setSortingEnabled(False)
+        #self.view.setSortingEnabled(False)
         self.tableModel.beginResetModel()
 
     # Subroutine to reset the visual appearance of the table view,
     # invoked on table reset because on instantiation we have no table.
     def setUpTableView(self):
-        self.view.sortByColumn(0,Qt.AscendingOrder)
-        #self.view.resizeColumnsToContents()
+        #self.view.sortByColumn(0,Qt.AscendingOrder)
         self.view.setColumnWidth(0,200)
         self.view.setColumnWidth(1,50)
         self.view.horizontalHeader().setStretchLastSection(True)
         #self.view.resizeRowsToContents()
-        self.view.setSortingEnabled(True)
+        #self.view.setSortingEnabled(True)
         
     # This slot receives the main window's docHasChanged signal.
     # Let the table view populate with all-new metadata (or empty
@@ -486,7 +486,7 @@ class wordsPanel(QWidget):
     # model we are resetting everything so the view will suck up new
     # data. Then call our editor to rebuild the metadata.
     def refresh(self):
-        self.view.setSortingEnabled(False)
+        #self.view.setSortingEnabled(False)
         self.tableModel.beginResetModel()
         IMC.editWidget.rebuildMetadata()
         self.tableModel.endResetModel()
