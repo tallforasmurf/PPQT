@@ -692,23 +692,31 @@ class findPanel(QWidget):
     # passed as an int in IMC.findKeys. Do the right thing based on it.
     # See notes in pqIMC.py where the key values are set up.
     def editKeyPress(self,kkey):
-        if   kkey == IMC.ctl_G : self.doSearch(0) # ^g == Next
-        elif kkey == IMC.ctl_shft_G : self.doSearch(1) # ^G == Prior
-        elif kkey == IMC.ctl_F : # ^f == focus to Find panel
+        if   kkey == IMC.ctl_G : self.doSearch(0) # ^g means Next
+        elif kkey == IMC.ctl_shft_G : self.doSearch(1) # ^G means Prior
+        elif kkey == IMC.ctl_equal : # ^= means replace and no movement
+            self.doReplace(1,False,False,False)
+        elif kkey == IMC.ctl_T : # ^t means replace and find next
+            self.doReplace(1, True, False, False)
+        elif kkey == IMC.ctl_shft_T : # ^T means replace and find backward
+            self.doReplace(1, False, True, False)
+        elif kkey == IMC.ctl_F : # ^f means focus to Find panel
             if not self.isVisible() :
                 IMC.mainWindow.makeMyPanelCurrent(self) 
             self.findText.setFocus() # get keyboard focus to find string
-        elif kkey == IMC.ctl_shft_F : # ^F == focus to find with selection
-            self.findText.setText(IMC.editWidget.textCursor().selectedText())
+        elif kkey == IMC.ctl_shft_F : # ^F means focus to find with selection
+            # make a copy of the selection
+            qs = QString(IMC.editWidget.textCursor().selectedText())
+            # if it contains a parasep, replace that with '\n' and make regex
+            # since regex, need also to escape some special chars
+            if qs.contains(IMC.QtLineDelim) :
+                qs.replace(IMC.QtLineDelim,QString(u'\\n'))
+                qs.replace(QRegExp(u'([\[\]\(\)\*\.])'),QString(u'\\\\1'))
+                self.regexSwitch.setChecked(True)
+            self.findText.setText(qs)
             if not self.isVisible() :
                 IMC.mainWindow.makeMyPanelCurrent(self)
             self.findText.setFocus() # get keyboard focus to the find string    
-        elif kkey == IMC.ctl_equal : # ^= == replace and no movement
-            self.doReplace(1,False,False,False)
-        elif kkey == IMC.ctl_T : # ^t == replace and find next
-            self.doReplace(1, True, False, False)
-        elif kkey == IMC.ctl_shft_T : # ^T == replace and find backward
-            self.doReplace(1, False, True, False)
         else:
             pqMsgs.beep() # should not occur
 
