@@ -33,32 +33,31 @@ __license__ = '''
 Implement the (re)Flow panel. On this panel are an array of controls
 related to reflowing the ASCII etext, and buttons for HTML conversion.
 
-ASCII reflow means arranging the text of each paragraph to fit in the standard
-75-character line. Complicating this are the special markups pioneered by
-Guiguts and supported here with somewhat different syntax:
+ASCII reflow means arranging the text of each paragraph to fit in a limited
+line width, usually 72 characters. Complicating this are the special markups
+pioneered by Guiguts and supported here with somewhat different syntax:
 
 /Q .. Q/   Reflow within block-quote margins, with default margins from the
            control on the panel but which can be set using /Q F:nn L:nn R:nn
 	   in the opening markup line.
 
 /U .. U/   Unsigned list, treated identically to /Q F:2 L:4 but allows
-           explicit F:/L:/R: options as well.
+           explicit F:nn L:nn R:nn options as well.
 
-/* .. */   Do not reflow but can be indented by a settable default amount or
-           by specific amount specified in /* L:nn on the first line.
+/* .. */   Do not reflow, but indent by a settable default amount, or
+           by specific amount specified in L:nn on the first line.
 
 /P .. P/   Indent by 2 spaces, reflow on a single-line basis as poetry. Default
-           margins from the controls but we add /P F:nn L:nn R:nn support.
+           margins from the controls allows F:nn L:nn R:nn support.
 
-/C .. C/   Like the Guiguts /f..f/, which guiguts does not reflow or indent.
-           Typically used for title pages etc. We indent the whole by 2 spaces
-	   minimum, and center each line on col 36 by default, but optionally
-	   on the center of the longest line, minimizing the width.
+/C .. C/   Do not reflow but center each line. Typically used for title pages
+           and the like. Indent the whole by 2 spaces minimum; center each line
+	   on col 36 by default, but optionally on the center of the longest
+	   line, minimizing the width.
 
 /X .. X/   Do not reflow, do not indent.
 
-/R .. R/   Right-aligned text, something missing from Guiguts, convenient
-	   signatures and letter heads.
+/R .. R/   Right-aligned text, convenient for signatures and letterheads.
 
 /T .. T/   Single-line table markup
 
@@ -72,16 +71,16 @@ The general algorithm of reflow is two-pass. On the first pass we examine the
 document (or selection, no difference) line-by-line from top to bottom. In this
 pass we identify each reflow unit, that is, each block of text to be treated.
 In open text, /Q, and /U, a unit is a paragraph delimited by blank lines.
-In other markups a unit is each single non-empty line. Empty lines are counted
+In other markups a unit is a single non-empty line. Empty lines are counted
 but otherwise ignored.
 
 For each unit we note several items: the first and last text block numbers;
-the first-line indent, left indent, and right indent (relative to a 75-char
-line); the count of blank lines preceding.. The indents of course depend on
+the first-line indent, left indent, and right indent on the maximum line, and
+the count of blank lines preceding. The indents of course depend on
 the type of markup we are in at that point. All these decisions are made on
-the first pass and recorded in a list of dicts, one for each unit/paragraph.
+the first pass and recorded in a list of dicts, one for each unit.
 
-The second pass operates on single units, working from the bottom of the
+The second pass operates on the units, working from the bottom of the
 document or selection, up. This is so changes in the text will not alter
 the block numbers of text still to be done. For each unit we pull tokens from
 the unit text and form a new text as a QString with the specified indents.
@@ -125,18 +124,21 @@ class flowPanel(QWidget):
         #            three spinboxes for first, left, right
         #      poiGbox group box "poetry default indents"
         #         poiHbox
-        #            three spinboxes for left, right, fold
+        #            three spinboxes for first, left, right
         #      miscHBox
+	#         mxlGbox group box "Para width"
+	#            mxlHbox
+	#               one spinbox for max text line size
+        #         ctrGBox group box "Center /C..C/ on:"
+        #            ctrHBox
+        #               radio buttons "Para max" "Longest line"
         #         nfiGbox group box "/*..*/ default indents"
         #            nfiHbox
         #               one spinbox for left
-        #         ctrGBox group box "Center /C..C/ on:"
-        #            ctrHBox
-        #               radio buttons "75" "longest line"
         #   bigHbox
         #      skipGbox group box "Do Not Reflow (skip):"
         #         skipVbox
-        #            five checkboxes for Poetry, blockquote, center, special, table
+        #            five checkboxes for Poetry, blockquote, center, no-flow, table
         #      tknVbox
         #         itGbox group box "Count <i> and </i> as:"
         #            itHbox
@@ -149,7 +151,7 @@ class flowPanel(QWidget):
         #               three radio buttons 0, 1, as-is
         #         ctGBox group box "Center /C..C/ on:"
         #            ctHBox
-        #               two radio buttons 75, longest line
+        #               two radio buttons doc, self
         #   doitFrame sunken frame for important buttons
         #      doitHBox
         #         "Reflow Now" [Selection]  [Document]
@@ -195,9 +197,32 @@ class flowPanel(QWidget):
         self.poIndent[2] = self.makeSpin(0,35,0,u"poRight")
         poiHBox.addWidget(self.poIndent[2],0)
         poiHBox.addStretch(1)
-        # misc row with two groups
+        # misc row with three groups
         miscHBox = QHBoxLayout()
         indentsVBox.addLayout(miscHBox)
+	# Max para width
+	mxlGBox = QGroupBox("Text width:")
+	miscHBox.addWidget(mxlGBox)
+	mxlHBox = QHBoxLayout()
+	mxlGBox.setLayout(mxlHBox)
+	mxlHBox.addWidget(QLabel("Width:"),0)
+	self.maxParaWidth = self.makeSpin(32,80,72,u"mxWidth")
+	mxlHBox.addWidget(self.maxParaWidth,0)
+	mxlHBox.addStretch(1)
+        # Center choice
+        ctrGBox = QGroupBox("Center /C..C/ on:")
+        miscHBox.addWidget(ctrGBox)
+        ctrHBox = QHBoxLayout()
+        ctrGBox.setLayout(ctrHBox)
+        self.ctrOnDoc = QRadioButton("doc")
+	self.ctrOnDoc.setChecked(True) # should get these from stgs
+        ctrHBox.addWidget(self.ctrOnDoc,0)
+        self.ctrOnSelf = QRadioButton("self")
+	self.ctrOnSelf.setChecked(False)
+        ctrHBox.addWidget(self.ctrOnSelf,0)
+        ctrHBox.addStretch(1)
+        bigHBox = QHBoxLayout()
+        mainLayout.addLayout(bigHBox)
         # no-flow indent
         nfiGBox = QGroupBox("/*..*/ default indent:")
         miscHBox.addWidget(nfiGBox)
@@ -207,18 +232,6 @@ class flowPanel(QWidget):
         self.nfLeftIndent = self.makeSpin(2,35,2,u"nfLeft")
         nfiHBox.addWidget(self.nfLeftIndent,0)
         nfiHBox.addStretch(1)
-        # Center choice
-        ctrGBox = QGroupBox("Center /C..C/ on:")
-        miscHBox.addWidget(ctrGBox)
-        ctrHBox = QHBoxLayout()
-        ctrGBox.setLayout(ctrHBox)
-        self.ctrOn75 = QRadioButton(" 75")
-        ctrHBox.addWidget(self.ctrOn75,0)
-        self.ctrOnLongest = QRadioButton("longest line+2")
-        ctrHBox.addWidget(self.ctrOnLongest,0)
-        ctrHBox.addStretch(1)
-        bigHBox = QHBoxLayout()
-        mainLayout.addLayout(bigHBox)
         # group of block skip checkboxes
         skipGBox = QGroupBox("Do not reflow (skip):")
         bigHBox.addWidget(skipGBox,0)
@@ -322,8 +335,7 @@ class flowPanel(QWidget):
     # This slot gets called on any change to the "count markup as"
     # button groups and refreshes the itbosc list which is used during reflow.
     # self.itbosc is a dict giving the logical widths for i, b and sc markup,
-    # as 0, 1, or as-is (2).
-    
+    # as 0, 1, or as-is (2). 
     def updateItBoSc(self):
         self.itbosc['i'] = 0 if self.itCounts[0].isChecked() else \
             1 if self.itCounts[1].isChecked() else 2
@@ -335,8 +347,9 @@ class flowPanel(QWidget):
     # FOR REFERENCE here are the actual data access items in the UI:
     # self.bqIndent[0/1/2].value() for first, left, right
     # self.poIndent[0/1/2].value() for first, left, right
+    # self.maxParaWidth.value() for paragraph wrap width (& default table width)
     # self.nfLeftIndent.value()
-    # self.ctrOn75.isChecked() versus self.ctrOnLongest.isChecked()
+    # self.ctrOnDoc.isChecked() versus self.ctrOnSelf.isChecked()
     # self.itCounts[0/1/2].isChecked() == 0, 1, as-is
     # self.boCounts[0/1/2].isChecked() == 0, 1, as-is
     # self.scCounts[0/1/2].isChecked() == 0, 1, as-is
@@ -407,7 +420,7 @@ class flowPanel(QWidget):
     # 'K' : in a line of a poem ('T':'P' && 'M':'P'), an empty QString or
     #       the poem line number as a decimal digits.
     # seen in a *, P, or C markup. Lines of a * or P markup, or C markup with
-    # "longest line" checked, are indented by F-W (which may be negative) thus
+    # "center on doc" checked, are indented by F-W (which may be negative) thus
     # removing any existing indent installed from a previous reflow.
     # 'B' : the count of blank lines that preceded this unit, used in Table
     # to detect row divisions and in HTML conversion to detect chapter heads
@@ -475,7 +488,7 @@ class flowPanel(QWidget):
 		# spaces this line has (* section) or needs to align it (C, R).
 		indentAmount = unit['F']
 		if markupCode == u'*' or \
-		(markupCode == u'C' and self.ctrOnLongest.isChecked()) :
+		(markupCode == u'C' and self.ctrOnSelf.isChecked()) :
 		    # reduce that to bring the longest line to the proper
 		    # left margin, typically 2 but could be nested deeper.
 		    indentAmount = unit['F'] - leastIndent + unit['L']
@@ -518,7 +531,7 @@ class flowPanel(QWidget):
 	    flowText = QString(u' '*F) # start the paragraph with indent F
 	    oneSpace = QString(u' ') # one space between tokens
 	    leftIndent = QString(u' '*L) # left-indent space
-            lineLength = 75 - unit['R']
+            lineLength = self.maxParaWidth.value() - unit['R']
 	    # In the following, lineLimit is the accumulated text length at
 	    # which we next need to insert a linebreak and indent; currentLength
 	    # is the accumulated length of text added so far. Both are LOGICAL
@@ -585,7 +598,8 @@ class flowPanel(QWidget):
     # PSW onto a stack when entering a markup, and pop it on exit.
     def parseText(self,topBlock,endBlock):
 	unitList = []
-	PSW = { 'S': True, 'Z':None, 'M':' ', 'P':True, 'F':0, 'L':0, 'R':0, 'W':75, 'B':0}
+	PSW = {'S': True, 'Z':None, 'M':' ', 'P':True, 'F':0, 'L':0, 'R':0, 'W':72, 'B':0}
+	PSW['W'] = self.maxParaWidth.value()
 	stack = []
 	# We recognize the start of markup with this RE    
 	markupRE = QRegExp(u'^/(P|Q|\\*|C|X|F|U|R|T)')
@@ -644,17 +658,17 @@ class flowPanel(QWidget):
 			    PSW['P'] = False # collect by lines
 			    self.getIndents(qs,PSW, self.poIndent[0].value(),
 			        self.poIndent[1].value(), self.poIndent[2].value() )
-			    PSW['W'] = 75 # initialize to find shortest indent
+			    PSW['W'] = self.maxParaWidth.value() # initialize to find shortest indent
 			elif PSW['M'] == u'*' and (not self.skipNfCheck.isChecked()) :
 			    # Enter a no-reflow indent section
 			    PSW['P'] = False # collect by lines
 			    self.getIndents(qs,PSW,0,self.nfLeftIndent.value(), 0 )
-			    PSW['W'] = 75 # initialize to find shortest indent
+			    PSW['W'] = self.maxParaWidth.value() # initialize to find shortest indent
 			elif PSW['M'] == u'C' and (not self.skipCeCheck.isChecked()) :
 			    # Enter a centering section
 			    PSW['P'] = False # collect by lines
 			    self.getIndents(qs,PSW,2,2,0)
-			    PSW['W'] = 75 # initialize to find shortest indent
+			    PSW['W'] = self.maxParaWidth.value() # initialize to find shortest indent
 			elif PSW['M'] == u'X' :
 			    # Enter a no-reflow no-indent section
 			    PSW['P'] = False # collect by lines
@@ -676,6 +690,7 @@ class flowPanel(QWidget):
 			    # start a table section /T or /TM
 			    PSW['P'] = False # collect by lines
 			    PSW['L'] += 2 # table indent of 2 over current L
+			    PSW['W'] = self.maxParaWidth.value() # save line width
 			else : 
 			    # markup of this type is to be skipped: consume
 			    # lines until we see the end of the section.
@@ -706,12 +721,12 @@ class flowPanel(QWidget):
 			    if PSW['M'] == u'C' : 
 				# calculate indent for centered line, at least 2
 				# (may be reduced later)
-				lineIndent = ( 75-len(lineText.strip()) ) /2
+				lineIndent = ( self.maxParaWidth.value()-len(lineText.strip()) ) /2
 				lineIndent = int( max(2, lineIndent) )
 				u['F'] = lineIndent
 			    elif PSW['M'] == u'R' :
 				# calculate indent for right-aligned line
-				lineIndent = max(0, (75-len(lineText.strip()))-PSW['R'])
+				lineIndent = max(0, (self.maxParaWidth.value()-len(lineText.strip()))-PSW['R'])
 				u['F'] = lineIndent
 			    elif PSW['M'] == u'P' or PSW['M'] == u'*': 
 				# calculate indent for P or *: existing leading
@@ -995,6 +1010,7 @@ class flowPanel(QWidget):
         stgs.setValue("poLeft",self.poIndent[1].value() )
         stgs.setValue("poRight",self.poIndent[2].value() )
         stgs.setValue("nfLeft",self.nfLeftIndent.value() )
+	stgs.setValue("mxWidth",self.maxParaWidth.value() )
         stgs.endGroup()
 
     # ============= end of the class definition of flowPanel!! ========
@@ -1133,6 +1149,10 @@ Edit Flow to skip /F..F/ in ascii reflow
 Edit Flow to handle /F..F/ in html convert
 
 U/
+
+/X
+-123456789-123456789-123456789-123456789-123456789-123456789-123456789-123|56789
+X/
 
 This lengthy quote is the unit-test document. It contains representative
 samples of all the reflow markup types. This is a sample of an open paragraph

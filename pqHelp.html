@@ -41,11 +41,12 @@ It is coded in Python using <a href="http://riverbankcomputing.co.uk/software/py
 It is packaged for distribution using <a href="http://pyinstaller.org">pyinstaller</a>.</p>
 <p>Qt is licensed for noncommercial use under the LGPL.
 PyQt4 is licensed for noncommercial use under the GPL v2 and the GPL v3.
-The source code of PPQT is licensed under the GPL v3; see the file <tt>extras/COPYING.TXT</tt> in the distribution folder.</p>
+<b>The source code of PPQT is licensed under the GPL v3</b>.
+See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 <h2>Acknowledgements</h2>
 <p>First, a deep bow of respect to Steve Shulz (Thundergnat) who created, and to all who maintain, Guiguts, the program from which PPQT takes its inspiration and lots of ideas. Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Developement with PyQt</i> that showed how to build PPQT.</p>
 <h2>Contents</h2>
-<p>After clicking a link, use ctl-B or ctl-[ (control-left bracket) for
+<p>After clicking a link, use ctl-b or ctl-[ (control-left bracket) for
 the Back function.</p>
 <ul>
 <li><a href='#Files'>Files and Folders</a> says where PPQT looks for the book text, images, and related files.</li>
@@ -58,10 +59,11 @@ the Back function.</p>
 <li><a href='#Find'>The Find Panel</a> tells about the many Find and Replace facilities.</li>
 <li><a href='#Chars'>The Characters Panel</a> tells how to use the character census.</li>
 <li><a href='#Words'>The Words Panel</a> tells how to find words, similar words, and misspelt words.</li>
-<li><a href='#Pages'>The Pages Panel</a> tells how to paginate the HTML etext.</li>
-<li><a href='#Flow'>The Reflow Panel</a> tells how to mark-up the text for format, including <a href='#Table'>Table markup</a> and <a href='#html'>HTML conversion</a></li>
+<li><a href='#Pages'>The Pages Panel</a> tells how to set the folios for the HTML etext.</li>
+<li><a href='#Flow'>The Reflow Panel</a> tells how to mark up the text for format, including <a href='#Table'>Table markup</a> and <a href='#html'>HTML conversion</a></li>
 <li><a href='#View'>The Preview Panel</a> tells how to preview the HTML conversion.</li>
 <li><a href='#Foot'>The Footnote Panel</a> tells how to find, number and convert footnotes.</li>
+<li><a href='#Extras'>The Extras</a> documents the miscellania in the <tt>extras</tt> folder.</li>
 </ul>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
@@ -427,13 +429,12 @@ sections in the ASCII etext, and for HTML conversion.
 </p>
 <h3>Markup Codes</h3>
 <p>Use the following codes to mark sections for special treatment in the
-reflow of ASCII etext and during HTML conversion. During reflow, normal paragraphs are flowed in a 75-character line. Other markup sections are
-supported as follows:</p>
+reflow of ASCII etext and during HTML conversion. During reflow, normal paragraphs are flowed within a maximum width, usually 72 characters. Other markup sections are supported as follows:</p>
 <table border='1' style='border-collapse:collapse;'>
 <tr><th>Markup</th><th>Usage</th></tr>
 <tr><td><b>/Q..Q/</b></td><td>Block Quote: paragraphs are reflowed
 within left and right indents as set in the top row of controls.</td></tr>
-<tr><td><b>/U..U/</b></td><td>Unsigned list: text is reflowed by paragraphs
+<tr><td><b>/U..U/</b></td><td>Unsigned list: text is reflowed by paragraphs,
 with the first line of each paragraph indented 2 and other lines indented 4.</td></tr>
 <tr><td><b>/P..P/</b></td><td>Poetry:single lines are indented as given
 in the second row of controls. Line numbers are pushed to the right margin.</td></tr>
@@ -441,50 +442,49 @@ in the second row of controls. Line numbers are pushed to the right margin.</td>
 <tr><td><b>/*..*/</b></td><td>No-flow: the entire section may be indented
 by an amount specified in the third control, otherwise no change.</td></tr>
 <tr><td><b>/C..C/</b></td><td>Centering: single lines are indented so
-as to center on the 75-char line, with at least a 2-space indent.</td></tr>
+as to be centered, with at least a 2-space indent.</td></tr>
 <tr><td><b>/T..T/</b><br /><b>/TM../T</b></td>
 <td>Table formatting, see discussion below</td>
-<tr><td><b>/X..X/</b></td><td>Left entirely alone.</td></tr>
-<tr><td><b>/F..F/</b></td><td>Left entirely alone.</td></tr>
+<tr><td><b>/X..X/</b></td><td>Preformatted section, left entirely alone.</td></tr>
+<tr><td><b>/F..F/</b></td><td>Footnote section, left entirely alone.</td></tr>
 </table>
 <h3>ASCII Reflow</h3>
-<p>Select a portion of text and click Reflow Now: Selection, or 
-Reflow Now: Document to reflow the whole document. Reflow is a single
-undo/redo operation: perform it; inspect the result; use ctl-z to undo; adjust the markup and try again.</p>
-<p>Before doing reflow you can
-set the switches on the left center to skip over special sections. For example set the skip-Tables checkbox so that /T markup is treated the same as /X and  left alone. During reflow, the markup codes are retained, and you can
-apply reflow multiple times without harm.</p>
-<p>For Centered text, setting the "longest line+2" button adjusts
+<p>ASCII reflow involves arranging the text to fit in a maximum width and also 
+formatting quotes, tables, and other special sections.</p>
+<h4>Setting Margins and Indents</h4>
+<p>The top row of controls set the default indents for block quotes.
+The <i>First</i> indent applies to the first line of a paragraph;
+<i>Left</i> to the other lines. The <i>Right</i> indent causes lines to
+be shorter than the maximum width by this amount.</p>
+<p>The second row of controls set the indents for poetry, in which the <i>First</i> indent applies to every line; the <i>Left</i> indent is used only if a line is too long to fit in the maximum width and is folded.</p>
+<p>At the left of the third row of controls is the Text Width control, which sets the width of text paragraphs and the default width for tables.</p>
+<p>For Centered text, setting the "doc" button causes each line to be centered on the text width value. Setting the "self" button adjusts
 a centered section as far to the left as possible leaving a 2-space indent.
-If the button is not set, each line is centered on 75 spaces, which
-may produce a deep left margin.</p>
+</p>
+<p>You can specify the First, Left and/or Right indent for any section
+by writing <b>F:</b><i>nn</i> <b>L:</b><i>nn</i> <b>R:</b><i>nn</i> following
+the start of the markup. For example <tt>/Q F:8 L:6</tt> starts a 
+block-quote markup with those margins, overriding the <i>First</i> and <i>Left</i> margins set with the visible controls, but using the <i>Right</i> from the control.</p>
+<p>You can write these explicit indent values on Quote, Poetry and List markups. You can also use <b>R:</b><i>nn</i> on Right markup to set a right margin; and <b>L:</b><i>nn</i> on no-reflow (/*) markup to set a left margin.</p>
+<h4>Reflowing</h4>
+<p>Select a portion of text and click Reflow Now: Selection, or use
+Reflow Now: Document to reflow the whole document. Reflow is a single
+undo/redo operation: perform it; inspect the result; use ctl-z to undo; adjust the markup and try again. During reflow, the markup codes are retained, and you can apply reflow multiple times without harm.</p>
+<p>Before doing reflow you can
+set the switches on the left center to skip over special sections. For example set the skip-Tables checkbox so that /T markup is treated the same as /X and  left alone.</p>
 <p>Normally you reflow after removing &lt;i>, &lt;b>, and &lt;sc> markup.
 However you can preview reflow while these are still in place by setting
 the controls on the right center. For example if &lt;sc> markup will
 be converted to uppercase, set the control to treat this markup as 0 length.
 (This does not work for tables at this time. Set the skip button for tables
 until you have removed the i/b/sc markup from the text.)</p>
-<h4>Indents</h4>
-<p>The top row of controls set the default indents for block quotes.
-The <i>First</i> indent applies to the first line of a paragraph;
-<i>Left</i> to the other lines. The <i>Right</i> indent causes lines to
-be shorter than 75 by this amount.</p>
-<p>The second row of controls set the indents for poetry, in which the <i>First</i>
-indent applies to every line; the <i>Left</i> indent is used only if a line
-is too long to fit in 75 chars and is folded.</p>
-<p>You can specify the First, Left and/or Right indent for any section
-by writing <b>F:</b><i>nn</i> <b>L:</b><i>nn</i> <b>R:</b><i>nn</i> following
-the start of the markup. For example <tt>/Q F:8 L:6</tt> starts a 
-block-quote markup with those margins, overriding the <i>First</i> and <i>Left</i> margins set with the visible controls, but using the <i>Right</i> from the control.</p>
-<p>You can write these explicit indent values on Quote, Poetry and List markups. You can also use <b>R:</b><i>nn</i> on Right markup to set a right margin; and <b>L:</b><i>nn</i> on no-reflow (/*) markup to set a left margin.</p>
 <h4>Nesting Markups</h4>
 <p>To a limited degree you can nest the markups. For example you can nest
 a /P poetry section within a /Q block quote section or a /U list section.
-You can nest a /R right align section in poetry or a quote. Multiple
-levels of nesting (/R within /P within /Q) are possible. The First, Left and Right indents for a nested section are taken relative to the indents for its containing section.</p>
+You can nest a /R right align section in poetry or a quote to provide a signature or letterhead line. Multiple levels of nesting (/R within /P within /Q) are possible. The First, Left and Right indents for a nested section are taken relative to the indents for its containing section.</p>
 <h3 id='Table'>Table Markup</h3>
 PPQT treats tables as a special kind of reflow. You mark up the table text with <b>/T...T/</b> and some other parameters. During reflow the table is formatted. If the result is not perfect, undo, adjust the markup, try again.</p>
-<p>Within a table, the column values within a row are separated in one of two ways: by strings of two or more spaces, or with stiles (|).</p>
+<p>The column values within each row are separated in one of two ways: by strings of two or more spaces, or with stile (|) characters.</p>
 <p>A single-line table has one table row per text line. It is marked up with  <b>/T..T/</b> Here is a simple table with two rows and two columns.</p>
 <pre>/T
 column 1    755.00
@@ -501,20 +501,20 @@ Chapter IV. The Nature and
 Properties of Clay   29
 T/
 </pre>
-<p>PPQT indents a table two spaces (an etext requirement for formatted text), more if the table is nested in another markup. By default it makes the table fill the line, 73 characters, less if contained in a markup with a RIGHT indent.</p>
-By default it aligns column text left and spaces the
-columns roughly in proportion to their contents. However, you can specify detailed controls on the opening markup line.
-Specify properties of the whole table with <b>T(</b><i>properties</i><b>)</b> where the <i>properties</i> can be:</p>
+<p>PPQT indents a table two spaces (an etext requirement for formatted text), more if the table is nested in another markup. By default the table is formatted to fill the paragraph width. The table is narrower if it is nested in a markup with a left and right indents.</p>
+<p>By default column text is aligned left, and columns are given widths
+roughly in proportion to their contents. However, you can specify detailed controls on the opening markup line.</p>
+<p>Specify properties of the whole table with <b>T(</b><i>properties</i><b>)</b> where the <i>properties</i> can be:</p>
 <ul><li><b>W:</b><i>nn</i> for the width of the table.</li>
 <li><b>S:'|'</b> (a stile in single quotes) to have the right side of the finished table be a column of
 stile characters.</li>
 <li><b>T:'-'</b> to have the top line of the table be a row of hyphens.</li>
 </ul>
-<p>For example <tt>/TM T(W:50)</tt> begins a multi-line table with a width of 50.</p>
+<p>For example <tt>/TM T(W:50)</tt> begins a multi-line table with a width of 50. The width specified here can be wider than the text width, this is not checked.</p>
 <p>Set the default properties for all columns with <b>C(</b><i>properties</i><b>)</b>, where
 the <i>properties</i> can be:</p>
 <ul><li><b>W:</b><i>nn</i> for the minimum width of every column.
-(PPQT will give columns more width than this to fill the table width.)</li>
+(PPQT will give columns more width than this to fill the table width, or to fit the contents of the widest cell.)</li>
 <li><b>A:R/L/C/D</b> to align the cell contents left, right, centered
 or decimal.</li>
 <li><b>B:'-'</b> to have each cell have a line of hyphens under it.</li>
@@ -544,7 +544,7 @@ T/</pre>
 T/</pre>
 <p>You can omit the contents of empty cells on the right end of a row. However, you cannot leave blank a cell or cells on any line within a row, or PPQT will assign
 text to the wrong column (as in the example above where "prose" fell
-from column 3 to column 1 because columns 1 & 2 were blank).
+from column 3 to column 1 because columns 1 and 2 were blank).
 To fill in for a cell that is logically empty,
 use a single @ character on every line, as in the above example.</p>
 <p>PPQT assigns horizontal space to columns using some brain-dead heuristics.
@@ -708,5 +708,17 @@ longer be recognized.</p>
 <p>HTML conversion of footnotes is divided between the Footnote Panel and the Reflow Panel.</p>
 <p>Click HTML Cvt in the Footnote Panel to convert all Anchors and Notes to HTML. This is a single-undo operation. Do this as the very last footnote operation in the HTML fork of the book. Afterward, the Footnote Panel is of no use, because the Notes can no longer be recognized.</p>
 <p>In the <a href='#Flow'>Reflow Panel</a> HTML conversion, the markup tags <tt>/F..F/</tt> are converted in HTML <tt>&lt;div></tt> markup.</p>
+<h2 id='Extras'>The Extras Folder</h2>
+<p>
+Within the distribution folder <tt>PPQT</tt> there is a folder named <tt>extras</tt> with some miscellaneous documents:</p>
+<li><tt>en-common.txt</tt> is the file of common English scannos, pretty much the same as that distributed with Guiguts.</li>
+<li><tt>syntax-of-find-button-files.txt</tt> has sketchy documentation of the format of a Find button file.</li>
+<li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS dictionary described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match PPQT conventions (which are different because NIH is why)).</li>
+<li><tt>empty-buttons.utf</tt> is a Find Buttons file that will clear all 24 buttons to <tt>(empty)</tt> status. Use it before setting up your own buttons to save, so as to avoid saving superfluous definitions.</li>
+<li><tt>unbalancedRE.utf</tt> loads a set of Find buttons to look for unbalanced markup.</li>
+<li><tt>fixupRE.utf</tt> loads a set of Find buttons to look for common formatting errors, modelled after Guiguts Fixup.</li>
+<li><tt>find-psep.utf</tt> loads a set of Find buttons to find and delete page separators.</li>
+<li><tt>clearTextMarkups.utf</tt> loads a set of Find buttons to find and delete block markup.</li>
+</ul>
 </body>
 </html>

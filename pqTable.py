@@ -590,11 +590,12 @@ splitRE = QRegExp(u'( {2,}|\s*\|\s*)')
 def tableReflow(tc,doc,unitList):
     # Note the properties of the table including specified width, multiline etc.
     tprops = tableProperties(getLineQs(tc,doc,unitList[0]['A']),unitList[0]['A'])
-    # If the width wasn't spec'd then develop a target width based on 75 less
-    # any indents in the first work unit. Take L and R from the first "real"
+    # If the width wasn't spec'd then develop a target width based on the
+    # current max line width less any indents in the first work unit.
+    # Take L and R from the first "real"
     # work unit, as the markup-start unit doesn't get the indent.
     targetTableWidth = tprops.tableWidth()
-    availableTableWidth = 75 - unitList[1]['L'] - unitList[1]['R']
+    availableTableWidth = unitList[0]['W'] - unitList[1]['L'] - unitList[1]['R']
     if targetTableWidth is None: # user did not spec T(W:)
         targetTableWidth = availableTableWidth
     else:
@@ -925,7 +926,7 @@ def tableHTML(tc,doc,unitList):
     # if the table width was specified, figure its percentage based
     # on the line width in effect (the table might be nested, e.g.).
     twpct = None
-    twasc = 75 - unitList[1]['L'] - unitList[1]['R']
+    twasc = unitList[0]['W'] - unitList[1]['L'] - unitList[1]['R']
     twidth = twasc
     if tprops.tableWidth() is not None:
         twidth = min(twasc,tprops.tableWidth())
@@ -1049,7 +1050,7 @@ if __name__ == "__main__":
     #IMC.editWidget = QPlainTextEdit()
     #IMC.editWidget.setFont(pqMsgs.getMonoFont())
 
-    tp = tableProperties(QString(u"/t T(A:C T:'-' S:'|') Col(B:'-' S:'|') 3(A:R W:8)"))
+    tp = tableProperties(QString(u"/t T(A:C T:'-' S:'|') Col(B:'-' S:'|') 3(A:R W:8)"),1599)
     print('tw ',tp.tableWidth())
     print('ts ',tp.tableSideString())
     print('tt ',tp.tableTopString())
