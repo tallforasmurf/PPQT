@@ -83,7 +83,7 @@ class htmlPreview(QWidget):
 	self.settings.setAttribute(QWebSettings.JavaEnabled, False)
 	self.settings.setAttribute(QWebSettings.PluginsEnabled, False)
 	self.settings.setAttribute(QWebSettings.ZoomTextOnly, True)
-	self.settings.setAttribute(QWebSettings.SiteSpecificQuirksEnabled, False)
+	#self.settings.setAttribute(QWebSettings.SiteSpecificQuirksEnabled, False)
 	# hook up the refresh button
 	self.connect(self.refreshButton, SIGNAL("clicked()"),self.refresh)
 	# hook up the load status signals

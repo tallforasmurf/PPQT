@@ -65,7 +65,7 @@ class helpDisplay(QWebView):
 	self.settings().setAttribute(QWebSettings.JavaEnabled, False)
 	self.settings().setAttribute(QWebSettings.PluginsEnabled, False)
 	self.settings().setAttribute(QWebSettings.ZoomTextOnly, True)
-	self.settings().setAttribute(QWebSettings.SiteSpecificQuirksEnabled, False)
+	#self.settings().setAttribute(QWebSettings.SiteSpecificQuirksEnabled, False)
 	self.userFindText = QString()
 	# Look for pqHelp.html in the app folder and copy its text into
 	# a local buffer. If it isn't found, put a message there instead.
