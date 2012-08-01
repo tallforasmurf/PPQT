@@ -364,9 +364,10 @@ class MainWindow(QMainWindow):
     # modified dot in the red close gumdrop, and on other platforms, 
     # displays an asterisk after the filename in the titlebar.
     def setWinModStatus(self):
-        self.setWindowModified(
-            self.editor.document().isModified() | IMC.needMetadataSave
-            )        
+        if self.windowTitle().contains(u'*') : # if there's a placeholder yet,
+            self.setWindowModified(
+                self.editor.document().isModified() | IMC.needMetadataSave
+                )        
     # Slot to receive the modificationChanged signal from the main editor.
     def ohModificationChanged(self,newValue):
         self.setWinModStatus()
