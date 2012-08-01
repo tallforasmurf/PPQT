@@ -36,7 +36,7 @@ is read from pqHelp.html in the app folder.
 
 from PyQt4.QtCore import ( Qt, QFile, QString, QIODevice, QTextStream)
 from PyQt4.QtWebKit import(QWebPage, QWebView, QWebSettings)
-from PyQt4.QtGui import (QAction, QKeySequence)
+from PyQt4.QtGui import (QAction, QKeySequence, QFont, QFontInfo)
 import pqMsgs
 import os
 
@@ -53,9 +53,16 @@ class helpDisplay(QWebView):
     def __init__(self, parent=None ):
         super(helpDisplay, self).__init__(parent)
 	# make page unmodifiable
-	#self.page().setContentEditable(False)
-	# initialize settings (copied from pqView)
-	self.settings().setFontFamily(QWebSettings.StandardFont, 'Palatino')
+	self.page().setContentEditable(False)
+	# initialize settings
+	# Find out the nearest font to Palatino
+	qf = QFont()
+	qf.setStyleStrategy(QFont.PreferAntialias+QFont.PreferMatch)
+	qf.setStyleHint(QFont.Serif)
+	qf.setFamily(QString(u'Palatino'))
+	qfi = QFontInfo(qf)
+	# set the default font to that serif font
+	self.settings().setFontFamily(QWebSettings.StandardFont, qfi.family())
 	self.settings().setFontSize(QWebSettings.DefaultFontSize, 16)
 	self.settings().setFontSize(QWebSettings.MinimumFontSize, 6)
 	self.settings().setFontSize(QWebSettings.MinimumLogicalFontSize, 6)

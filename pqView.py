@@ -45,7 +45,7 @@ then return its selectedText, which is plain text stripped of HTML cruft.
 '''
 from PyQt4.QtCore import ( QChar, QPoint, Qt, QString, QUrl, SIGNAL)
 from PyQt4.QtGui import (
-    QFont,
+    QFont, QFontInfo,
     QPushButton,
     QHBoxLayout,
     QVBoxLayout,
@@ -70,9 +70,15 @@ class htmlPreview(QWidget):
 	self.setLayout(vbox)
 	# make the web preview uneditable
 	self.preview.page().setContentEditable(False)
-	# Set a common available serif font as default
 	self.settings = self.preview.settings()
-	self.settings.setFontFamily(QWebSettings.StandardFont, 'Palatino')
+	# Find out the nearest font to Palatino
+	qf = QFont()
+	qf.setStyleStrategy(QFont.PreferAntialias+QFont.PreferMatch)
+	qf.setStyleHint(QFont.Serif)
+	qf.setFamily(QString(u'Palatino'))
+	qfi = QFontInfo(qf)
+	# set the default font to that serif font
+	self.settings.setFontFamily(QWebSettings.StandardFont, qfi.family())
 	self.settings.setFontSize(QWebSettings.DefaultFontSize, 16)
 	self.settings.setFontSize(QWebSettings.MinimumFontSize, 6)
 	self.settings.setFontSize(QWebSettings.MinimumLogicalFontSize, 6)
@@ -83,6 +89,7 @@ class htmlPreview(QWidget):
 	self.settings.setAttribute(QWebSettings.JavaEnabled, False)
 	self.settings.setAttribute(QWebSettings.PluginsEnabled, False)
 	self.settings.setAttribute(QWebSettings.ZoomTextOnly, True)
+	# the following causes a hard error in linux
 	#self.settings.setAttribute(QWebSettings.SiteSpecificQuirksEnabled, False)
 	# hook up the refresh button
 	self.connect(self.refreshButton, SIGNAL("clicked()"),self.refresh)
