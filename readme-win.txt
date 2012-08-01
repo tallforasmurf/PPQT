@@ -26,8 +26,8 @@ Within the PPQT folder locate the file ppqt.exe (lowercase). This is the
 executable program. It must launch within the PPQT folder which contains
 all its support code. For convenience, right-click on the ppqt file
 and from the context menu, select "Create Shortcut". Drag the resulting
-file, "shortcut to ppqt" onto your desktop. You can launch PPQT by
-double-clicking this shortcut.
+item ("shortcut to ppqt" or "ppqt-shortcut") onto your desktop. You can
+launch PPQT by double-clicking this shortcut.
 
 This completes the installation process.
 
