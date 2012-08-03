@@ -417,10 +417,10 @@ Use these to insert a text pattern at the start of every page (except
 pages for which the Action is Skip folio). The text pattern may contain <tt>\n</tt> to insert a line-break, and it may contain <tt>%f</tt> to insert the
 folio number for that page. Insert
 any unique pattern that you can extend later with regular expression
-replacements, for example <tt>[=%f=]</tt>. The full-on pattern for
-HTML folios in the side margin is:</p><blockquote>
-<tt>\n&lt;span class='pgnum'>&lt;a id='Page_%f' name='Page_%f'>&lt;/a>[Pg&amp;nbsp;%f]&lt;/span>\n</tt>
-</blockquote>
+replacements, for example <tt>[=%f=]</tt>. The full pattern for
+HTML folios in the side margin is:<br /><pre>
+<tt>&lt;span class='pgnum'>&lt;a id='Page_%f' name='Page_%f' href='#Page_%f'>[Pg&amp;nbsp;%f]&lt;/a>&lt;/span>\n</tt>
+</pre></p>
 <p>Inserting folio text is a single undo/redo operation.</p>
 <h2 id='Flow'>The Reflow Panel</h2>
 <p>Click the Flow tab to display the Reflow panel.
@@ -691,7 +691,7 @@ NOTES
 
 
 /F
-F/</pre><p>Here, NOTES represents a subhead, so it is preceded and followed by two blank lines. The <tt>/F..F/</tt> markup codes tell where the Notes from the preceding chapter should move. Alternatively you might have a FOOTNOTES chapter (preceded by four blank lines) at the end of the book text.</p>
+F/</pre><p>Here, <tt>NOTES</tt> represents a subhead, so it is preceded and followed by two blank lines. The <tt>/F..F/</tt> markup codes tell where the Notes from the preceding chapter should move. Alternatively you might have a single <tt>NOTES</tt> chapter (preceded by four blank lines) at the end of the book text.</p>
 <p>When you click the Move Notes button, PPQT scans the document and locates all the <tt>/F..F/</tt> sections you have coded. (If it cannot find any, it displays an error.) Then it goes through the footnote table and finds any Notes that are not already enclosed in a <tt>/F..F/</tt> section. It moves these into the Footnote section next below them in the document. (If there is no section below  a Note, it is not moved.)</p>
 <p>Moving notes is a single-undo operation. Inspect the result and use ctl-z if it is not satisfactory.</p>
 <h3>ASCII Conversion</h3>
@@ -706,20 +706,20 @@ longer be recognized.</p>
   
 <h3>HTML Conversion</h3>
 <p>HTML conversion of footnotes is divided between the Footnote Panel and the Reflow Panel.</p>
-<p>Click HTML Cvt in the Footnote Panel to convert all Anchors and Notes to HTML. This is a single-undo operation. Do this as the very last footnote operation in the HTML fork of the book. Afterward, the Footnote Panel is of no use, because the Notes can no longer be recognized.</p>
-<p>In the <a href='#Flow'>Reflow Panel</a> HTML conversion, the markup tags <tt>/F..F/</tt> are converted in HTML <tt>&lt;div></tt> markup.</p>
+<p>In the Footnote panel click HTML Cvt to convert all Anchors and Notes to HTML. This is a single-undo operation. Do this as the very last footnote operation in the HTML fork of the book. Afterward, the Footnote Panel is of no use, because the Notes can no longer be recognized.</p>
+<p>Later, when you use HTML Convert in the <a href='#html'>Reflow Panel</a>, the markup tags <tt>/F..F/</tt> are converted in HTML <tt>&lt;div></tt> markup.</p>
 <h2 id='Extras'>The Extras Folder</h2>
 <p>
 Within the distribution folder <tt>PPQT</tt> there is a folder named <tt>extras</tt> with some miscellaneous documents:</p>
 <li><tt>en-common.txt</tt> is the file of common English scannos, pretty much the same as that distributed with Guiguts.</li>
 <li><tt>suggested-workflow.rtf</tt> describes the steps of post-proofing with PPQT in a logical sequence.</li>
-<li><tt>syntax-of-find-button-files.txt</tt> has sketchy documentation of the format of a Find button file.</li>
-<li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS dictionary described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match PPQT conventions (which are different because NIH is why)).</li>
 <li><tt>empty-buttons.utf</tt> is a Find Buttons file that will clear all 24 buttons to <tt>(empty)</tt> status. Use it before setting up your own buttons to save, so as to avoid saving superfluous definitions.</li>
 <li><tt>unbalancedRE.utf</tt> loads a set of Find buttons to look for unbalanced markup.</li>
 <li><tt>fixupRE.utf</tt> loads a set of Find buttons to look for common formatting errors, modelled after Guiguts Fixup.</li>
 <li><tt>find-psep.utf</tt> loads a set of Find buttons to find and delete page separators.</li>
 <li><tt>clearTextMarkups.utf</tt> loads a set of Find buttons to find and delete block markup.</li>
+<li><tt>syntax-of-find-button-files.txt</tt> has sketchy documentation of the format of a Find button file.</li>
+<li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS style section described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match what PPQT generates).</li>
 </ul>
 </body>
 </html>
