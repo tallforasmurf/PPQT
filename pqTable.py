@@ -619,6 +619,7 @@ def tableReflow(tc,doc,unitList):
     for u in work:
         unit = unitList[u]
         qs = getLineQs(tc,doc,unit['A'])
+        #dbg = unicode(qs)
         if botChar is not None:
             if qs.size() == qs.count(botChar):
                 # this line consists entirely of hyphens, treat as blank
@@ -642,6 +643,7 @@ def tableReflow(tc,doc,unitList):
             qsl.removeAt(qsl.count()-1)
         c = 1
         for cqs in qsl:
+            #dbg = unicode(cqs)
             tcells.store(r,c,cqs)
             c += 1
         # If this is a single-line table, increment the row number.
@@ -747,12 +749,12 @@ def tableReflow(tc,doc,unitList):
     # set the head of each text line, indent with optional stile
     leftIndent = QString(u' ' * unitList[1]['L']) # indent by L
     lineStart = QString(leftIndent)
-    dbg = unicode(lineStart)
+    #dbg = unicode(lineStart)
     if tprops.columnSideString() is not None:
         lineStart.append(cellDelimiterString) # plus optional stile
     # set the right-side delimiter of stile or nothing
     lineEnd = QString(tableSideString)
-    dbg = unicode(lineEnd)
+    #dbg = unicode(lineEnd)
     # set the between-rows constant of nothing, linebreak, or hyphens+linebreak
     cellBottom = QString() # nothing, for a single-line table with no botChar
     if botChar is not None:
@@ -762,7 +764,7 @@ def tableReflow(tc,doc,unitList):
     else: # even if no botChar, multiline table still needs empty lines
         if tprops.isMultiLine() :            
             cellBottom.append(IMC.QtLineDelim)
-    dbg = unicode(cellBottom)
+    #dbg = unicode(cellBottom)
     # accumulate the table top delimiter if requested
     if topChar is not None:
         tableText.append(leftIndent)
@@ -796,7 +798,7 @@ def tableReflow(tc,doc,unitList):
                 qsLine = QString(unicode(qsLine).rstrip())
             else:
                 qsLine.append(lineEnd)
-            dbg = unicode(qsLine)
+            #dbg = unicode(qsLine)
             tableText.append(qsLine)
             tableText.append(IMC.QtLineDelim)
         # If this is not the last row, or even if it is and a bottom string
@@ -827,6 +829,7 @@ def tableReflow(tc,doc,unitList):
 chunkRE = QRegExp()
 def flowCell(qs,width,align,decpoint,decwidth):
     qs = expandAt(qs,width,align) # deal with @ tokens
+    #dbg = unicode(qs)
     if qs.size() <= width :
         # entire cell data fits in the width, return one-string list
         return QStringList(alignCell(qs,width,align,decpoint,decwidth))
@@ -852,6 +855,7 @@ def flowCell(qs,width,align,decpoint,decwidth):
 # user presumably wrote it in the first place.
 findAtRE = QRegExp(u'\s*@+\s*')
 def expandAt(qs,width,align):
+    #dbg = unicode(qs)
     j = findAtRE.indexIn(qs,0)
     if j < 0 : return qs # there were no @s
     q2 = QString()
@@ -862,10 +866,12 @@ def expandAt(qs,width,align):
         q2.append(QString( (u' '*w)+u'@') )
         qs.remove(0,j+findAtRE.cap(0).size())
         j = findAtRE.indexIn(qs,0)
+    #dbg = unicode(q2)
     return q2        
 # Given a QString that fits in a width, extend it front a/o back to
 # align in that width.
 def alignCell(qs,width,align,decpoint,decwidth):
+    qs = qs.simplified() # strip off any spaces expandAt may have added
     spaces = width - qs.size()
     if spaces > 0 : 
         lspace = QString(u'')
@@ -889,6 +895,7 @@ def alignCell(qs,width,align,decpoint,decwidth):
             lspace.fill(onespace,spaces-rspace.size())
         qs.prepend(lspace)
         qs.append(rspace)
+    #dbg = unicode(qs)
     return qs
     
 # warn the user a table will be wider than expected/requested
