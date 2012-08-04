@@ -716,7 +716,7 @@ class PPTextEditor(QPlainTextEdit):
                     # We are doing page seps, it's for Open with no .meta seen,
                     # the page table has been cleared. Store the page sep
                     # data in the page table, with a textCursor to its start.
-                    qsfilenum = reLineSep.cap(1) # ddd from "File: ddd.png"
+                    qsfilenum = reLineSep.cap(1) # xxx from "File: xxx.png"
                     qsproofers = reLineSep.cap(2) # \who\x\blah\etc
                     # proofer names can contain spaces, replace with en-space char
                     qsproofers.replace(QChar(" "),QChar(0x2002))
@@ -753,7 +753,7 @@ class PPTextEditor(QPlainTextEdit):
 # and the end hyphens just fill the line out to 75 and may be absent.
 # The inner parens, cap(3), (\\[^\\]+) captures one proofer name, e.g. \JulietS
 # and the outer parens, .cap(2) capture all of however many there are.
-reLineSep = QRegExp(u'-----File: (\\d+).png---((\\\\[^\\\\]*)+)\\\\-*',Qt.CaseSensitive)
+reLineSep = QRegExp(u'-----File: ([^\\.]+)\\.png---((\\\\[^\\\\]*)+)\\\\-*',Qt.CaseSensitive)
 # Regex to match html markup: < /? spaces? (tag) spaces? whoknowswhat >
 # the cap(1) is the markup verb, and cap(2) is possibly a dict tag
 reMarkup = QRegExp("\\<\\/?\\s*(\\w+)\\s*([^>]*)>",Qt.CaseInsensitive)
