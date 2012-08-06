@@ -92,6 +92,19 @@ __license__ = '''
     dictionary. It is used internally to implement the main and alt dicts.
     It provides only its initializer and the spell(aword) method.
 
+    There are several differences between this checker and the "real"
+    myspell/hunspell. They seem to be constructed so they can be used both
+    to check words and to generate them, that is, given a root word, develop
+    all derivable words from it. Thus their affix rules have a test field
+    to limit when an affix can be applied. However we go only the opposite way:
+    given a target word that is not in the dictionary already, can we strip
+    known affixes from it to produce a word that is known? We don't care if the
+    usage is not valid, e.g. we don't care that you can't get to "undrink"
+    starting from "drink" when the PFX tests are applied. We are given "undrink"
+    from a document; we find that "un" is a prefix; stripping it produces
+    "drink" which is in the dictionary; then if ANY "un" prefix is allowed by
+    "drink", we are happy. Hence we don't store the test fields of the affixes.
+    See readAffRules() below for more comments on affix rule formats.
 '''
 from PyQt4.QtCore import (QRegExp, QString,QStringList)
 import pqMsgs
@@ -263,31 +276,45 @@ class spellDict():
 	dSize = int(udf.readline().strip())
 	# Process the rest of the dictionary into a list of two-ples,
 	# ('wordtext', 'affixflags'). Sort the entire list on the word texts.
+	# Watch out for duplicate words: some dicts will have the same word
+	# more than once with different sets of affix rules. When this happens
+	# just combine the sets of rule-class-letters.
 	# Any encoding errors or i/o errors here will trap up to the 
 	# caller's try statement.
 	self.dictData = {}
 	for line in udf:
 	    if len(line) and (line[0].isalnum()): # ignoring nulls, comments
 		(word,slash,aflags) = unicode(line).strip().partition(u'/')
-		self.dictData[word] = aflags
+		if not (word in self.dictData):
+		    self.dictData[word] = aflags
+		else : # dup entry
+		    self.dictData[word] += aflags
 	# And that is all there is to loading a dictionary!
 
     '''
     Read all the lines in a tag.aff file and save the PFX or SFX rules
     in a form we use later to strip down words. For reference a PFX
-    or SFX line has one of two forms. The first of a class is:
-        xxx classid [Y|N] rule-count
-    where: classid is a single letter key to a class of related rules
-    (we do NOT support the Hunspell multi-char class ids); Y|N refers
-    to whether rules can be compounded (we always assume Y, too bad);
+    or SFX line has one of two forms. The head of a rule-class is:
+        [S|P]FX classid [Y|N] rule-count
+    where: classid is a single letter key to this class of related rules
+    (we do NOT support the Hunspell multi-char or numeric class ids);
+    Y|N says whether rules can be compounded (we always assume Y, too bad);
     and rule-count is the number of actual rules of this class to follow.
-    We ignore this line. Other lines are of the form:
-        xxxx classid cstrip cadd test
+    We ignore this line. Following lines are of the form:
+        [S|P]FX classid cstrip cadd test
     where: cstrip is the characters that would be removed before applying
     the affix, with '0' meaning none; cadd is the affix string; and test
-    is a form of regex to see if the affix can be used. We store only
-    a four-ple (cadd, len(cadd), cstrip, classid). Because we discard the
-    test, we get quite a few duplicates which we eliminate with a set.
+    is a form of regex to see if the affix can be used.
+    That is the simple story the hunspell docs would tell however there is more.
+    Some hunspell dicts contain cadd of -xxx or xxx- so that hyphenated
+    compound words can be treated as affixes. We break up hyphenated tokens
+    before checking (see makeSpellCheck.check), so affix rules of this type
+    are not saved. Also, some rules have cadd=='0' meaning, add nothing.
+    These are in effect suffix-strippers that remove cstrip and replace it with
+    the null string. We treat this as applying globally (see stripAndLookUp).    
+    We store an affix as a fourple (cadd, len(cadd), cstrip, classid). Because
+    we discard the test field we get quite a few duplicates (many affix rules
+    differ only in the test applied); these we eliminate with a set.
     Finally, sort the list on the cadd strings (really useful only for PFX)
     '''
     def readAffRules(self,verb,affile):
@@ -300,7 +327,8 @@ class spellDict():
 		if not p[3].isdigit() : # not first line of a class
 		    classid = p[1]
 		    cstrip = u'' if p[2] == u'0' else p[2]
-		    cadd = p[3]
+		    cadd = u'' if p[3] == u'0' else p[3]
+		    if u'-' in cadd: continue # skip compounding rules
 		    key = cadd+classid+cstrip
 		    if not key in keySet :
 			keySet.add(key)
@@ -318,16 +346,27 @@ class spellDict():
     # appending e and s, so we have to cut it off at 2.
     def stripAndLookup(self,tw,depth):
 	for (cadd,ladd,cstrip,classid) in self.sfxRules:
-	    if tw[-ladd:] == cadd : # word has this suffix e.g. 'ed'
-		xw = tw[:-ladd]+cstrip
-		if (xw in self.dictData) and (classid in self.dictData[xw]) :
-		    # shortened word matched and sfx class applies to it
-		    return True
-		else:
-		    if depth < 2 :
-			if self.stripAndLookup(xw,depth+1): # try to shorten it more
-			    return True # shorter word was a hit
-		    # else keep trying suffixes
+	    if ladd : # cadd is not null: normal suffix rule
+		if tw[-ladd:] == cadd : # word has this suffix e.g. 'ed'
+		    xw = tw[:-ladd]+cstrip
+		    if (xw in self.dictData) and (classid in self.dictData[xw]) :
+			# shortened word matched and sfx class applies to it
+			return True
+		    else:
+			if depth < 2 :
+			    if self.stripAndLookup(xw,depth+1): # try to shorten it more
+				return True # shorter word was a hit
+		# else keep trying suffixes
+	    else : # cadd is null, see if we can just strip cstrip
+		if tw[-len(cstrip):] == cstrip :
+		    xw = tw[:-len(strip)]
+		    if xw in self.dictData : # don't care about classid
+			return True
+		    else:
+			if depth < 2 :
+			    if self.stripAndLooup(xw, depth+1):
+				return True
+
 	# We have run through all the suffixes with no luck; try prefixes
 	for (cadd,ladd,cstrip,classid) in self.pfxRules:
 	    if tw[:ladd] == cadd: # word has this prefix e.g. 'un'
@@ -396,20 +435,21 @@ if __name__ == "__main__":
     sp = IMC.spellCheck
     print("spellcheck is up: ",sp.isUp())
     if sp.isUp():
-	print("Junk as main: ", sp.setMainDict(u"Foobar"))
-	print("en_GB as main: ",sp.setMainDict(u"en_GB"))
-	wl = ['-8.7', 'AND','bazongas','101st', 'run-of-the-mill', 'basse-terre', '  ','lait','fraise',
-	      'Englishman', 'oiseau', 'oiseaux','Paris']
+	#print("Junk as main: ", sp.setMainDict(u"Foobar"))
+	print("de_DE as main: ",sp.setMainDict(u"de_DE"))
+	#wl = ['-8.7', 'AND','bazongas','101st', 'run-of-the-mill', 'basse-terre', '  ','lait','fraise',
+	      #'Englishman', 'oiseau', 'oiseaux','Paris']
+	wl = unicode('\xfcberwinden \xfcberwindende \xfcberwindet \xfcbertragen \xfcbertragenen \xfcberstark \xfcberschreibt \xfcberschreitet \xfcberraschender \xfcberraschend').split()
 	print("==Main dict==")
 	for w in wl:
             if sp.check(w):
                 print(w + " is a word")
             else:
                 print(w + " is not")
-	print("==Alt dict==")
-	for w in wl:
-	    if sp.check(w,'fr_FR'):
-                print(w + " is a word")
-            else:
-                print(w + " is not")
+	#print("==Alt dict==")
+	#for w in wl:
+	    #if sp.check(w,'fr_FR'):
+                #print(w + " is a word")
+            #else:
+                #print(w + " is not")
 	sp.terminate()
