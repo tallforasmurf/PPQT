@@ -69,7 +69,7 @@ from PyQt4.QtGui import (
     QContextMenuEvent,
     QHBoxLayout,
     QItemSelectionModel,
-    QKeyEvent,
+    QKeyEvent, QLabel,
     QMenu,
     QPushButton,
     QSortFilterProxyModel,
@@ -283,8 +283,10 @@ class myTableView(QTableView):
                 if dist >= edit_distance(word,word2): # test it
                     harmList.append(word2) # one hit is on the word itself
         if 1 < len(harmList) : # got at least 1 other
+            self.panelRef.tableModel.beginResetModel()
             self.panelRef.listFilter = harmList
-            self.panelRef.tableModel.reset()
+            self.panelRef.tableModel.endResetModel()
+            self.panelRef.rowCountLabel.setNum(self.panelRef.proxy.rowCount())
         else:
             pqMsgs.infoMsg(
         "There are no words in edit distance {0} edit of {1}".format(dist,word)
@@ -313,8 +315,10 @@ class myTableView(QTableView):
             if 0 == word.compare(word2,Qt.CaseInsensitive):
                 h1list.append(unicode(word1)) # one hit on word itself
         if 1 < len(h1list): # got at least 1 other
+            self.panelRef.tableModel.beginResetModel()
             self.panelRef.listFilter = h1list
-            self.panelRef.tableModel.reset()
+            self.panelRef.tableModel.endResetModel()
+            self.panelRef.rowCountLabel.setNum(self.panelRef.proxy.rowCount())
         else:
             pqMsgs.infoMsg("There are no words similar to {0}".format(unicode(wordOriginal)))
 
@@ -361,6 +365,12 @@ class wordsPanel(QWidget):
         topLayout.addWidget(self.caseSwitch,0)
         topLayout.addStretch(1)
         topLayout.addWidget(self.filterMenu,0)
+        topLayout.addStretch(1)
+        self.rowCountLabel = QLabel("0")
+        topLayout.addWidget(self.rowCountLabel)
+        rowCountLabelLabel = QLabel("rows")
+        rowCountLabelLabel.setAlignment(Qt.AlignLeft)
+        topLayout.addWidget(rowCountLabelLabel)
         self.view = myTableView(self)
         self.view.setCornerButtonEnabled(False)
         self.view.setWordWrap(False)
@@ -447,6 +457,7 @@ class wordsPanel(QWidget):
     # Based on the row, set self.filterLambda to a lambda that will
     # accept or reject a given QChar value.
     def filter(self,row):
+        self.tableModel.beginResetModel()
         if row == 1 : self.filterLambda = self.lambdaUpper
         elif row == 2 : self.filterLambda = self.lambdaLower
         elif row == 3 : self.filterLambda = self.lambdaMixed
@@ -457,7 +468,8 @@ class wordsPanel(QWidget):
         elif row == 8 : self.filterLambda = self.lambdaMisspelt
         else : self.filterLambda = self.lambdaAll
         self.listFilter = None
-        self.tableModel.reset()
+        self.tableModel.endResetModel()
+        self.rowCountLabel.setNum(self.proxy.rowCount())
 
     # This slot receives the main window's docWillChange signal.
     # It comes with a file path but we can ignore that.
@@ -472,6 +484,7 @@ class wordsPanel(QWidget):
         self.view.setColumnWidth(0,200)
         self.view.setColumnWidth(1,50)
         self.view.horizontalHeader().setStretchLastSection(True)
+        self.rowCountLabel.setNum(self.proxy.rowCount())
         #self.view.resizeRowsToContents()
         #self.view.setSortingEnabled(True)
         
