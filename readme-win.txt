@@ -1,6 +1,6 @@
 
 You have downloaded PPQT, a post-processing application for use
-by volunteers at Project Gutenberg Distributed Proofreaders (pgdp.net)
+by volunteers supporting Distributed Proofreaders (pgdp.net)
 
 == LICENSES ==
 
