@@ -524,7 +524,7 @@ class PPTextEditor(QPlainTextEdit):
     # to see if it is a page separator. If we are opening a file having no
     # metadata, the Page argument is True and we build a page table entry.
     # Other times (e.g. from the Refresh button of the Word or Char panel),
-    # or prior to a save) we skip over page separator lines.
+    # we skip over page separator lines.
     
     # For any other line we scan by characters, parsing out words and taking
     # the char and word counts. Note that the word and char census lists
@@ -562,6 +562,7 @@ class PPTextEditor(QPlainTextEdit):
         IMC.needMetadataSave = True
         IMC.wordCensus.clear()
         IMC.charCensus.clear()
+        localCharCensus = {}
         iFolio = 0 # page number for line separator records
         def GET(): # acquire the next char and category, push action
             global qcThis, uiCat, nextAction, i
@@ -570,17 +571,21 @@ class PPTextEditor(QPlainTextEdit):
             nextAction = parseArray[inWord][uiCat]
         def COUNT1(): # count the current character, advance index
             global qcThis, uiCat, nextAction, i
-            IMC.charCensus.count(QString(qcThis),uiCat)
+            #IMC.charCensus.count(QString(qcThis),uiCat)
+            u = qcThis.unicode() # a long integer
+            localCharCensus[u] = 1+localCharCensus.get(u,0)
             i += 1
             # since most letters end up here, save one cycle by doing GET now
             # if i is off the end, it's ok: QString.at(toobig) returns 0.
             qcThis = qsLine.at(i)
             uiCat = qcThis.category()
             nextAction = parseArray[inWord][uiCat]
-        def COUNTN(n): # census chars of a known-length string e.g. [OE], </i>
+        def COUNTN(n): # census chars of a known-length string like [OE], </i>
             global qcThis, uiCat, qsLine, nextAction, i
             for j in range(n): # i.e. do this n times
-                IMC.charCensus.count(QString(qcThis),uiCat)
+                #IMC.charCensus.count(QString(qcThis),uiCat)
+                u = qcThis.unicode() # a long integer
+                localCharCensus[u] = 1+localCharCensus.get(u,0)
                 i += 1
                 qcThis = qsLine.at(i)
                 uiCat = qcThis.category()
@@ -619,7 +624,6 @@ class PPTextEditor(QPlainTextEdit):
                         # start tagging words with /dictag
                         qsDict.append(u"/")
                         qsDict.append(reMarkup.cap(2).trimmed())
-                        pass
                 # regardless, skip the whole markup
                 nextAction = (COUNTN, reMarkup.matchedLength() )
             else:
@@ -747,6 +751,13 @@ class PPTextEditor(QPlainTextEdit):
             if (0 == (qtb.blockNumber() & 127)) : #every 128th block
                 pqMsgs.rollBar(qtb.blockNumber()) # roll the bar
         pqMsgs.endBar()
+        # to save time by not calling charCensus.count() for every character
+        # we accumulated the char counts in localCharCensus. Now read it out
+        # in sorted order and stick it in the IMC.charCensus list.
+        for uc in sorted(localCharCensus.keys()):
+            qc = QChar(uc) # long int to QChar
+            IMC.charCensus.append(QString(qc),localCharCensus[uc],qc.category())
+                                  
 # The following are global names referenced from inside the parsing functions
 # Regex to exactly match all of a page separator line. Note that the proofer
 # names can contain almost any junk; proofer names can be null (\name\\name);

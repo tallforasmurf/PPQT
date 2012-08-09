@@ -39,35 +39,8 @@ A separate object is instantiated for each list, offering these methods:
   * bool active() - a nonempty list exists and can be used
   * bool check(w) - look up one word in the list
   * insert(w) - insert a word into the list
-
-The other lists are the character and word censuses of the entire file.
-In each case there is a three-column table held as three lists. The first
-is an ordered list of QStrings (not Python u'strings'), searched and inserted-to
-using a version of the bisect_left function modified to compare QStrings.
-The second is an integer count and the third, an integer flag value, the unicode
-property of a character, or a set of flags for a word.
-  
-The word lists are built by the editor while loading a document, and again
-by the refresh function of the word- and char- views. It is queried by the
-word- and char views and by the the syntax highligher (for misspelt flags).
-
-The words and chars are stored as QStrings so as to get Unicode comparisons
-(we don't trust Python's Unicode support as well as we do Qt's),
-so for example a word composed of all-uppercase Greek or Cyrillic is
-correctly seen as an all-cap word. The methods are:
-
-  * clear() - empty the list
-  * int count(qs,flag)  - insert, or increment the count of, a word or char
-                        and store its flags. Returns the new count;
-                        if it is 1, the word/char was new.
-  * int lookup(qs) - find word in list and return index, or None if not there
-  * int census(qs) - return the number of occurrences of a word
-  * int flags(qs)  - return the category flags of a word, or 0x0 if not known
-  * int size() - return the number of words in the list
-  * (qs, int, int) get(n) - return the word, count, and flags of the word at
-                     index n as a tuple, used by pqChar and pqWord to populate
-		     their tables.
-
+  * load(stream,endmark) - load sorted words from a metadata stream
+  * save(stream) - write the list in sequence to a metadata stream
 '''
 
 import bisect
@@ -78,9 +51,8 @@ from PyQt4.QtCore import (Qt, QFile, QTextStream, QString, QChar)
 # This class is used for the good_words, bad_words and scanno lists.
 class wordList():
     def __init__(self):
-        self.wordlist = []
-        self.len = 0
-        
+        self.clear()
+
     def clear(self):
         self.wordlist = []
         self.len = 0
@@ -94,6 +66,16 @@ class wordList():
 	    if (i != self.len) and (self.wordlist[i] == word):
 		return True
         return False
+
+    # Provide for inserting a word to the list. Bisect_left returns the
+    # index of word or the highest item < word. If word is higher than
+    # anything in the list, the return is the length of the list.
+    def insert(self,word):
+	i = bisect.bisect_left(self.wordlist,word)
+	if (i != self.len) and (self.wordlist[i] == word):
+	    return
+	self.wordlist.insert(i,word)
+	self.len += 1
 
     # Load up a file of words, assumed one per line. We store them as
     # Python strings, not QStrings, so as to use the bisect module. We do not
@@ -119,20 +101,41 @@ class wordList():
     def save(self,stream):
 	for i in range(self.len):
 	    stream << (self.wordlist[i]+"\n")
+'''
+Second, lists for the character and word censuses of the entire file.
+In each case there is a three-column table held as three lists. The first
+is an ordered list of QStrings (not Python u'strings'), searched and inserted-to
+using a version of the bisect_left function modified to compare QStrings.
+The second is an integer count; the third, an integer flag value, either the
+unicode property of a character, or a set of flags for a word.
+  
+The word lists are built by the editor while loading a document, and again
+by the refresh function of the word- and char- views. It is queried by the
+word- and char views and by the the syntax highligher (for misspelt flags).
 
-    # Provide for inserting a word to the list. Bisect_left returns the
-    # index of word or the highest item < word. If word is higher than
-    # anything in the list, the return is the length of the list.
-    def insert(self,word):
-	i = bisect.bisect_left(self.wordlist,word)
-	if (i != self.len) and (self.wordlist[i] == word):
-	    return
-	self.wordlist.insert(i,word)
-	self.len += 1
+The words and chars are stored as QStrings so as to get Unicode comparisons
+(we don't trust Python's Unicode support as well as we do Qt's),
+so for example a word composed of all-uppercase Greek or Cyrillic would be
+correctly seen as an all-cap word. The methods are:
 
-# Class for the character census and word census of a document. 
-# Basically a 3-column table with keys are stored as QStrings
-# and a count and a flag value.
+  * clear() - empty the list
+  * int size() - return the number of words in the list
+  * int lookup(qs) - find word and return its index, or None if not there
+  * int count(qs,flag)  - insert, or increment the count of, a word or char
+                        and store its flags. Returns the new count;
+                        if it is 1, the word/char was new.
+  * int getCount(qs) - find a word and return its occurrence count or 0
+  * qs  getWord(i)  - return the word at index i, used by pqWords
+  * int getFlag(qs)  - find a word and return its category flags or 0
+  * (qs, int, int) get(n) - return the word, count, and flags of the word at
+                     index n as a tuple, used by pqChar and pqWord to populate
+		     their tables.
+  * setflags(i,flag) - set the flag value of a word given its index - used
+		     to set or clear the misspelled flag value
+  * append(qs,count,flag) - add a word with a known count, in sorted order
+                     called during load of metadata, and to populate the
+		     char census after census taken.
+'''
 class vocabList():
     def __init__(self):
         self.clear()
@@ -147,37 +150,8 @@ class vocabList():
     def size(self):
         return self._size
 
-    # This is called when a table widget is populating itself, reading out
-    # the list by row number.
-    def get(self,index):
-        if (index >= 0) and (index < self.size):
-            return (self.words[index], self.counts[index], self.flags[index])
-        else:
-            raise ValueError # naughty naughty
-
-    # Used by pqWords when scanning the table
-    def getWord(self,index):
-	return unicode(self.words[index])
-
-    # This is called from load, where we learn the word and its count
-    # and its flags from the metadata file. We assume this is going to
-    # come in sorted order, else we will be in big trouble.
-    def append(self, qs, cc, ff):
-	self.words.append(qs)
-	self.counts.append(cc)
-	self.flags.append(ff)
-	self._size += 1
-
-    # Set or change the flags value of an existing word
-    def setflags(self, index, newflag):
-        if (index >= 0) and (index < self.size):
-            self.flags[index] = newflag
-        else:
-            raise ValueError # tsk tsk
-
     # find a word in our vocabulary and return its index, or None if not there
-    # use the bisect_left algorithm. Short-circuit the lookup if coming back
-    # for the same word as last time.
+    # use the bisect_left algorithm.
     def lookup(self,qs):
         lo = 0
         hi = self._size
@@ -193,20 +167,6 @@ class vocabList():
                 return lo
         return None # not there
 
-    # return the count value of a word
-    def census(self, qs):
-        i = self.lookup(qs)
-        if i is not None :
-            return self.counts[i]
-        else:
-            return 0
-    # return the flag value of a word
-    def getFlag(self, qs):
-        i = self.lookup(qs)
-        if i >= 0 :
-            return self.flags[i]
-        else:
-            return 0
     # tabulate one use of a word and set its flag on first seeing it
     def count(self,qs,flag):
         i = self.lookup(qs)
@@ -221,6 +181,50 @@ class vocabList():
             self.flags.insert(i,int(flag))
             self._size += 1
         return self.counts[i]
+
+    # return the count value of a word
+    def getCount(self, qs):
+        i = self.lookup(qs)
+        if i is not None :
+            return self.counts[i]
+        else:
+            return 0
+
+    # Used by pqWords when scanning the table
+    def getWord(self,index):
+	return self.words[index]
+
+    # return the flag value of a word
+    def getFlag(self, qs):
+        i = self.lookup(qs)
+        if i >= 0 :
+            return self.flags[i]
+        else:
+            return 0
+
+    # This is called when a table widget is populating itself, reading out
+    # the list by row number.
+    def get(self,index):
+        if (index >= 0) and (index < self.size):
+            return (self.words[index], self.counts[index], self.flags[index])
+        else:
+            raise ValueError # naughty naughty
+
+    # Set or change the flags value of an existing word
+    def setflags(self, index, newflag):
+        if (index >= 0) and (index < self.size):
+            self.flags[index] = newflag
+        else:
+            raise ValueError # tsk tsk
+
+    # This is called from load, where we learn the word and its count
+    # and its flags from the metadata file. We assume this is going to
+    # come in sorted order, else we will be in big trouble.
+    def append(self, qs, cc, ff):
+	self.words.append(qs)
+	self.counts.append(cc)
+	self.flags.append(ff)
+	self._size += 1
 
 if __name__ == "__main__":
     import sys
@@ -255,7 +259,7 @@ if __name__ == "__main__":
         #word = stream.readLine().trimmed()
         #j = vl.count(word, 9)
     #for w in ['frog','cheese','banana','hasaspace', 'notinfile']:
-        #i = vl.lookup(QString(w))
+        #vl.count(QString(w),0)
         #if i is not None:
             #(ww,cc,ff) = vl.get(i)
             #print('{0}: {1} {2} {3} {4}'.format(w, i, ww, cc, ff))
