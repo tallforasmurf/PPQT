@@ -1,9 +1,12 @@
- PPQT is an integrated application for post-processing etexts by the
- volunteers who contribute to Project Gutenberg Distributed Proofreaders (PGDP.net)
+This is the README that is visible on github. See also the readme-xxx files
+specific to the platform distributions.
 
- PPQT is Copyright(C) 2011, 2012 David Cortesi (email: tallforasmurf@yahoo.com)
+PPQT is an integrated application for post-processing etexts by the
+volunteers who contribute to Distributed Proofreaders (PGDP.net)
+
+PPQT is Copyright(C) 2011, 2012 David Cortesi (email: tallforasmurf@yahoo.com)
  
- License (GPL-3.0) :
+License (GPL-3.0) :
     PPQT is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -15,42 +18,35 @@
     GNU General Public License for more details.
 
     You can find a copy of the GNU General Public License in the file
-    extras/COPYING.TXT included in the distribution of this program, or see:
+    COPYING.TXT included in the distribution of this program, or see:
     <http://www.gnu.org/licenses/>.
-
- PPQT is written in Python (2.7 but should require little to make it 3)
- with PyQt4 and Qt4.
 
 Features:
 
  A single document file, bookname.suffix, is edited. A variety of metadata
  is collected the first time a file is opened and is saved in a metadata file,
- bookname.suffix.metadata. Also expected to exist at the same file path
+ bookname.suffix.meta. Also expected to exist at the same file path
  as bookname.suffix:
      bookname.suffix.meta (created on first save)
      good_words.txt (optional)
      bad_words.txt (optional)
-     pngs, a folder containing page scan images named nnn.png
+     pngs, a folder containing page scan images named (typically) nnn.png
 
  The main window has two panes divided by a splitter. The left pane has
- the text for editing (QPlainTextEdit). Besides the usual editing functions
- PPQT supports highlighting words from a file of common "scannos," and also
- underlining of words that fail the built-in spellcheck.
+ the text for editing. Besides the usual editing functions PPQT supports
+ highlighting words from a file of common "scannos," and also
+ underlining of words that have failed the built-in spellcheck.
  
  The right pane is a Qt Tabset with several panels for specific functions:
 
     Pngs :  Shows the scan image (nnn.png) for the text at the insertion point
 	    from the pngs folder.
 
-    Find :  A variety of search/replace controls including predefined regex
-            searches in a user-programmable button array.
-
     Notes : A QPlainTextEdit where the user can keep notes that are saved as
 	    part of the metadata.
 
-    Pages : A table of all pages with their scan (.png) numbers, folio
-            (pagination) controls, and proofer ids. Page boundaries are kept
-	    in the metadata after page delimiters are purged.
+    Find :  A variety of search/replace controls including predefined regex
+            searches in a user-programmable button array.
 
     Chars : A table of the character census, showing for each its glyph,
 	    hex value, count of occurrences, HTML Entity code,
@@ -64,14 +60,18 @@ Features:
     Flow :  Controls for Ascii text reflow, Ascii table processing, and
 	    and HTML auto-conversion.
 
-    View :  Displays the document as rendered by QWebView.
+    Pages : A table of all pages with their scan (.png) numbers, folio
+            (pagination) controls, and proofer ids. Page boundaries are kept
+	    in the metadata after page delimiter lines are purged.
 
-    FNote(TBS) : Controls related to footnote processing and a table of the
+    Pvw :  Displays the document as rendered by a browser (webkit).
+
+    FNote : Controls related to footnote processing and a table of the
 	    footnotes found, with errors indicated.
     
     Help :   Terse documentation of all features
 
 PPQT incorporates a spellcheck system based on Myspell/OpenOffice dictionaries
-but implemented in Python code (to avoid having to include pyCharm or such).
-Besides one default dictionary for the document, it allows phrases or sections
-to be marked off to be spellchecked using a different language.
+but implemented in Python code. Besides one default dictionary for the document,
+it allows phrases or sections to be marked off to be spellchecked using a
+different language.
