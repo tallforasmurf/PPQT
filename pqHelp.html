@@ -28,13 +28,17 @@ __license__ = '''
 </head>
 <body>
 <h1>Introduction</h1>
-<p>PPQT is a unified tool for post-processing books for Project Gutenberg Distributed Proofreaders. It provides a text editor that integrates a number of features useful during post-processing, including display of the book's scanned pages, regular expression find/replace, spellcheck, pagination, footnoting, and html preview. This Help is its sole documentation.</p>
+<p>PPQT is a unified tool for use by the volunteers who post-process books for Distributed Proofreaders. It provides a text editor that integrates a number of features useful during post-processing, including display of the book's scanned pages, regular expression find/replace, spellcheck, pagination, footnoting, and html preview. This Help is its sole documentation.</p>
+<p>You can read this help text in the Help panel of the program; or you
+can find <tt>pqHelp.html</tt> in the PPQT folder and open it in any browser.</p>
+<p>If while reading this text in the Help panel you click on a link, you can get
+back to the text by keying ctl-[ or ctl-b (mac users see next paragraph).</p>
 <h2>Mac Users Note</h2>
 <p> Throughout this Help, when you read <b>ctl-</b>
 you think <b>cmd-</b>. And when you read <b>alt-</b>, you think <b>opt-</b>.
 Qt is quite consistent in these mappings. However, when you see <b>control-</b>
 (not <b>ctl-</b>), that really means, the Control key on every platform.</p>
-<p>For example, this help says that to set bookmark 1, you key ctl-alt-1. However as a Mac user you will  know to substitute cmd- for ctl- and opt- for alt-, and set bookmark 1 using cmd-opt-1. Try it now: key ctl-f for a simple Find dialog for searching in this help text.</p>
+<p>For example, in this Help panel the "back" function is ctl-b or ctl-[. You know that would be cmd-[ or cmd-b. Similarly, it says below that to set bookmark 1, you key ctl-alt-1. As a Mac user you will  know to substitute cmd- for ctl- and opt- for alt-, and set bookmark 1 using cmd-opt-1.</p>
 <h2>Licenses</h2>
 <p>PPQT is based on the <a href="http://qt-project.org">Qt platform</a>.
 It is coded in Python using <a href="http://riverbankcomputing.co.uk/software/pyqt/intro">PQt4</a>.
@@ -44,10 +48,8 @@ PyQt4 is licensed for noncommercial use under the GPL v2 and the GPL v3.
 <b>The source code of PPQT is licensed under the GPL v3</b>.
 See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 <h2>Acknowledgements</h2>
-<p>First, a deep bow of respect to Steve Shulz (Thundergnat) who created, and to all who maintain, Guiguts, the program from which PPQT takes its inspiration and lots of ideas. Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Developement with PyQt</i> that showed how to build PPQT.</p>
+<p>First, a deep bow of respect to Steve Shulz (Thundergnat) who created, and to all who maintain, Guiguts, the program from which PPQT takes its inspiration and lots of ideas. Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Development with PyQt</i> that showed how to build PPQT.</p>
 <h2>Contents</h2>
-<p>After clicking a link, use ctl-b or ctl-[ (control-left bracket) for
-the Back function.</p>
 <ul>
 <li><a href='#Files'>Files and Folders</a> says where PPQT looks for the book text, images, and related files.</li>
 <li><a href='#Main'>The Main Window</a> describes that.</li>
@@ -68,7 +70,7 @@ the Back function.</p>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
 <h3>File Encodings and Suffixes</h3>
-<p>PPQT is entirely Unicode internally. The file contents are converted to Unicode on input, and back to some byte code on output, based only on the file suffix. Rename a new file as needed to cause conversion to and from these encodings:</p>
+<p>PPQT is entirely Unicode internally. The file contents are converted to Unicode on input, and back to some byte code on output, based only on the file suffix. Rename a new file as needed to cause conversion from or to these encodings:</p>
 <table border='1' style='border-collapse:collapse;'>
 <head><td>Suffix</td><td>Uses encoding</td></head>
 <tr><td style='width:4em;'><tt>.txt</tt></td><td>Latin-1 or 7-bit Ascii (PPQT cannot distinguish between these)</td></tr>
@@ -699,15 +701,15 @@ F/</pre><p>Here, <tt>NOTES</tt> represents a subhead, so it is preceded and foll
 [Footnote key: Text of the note... ]</pre> into:<pre>/Q F:2 L:<i>w</i> R:2
   [key] Text of the note...
 Q/</pre>The left-indent <i>w</i> is based on the widest key of that key class.
+These new /Q..Q/ sections are reflowed in the <a href='#Flow'>Reflow Panel</a> ASCII reflow.
 </p>
 <p>Do this as the very last footnote operation in the plain text fork of the book. Afterward, the Footnote Panel is of no use because the Notes can no
 longer be recognized.</p>
-<p>In the <a href='#Flow'>Reflow Panel</a> ASCII reflow, the markup tags the remaining markup is resolved.</p>
-  
+ 
 <h3>HTML Conversion</h3>
 <p>HTML conversion of footnotes is divided between the Footnote Panel and the Reflow Panel.</p>
 <p>In the Footnote panel click HTML Cvt to convert all Anchors and Notes to HTML. This is a single-undo operation. Do this as the very last footnote operation in the HTML fork of the book. Afterward, the Footnote Panel is of no use, because the Notes can no longer be recognized.</p>
-<p>Later, when you use HTML Convert in the <a href='#html'>Reflow Panel</a>, the markup tags <tt>/F..F/</tt> are converted in HTML <tt>&lt;div></tt> markup.</p>
+<p>Later, when you use HTML Convert in the <a href='#html'>Reflow Panel</a>, the markup tags <tt>/F..F/</tt> are converted to HTML <tt>&lt;div></tt> markup.</p>
 <h2 id='Extras'>The Extras Folder</h2>
 <p>
 Within the distribution folder <tt>PPQT</tt> there is a folder named <tt>extras</tt> with some miscellaneous documents:</p>
