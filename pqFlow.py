@@ -28,67 +28,33 @@ __license__ = '''
     extras/COPYING.TXT included in the distribution of this program, or see:
     <http://www.gnu.org/licenses/>.
 '''
-
 '''
-Implement the (re)Flow panel. On this panel are an array of controls
-related to reflowing the ASCII etext, and buttons for HTML conversion.
+This rather complex module contains the code for the Reflow UI panel as
+well as the code to actually perform ASCII reflow (except tables) and
+HTML conversion (including tables). It is structured as follows.
 
-ASCII reflow means arranging the text of each paragraph to fit in a limited
-line width, usually 72 characters. Complicating this are the special markups
-pioneered by Guiguts and supported here with somewhat different syntax:
+class flowPanel implements the UI with its numerous buttons and spinners.
+The class definition also contains the following members which could (maybe
+should) be global rather than class members:
 
-/Q .. Q/   Reflow within block-quote margins, with default margins from the
-           control on the panel but which can be set using /Q F:nn L:nn R:nn
-	   in the opening markup line.
+parseText scans the text and detects all markups, preparing a list
+of work units, one per paragraph or formatted line. This list of work
+units is used by theRealReflow to direct reflow, also by pqTable to
+direct table reflow, and by theRealHTML to direct HMTL conversion.
 
-/U .. U/   Unsigned list, treated identically to /Q F:2 L:4 but allows
-           explicit F:nn L:nn R:nn options as well.
+theRealReflow controls the process of reflow of a selection or the document.
+It calls parseText then converts each unit returned by the parser according
+to its markup.
 
-/* .. */   Do not reflow, but indent by a settable default amount, or
-           by specific amount specified in L:nn on the first line.
+the RealHTML control the process of HTML conversion of a selection or document.
+It calls parseText then wraps each returned unit in appropriate markup.
 
-/P .. P/   Indent by 2 spaces, reflow on a single-line basis as poetry. Default
-           margins from the controls allows F:nn L:nn R:nn support.
+Down at the bottom, global gnuWrap performs optimal reformatting of a single
+paragraph, using the Knuth algorithm as copied from the Gnu Core Utilities
+"fmt" utility code.
 
-/C .. C/   Do not reflow but center each line. Typically used for title pages
-           and the like. Indent the whole by 2 spaces minimum; center each line
-	   on col 36 by default, but optionally on the center of the longest
-	   line, minimizing the width.
-
-/X .. X/   Do not reflow, do not indent.
-
-/R .. R/   Right-aligned text, convenient for signatures and letterheads.
-
-/T .. T/   Single-line table markup
-
-/TM .. T/  Multi-line table markup. These allow more complex table options
-           which are documented in pqTable.
-
-The reflow markups are always left in place, ensuring that reflow can be
-done multiple times.
-
-The general algorithm of reflow is two-pass. On the first pass we examine the
-document (or selection, no difference) line-by-line from top to bottom. In this
-pass we identify each reflow unit, that is, each block of text to be treated.
-In open text, /Q, and /U, a unit is a paragraph delimited by blank lines.
-In other markups a unit is a single non-empty line. Empty lines are counted
-but otherwise ignored.
-
-For each unit we note several items: the first and last text block numbers;
-the first-line indent, left indent, and right indent on the maximum line, and
-the count of blank lines preceding. The indents of course depend on
-the type of markup we are in at that point. All these decisions are made on
-the first pass and recorded in a list of dicts, one for each unit.
-
-The second pass operates on the units, working from the bottom of the
-document or selection, up. This is so changes in the text will not alter
-the block numbers of text still to be done. For each unit we pull tokens from
-the unit text and form a new text as a QString with the specified indents.
-Then we insert the reflowed text string to replace the original line(s).
-All updates are done with one QTextCursor set up for a single undo "macro".
-
-In a "pythonic" move we use a "generator" (co-routine) to produce tokens from
-the old text.
+In the pqTable module, tableReflow and tableHTML do ASCII and HTML conversion
+of tables, based on the work units found by parseText.
 
 '''
 import pqMsgs
@@ -126,7 +92,9 @@ class flowPanel(QWidget):
         #         poiHbox
         #            three spinboxes for first, left, right
         #      miscHBox
-	#         mxlGbox group box "Para width"
+	#         txwGbox group box "Text widths"
+	#            oplHBox
+	#               one spinbox for optimal text line size
 	#            mxlHbox
 	#               one spinbox for max text line size
         #         ctrGBox group box "Center /C..C/ on:"
@@ -200,15 +168,25 @@ class flowPanel(QWidget):
         # misc row with three groups
         miscHBox = QHBoxLayout()
         indentsVBox.addLayout(miscHBox)
-	# Max para width
-	mxlGBox = QGroupBox("Text width:")
-	miscHBox.addWidget(mxlGBox)
-	mxlHBox = QHBoxLayout()
-	mxlGBox.setLayout(mxlHBox)
-	mxlHBox.addWidget(QLabel("Width:"),0)
-	self.maxParaWidth = self.makeSpin(32,80,72,u"mxWidth")
+	# Max and optimal para widths: two spinners
+	txwGBox = QGroupBox("Text widths:")
+	miscHBox.addWidget(txwGBox)
+	txwHBox = QHBoxLayout() # row of two spinners
+	mxlHBox = QHBoxLayout() # max width spinner box
+	mxlHBox.addWidget(QLabel("Max:"),0)
+	self.maxParaWidth = self.makeSpin(32,80,75,u"mxWidth")
 	mxlHBox.addWidget(self.maxParaWidth,0)
 	mxlHBox.addStretch(1)
+	oplHBox = QHBoxLayout() # optimum width spinner box
+	oplHBox.addWidget(QLabel("Opt:"),0)
+	self.optParaWidth = self.makeSpin(32,80,72,u"optWidth")
+	oplHBox.addWidget(self.optParaWidth,0)
+	oplHBox.addStretch(1)
+	txwHBox.addLayout(oplHBox,0)
+	txwHBox.addLayout(mxlHBox,0)
+	txwHBox.addStretch(1)
+	txwGBox.setLayout(txwHBox)
+	self.connect(self.maxParaWidth,SIGNAL("valueChanged(int)"),self.checkMaxWidth)
         # Center choice
         ctrGBox = QGroupBox("Center /C..C/ on:")
         miscHBox.addWidget(ctrGBox)
@@ -344,10 +322,17 @@ class flowPanel(QWidget):
         self.itbosc['sc'] = 0 if self.scCounts[0].isChecked() else \
             1 if self.scCounts[1].isChecked() else 2
 
+    # This slot gets called on any change to the max para width spinbox,
+    # and just makes sure that the optimal box never is greater.
+    def checkMaxWidth(self,i):
+	if i < self.optParaWidth.value() :
+	    self.optParaWidth.setValue(i)
+
     # FOR REFERENCE here are the actual data access items in the UI:
     # self.bqIndent[0/1/2].value() for first, left, right
     # self.poIndent[0/1/2].value() for first, left, right
-    # self.maxParaWidth.value() for paragraph wrap width (& default table width)
+    # self.maxParaWidth.value() for paragraph wrap max & default table width
+    # self.optParaWidth.value() for paragraph wrap
     # self.nfLeftIndent.value()
     # self.ctrOnDoc.isChecked() versus self.ctrOnSelf.isChecked()
     # self.itCounts[0/1/2].isChecked() == 0, 1, as-is
@@ -393,52 +378,100 @@ class flowPanel(QWidget):
         endBlock = doc.findBlockByNumber(doc.blockCount()-1)
         self.theRealHTML(topBlock,endBlock)
 
-    # Reflow proceeds in two passes. The first pass is common to Reflow and
-    # to HTML, and is implemented as parseText below. It scans the text and
-    # reduces it to a sequence of "work units." A work unit is a dict
-    # having these members:
-    # 'T' : type of work unit, specifically
-    #    'P' paragraph or line to reflow within margins F, L, R
-    #    'M' markup of type noted next begins with this line
-    #    '/' markup of type noted next ends with this line
-    # 'M' : the type of markup starting, in effect, or ending:
-    #    ' ' no active markup, open text
-    #    'Q' block quote
-    #    'F' like Q but zero indents
-    #    'P' poetry
-    #    '*' no-reflow but indent as per UI
-    #    'C' no-reflow but center as per UI
-    #    'X' no-reflow and leave alone
-    #    'U' unordered list by paragraphs
-    #    'R' right-aligned by lines
-    #    'T' single or multiline table
-    # 'A' : text block number of start of the unit
-    # 'Z' : text block number of end of the unit
-    # 'F', 'L', 'R': the desired First, Left and Right margins for this unit,
-    # 'W' : in a paragraph ('T':'P'), the smallest actual indent thus far
-    #       in the unit; in end of markup ('T':'/') the smallest in the unit.
-    # 'K' : in a line of a poem ('T':'P' && 'M':'P'), an empty QString or
-    #       the poem line number as a decimal digits.
-    # seen in a *, P, or C markup. Lines of a * or P markup, or C markup with
-    # "center on doc" checked, are indented by F-W (which may be negative) thus
-    # removing any existing indent installed from a previous reflow.
-    # 'B' : the count of blank lines that preceded this unit, used in Table
-    # to detect row divisions and in HTML conversion to detect chapter heads
-    # or Poetry stanzas.
+    '''
+ASCII reflow means arranging the text of each paragraph to fit in a limited
+line width, usually 72 characters. Complicating this are the special markups
+pioneered by Guiguts and supported here with somewhat different syntax:
+
+/Q .. Q/   Reflow within block-quote margins, with default margins from the
+           control on the panel but which can be set using /Q F:nn L:nn R:nn
+	   in the opening markup line.
+
+/U .. U/   Unsigned list, treated identically to /Q F:2 L:4 but allows
+           explicit F:nn L:nn R:nn options as well.
+
+/* .. */   Do not reflow, but indent by a settable default amount, or
+           by specific amount specified in L:nn on the first line.
+
+/P .. P/   Indent by 2 spaces, reflow on a single-line basis as poetry. Default
+           margins from the controls, but allows F:nn L:nn R:nn override.
+
+/C .. C/   Do not reflow but center each line. Typically used for title pages
+           and the like. Indent the whole by 2 spaces minimum; center each line
+	   on col 36 by default, but optionally on the center of the longest
+	   line, minimizing the width.
+
+/X .. X/   Do not reflow, do not indent.
+
+/R .. R/   Right-aligned text, convenient for signatures and letterheads.
+
+/T .. T/   Single-line table markup
+
+/TM .. T/  Multi-line table markup. These allow more complex table options
+           which are documented in pqTable.
+
+The reflow markups are always left in place, ensuring that reflow can be
+done multiple times.
+
+The general algorithm of reflow is two-pass. On the first pass we examine the
+document (or selection, no difference) line-by-line from top to bottom. In this
+pass we identify each reflow unit, that is, each block of text to be treated.
+In open text, /Q, and /U, a unit is a paragraph delimited by blank lines.
+In other markups a unit is a single non-empty line. Empty lines are counted
+but otherwise ignored.
+
+For each unit we note several items: the first and last text block numbers;
+the first-line indent, left indent, and right indent on the maximum line, and
+the count of blank lines preceding. The indents of course depend on
+the type of markup we are in at that point. All these decisions are made on
+the first pass and recorded in a list of dicts, one for each unit.
+
+The second pass operates on the units, working from the bottom of the
+document or selection, up. This is so changes in the text will not alter
+the block numbers of text still to be done. For each unit we pull tokens from
+the unit text and form a new text as a QString with the specified indents.
+Then we insert the reflowed text string to replace the original line(s).
+All updates are done with one QTextCursor set up for a single undo "macro".
+
+The reflow work unit produced by parseText below is a dict with these members:
+    'T' : type of work unit, specifically
+        'P' paragraph or line to reflow within margins F, L, R
+        'M' markup of type noted next begins with this line
+        '/' markup of type noted next ends with this line
+    'M' : the type of markup starting, in effect, or ending:
+        ' ' no active markup, open text
+        'Q' block quote
+        'F' like Q but zero indents
+        'P' poetry
+        '*' no-reflow but indent as per UI
+        'C' no-reflow but center as per UI
+        'X' no-reflow and leave alone
+        'U' unordered list by paragraphs
+        'R' right-aligned by lines
+        'T' single or multiline table
+    'A' : text block number of start of the unit
+    'Z' : text block number of end of the unit
+    'F', 'L', 'R': the desired First, Left and Right margins for this unit,
+    'W' : in a paragraph ('T':'P'), the smallest actual indent thus far seen
+        in the unit; in end of markup ('T':'/') the smallest seen in the unit.
+        Lines of a * or P markup, or C markup with "center on doc" checked,
+	are indented by F-W (which may be negative) thus removing any existing
+	indent installed from a previous reflow.
+    'K' : in a line of a poem ('T':'P' && 'M':'P'), an empty QString or
+	the poem line number as a QString of decimal digits.
+    'B' : the count of blank lines that preceded this unit, used in Table
+	to detect row divisions, and in HTML conversion to detect chapter heads
+        or Poetry stanza breaks.
+    '''
 
     def theRealReflow(self,topBlock,endBlock):
-	global tokGen # see wayyyy below this code down at the end
+	global optimalWrap
 	# Parse the text into work units
         unitList = self.parseText(topBlock,endBlock)
         if 0 == len(unitList) :
             return # all-blank? or perhaps an error like unbalanced markup
 	# Now do the actual reflowing. unitList has all the paras and single
-	# lines to be hacked. Work from end to top. For lines in sections
-	# R, P, *, and C, just adjust the leading spaces. Skip over X, and
-	# pass Tables to a separate module. For nonmarkup, Q and U sections
-	# reflow paragraphs into new lines. The tokgen function (below) is a
-	# generator that returns the next token and its effective length
-	# (counting i/b/sc markups as specified in the UI).
+	# lines to be hacked. Work from end to top.
         doc = IMC.editWidget.document()
         # In order to have a single undo/redo operation we have to use a
         # single QTextCursor, which is this one:
@@ -461,8 +494,7 @@ class flowPanel(QWidget):
 		leastIndent = unit['W']
 		markupCode = unit['M']
 		if markupCode == u'T':
-		    # bottom of a table section, not its start
-		    tableBottomIndex = u
+		    tableBottomIndex = u # note bottom extent of a Table section
 		continue
 	    if unit['T'] == u'M' :
 		# start of markup, which we see last in our backward scan
@@ -470,7 +502,7 @@ class flowPanel(QWidget):
 		    # top of a table section; pass the table work units to
 		    # pqTable.tableReflow, which will do the needful.
 		    pqTable.tableReflow(tc,doc,unitList[u:tableBottomIndex+1])
-		# and emerge from this markup block
+		# Whatever type, emerge from this markup block
 		(leastIndent, markupCode) = markStack.pop()
 		continue
 	    # neither end of markup, so: a real unit of lines to process.
@@ -484,8 +516,8 @@ class flowPanel(QWidget):
 		# line of /X which we skip, or /T which we defer
 		continue # don't touch it
 	    if (markupCode == u'*') or (markupCode == u'C') or (markupCode == u'R') :
-		# non-reflow block; adjust leading spaces. F is how many
-		# spaces this line has (* section) or needs to align it (C, R).
+		# For lines in R, *, and C, just adjust the leading spaces.
+		# F is how many spaces this line has (/*) or needs (/C, /R).
 		indentAmount = unit['F']
 		if markupCode == u'*' or \
 		(markupCode == u'C' and self.ctrOnSelf.isChecked()) :
@@ -506,77 +538,38 @@ class flowPanel(QWidget):
 		tc.insertText(QString(lineText))
 		continue # and that's that for this unit
 	    # This unit describes a paragraph of one or more lines to reflow.
-	    # This includes open text, block quotes, lists, and lines of Poetry.
-	    # set up a text cursor that selects the text to be flowed: 
-            # set the virtual insertion point after the end of the last line
+	    # This includes paras of open text, /Q, and /U, and lines of /P.
+	    # set up a text cursor that selects the text to be flowed: First,
+            # set the virtual insertion point after the end of the last line,
             blockZ = doc.findBlockByNumber(blockNumberZ)
 	    if blockZ != doc.lastBlock():
 		tc.setPosition(blockZ.position()+blockZ.length())
 	    else:
 		tc.setPosition(blockZ.position()+blockZ.length()-1)
-	    # drag to select up to the beginning of the first line
+	    # then drag to select up to the beginning of the first line
             blockA = blockZ if blockNumberA == blockNumberZ \
 	           else doc.findBlockByNumber(blockNumberA)
             tc.setPosition(blockA.position(),QTextCursor.KeepAnchor)
-            # collect tokens from the selected text and assemble them into
-            # lines based on F, L, R, adjusted by W. Collect the marginal
-	    # indents and tokens into a QString flowText.
-	    F = unit['F']
-	    L = unit['L']
 	    if markupCode == u'P' :
-		# pull Poetry lines back out if they had previously indented
+		# pull Poetry lines back out if they were previously indented
 		# for example if they had previously been reflowed
-		F = max(0,F-leastIndent)
-		L = max(0,L-leastIndent)
-	    flowText = QString(u' '*F) # start the paragraph with indent F
-	    oneSpace = QString(u' ') # one space between tokens
-	    leftIndent = QString(u' '*L) # left-indent space
-            lineLength = self.maxParaWidth.value() - unit['R']
-	    # In the following, lineLimit is the accumulated text length at
-	    # which we next need to insert a linebreak and indent; currentLength
-	    # is the accumulated length of text added so far. Both are LOGICAL
-	    # lengths, because <i/b/sc> markups may have credited with different
-	    # logical than physical lengths.
-	    lineLimit = lineLength
-	    currentLength = F
-            for (tok,tl) in tokGen(tc,self.itbosc):
-                if lineLimit >= (currentLength + tl):
-		    # there is room for this token's logical length
-                    flowText.append(tok)
-                    flowText.append(oneSpace) # assume there'll be another token
-                    currentLength += (tl + 1)
-                else: # time to break the line.
-                    lineLimit = currentLength + lineLength # set new limit
-                    flowText.chop(1) # drop the space we added after last token
-                    flowText.append(IMC.QtLineDelim) # add a linebreak
-                    flowText.append(leftIndent) # add a new Left indent
-                    flowText.append(tok) # and now add the current token
-                    flowText.append(oneSpace) # assume there'll be another token
-                    currentLength += (L + tl + 1)
-            # used up all the tokens of this paragraph or line. If this was a
-	    # line of a poem, and it ended with a line number, push that out
-	    flowText.chop(1) # drop superfluous final space
-	    if markupCode == u'P' and (not unit['K'].isEmpty()) :
-		# there was a line number seen on this poem line
-		available = lineLimit - currentLength
-		if available < 1 :
-		    # not room to put a second space ahead of the 
-		    # line number, which we must do to maintain the ability
-		    # to recognize a line number.
-		    pqMsgs.warningMsg(
-		        u'Poem line number does not fit in line length',
-		        u'Near line {0}'.format(blockNumberA)  )
-		    available = 1 # so push it past the limit by 1
-		insertPoint = currentLength - unit['K'].size() - 1
-		flowText.insert(insertPoint,b' '*available)
-		
-	    # replace the old text with reflowed text
-            flowText.append(IMC.QtLineDelim) # terminate last line
+		unit['F'] = max(0, unit['F'] - leastIndent)
+		unit['L'] = max(0, unit['L'] - leastIndent)
+	    # Optimal paragraph wrap is quite lengthy, I'm pulling the code
+	    # out of line for readability. Although "setting up a stack frame
+	    # is expensive" (Guido) it won't be significant over all.
+	    flowText = optimalWrap(tc,unit,
+	                           self.optParaWidth.value(),
+	                           self.maxParaWidth.value(),
+	                           self.itbosc)
+            # flowText now has all the tokens of this paragraph or line,
+	    # including a poem line number if present. So just stick the
+	    # whole mess back into the document.
 	    tc.insertText(flowText) # replace selection with reflow
-	    # end of for u in reversed range of unitList loop
+	# end of "for u in reversed range of unitList" loop
         pqMsgs.endBar() # wipe out the progress bar
         tc.endEditBlock() # close the single undo/redo macro
-	# and that's reflow, folks. Barely 800 lines. pih. easy.
+	# and that's reflow, folks.
 
     # This is the text parser used by theRealReflow and theRealHTML.
     # Parse a span of text lines into work units, as documented above.
@@ -585,12 +578,12 @@ class flowPanel(QWidget):
     # S : scanning: True, looking for a para, or False, collecting a para
     # Z : None, or a QString of the end of the current markup, e.g. 'P/'
     # M : the code of this markup e.g. u'Q'
-    # P : True = reflow by paragraphs, False, by single lines as in Poetry
+    # P : True = reflow by paragraphs, False, by single lines as in /P, /*, etc.
     # F, L, R: current first, left, right indents
     # W, shortest existing indent seen in a no-reflow section
     # B, count of blank lines skipped ahead of this line/para
     # K, poem line number when seen
-    # Many of these items get copied into each work unit.
+    # Most of these status items get copied into the work units we produce.
     # 
     # We permit nesting markups pretty much arbitrarily (nothing can nest
     # inside /X or /T however). In truth only the nest of /P or /R inside
@@ -605,8 +598,10 @@ class flowPanel(QWidget):
 	markupRE = QRegExp(u'^/(P|Q|\\*|C|X|F|U|R|T)')
 	# We recognize a poem line number with this RE: at least 2 spaces,
 	# then decimal digits followed by the end of the line. Note: because
-	# we apply to a line as qstring we can use the $ for end of line
-	poemNumberRE = QRegExp(u' {2,}(\d+) *$')
+	# we apply to a line as qstring we can use the $ for end of line. We
+	# capture any trailing spaces (not \s which would catch \n as well)
+	# so that the HTML conversion gets the right length calculation.
+	poemNumberRE = QRegExp(u' {2,}(\d+ *)$')
 	# We step through QTextBlocks using the next() method but we take the
 	# block numbers to set up the progress bar:
 	topBlockNumber = topBlock.blockNumber()
@@ -826,60 +821,63 @@ class flowPanel(QWidget):
                 'F':PSW['F'], 'L':PSW['L'], 'R':PSW['R'],
                 'W':PSW['W'], 'B':PSW['B'], 'K':QString() }
 
-    # Do HTML conversion. Use the textParse method to make a list of units.
-    # Process the list of units from bottom up, replacing as we go:
-    #  Q/   -->   </div>
-    #  /Q   -->   <div class='blockquote'>
-    #  R/   -->   </div>
-    #  /R   -->   <div class='ralign'>
-    #  U/   -->   </ul>
-    #  /U   -->   <ul>
-    #  P/   -->   </div></div>
-    #  /P   -->   <div class='poetry'><div class='stanza'>
-    #  T/   -->   </table>
-    #  /T[M] -->  <table>
-    #  /F  -->  <div class='footnotes'>
-    #  F/  -->  </div>
-    #  */, X/, C/  --> </pre>
-    #  /*, /X, /C  --> <pre>
-    # <tb> --> <hr /> (no classname, so set your CSS for this as default case)
-    #
-    # We "enter" a markup at its end (Q/, T/, etc) and on entering push the
-    # prior markup type. Within a markup we insert bookend texts around each
-    # work unit based on the markup:
-    #  Q/, R/, and open code: <p> and </p>
-    #  U/ : <li> and </li>
-    #  P/ : <span class="iX"> and </span><br /> where "iX" is based on F-W
-    #  */, X/, C/, and T/ -- None
-    # On seeing T/ we note the unit number ending the table; on /T[M] we pass
-    # the slice of table units from /T to T/ to pqTable.tableHTML.
-    # The B, preceding blank lines, value of a work unit is used as follows:
-    # With poetry, B>0 means inserting </div><div class='stanza'>
-    # In open text, B==4 means using <h2> and </h2> as paragraph bookends;
-    # but B==2 when the next-higher unit has B!=4 means use <h3> and </h3>
-    # Globals bookendA, etc are below.
-    #
-    # Note on inserting bookends and other markup: QTextBlock.length() does
-    # include the line-delim at the end of the block. We include our own
-    # line-delim inserting bookendA, so <p>, <li> etc go on a line alone,
-    # and also on bookendZ, which goes after the existing line-delim and
-    # gets one of its own as well, thus <p>\n ... text \N</p>\n where 
-    # \N represents the existing line-delim.
-    
+    '''
+    Do HTML conversion. Use the textParse method to make a list of units.
+    Process the list of units from bottom up, replacing as we go. Unlike reflow
+    where the markup codes are retained to use again, here we replace the codes
+    with HTML markup as follows:
+    /Q   -->   <div class='blockquote'>
+    Q/   -->   </div>
+    /R   -->   <div class='ralign'>
+    R/   -->   </div>
+    /U   -->   <ul>
+    U/   -->   </ul>
+    /P   -->   <div class='poetry'><div class='stanza'>
+    P/   -->   </div></div>
+    /T, /TM -->  <table>
+    T/   -->   </table>
+    /F  -->  <div class='footnotes'>
+    F/  -->  </div>
+    /*, /X, /C  --> <pre>
+    */, X/, C/  --> </pre>
+    <tb> --> <hr /> (no classname, so set your CSS for this as default case)
+
+    We "enter" a markup at its end (Q/, T/, etc) and on entering push the
+    prior markup type. WITHIN a markup we insert bookend texts around each
+    work unit (paragraph or line) based on the active markup:
+    /Q, /R, and open code: <p> and </p>
+    /U : <li> and </li>
+    /P : <span class="iX"> and </span><br /> where "iX" is based on F-W
+    /*, /X, /C, and /T -- None
+    On seeing T/ we note the unit number ending the table; on /T[M] we pass
+    the slice of table units from /T to T/ to pqTable.tableHTML.
+    The B (preceding blank lines) value of a work unit is used as follows:
+    With poetry, B>0 means inserting </div><div class='stanza'>
+    In open text, B==4 means using <h2> and </h2> as paragraph bookends;
+    but B==2 when the next-higher unit has B!=4 means use <h3> and </h3>
+    The bookend strings are globals, see below.
+
+    Note on inserting bookends and other markup: QTextBlock.length() does
+    include the line-delim at the end of the block. We include our own
+    line-delim inserting bookendA, so <p>, <li> etc go on a line alone,
+    and also on bookendZ, which goes after the existing line-delim and
+    gets one of its own as well, thus <p>\\n ... text \\N</p>\\n where 
+    \\N represents the existing line-delim.
+    '''
     def theRealHTML(self,topBlock,endBlock):
-	# This is a serious one-time-only operation for the whole document.
-	# Get user buy-in if it's more than half the document.
+	# This being a serious one-time-only operation, get user authorization
+	# for more than a page worth of data.
 	doc = IMC.editWidget.document()
 	topBlockNumber = topBlock.blockNumber()
 	endBlockNumber = endBlock.blockNumber()
-	if (doc.blockCount()/2) < (endBlockNumber - topBlockNumber) :
+	if (endBlockNumber - topBlockNumber) > 50 :
 	    yn = pqMsgs.okCancelMsg(
 	        QString(u"HTML Conversion is a big deal: OK?"),
 	        QString(U"Inspect result carefully before saving; ^Z to undo")
 	        )
 	    if not yn : return
 	# Parse the text into work units
-	unitList = IMC.flowPanel.parseText(topBlock,endBlock)
+	unitList = self.parseText(topBlock,endBlock)
 	if 0 == len(unitList) :
 	    return # all-blank? or perhaps an error like unbalanced markup
 	# In order to have a single undo/redo operation we have to use a
@@ -1011,59 +1009,14 @@ class flowPanel(QWidget):
         stgs.setValue("poRight",self.poIndent[2].value() )
         stgs.setValue("nfLeft",self.nfLeftIndent.value() )
 	stgs.setValue("mxWidth",self.maxParaWidth.value() )
+	stgs.setValue("optWidth",self.optParaWidth.value() )
         stgs.endGroup()
 
     # ============= end of the class definition of flowPanel!! ========
 
-# tokGen is a generator function that returns the successive tokens from the
-# text selected by a text cursor. Each token is returned as a tuple, (tok,tl)
-# where tok is a QString and tl is its logical length, which may be less than
-# tok.size() when tok contains <i/b/sc> markups. The lengths to use for these are
-# passed as a dictionary (from flowpanel.itbosc, which isn't accessible as this
-# is a global function, not a method). Note that a multiline selection has
-# \u2029 instead of \n, but it comes up as isSpace() anyway so we don't care.
-ibsRE = QRegExp("^</?(i|b|sc)>",Qt.CaseInsensitive)
-ltChar = QChar(u'<')
-
-def tokGen(tc, itbosc):
-    qs = tc.selectedText() # sadly we end up copying every paragraph.
-    qs.append(QChar(u' ')) # ensure text ends in space for easier loop control
-    i = 0
-    while True: # one iteration per token returned
-        # n.b. qs.at(qs.size()).isSpace() returns False
-        while qs.at(i).isSpace():
-            i += 1
-        if i >= qs.size() : break # we're done
-        tok = QString()
-        ll = 0
-        while not qs.at(i).isSpace():
-            # since markup is < 1% of a doc, no point in applying the ibsRE
-            # when it has no chance of matching.
-            if qs.at(i) == ltChar :
-                # The reason there's a caret in that RE is that we want
-                # the search to fail quick, not run on ahead and find the
-                # next markup that may be 50 characters down the string.
-                # One would think with the CaretAtOffset rule, and a match
-                # at offset i, the return would be 0, but it's the offset.
-                if i == ibsRE.indexIn(qs,i,QRegExp.CaretAtOffset):
-                    x = itbosc[unicode(ibsRE.cap(1))]
-                    ll += x if x<2 else ibsRE.matchedLength()
-                    tok.append( ibsRE.cap(0) )
-                    i += ibsRE.matchedLength()
-                else:
-                    ll += 1
-                    tok.append(ltChar)
-                    i += 1
-            else:
-                ll += 1
-                tok.append(qs.at(i))
-                i += 1
-        # back to spaces, return this token
-        yield( (tok, ll) )
-
 # Opening and closing bookends for theRealHTML indexed by active markup code.
 # These are Python strings rather than QStrings mainly so the P string
-# can have a format code.
+# can have a format code. They are out here global just for neatness.
 bookendA = {
             ' ':u'<p>',
             'Q':u'<p>',
@@ -1120,6 +1073,171 @@ markupZ = {
             'C':u'</pre>',
             '*':u'</pre>'
             }
+
+# tokGen is a generator function that returns the successive tokens from the
+# text selected by a text cursor. Each token is returned as a tuple, (tok,tl)
+# where tok is a QString and tl is its logical length, which may be less than
+# tok.size() when tok contains <i/b/sc> markups. The lengths to use for these are
+# passed as a dictionary (from flowpanel.itbosc, which isn't accessible as this
+# is a global function, not a method). Note that a multiline selection has
+# \u2029 instead of \n, but the regexes treat it as \s anyway so we don't care.
+
+# This is the second version of tokGen; the first parsed the input character by
+# character much as a C prog would. This finds tokens using an RE, then looks
+# within the token for markups using another RE. The overhead of multiple RE
+# lookups turns out to be much less than the overhead of fingering every char
+# so this takes less than half the time.
+ibsRE = QRegExp("</?(i|b|sc)>",Qt.CaseInsensitive)
+tokRE = QRegExp(u"\s*(\S+)") # default is greedy
+def tokGen(tc, itbosc):
+    global ibsRE, tokRE
+    searchText = tc.selectedText() # get a QString view of selected text
+    j = 0 # index of last-found token
+    while True : # once around per token returned
+        j = tokRE.indexIn(searchText,j)
+        if j < 0 : break # no more tokens, end of generation
+        qs = QString(tokRE.cap(1)) # make a copy of the token text
+        ll = qs.size() # assume its gross length is logical length
+        j += tokRE.matchedLength() # advance to next token
+        m = ibsRE.indexIn(qs) # start looking for markup in the token
+        while m >= 0 :
+            # Token might be "<i><b><sc>Foo</sc></b></i>"
+            x = itbosc[unicode(ibsRE.cap(1))] # 0, 1, or 2==as-is
+            ml = ibsRE.matchedLength() # length of found markup
+            if x < 2 :
+                ll -= (ml-x) # treat the markup as size 0 or 1
+            m = ibsRE.indexIn(qs,m+ml) # another markup in this token?
+        yield (qs, ll)
+
+# Optimal paragraph wrap. After considerable research, including reading
+# the original Knuth&Plass paper (Software: Practice and Experience, 1981)
+# and looking at several implementations in various languages online I finally
+# found readable C code in the fmt utility in the Gnu Core Utilities. The
+# following is a slavish copy of the fmt_paragraph() function in that.
+#
+# Input is the text cursor selecting the paragraph text and the itbosc dict,
+# which get handed to tokGen (above). Also input is the optimal and max line
+# lengths from the UI spinners, and the work unit from which we get the F/L/R
+# values and, sometimes, a poem line number.
+# This RE matches the last/only line of a poem with a line number.
+poemLastLineRE = QRegExp(u'\u2029?(.+)( \d+)\u2029$')
+def optimalWrap(tc,unit,optimum,maximum,itbosc):
+    global tokGen
+    # Set up the "too much" cost factor
+    SquareRootOfInfinity = 32767
+    Infinity = SquareRootOfInfinity * SquareRootOfInfinity
+
+    # In Gnu fmt, the paragraph is read into a list of structs but this can
+    # be seen as a table, with each struct a row and its members, columns.
+    # Here we make the same table using parallel lists. If reading the C code,
+    # the "struct word" members map as follows:
+    # const char *text -- T[j] as a QString from tokgen
+    # int length       -- W[j] logical token length from tokgen
+    # int line_length  -- L[j] length of line starting from here
+    # COST best_cost   -- C[j] cost of line of length L[j]
+    # WORD *next_break -- P[j] index of first T[j] of following line
+    # Struct members space, paren, period, punct and final are not maintained.
+    # Gnu fmt uses the convention that dot-space-space ends a sentence, so it
+    # can distinguish sentence-ending periods from abbreviation periods. PG
+    # does not use this convention (too bad!) so we can't detect end of a
+    # sentence and accordingly the related cost calculations can't be done.
+
+    T = [] 
+    W = []
+    for (tok,ll) in tokGen(tc,itbosc) :
+	T.append(tok)
+	W.append(ll)
+    N = len(T) # valid tokens are 0..N-1
+    # Set up spacing: The line length is the allowed line size minus the
+    # left- and right-indents if any.
+    LOptimum = optimum - unit['L'] - unit['R']
+    LMaximum = maximum - unit['L'] - unit['R']
+    # firstIndentDiff is the difference between the first-line indent and the
+    # other lines. The standard indent is accounted for in LOptimum/LMaximum
+    # and implemented during output. The first line can be indented or exdented
+    # relative to it, and this difference is set up in T[0] and W[0]
+    firstIndentDiff = unit['F'] - unit['L']
+    W[0] += firstIndentDiff # W[0] could conceivably be 0 or negative - problem?
+    C = (N+1)*[0] # the Costs column; C[N] is a sentinel
+    W.append(LMaximum) # ..as is W[N] (recall, tokens are 0..N-1)
+    P = (N+1)*[N] # the next-word link column
+    L = (N+1)*[0] # The length-from-here column
+    scanPtr = N-1 # start with last word, work backwards
+    while True : # for (start = word_limit - 1; start >= word; start--)
+	bestCost = Infinity
+	testPtr = scanPtr
+	currentLen = W[testPtr]
+	while True : # do{...} while(len < maxwidth)
+	    testPtr += 1 # this goes to N on first iteration
+	    # "consider breaking before testPtr" : bringing line_cost() inline
+	    thisCost = 0
+	    if testPtr != N:
+		thisCost = LOptimum - currentLen
+		thisCost *= 10
+		thisCost = int(thisCost * thisCost)
+		if P[testPtr] != N :
+		    n = (currentLen - L[testPtr])/2
+		    thisCost += int(n * n)
+	    thisCost += C[testPtr]
+	    if thisCost < bestCost : # possible break point
+		bestCost = thisCost
+		P[scanPtr] = testPtr
+		L[scanPtr] = currentLen
+	    currentLen += 1 + W[testPtr] # picks up LMaximum when testPtr==N
+	    if currentLen >= LMaximum : break
+	# end inner do-while
+	# we don't try to implement base_cost() which penalizes short widows
+	# and orphans, encourages breaks after sentences and right parens,
+	# and so forth, all because we can't detect ends of sentences.
+	C[scanPtr] = bestCost # + base_cost(scanPtr)
+	if scanPtr == 0 : break # all done
+	scanPtr -= 1
+    # end main for-loop
+    # prepare the output as a string of lines with proper indents.
+    firstIndent = QString(u' '*unit['F'])
+    leftIndent = QString(u' '*unit['L']) # left-indent space for lines 2-m
+    oneSpace = QString(u' ') # one space between tokens
+    flowText = QString()
+    indent = firstIndent
+    # Each line extends from T[a] to T[z-1]
+    a = 0
+    while True : # do until z == N
+	spacer = indent
+	z = P[a]
+	while a < z :
+	    flowText.append(spacer)
+	    flowText.append(T[a])
+	    a += 1
+	    spacer = oneSpace
+	flowText.append(IMC.QtLineDelim)
+	indent = leftIndent
+	if z == N : break
+	a = z
+    # If this is a line of poetry and if it had a line number at the end,
+    # we need to insert spaces to slide that last token out. Typically poetry
+    # lines don't get folded but it can happen, so we have to isolate the
+    # last of what is probably only one line but might now be 2 or even more.
+    if unit['M'] == u'P' and (not unit['K'].isEmpty()) :
+	# there was a line number seen on this poem line. It will have been
+	# token T[N-1] and is now at the end of the line with one space.
+	# We need to insert spaces to right-justify the number against LMaximum
+	# and at least 1 additional so we can recognize it on another reflow.
+	z = poemLastLineRE.indexIn(flowText) # assert z == 0
+	# cap(1).size() is text preceding the number; cap(2).size() is the
+	# size of the number and its preceding one space.
+	a = poemLastLineRE.cap(1).size() # length of text preceding number
+	z = poemLastLineRE.cap(2).size() # length of space+nnn
+	available = LMaximum - a - z 
+	if available < 1 :
+	    # not room to put in space, space, line number
+	    pqMsgs.warningMsg(
+	        u'Poem line number overflows line length',
+	        u'Line number is' + unicode(poemLastLineRE.cap(2))
+	    )
+	    available = 1
+	flowText.insert(flowText.size()-z, QString(u' '*available))
+
+    return flowText
 
 if __name__ == "__main__":
     import sys
