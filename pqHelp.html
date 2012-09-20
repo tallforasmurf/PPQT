@@ -28,9 +28,9 @@ __license__ = '''
 </head>
 <body>
 <h1>Introduction</h1>
-<p>PPQT is a unified tool for use by the volunteers who post-process books for Distributed Proofreaders. It provides a text editor that integrates a number of features useful during post-processing, including display of the book's scanned pages, regular expression find/replace, spellcheck, pagination, footnoting, and html preview. This Help is its sole documentation.</p>
-<p>You can read this help text in the Help panel of the program; or you
-can find <tt>pqHelp.html</tt> in the PPQT folder and open it in any browser.</p>
+<p>PPQT is a unified tool for use by the volunteers who post-process books for Distributed Proofreaders. It provides a text editor that integrates a number of features useful during post-processing, including display of the book's scanned pages, regular expression find/replace, spellcheck, pagination, footnoting, and html preview. This Help is its main documentation. Some additional info can
+be found in the <a href='#Extras'>Extras</a> folder in the PPQT folder.</p>
+<p>You can read this help text in the Help panel of the program; or just locate <tt>pqHelp.html</tt> in the PPQT folder and open it in any browser.</p>
 <p>If while reading this text in the Help panel you click on a link, you can get
 back to the text by keying ctl-[ or ctl-b (mac users see next paragraph).</p>
 <h2>Mac Users Note</h2>
@@ -38,17 +38,17 @@ back to the text by keying ctl-[ or ctl-b (mac users see next paragraph).</p>
 you think <b>cmd-</b>. And when you read <b>alt-</b>, you think <b>opt-</b>.
 Qt is quite consistent in these mappings. However, when you see <b>control-</b>
 (not <b>ctl-</b>), that really means, the Control key on every platform.</p>
-<p>For example, in this Help panel the "back" function is ctl-b or ctl-[. You know that would be cmd-[ or cmd-b. Similarly, it says below that to set bookmark 1, you key ctl-alt-1. As a Mac user you will  know to substitute cmd- for ctl- and opt- for alt-, and set bookmark 1 using cmd-opt-1.</p>
+<p>For example, in this Help panel the "back" function is ctl-b or ctl-[. For a mac, that means cmd-[ or cmd-b. Similarly, it says below that to set bookmark 1, you key ctl-alt-1. As a Mac user you will  know to substitute cmd- for ctl- and opt- for alt-, and set bookmark 1 using cmd-opt-1.</p>
 <h2>Licenses</h2>
 <p>PPQT is based on the <a href="http://qt-project.org">Qt platform</a>.
-It is coded in Python using <a href="http://riverbankcomputing.co.uk/software/pyqt/intro">PQt4</a>.
+It is coded in Python using <a href="http://riverbankcomputing.co.uk/software/pyqt/intro">PyQt4</a>.
 It is packaged for distribution using <a href="http://pyinstaller.org">pyinstaller</a>.</p>
 <p>Qt is licensed for noncommercial use under the LGPL.
 PyQt4 is licensed for noncommercial use under the GPL v2 and the GPL v3.
 <b>The source code of PPQT is licensed under the GPL v3</b>.
 See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 <h2>Acknowledgements</h2>
-<p>First, a deep bow of respect to Steve Shulz (Thundergnat) who created, and to all who maintain, Guiguts, the program from which PPQT takes its inspiration and lots of ideas. Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Development with PyQt</i> that showed how to build PPQT.</p>
+<p>First, a deep bow of respect to Steve Shulz (Thundergnat) who created Guiguts, the program from which PPQT takes its inspiration (and lots of ideas). Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Development with PyQt</i> that showed how to build PPQT.</p>
 <h2>Contents</h2>
 <ul>
 <li><a href='#Files'>Files and Folders</a> says where PPQT looks for the book text, images, and related files.</li>
@@ -102,7 +102,7 @@ is a tabbed set of panels for different functions. All these panels are describe
 It uses a monospaced font, defaulting to
 <a href="http://dejavu-fonts.org/wiki/Main_Page">Deja Vu Mono</a>
 or to Courier New, either of which is legible and has a full range of Unicode characters. (The DpCustomMono2 font often used at PGDP lacks most Unicode characters.)</p>
-<p>Use View&nbsp;>&nbsp;Font... command to select another font, which will be remembered from session to session. It would be a very bad idea to use anything but a monospaced font.</p>
+<p>Use the View&nbsp;>&nbsp;Font... command to select a font from your system, which will be remembered from session to session. It would be a very bad idea to use anything but a monospaced font.</p>
 <p>Below the edit panel is a status area where activity messages appear
 from time to time. Bottom center is a line-number field displaying the
 line number of the edit cursor. Type a new number in
@@ -242,7 +242,7 @@ repeat that operation, click the button. All the find/replace
 controls are returned to the stored settings.
 The button contents are remembered from session to session.</p>
 <p>To clear the contents of a button, right-click it, clear the label field to empty, and click OK.</p>
-<p>To save the button settings to a file, select File&nbsp;>&nbsp;Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (so a suffix of .utf is a good idea). In the saved file each non-empty button is represented in text form. (Feel free to edit it.)</p>
+<p>To save the button settings to a file, select File&nbsp;&gt;&nbsp;Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (so a suffix of .utf is a good idea). In the saved file each non-empty button is represented in text form. (Feel free to edit it.)</p>
 <p>To load button settings from a file, select File&nbsp;>&nbsp;Load Find Buttons.
 Any valid button definitions in the file are assigned to the buttons.
 Rather strict controls are applied but no diagnostics are issued; an invalid
@@ -250,7 +250,7 @@ button definition is just silently ignored.</p>
 <p>
 The intent of saving and loading buttons is to be able to save
 and re-use complex search operations, and exchange them with other
-users. The format of a file of saved buttons is documented elsewhere.</p>
+users. See the<a href='#Extras'>Extras</a> folder in the PPQT folder for some saved button definitions and a note on the format of a file of saved buttons.</p>
 <h3>Regex Syntax</h3>
 <p>The Regular Expression (regex) support provided by Qt4 is similar to, but has fewer features than, the Perl regexes used in guiguts. (Qt version 5, planned for 2013, has better support.) The following forms are used to match text.</p>
 <table border='1' style='border-collapse:collapse;'>
@@ -292,22 +292,20 @@ not at end of line. However the lookbehind tests of Perl regexes are not support
 <p>Note: owing to some tricks PPQT plays with the Qt regex support, 
 the caret and dollar codes, which usually match at beginning and end
 of a line, only match at top and bottom search boundary respectively.
-Use \n to match at beginning and end of line.</p>
-<p>Replacement text for a regex match may contain <b>\</b><i>n</i> to refer
-to the <i>n</i>th captured (parenthesized) text. None of the special
-replacements supported by guiguts (such as <tt>\U...\E</tt> to uppercase
+Use <tt>\n</tt> to match at beginning and end of line.</p>
+<p>As usual, replacement text for a regex match may contain <b>\</b><i>i</i> to refer to the <i>i</i>th captured (parenthesized) text. However, none of the special replacements supported by guiguts (such as <tt>\U...\E</tt> to uppercase
 the text) are available.</p>
 <h2 id='Chars'>The Characters Panel</h2>
 <p>Click the Char tab to show the Characters panel.
 This panel displays a table of all characters seen in the document,
 in five columns:</p>
-<table border='1' style='border-collapse:collapse;width:90%'>
-<tr><td><b>Glyph</b></td><td>The character symbol.</td></tr>
-<tr><td><b>Value</b></td><td>The hex value of the Unicode character.</td></tr>
-<tr><td><b>Count</b></td><td>The number of times the character appears in the document.</td></tr>
-<tr><td><b>Entity</b></td><td>The  HTML/XML Entity code for this character.</td></tr>
-<tr><td><b>Unicode<br />category</b></td><td>The Unicode category of the character.</td></tr>
-</table>
+<ul>
+<li><b>Glyph</b>: The character symbol.</li>
+<li><b>Value</b>: The hex value of the Unicode character.</li>
+<li><b>Count</b>: The number of times the character appears in the document.</li>
+<li><b>Entity</b>: The  HTML/XML Entity code for this character.</li>
+<li><b>Unicode category</b>: The Unicode category of the character.</li>
+</ul>
 <p>Click on the heading of any column to sort the table on that column.
 After you have edited the document, the table is out of date.
 Click the Refresh button
@@ -331,9 +329,9 @@ Replace text. This makes it easy to replace a character with its Entity code.</p
 <p>Click the Word tab to see the Words panel.
 This is a table of all words in the document, in three columns:</p>
 <ul>
-<li>Word: text of the word</li>
-<li>Count: the number of times the word appears</li>
-<li>Features: a string of letters showing information about the word,
+<li><b>Word</b>: text of the word</li>
+<li><b>Count</b>: the number of times the word appears</li>
+<li><b>Features</b>: a string of letters showing information about the word,
 for example <tt>Aa---X</tt>. These codes contain, from left to right:
 <ul>
 <li>A if the word contains an uppercase letter, else hyphen</li>
@@ -390,7 +388,7 @@ All from the popup menu above the table to see all words again.</p>
 <p>Click the Page tab to display the Pages panel. 
 The body of this panel is a table showing the information extracted from the page separator lines the first time the file was opened. The information is retained in the metadata even after the text of the page separator lines has been deleted. The columns are:</p>
 <ul>
-<li>Scan#: the number of the scanned image, usually three digits; this
+<li>Scan#: the number of the scanned image, usually three or four digits; this
 is the filename of the <tt>.png</tt> image file in the <tt>pngs</tt> folder.</li>
 <li>Format: the display format for a visible folio: arabic or roman numerals.</li>
 <li>Action: how to compute and display the folio for this page</li>
@@ -459,11 +457,12 @@ The <i>First</i> indent applies to the first line of a paragraph;
 <i>Left</i> to the other lines. The <i>Right</i> indent causes lines to
 be shorter than the maximum width by this amount.</p>
 <p>The second row of controls set the indents for poetry, in which the <i>First</i> indent applies to every line; the <i>Left</i> indent is used only if a line is too long to fit in the maximum width and is folded.</p>
-<p>At the left of the third row of controls is the Text Width control, which sets the width of text paragraphs and the default width for tables.</p>
+<p>At the left of the third row is a pair of Text width controls, one for the
+optimal (preferred) line length, and a second for the absolute maximum line of text. When reflowing paragraphs most lines will around the optimal length and none will exceed the maximum. Typical settings are 72 and 75. The maximum length is the default width for tables.</p>
 <p>For Centered text, setting the "doc" button causes each line to be centered on the text width value. Setting the "self" button adjusts
 a centered section as far to the left as possible leaving a 2-space indent.
 </p>
-<p>You can specify the First, Left and/or Right indent for any section
+<p>You can specify the First, Left and/or Right indent for any markup section
 by writing <b>F:</b><i>nn</i> <b>L:</b><i>nn</i> <b>R:</b><i>nn</i> following
 the start of the markup. For example <tt>/Q F:8 L:6</tt> starts a 
 block-quote markup with those margins, overriding the <i>First</i> and <i>Left</i> margins set with the visible controls, but using the <i>Right</i> from the control.</p>
@@ -480,6 +479,8 @@ the controls on the right center. For example if &lt;sc> markup will
 be converted to uppercase, set the control to treat this markup as 0 length.
 (This does not work for tables at this time. Set the skip button for tables
 until you have removed the i/b/sc markup from the text.)</p>
+<p>Paragraphs of normal text and paragraphs in block quotes and lists are reflowed within the text margin settings. First, Left and Right margin settings are deducted from both numbers, so if the text widths are set to 72 and 74 (for example), and the Left and Right margins are 4 and 4, the effective margins are optimal 64 and maximum 66.</p>
+<p>Paragraph text is reflowed within the effective margins using an optimal algorithm which gives more even line-breaks than the usual "greedy" algorithm.</p>
 <h4>Nesting Markups</h4>
 <p>To a limited degree you can nest the markups. For example you can nest
 a /P poetry section within a /Q block quote section or a /U list section.
@@ -503,7 +504,7 @@ Chapter IV. The Nature and
 Properties of Clay   29
 T/
 </pre>
-<p>PPQT indents a table two spaces (an etext requirement for formatted text), more if the table is nested in another markup. By default the table is formatted to fill the paragraph width. The table is narrower if it is nested in a markup with a left and right indents.</p>
+<p>PPQT indents a table two spaces (an etext requirement for formatted text), more if the table is nested in another markup. By default the table is formatted to fill the maximum paragraph width (not the optimal width) so the table is narrower when nested in a markup with a left and right indents.</p>
 <p>By default column text is aligned left, and columns are given widths
 roughly in proportion to their contents. However, you can specify detailed controls on the opening markup line.</p>
 <p>Specify properties of the whole table with <b>T(</b><i>properties</i><b>)</b> where the <i>properties</i> can be:</p>
@@ -512,7 +513,7 @@ roughly in proportion to their contents. However, you can specify detailed contr
 stile characters.</li>
 <li><b>T:'-'</b> to have the top line of the table be a row of hyphens.</li>
 </ul>
-<p>For example <tt>/TM T(W:50)</tt> begins a multi-line table with a width of 50. The width specified here can be wider than the text width, this is not checked.</p>
+<p>For example <tt>/TM T(W:50)</tt> begins a multi-line table with a width of 50. The width specified here can be wider than the text margin, and this is not checked.</p>
 <p>Set the default properties for all columns with <b>C(</b><i>properties</i><b>)</b>, where
 the <i>properties</i> can be:</p>
 <ul><li><b>W:</b><i>nn</i> for the minimum width of every column.
@@ -553,13 +554,13 @@ use a single @ character on every line, as in the above example.</p>
 To get exactly the spacing you want, specify the width of the table and
 of each column individually.</p>
 <p>As suggested by the example, you can spell out the names of properties,
-for example <tt>WIDTH:50</tt> instead of <tt>W:50</tt>. But actually, only
-the initial letter is checked, so <tt>WATERMELON:50</tt> works, too.</p>
+for example <tt>WIDTH:50</tt> instead of <tt>W:50</tt>. (Actually, only
+the initial letter is checked, so <tt>WATERMELON:50</tt> works, too.)</p>
 <p>Decimal alignment makes the decimal separators line up vertically in a column. When you specify <tt>A:D</tt> for a column, you can also specify
 the width in two parts, for example <tt>W:7.3</tt> where the first number (7)
 says the minimum width for the integer part, and the second (3) sets the
 minimum width for the decimal and the fraction digits. You may also
-specify <tt>D:'<i>x</i>'</tt> to set a different decimal separator character <i>x</i>, for example in a German text, where the comma is the conventional
+specify <tt>D:'<i>x</i>'</tt> to set a different decimal separator character <i>x</i>, for example in a European text where comma is the conventional
 decimal "point". Here is a simple table with decimal alignment before reflow:</p>
 <pre>
 /T TABLE(WIDTH:30) 1(A:R) 2(A:D W:8.4 D:',')
@@ -578,13 +579,13 @@ contain text, especially in a multi-line table. For example you may find
 it best to format a heading row manually over a decimal table.</p>
 <h3 id='html'>HTML Conversion</h3>
 <p>ASCII reflow is designed so you can do it repeatedly. HTML conversion
-is a one-shot deal: it wipes out the reflow markup lines and the spacing
+is a one-shot deal that wipes out the reflow markup lines and the spacing
 of tables. Select a range of text and click HTML Convert: Selection, or
 click Convert: Document to do the whole thing. HTML conversion is a single
 undo/redo operation: apply it; check the result in the <a href='#View'>Preview panel</a>; key ctl-z to undo and fix the markup.</p>
 <p>During conversion the following changes are made
 for the different markup types.</p>
-<table border='1' style='width:100%;'>
+<table border='1' style='width:100%;border-collapse:collapse;'>
 <tr><th style='width:25%;'>Markup</th><th>Converted to:</th></tr>
 <tr><td>text paragraphs</td><td><tt>&lt;p></tt><i>para text</i><tt>&lt;/p></tt></td></tr>
 <tr><td><b>/Q</b></td><td><tt>&lt;div class="blockquote"></tt></tr>
@@ -639,9 +640,12 @@ To return to the book preview, key ctl-B or ctl-[ (control-left bracket).</p>
 <p>The following terms are important. A <i>Note</i> is a section of text that begins with <tt>[Footnote</tt> and ends with a right-bracket, for example,</p>
 <pre>[Footnote <b>z</b>: ... some text possibly mutiple lines,
 ending with -- ]</pre>
-<p>A Note is only recognized when  <tt>[Footnote</tt> begins in column zero  and the final right-bracket is the last character on its line. (Additional square brackets within a Note are not a problem so long as they don't come at the end of a line.)</p>
+<p>A Note is only recognized when  <tt>[Footnote</tt> begins in column zero  and the final right-bracket is the last character on its line. (Additional square brackets within a Note are not a problem so long as they don't come at the end of a line.) A Note may contain other types of markup, for example quotes, poems or tables.</p>
 <p>An <i>Anchor</i> is a reference to a Note enclosed in brackets thus<tt>[<b>z</b>]</tt>. An Anchor is never found in column zero, although
-it may come at the end of a line.</p>
+it may come at the end of a line. Anchors may appear in tables, quotes, and poetry as well as normal text.
+<p>A Note should not be coded inside /Q or /T or any other markup section that gets indented, because after reflow the <tt>[Footnote</tt> will no longer be at the left margin, and the note won't be recognized. When an Anchor appears in some markup section, place the matching Note after the end of the markup.</p>
+
+A Note may  contain an Anchor to another Note (that is, a footnote to the footnote&mdash;yes, it really happens), but the Note bodies cannot be nested. The referenced Note to the Note must be outside the referring Note, perhaps immediately after it.</p>
 <p>A <i>Key</i> is the bit of text that relates an Anchor to its Note, <tt><b>z</b></tt> in these examples. A key falls into one of several <i>Classes</i>:</p>
 <ul>
 <li>The letters <tt>IVXLCD</tt> are in the Upper Roman class</li>
@@ -658,18 +662,16 @@ resolved when renumbering, see below.</p>
 <h3>The Footnote Table</h3>
 <p>When you click the Refresh button at the top of the panel, PPQT scans the document for Anchors and Notes. It matches the anchors and notes and displays the result in the table. The columns of the table are:</p>
 <ul>
-<li>Key: the letters or numbers of the key.</li>
-<li>Class: the Key Class PPQT has assigned based on the Key.</li>
-<li>Ref Line: the line number where the Anchor was seen.</li>
-<li>Note Line: the first line number of the Note.</li>
-<li>Length: the number of lines in the Note.</li>
-<li>Text: the first few characters of the Note text.</li>
+<li><b>Key</b>: the letters or numbers of the key.</li>
+<li><b>Class</b>: the Key Class that PPQT has assigned based on the Key.</li>
+<li><b>Ref Line</b>: the line number where the Anchor was seen.</li>
+<li><b>Note Line</b>: the first line number of the Note.</li>
+<li><b>Length</b>: the number of lines in the Note.</li>
+<li><b>Text</b>: the first few characters of the Note text.</li>
 </ul>
 <p>When PPQT finds an Anchor but cannot match it to a Note, the Note Line column has a question mark. When it found a Note but no Anchor refers to it, the Ref Line column has a question mark. In these unmatched cases, the row of the table is pink to show there is a problem. You must resolve these problems before the action buttons at the bottom of the panel will work.</p>
 <p>When a Note has more than 10 text lines, or an Anchor is more than 50 lines from its Note, the table row is pale green to suggest a possible problem. You should check these cases to make sure PPQT has recognized the Note properly and matched it to the correct Anchor.</p>
 <p>When you click on a Ref Line cell, the document jumps to the line with that Anchor, with the Key selected. Click on a Note Line cell; the document jumps to that Note with the Note selected. Click repeatedly on a Key cell and the document jumps back and forth between the Anchor and the Note.</p>
-<p>A Note may contain other types of markup, for example quotes, poems or tables. A Note may also contain an Anchor to another Note (that is, a footnote to the footnote), but the Note bodies cannot be nested. The referenced Note to the Note must be outside the referring Note, perhaps immediately after it.</p>
-<p>Anchors may appear in tables, quotes, and poetry. However, a Note should not be coded inside /Q or /T or any other markup section that gets indented, because after reflow the <tt>[Footnote</tt> will no longer be at the left margin, and the note won't be recognized. Place Notes after the end of the markup containing their Anchors.</p>
 <h3>Renumbering</h3>
 <p>When you click the Renumber button, provided there are no pink lines in the table, PPQT sweeps through all the Keys in the document and renumbers them sequentially according to their Class. PPQT has five counters that are set to zero when you click Renumber, and that are increased by 1 each time they are used. The number streams are:</p>
 <ul>
@@ -693,7 +695,7 @@ NOTES
 
 
 /F
-F/</pre><p>Here, <tt>NOTES</tt> represents a subhead, so it is preceded and followed by two blank lines. The <tt>/F..F/</tt> markup codes tell where the Notes from the preceding chapter should move. Alternatively you might have a single <tt>NOTES</tt> chapter (preceded by four blank lines) at the end of the book text.</p>
+F/</pre><p>Here, <tt>NOTES</tt> represents a subhead (because it is preceded and followed by two blank lines). The text "NOTES" does not matter; it is the <tt>/F..F/</tt> markup codes that tell where the Notes from the preceding chapter should be moved. Alternatively you might have a single chapter of notes at the end of the book text.</p>
 <p>When you click the Move Notes button, PPQT scans the document and locates all the <tt>/F..F/</tt> sections you have coded. (If it cannot find any, it displays an error.) Then it goes through the footnote table and finds any Notes that are not already enclosed in a <tt>/F..F/</tt> section. It moves these into the Footnote section next below them in the document. (If there is no section below  a Note, it is not moved.)</p>
 <p>Moving notes is a single-undo operation. Inspect the result and use ctl-z if it is not satisfactory.</p>
 <h3>ASCII Conversion</h3>
@@ -701,7 +703,7 @@ F/</pre><p>Here, <tt>NOTES</tt> represents a subhead, so it is preceded and foll
 [Footnote key: Text of the note... ]</pre> into:<pre>/Q F:2 L:<i>w</i> R:2
   [key] Text of the note...
 Q/</pre>The left-indent <i>w</i> is based on the widest key of that key class.
-These new /Q..Q/ sections are reflowed in the <a href='#Flow'>Reflow Panel</a> ASCII reflow.
+These new /Q..Q/ sections can be reflowed in the <a href='#Flow'>Reflow Panel</a> ASCII reflow.
 </p>
 <p>Do this as the very last footnote operation in the plain text fork of the book. Afterward, the Footnote Panel is of no use because the Notes can no
 longer be recognized.</p>
@@ -709,7 +711,7 @@ longer be recognized.</p>
 <h3>HTML Conversion</h3>
 <p>HTML conversion of footnotes is divided between the Footnote Panel and the Reflow Panel.</p>
 <p>In the Footnote panel click HTML Cvt to convert all Anchors and Notes to HTML. This is a single-undo operation. Do this as the very last footnote operation in the HTML fork of the book. Afterward, the Footnote Panel is of no use, because the Notes can no longer be recognized.</p>
-<p>Later, when you use HTML Convert in the <a href='#html'>Reflow Panel</a>, the markup tags <tt>/F..F/</tt> are converted to HTML <tt>&lt;div></tt> markup.</p>
+<p>This does not convert the the markup tags <tt>/F..F/</tt>. Later, when you use HTML Convert in the <a href='#html'>Reflow Panel</a>, it converts the tags to <tt>&lt;div></tt> markup.</p>
 <h2 id='Extras'>The Extras Folder</h2>
 <p>
 Within the distribution folder <tt>PPQT</tt> there is a folder named <tt>extras</tt> with some miscellaneous documents:</p>
