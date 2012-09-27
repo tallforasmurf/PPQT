@@ -176,7 +176,10 @@ The kludge with the fewest gotchas is to copy the find regex and delete from
 it any trailing lookahead before using it to do the replace. The regex sans
 lookahead should still match to the text it matched with lookahead. It may
 be possible to think of a regex that, without its lookahead, will find a
-SHORTER match than it did with lookahead, but I can't think of one.
+SHORTER match than it did with lookahead, but I can't think of one. UPDATE:
+in fact exactly such a regex is in extras/ClearTextMarkup.utf: X.*(?=\\n)
+when the regex is not greedy, the .* matches less without the lookahead than
+with it. So a further kludge: force greedy.
 
 Qt 5 is supposed to offer much improved regex support with both lookahead and
 lookbehind and the whole design will have to be revisited then. Possibly the
@@ -613,6 +616,7 @@ class findPanel(QWidget):
                     qpat = self.regexp.pattern() # get the pattern
                     qpat.truncate(lookp)  # truncate the "(?=asdf)"
                     qrex.setPattern(qpat) # put modified pattern back
+                    qrex.setMinimal(False) # make it greedy
                 # Get the currently-selected text as a QString ref
                 qs = tc.selectedText() # get selection as QString
                 # Copy the user's replace string and change \n to psep
@@ -670,6 +674,7 @@ class findPanel(QWidget):
                         qpat = self.regexp.pattern() # get the pattern
                         qpat.truncate(lookp)  # truncate the "(?=asdf)"
                         qrex.setPattern(qpat) # put modified pattern back
+                        qrex.setMinimal(False) # and make it greedy
                 # The hits were stored in LIFO order, so this loop applies them
                 # from the end of the document up, keeping later positions valid.
                 for tc in hits:
