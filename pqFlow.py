@@ -226,6 +226,15 @@ class flowPanel(QWidget):
         self.skipTbCheck = QCheckBox("Tables /T..T/")
         skipVBox.addWidget(self.skipTbCheck,0)
         #skipVBox.addStretch(1)
+	self.skipIsChecked = {'P':self.skipPoCheck.isChecked,
+	                    'Q':self.skipBqCheck.isChecked,
+	                    'C':self.skipCeCheck.isChecked,
+	                    '*':self.skipNfCheck.isChecked,
+	                    'T':self.skipTbCheck.isChecked,
+	                    'R':lambda : False,
+	                    'X':lambda : False,
+	                    'U':lambda : False,
+	                    'F':lambda : False }
         # group of token-width radio button sets
         tknVBox = QVBoxLayout()
         bigHBox.addLayout(tknVBox)
@@ -339,11 +348,14 @@ class flowPanel(QWidget):
     # self.boCounts[0/1/2].isChecked() == 0, 1, as-is
     # self.scCounts[0/1/2].isChecked() == 0, 1, as-is
     # -- the above 3 are also available as self.itbosc['b'/'i'/'sc']
+    # The following are set by the user to skip different kinds of markup:
     # self.skipPoCheck.isChecked()
     # self.skipBqCheck.isChecked()
     # self.skipNfCheck.isChecked()
     # self.skipCeCheck.isChecked()
     # self.skipTbCheck.isChecked()
+    # For ease of access, the self.skipIsChecked dict contains references
+    # to the .isChecked member of each keyed by the markup code letter.
 
     # These slots receive the clicked signal of the action buttons
     def reflowSelection(self):
@@ -452,11 +464,12 @@ The reflow work unit produced by parseText below is a dict with these members:
     'A' : text block number of start of the unit
     'Z' : text block number of end of the unit
     'F', 'L', 'R': the desired First, Left and Right margins for this unit,
-    'W' : in a paragraph ('T':'P'), the smallest actual indent thus far seen
-        in the unit; in end of markup ('T':'/') the smallest seen in the unit.
-        Lines of a * or P markup, or C markup with "center on doc" checked,
-	are indented by F-W (which may be negative) thus removing any existing
-	indent installed from a previous reflow.
+    'W' : in start of markup ('T'='M'), the max par width for reference mainly
+        in the table module; in a paragraph ('T'='P'), the smallest actual indent
+	thus far seen in the unit; in end of markup ('T'='/') the smallest indent
+	seen in the unit. Lines of a * or P markup, or C markup with "center on
+	doc" checked, are indented by F-W (which may be negative) thus removing
+	any existing indent installed from a previous reflow.
     'K' : in a line of a poem ('T':'P' && 'M':'P'), an empty QString or
 	the poem line number as a QString of decimal digits.
     'B' : the count of blank lines that preceded this unit, used in Table
@@ -618,83 +631,77 @@ The reflow work unit produced by parseText below is a dict with these members:
 	    if 0x0f == (thisBlockNumber & 0x0f) :
 		pqMsgs.rollBar(thisBlockNumber - topBlockNumber)
 	    qs = thisBlock.text() # const(?) ref(?) to text of line
-	    if PSW['S'] :
-		# not in a paragraph, scanning for data to work on
+	    if PSW['S'] : # state of not in a paragraph, scanning for work.
 		if qs.trimmed().isEmpty() :
 		    # another blank line, just count it
 		    PSW['B'] += 1
 		else:
 		    # We are looking for work and we found a non-empty line!
 		    # But: is it text, or a markup?
-		    if 0 == markupRE.indexIn(qs):
-			# we have found a markup! Save our current state
+		    if 0 == markupRE.indexIn(qs):		    
+			# We have found a markup! Save our current state.
+			# Note that PSW['S'] is True and stays that way
 			stack.append(PSW.copy())
-			# Now, figure out which markup it is, and set PSW to suit.
-			# Note that PSW['S'] is already True and stays that way
-			PSW['M'] = unicode(markupRE.cap(1)) # u'Q', u'P' etc
-			PSW['Z'] = QString(PSW['M']+u'/') # endmark, 'Q/' etc
-			# make a start-markup work unit for this line
-			unitList.append(self.makeUnit('M',PSW,thisBlockNumber,thisBlockNumber))
-			PSW['B'] = 0 # clear the blank-line-before count
-			if PSW['M'] == u'Q' and (not self.skipBqCheck.isChecked()) :
-			    # Enter a block quote section
-			    PSW['P'] = True # collect paragraphs
-			    self.getIndents(qs,PSW,self.bqIndent[0].value(),
-			    self.bqIndent[1].value(), self.bqIndent[2].value() )
-			    # don't care about W
-			elif PSW['M'] == u'F' : # footnote section
-			    PSW['P'] = True # collect paragraphs
-			    PSW['F'] = 0 # with 0 margins
-			    PSW['L'] = 0
-			    PSW['R'] = 0
-			    # don't care about W
-			elif PSW['M'] == u'P' and (not self.skipPoCheck.isChecked()) :
-			    # Enter a poetry section
-			    PSW['P'] = False # collect by lines
-			    self.getIndents(qs,PSW, self.poIndent[0].value(),
-			        self.poIndent[1].value(), self.poIndent[2].value() )
-			    PSW['W'] = self.maxParaWidth.value() # initialize to find shortest indent
-			elif PSW['M'] == u'*' and (not self.skipNfCheck.isChecked()) :
-			    # Enter a no-reflow indent section
-			    PSW['P'] = False # collect by lines
-			    self.getIndents(qs,PSW,0,self.nfLeftIndent.value(), 0 )
-			    PSW['W'] = self.maxParaWidth.value() # initialize to find shortest indent
-			elif PSW['M'] == u'C' and (not self.skipCeCheck.isChecked()) :
-			    # Enter a centering section
-			    PSW['P'] = False # collect by lines
-			    self.getIndents(qs,PSW,2,2,0)
-			    PSW['W'] = self.maxParaWidth.value() # initialize to find shortest indent
-			elif PSW['M'] == u'X' :
-			    # Enter a no-reflow no-indent section
-			    PSW['P'] = False # collect by lines
-			    PSW['F'] = 0
-			    PSW['L'] = 0
-			    PSW['R'] = 0
-			    # don't care about W
-			elif PSW['M'] == u'U' :
-			    # Enter a list markup
-			    PSW['P'] = True # collect by paragraphs
-			    self.getIndents(qs,PSW,2,4,4)
-			    # don't care about W
-			elif PSW['M'] == u'R' :
-			    # Enter a right-aligned section
-			    PSW['P'] = False # collect by lines
-			    self.getIndents(qs,PSW,0,0,0)
-			    # don't care about W
-			elif PSW['M'] == u'T' and (not self.skipTbCheck.isChecked()) :
-			    # start a table section /T or /TM
-			    PSW['P'] = False # collect by lines
-			    PSW['L'] += 2 # table indent of 2 over current L
-			    PSW['W'] = self.maxParaWidth.value() # save line width
-			else : 
-			    # markup of this type is to be skipped: consume
-			    # lines until we see the end of the section.
-                            while thisBlock.next() != endBlock:
-                                thisBlock = thisBlock.next()
-                                if thisBlock.text().startsWith(PSW['Z']) :
-				    thisBlock = thisBlock.previous()
-				    break     
-		    # markupRE did not hit, not starting a markup. Ending one?
+			# Note the markup type and prepare its end-flag compare value.
+			PSW['M'] = unicode(markupRE.cap(1)) # u'Q', 'P', 'T' etc
+			PSW['Z'] = QString(PSW['M']+u'/') # endmark, 'Q/', 'P/' etc
+			if not self.skipIsChecked[PSW['M']]() :
+			    # We are processing this type of markup
+			    # make a start-markup work unit for this line
+			    if PSW['M'] == u'Q' : # Enter a block quote section
+			    	PSW['P'] = True # collect paragraphs
+			    	self.getIndents(qs,PSW,self.bqIndent[0].value(),
+			                       self.bqIndent[1].value(),
+				               self.bqIndent[2].value() )
+			    elif PSW['M'] == u'U' : # Enter a list markup
+			        PSW['P'] = True # collect by paragraphs
+			        self.getIndents(qs,PSW,2,4,4)
+			    elif PSW['M'] == u'P' : # Enter a poetry section
+			        PSW['P'] = False # collect by lines
+			        self.getIndents(qs,PSW, self.poIndent[0].value(),
+			                        self.poIndent[1].value(),
+				                self.poIndent[2].value() )
+			        PSW['W'] = self.maxParaWidth.value() # initialize to find shortest indent
+			    elif PSW['M'] == u'R' : # Enter a right-aligned section
+			        PSW['P'] = False # collect by lines
+			        self.getIndents(qs,PSW,0,0,0)
+			    elif PSW['M'] == u'*' : # Enter a no-reflow indent section
+			        PSW['P'] = False # collect by lines
+			        self.getIndents(qs,PSW,0,self.nfLeftIndent.value(),0)
+			        PSW['W'] = self.maxParaWidth.value() # initialize to find shortest indent
+			    elif PSW['M'] == u'C' : # Enter a centering section
+			        PSW['P'] = False # collect by lines
+			        self.getIndents(qs,PSW,2,2,0)
+			        PSW['W'] = self.maxParaWidth.value() # initialize to find shortest indent
+			    elif PSW['M'] == u'X' : # Enter a no-reflow no-indent section
+			        PSW['P'] = False # collect by lines
+			        PSW['F'] = 0 # use zero margins
+			        PSW['L'] = 0
+			        PSW['R'] = 0
+			    elif PSW['M'] == u'T' : # start a table section /T or /TM
+			        PSW['P'] = False # collect by lines
+			        PSW['L'] += 2 # table indent of 2 over current L
+			        PSW['W'] = self.maxParaWidth.value() # save line width
+			    else : # assert PSW['M'] == u'F'  # Enter footnote section
+			        PSW['P'] = True # collect paragraphs
+			        PSW['F'] = 0 # with 0 margins
+			        PSW['L'] = 0
+			        PSW['R'] = 0
+			        # don't care about W
+			    unitList.append(self.makeUnit('M',PSW,thisBlockNumber,thisBlockNumber))
+			    PSW['B'] = 0 # clear the blank-line-before count
+			else : # markup of this type is to be skipped: consume lines
+			    # until we see the end of the section, then pop the stack.
+			    # Should we not see the closing mark the stack will be
+			    # unbalanced and an error will be issued.
+			    while thisBlock.next() != endBlock:
+				thisBlock = thisBlock.next()
+				if thisBlock.text().startsWith(PSW['Z']) :
+				    PSW = stack.pop()
+				    PSW['B'] = 0
+				    break  
+		    # markupRE did not see a match, so not starting a markup.
+		    # Perhaps we are ending one?
 		    elif PSW['Z'] is not None and qs.startsWith(PSW['Z']):
 			# we have found end of markup with no paragraph working
 			# document it with an end-markup unit
@@ -703,9 +710,9 @@ The reflow work unit produced by parseText below is a dict with these members:
 			PSW = stack.pop()
 			PSW['B'] = 0
 		    else:
-			# It is not a markup, so it starts a paragraph
+			# Neither open nor close markup, so: a paragraph
 			if PSW['P'] : 
-			    # start of a normal paragraph
+			    # collecting by paras, note start of one
 			    firstBlockNumber = thisBlockNumber
 			    PSW['S'] = False # go to other half of the if-stack
 			else:
@@ -738,9 +745,9 @@ The reflow work unit produced by parseText below is a dict with these members:
 			    PSW['W'] = min(lineIndent,PSW['W']) # note shortest indent
 			    unitList.append(u)			    
 			    PSW['B'] = 0
-	    else: # PSW['S'] is false
-		# we are collecting the lines of a paragraph. Is this line empty?
-		# the .trimmed method strips leading and trailing whitespace,
+	    else: # PSW['S'] is false, ergo we are collecting lines of a
+		# paragraph. Is this line empty (ending a para)?
+		# The .trimmed method strips leading and trailing whitespace,
 		# so we can detect either all-blank or truly empty lines.
 		if qs.trimmed().isEmpty():
 		    # we were collecting lines and now have a blank line,
@@ -754,13 +761,14 @@ The reflow work unit produced by parseText below is a dict with these members:
 		else:
 		    # this line is not empty, but, is it data or end-markup?
 		    if PSW['Z'] is not None and qs.startsWith(PSW['Z']):
-			# we have found the end of the current markup with a para working
-			# add a work unit for the paragraph we are in
+			# we have found the end of the current markup with a
+			# paragraph in progress. Add a work unit for the
+			# paragraph we are in...
 			unitList.append(
 			    self.makeUnit('P',PSW,firstBlockNumber,thisBlockNumber-1))
-			# and also put in a work unit for the end of the markup
+			# ..and put in a work unit for the end of the markup
 			unitList.append(self.makeUnit('/',PSW,thisBlockNumber,thisBlockNumber) )
-		        # and return to what we were doing before the markup
+		        # ..and return to what we were doing before the markup
 		        PSW = stack.pop()
 		        PSW['B'] = 0
 		    else:
@@ -1261,16 +1269,32 @@ if __name__ == "__main__":
     pqMsgs.makeBarIn(MW.statusBar())
     MW.show()
     utqs = QString('''
-/U
-Edit Flow to skip /F..F/ in ascii reflow
 
-Edit Flow to handle /F..F/ in html convert
+/C
+a
+little
+centered section
+C/
 
-U/
+/*
+                    starry
+                    starry
+    night
+*/
 
 /X
--123456789-123456789-123456789-123456789-123456789-123456789-123456789-123|56789
+123456789-123456789-123456789-123456789-123456789-123456789-123456789-123|56789
 X/
+
+/Q F:8 L:6 R:12
+The following markups are not reflowed by paragraphs, but rather are
+treated as single lines.
+
+/R
+--David Hume, 1789
+R/
+
+Q/
 
 This lengthy quote is the unit-test document. It contains representative
 samples of all the reflow markup types. This is a sample of an open paragraph
@@ -1295,16 +1319,6 @@ Block quote is done with /Q..Q/. It takes FLR with defaults from the UI.
 Lists are done with /U..U/.
 U/
 
-/Q F:8 L:6 R:12
-The following markups are not reflowed by paragraphs, but rather are
-treated as single lines.
-
-/R
---David Hume, 1789
-R/
-
-Q/
-
 /P F:2 R:10 L:8
 Here are our thoughts, voyagers' thoughts,
 Here not the land, firm land, alone appears, may then by them be said,
@@ -1326,7 +1340,7 @@ This song for mariners and all their ships.
 P/
 
 /X
--123456789-123456789-123456789-123456789-123456789-123456789-123456789-123|56789
+123456789-123456789-123456789-123456789-123456789-123456789-123456789-123|56789
 X/
 
 /T  single line table
