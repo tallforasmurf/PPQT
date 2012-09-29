@@ -215,6 +215,7 @@ from PyQt4.QtGui import(
     QSizePolicy, QSpacerItem,
     QTextCursor, QTextDocument,
     QUndoStack,
+    QValidator,
     QWidget )
 
 UserButtonMax = 24 # how many user buttons to instantiate
@@ -947,6 +948,37 @@ class recentStrings(QComboBox):
     
 # We subclass LineEdit to make our find and replace text widgets.
 # It has some special features compared to the usual LineEdit.
+# One feature is that it has a custom validator whose job is to
+# fix up newline characters (being pasted) and make them visible as '\n'
+
+class findRepValidator(QValidator) :
+    def __init__(self,parent=None):
+        super(findRepValidator, self).__init__(parent)
+        self.slashn = QString(u'\\n')
+        self.newline = QChar(u'\n')
+    # The point here is to catch the pasting of a line delimiter into any of
+    # the fields and replace it with a visible "\n". Plan was to see it in the
+    # validate(), return Invalid, and patch it in the fixup(). Doesn't work that
+    # way! fixup() only gets called when Enter is pressed, meanwhile returning
+    # Invalid causes keystrokes to be discarded. Stupid design. However in the
+    # validate() we are allowed to edit the input string. Then, turns out that
+    # even if you copy across a line boundary, the paste string doesn't have
+    # the Qt line delimiter but a newline. We think! But that test used the
+    # Mac clipboard, maybe there are times when u\2029 does get in, so we check
+    # for both and fix both. OK, another funny thing, if you replace one char
+    # with two, you need to advance the cursor position, else the insertion
+    # point ends up wrong. NB, this gets called on any keystroke, and Enter.
+    def validate(self,qs,pos):
+        n1 = qs.count(IMC.QtLineDelim)
+        if n1 :
+            qs.replace(IMC.QtLineDelim,self.slashn)
+        n2 = qs.count(self.newline)
+        if n2 :
+            qs.replace(self.newline,self.slashn)
+        dbg = unicode(qs)
+        # return(qs, QValidator.Acceptable, pos+n1+n2) # Python3 API
+        return (QValidator.Acceptable, pos+n1+n2)
+    
 
 class findRepEdit(QLineEdit):
     def __init__(self, parent=None):
@@ -954,6 +986,7 @@ class findRepEdit(QLineEdit):
         self.setFont(pqMsgs.getMonoFont(11,False))
         self.setAutoFillBackground(True) # allow changing bg color
         self.userLoad = False # not loaded from a userButton
+        self.setValidator(findRepValidator())
     
     # Change the background color of this lineEdit
     def setBackground(self,color):
