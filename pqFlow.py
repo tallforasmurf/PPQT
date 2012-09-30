@@ -1152,9 +1152,11 @@ def optimalWrap(tc,unit,optimum,maximum,itbosc):
 
     T = [] 
     W = []
+    grossLen = 0
     for (tok,ll) in tokGen(tc,itbosc) :
 	T.append(tok)
 	W.append(ll)
+	grossLen += ll
     N = len(T) # valid tokens are 0..N-1
     # Set up spacing: The line length is the allowed line size minus the
     # left- and right-indents if any.
@@ -1165,62 +1167,73 @@ def optimalWrap(tc,unit,optimum,maximum,itbosc):
     # and implemented during output. The first line can be indented or exdented
     # relative to it, and this difference is set up in T[0] and W[0]
     firstIndentDiff = unit['F'] - unit['L']
-    W[0] += firstIndentDiff # W[0] could conceivably be 0 or negative - problem?
-    C = (N+1)*[0] # the Costs column; C[N] is a sentinel
-    W.append(LMaximum) # ..as is W[N] (recall, tokens are 0..N-1)
-    P = (N+1)*[N] # the next-word link column
-    L = (N+1)*[0] # The length-from-here column
-    scanPtr = N-1 # start with last word, work backwards
-    while True : # for (start = word_limit - 1; start >= word; start--)
-	bestCost = Infinity
-	testPtr = scanPtr
-	currentLen = W[testPtr]
-	while True : # do{...} while(len < maxwidth)
-	    testPtr += 1 # this goes to N on first iteration
-	    # "consider breaking before testPtr" : bringing line_cost() inline
-	    thisCost = 0
-	    if testPtr != N:
-		thisCost = LOptimum - currentLen
-		thisCost *= 10
-		thisCost = int(thisCost * thisCost)
-		if P[testPtr] != N :
-		    n = (currentLen - L[testPtr])/2
-		    thisCost += int(n * n)
-	    thisCost += C[testPtr]
-	    if thisCost < bestCost : # possible break point
-		bestCost = thisCost
-		P[scanPtr] = testPtr
-		L[scanPtr] = currentLen
-	    currentLen += 1 + W[testPtr] # picks up LMaximum when testPtr==N
-	    if currentLen >= LMaximum : break
-	# end inner do-while
-	# we don't try to implement base_cost() which penalizes short widows
-	# and orphans, encourages breaks after sentences and right parens,
-	# and so forth, all because we can't detect ends of sentences.
-	C[scanPtr] = bestCost # + base_cost(scanPtr)
-	if scanPtr == 0 : break # all done
-	scanPtr -= 1
-    # end main for-loop
-    # prepare the output as a string of lines with proper indents.
-    firstIndent = QString(u' '*unit['F'])
-    leftIndent = QString(u' '*unit['L']) # left-indent space for lines 2-m
-    oneSpace = QString(u' ') # one space between tokens
-    flowText = QString()
-    indent = firstIndent
-    # Each line extends from T[a] to T[z-1]
-    a = 0
-    while True : # do until z == N
-	spacer = indent
-	z = P[a]
-	while a < z :
-	    flowText.append(spacer)
-	    flowText.append(T[a])
-	    a += 1
-	    spacer = oneSpace
+    if (N == 1) or (LMaximum >= (grossLen + (N - 1) + unit['F'])) :
+	# There is but one token (any length), or the sum of tokens fits in 
+	# the first line, so just put it all together now. 
+	flowText = QString(u' '*unit['F'])
+	for tok in T :
+	    flowText.append(tok)
+	    flowText.append(QChar(u' '))
 	flowText.append(IMC.QtLineDelim)
-	indent = leftIndent
-	if z == N : break
-	a = z
+    else :
+	# There is a need to split tokens across lines, using gnuWrap.
+	W[0] += firstIndentDiff # W[0] could conceivably be 0 or negative - problem?
+	C = (N+1)*[0] # the Costs column; C[N] is a sentinel
+	W.append(LMaximum) # ..as is W[N] (recall, tokens are 0..N-1)
+	P = (N+1)*[N] # the next-word link column
+	L = (N+1)*[0] # The length-from-here column
+	scanPtr = N-1 # start with last word, work backwards
+	while True : # for (start = word_limit - 1; start >= word; start--)
+	    bestCost = Infinity
+	    testPtr = scanPtr
+	    currentLen = W[testPtr]
+	    while True : # do{...} while(len < maxwidth)
+		testPtr += 1 # this goes to N on first iteration
+		# "consider breaking before testPtr" : bringing line_cost() inline
+		thisCost = 0
+		if testPtr != N:
+		    thisCost = LOptimum - currentLen
+		    thisCost *= 10
+		    thisCost = int(thisCost * thisCost)
+		    if P[testPtr] != N :
+			n = (currentLen - L[testPtr])/2
+			thisCost += int(n * n)
+		thisCost += C[testPtr]
+		if thisCost < bestCost : # possible break point
+		    bestCost = thisCost
+		    P[scanPtr] = testPtr
+		    L[scanPtr] = currentLen
+		currentLen += 1 + W[testPtr] # picks up LMaximum when testPtr==N
+		if currentLen >= LMaximum : break
+	    # end inner do-while
+	    # we don't try to implement base_cost() which penalizes short widows
+	    # and orphans, encourages breaks after sentences and right parens,
+	    # and so forth, all because we can't detect ends of sentences.
+	    C[scanPtr] = bestCost # + base_cost(scanPtr)
+	    if scanPtr == 0 : break # all done
+	    scanPtr -= 1
+	# end main for-loop
+	# prepare the output as a string of lines with proper indents.
+	firstIndent = QString(u' '*unit['F'])
+	leftIndent = QString(u' '*unit['L']) # left-indent space for lines 2-m
+	oneSpace = QString(u' ') # one space between tokens
+	flowText = QString()
+	indent = firstIndent
+	# Each line extends from T[a] to T[z-1]
+	a = 0
+	while True : # do until z == N
+	    spacer = indent
+	    z = P[a]
+	    while a < z :
+		flowText.append(spacer)
+		flowText.append(T[a])
+		a += 1
+		spacer = oneSpace
+	    flowText.append(IMC.QtLineDelim)
+	    indent = leftIndent
+	    if z == N : break
+	    a = z
+    # At this point we have a single line or multiple lines in flowText.
     # If this is a line of poetry and if it had a line number at the end,
     # we need to insert spaces to slide that last token out. Typically poetry
     # lines don't get folded but it can happen, so we have to isolate the
@@ -1229,7 +1242,7 @@ def optimalWrap(tc,unit,optimum,maximum,itbosc):
 	# there was a line number seen on this poem line. It will have been
 	# token T[N-1] and is now at the end of the line with one space.
 	# We need to insert spaces to right-justify the number against LMaximum
-	# and at least 1 additional so we can recognize it on another reflow.
+	# inserting at least 1 space so we can recognize it on another reflow.
 	z = poemLastLineRE.indexIn(flowText) # assert z == 0
 	# cap(1).size() is text preceding the number; cap(2).size() is the
 	# size of the number and its preceding one space.
@@ -1255,6 +1268,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv) # create an app
     IMC = pqIMC.tricorder() # set up a fake IMC for unit test
     IMC.fontFamily = QString("Courier")
+    IMC.QtLineDelim = QChar(0x2029)
     import pqMsgs
     pqMsgs.IMC = IMC
     import pqTable
