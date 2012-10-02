@@ -840,7 +840,7 @@ The reflow work unit produced by parseText below is a dict with these members:
     R/   -->   </div>
     /U   -->   <ul>
     U/   -->   </ul>
-    /P   -->   <div class='poetry'><div class='stanza'>
+    /P   -->   <div class='poem'><div class='stanza'>
     P/   -->   </div></div>
     /T, /TM -->  <table>
     T/   -->   </table>
@@ -1061,7 +1061,7 @@ markupA = {
             ' ':None,
             'Q':u'<div class="blockquote">',
             'R':u'<div class="ralign">',
-            'P':u'<div class="poetry"><div class="stanza">',
+            'P':u'<div class="poem"><div class="stanza">',
             'U':u'<ul>',
             'T':u'<table>',
             'F':u"<div class='footnotes'>",
