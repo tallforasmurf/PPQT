@@ -3,7 +3,7 @@
 \f3\fnil\fcharset0 LucidaGrande;\f4\fmodern\fcharset0 CourierNewPSMT;\f5\fnil\fcharset0 DPCustomMono2;
 }
 {\colortbl;\red255\green255\blue255;}
-\margl1440\margr1440\vieww16680\viewh19040\viewkind0
+\margl1440\margr1440\vieww10380\viewh15100\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\qc\pardirnatural
 
 \f0\b\fs28 \cf0 A Post-Processing Workflow\
@@ -83,37 +83,40 @@ Read sequentially through the book. The main aim of this first pass is to repair
 \
 a. As you reach a page, run your eye over the scan image looking for bold, italic and small-cap text, and over the edit text to verify proper markup of it.\
 \
-b. Note where a font markup is broken over the page boundary and remove superfluous markup above and below the  page separator.\
+b. Read the page text, or at least scan it for the lilac highlights of scannos and read enough to be sure these are not errors.\
 \
-c. Read the page text, or at least scan it for the lilac highlights of scannos and read enough to be sure these are not errors.\
+c. At the end of the page, if a word or hyphenated phrase is broken across the page boundary, heal it, putting a complete word or phrase either before or after the page separator line. Delete the fragment, hyphen, and asterisk. (These word fragments are what make spellcheck not useful now.)\
 \
-d. Observe any quotes, poetry and tables. Make sure they are appropriately marked per the formatting guidelines (
+d. If a paragraph ends at the bottom of a page, check that there is a blank line after it on this or the following page.\
+\
+e. Note where a style markup (italic, etc.) is broken over the page boundary and remove superfluous markup above and below the  page separator.\
+\
+f. Observe any quotes, poetry and tables. Make sure they are appropriately marked per the formatting guidelines (
 \f1 /#..#/
 \f0  for quotes and 
 \f1 /*..*/
 \f0  for everything else) and have a blank line before and after the markup lines.\
 \
-e. Note where a table, quote, or poem spans the page boundary. Remove superfluous markup delimiters above and below the page separator. Do no more; these block markups have their own steps later.\
+g. Note where a table, quote, or poem spans the page boundary. Remove superfluous markup delimiters above and below the page separator. Do no more; these block markups have their own steps later.\
 \
-f. Move any footnote to immediately follow the paragraph in which it is referenced, on the same page or a later page. If a footnote was broken across two pages, rejoin its parts now and eliminate the extra asterisks and brackets.\
+h. If the proofers had to leave an illustration or sidenote inside a paragraph, move it to an appropriate place between paragraphs.\
 \
-g. If the proofers had to leave an illustration or sidenote inside a paragraph, move it to an appropriate place between paragraphs.\
+i. If a footnote was broken across two pages, rejoin its parts now and eliminate the extra asterisks and brackets.\
 \
-h. At the end of the page, if a word or hyphenated phrase is broken across the page boundary, heal it, putting a complete word or phrase either before or after the page separator line. Delete the fragment, hyphen, and asterisk. (These word fragments are what make spellcheck not useful now.)\
-\
-j. If a paragraph ends at the bottom of a page, check that there is a blank line after it on this or the following page.\
+j. Move any footnote to immediately follow the paragraph in which it is referenced, on this or another page.\
 \
 k. Delete any [Blank Page] notations, they are superfluous.\
 \
 l. Make notes in the Notes tab about things such as unusual or inconsistent spelling or formatting, or things that will need attention later, such as cross-references.\
 \
-Perform these actions on all pages to the end of the book.\
+Perform these actions on each page to the end of the book.\
 \
-Here's a tip on moving footnotes and sidenotes. Select the text from the end of the preceding line to the end of the note, for example:\
+Here's a tip on moving footnotes, illustrations and sidenotes. Select the text from the end of the preceding line to the end of the note, for example:\
+\
 
 \f1 the last line on the page, not end of a para-*
 \f3 \uc0\u8592 
-\f0\fs24 click here
+\f0\fs24 click there
 \f4\fs28 \
 
 \f1 \
@@ -121,7 +124,7 @@ Here's a tip on moving footnotes and sidenotes. Select the text from the end of 
 -----File: 257.png--- page separator ---
 \fs24  
 \f4\fs28       
-\f0\fs24 drag to here
+\f0\fs24 drag to there
 \f3\fs28 \uc0\u8593 
 \f4 \
 
@@ -130,7 +133,8 @@ Here's a tip on moving footnotes and sidenotes. Select the text from the end of 
 \f0\fs24 drop selection here
 \f4\fs28 \
 
-\f0 Click just right of the last letter on the line above the note; drag just through the right bracket of the note, and let go. (You have selected the newline preceding the note, through the note, but not the newline at the end of the note.) Click down on the selected text and drag it, dropping it when the insertion point is just right of the line above the destination. This preserves all line-breaks without using the keyboard.\
+\f0 \
+Click just right of the last letter on the line above the note; drag just through the right bracket of the markup, and let go. (You have selected the newline preceding the note, through the note, but not the newline at the end of the note.) Click down on the selected text and drag it, dropping it when the insertion point is just right of the line above the destination. This preserves all line-breaks without using the keyboard.\
 \
 
 \b 4. Asterisk Removal: Proofer comments, typos, odd hyphens\
@@ -138,11 +142,11 @@ Here's a tip on moving footnotes and sidenotes. Select the text from the end of 
 \b0 \
 Proofers leave asterisks to mark doubtful things; now resolve them. Use find (non-regex) to look for any asterisk. (Use ctl-g to step rapidly from asterisk to asterisk.)\
 \
-If the proofers entered a though-break as five asterisks, change it to <tb>. We'll change it back later.\
+If the proofers entered a thought-break as five asterisks, change it to <tb>. We'll change it back later.\
 \
-If the proofers left a footnote key as [*], change the key to a capital letter as stated in the F1 guidelines.\
+If the proofers left a footnote key as [*], change the key to a capital letter as stated in the guidelines.\
 \
-When a hyphenated word at the end of a line is marked with an asterisk, the proofer wasn't sure whether to retain the hyphen. Search the book for similar words and make the dubious word consistent, either hyphenated or not.\
+When a hyphenated word at the end of a line is marked with an asterisk, the proofer wasn't sure whether to retain the hyphen. Search the book for similar words and make the dubious word consistent, either hyphenated or not. (Note your decision in the Notes tab.)\
 \
 When the proofers have found a definite typo, mark it thus:\
   
@@ -160,7 +164,7 @@ When the proofers left other notes or queries, resolve them.\
 \
 As you resolve proofer notes, delete the note text, brackets, and asterisks.\
 \
-At the end of this step there should be no asterisks except 
+At the end of this step there should be no asterisks left except 
 \f1 /*..*/
 \f0  markup and where the original text has them.\
 \
@@ -170,7 +174,7 @@ At the end of this step there should be no asterisks except
 \b0 \
 Use find to search (regex) for 
 \f1 \\n(/|[A-Z#\\*]/)
-\f0 , a line that begins with a slash, or with a single uppercase letter, asterisk, or # and a slash, in other words, the top or bottom of block format markup. Change the markup to PPQT's markup conventions:\
+\f0 , a line that begins with a slash, or with a single uppercase letter, asterisk, or # and a slash, in other words, the top or bottom of block format markup. Step through the book changing the markup to PPQT's markup conventions:\
 \
 a. For 
 \f1 /#..#/
@@ -234,7 +238,7 @@ c. When
 \f1 /*..*/
 \f0  encloses a list, use 
 \f1 /U..U/
-\f0  and put a single blank line between list items (in other words, each list item is a paragraph). The default margins for a list are 
+\f0  and put a single blank line between list items (each list item is a paragraph). The default margins for a list are 
 \f1 F:2 L:4
 \f0  so the list has a 2-space indent and an asterisk or single digit plus a space will be exdented on each item. Add explicit 
 \f1 FIRST:
@@ -265,9 +269,13 @@ e. When
 \
   * each logical row of is a single line and there are no blank lines in the table;\
 \
-  * there are at least two spaces between the data for adjacent cells;\
+  * there are at least two spaces 
+\i between
+\i0  the data for adjacent cells;\
 \
-  * there are no strings of multiple spaces within the data of any single cell;\
+  * there are no strings of multiple spaces 
+\i within
+\i0  the data of any single cell;\
 \
   * every internal cell is represented by some text, or by a single @ character (empty cells at the end of a row can be left blank).\
 \
@@ -279,7 +287,11 @@ When
 \
   * the data of each logical row is set off with a single blank line;\
 \
-  * there are at least two spaces between the data for adjacent cells in every line;\
+  * there are at least two spaces 
+\i between
+\i0  the data for adjacent cells in every line but no more than one space 
+\i within
+\i0  the data of any cell;\
 \
   * every internal cell is represented by text in every line of its row, either data or a single @ character (text of cells at the end of a line can be left blank).\
 \
@@ -367,7 +379,7 @@ View > Spelling on and wait while misspelling highlights are set.\
 \b 12. Character counts\
 
 \b0 \
-Go to the Char panel and click the head of the Count column. Inspect the characters that appear only once. To see a character in context, double-click it in the first column: the Find panel opens with that character as the Find text and you can search for it.\
+Go to the Char panel and click the head of the Count column. Inspect the characters that appear only once. To see a character in context, double-click it in the first column: the Find panel opens with that character as the Find text and the first instance found. Use ctl-g to look for the next.\
 \
 Click the Unicode Category column head to sort by types. Scroll to the Punctuation classes and verify there are equal counts of left/right parens and brackets. If not, figure out why.\
 \
@@ -383,15 +395,15 @@ Go to the Word panel. Turn off Respect Case if it is on. (Note when the table is
 \
 From the popup menu select misspelt. The words (tokens, really) that fail spellcheck and were not in the 
 \f1 good_words
-\f0  file are shown. You want to clear this list entirely, either by correcting misspelt words or by putting valid words into the good-words list.\
+\f0  file are shown. You want to clear this list entirely, either by correcting misspelt words or by adding valid words to the good-words list.\
 \
 The list of misspelt words may be long in a book that uses archaic, latinate, or scientific terms, and clearing it may be the second-longest PP task, but it is also a fruitful way to find unnoticed typos. You can save some time by making a rapid first pass in which you scan the table for correctly spelled proper names and other obviously correct items. ctl-click each word you are sure is correct; when you have selected a few, right-click (Mac: 
 \b control
 \b0 -click) and select Add to goodwords from the context menu. Re-choose misspelt from the popup menu to redisplay the remaining words.\
 \
-Examine the remaining words of whose spelling you are unsure. To see a word in context, double-click the word in the first column. This copies the word to the Find panel, does a First search to highlight it in the document, and copies it to the paste buffer (for convenient pasting into a search engine). Use ctl-g to step through other uses.\
+Examine the remaining words of whose spelling you are unsure. To see a word in context, double-click the word in the first column. This copies the word to the Find panel, does a First search to highlight it in the document, and copies it to the paste buffer (for convenient pasting into a web browser or dictionary app). Use ctl-g to step through other occurrences.\
 \
-If a word appears only because it was a typo and is now the original-text in a typo markup (step 4 above), just ignore it. It will go away later. If a word is a previously unnoticed typo, put it into typo markup. If it proves to be correct, add it to the good words.\
+If a word appears only because it was a typo and is now the original-text in a typo markup (step 4 above), just ignore it. It will go away later. If a word is a previously unnoticed typo, put it into typo markup. If a word is correct in context, add it to the good words.\
 \
 If the book has significant passages in a second language, you can mark such text as follows: 
 \f1 <sd 
@@ -399,7 +411,7 @@ If the book has significant passages in a second language, you can mark such tex
 \f1\i0 >
 \f5\fs24 \'85
 \f1\fs28 </sd>
-\f0  where dict is one of the dictionary names that appears in the popup list in the View > Dictionary dialog. For example a sentence or paragraph in French can be marked up with 
+\f0  where dict is one of the dictionary names that appears in the popup list in the View > Dictionary dialog. For example a paragraph in French can be marked up with 
 \f1 <sd fr_FR>
 \f5\fs24 \'85
 \f1\fs28 </sd>
@@ -419,7 +431,7 @@ You might also filter on UPPERCASE and scan that subset for oddities.\
 \b 16. Illustrations\
 
 \b0 \
-In the Word panel display All, then find Illustration. Right-click and apply Second Harmonic to see if there are versions with different capitalization or spelling errors. Correct any that appear.\
+In the Word panel display All, then find Illustration. Right-click and apply Second Harmonic to see if there are versions with different capitalization or spelling errors. Examine any that appear to see if they are miscoded illustration markups.\
 \
 Double-click Illustration to put it in the Find text, set Whole Word on and and Respect Case off, and use search to step through the document. Make sure each Illustration is properly located above or below the paragraph that mentions it.\
 \
@@ -437,13 +449,11 @@ Double-click Sidenote to put it in the Find text, set Whole Word on and Respect 
 \
 In the Word panel find Footnote. Right-click and apply Second Harmonic to see if there are versions with different capitalization or spelling errors. Examine each spelling different from initial-cap Footnote, and if they are in what should be Footnote markup, correct them.\
 \
-On the Fnote panel, click Refresh. If there are pink rows in the table, find the problems and fix them. When all rows are white or green, look at each footnote by clicking on the Key value once to see the anchor and again to see the note. There is no substitute for looking at every footnote this way to ensure that PPQT has correctly recognized the scope of each Note and paired Anchors and Notes correctly. (An alternate way to see every Note is to search for 
-\f1 \\n\\[Footnote.+\\]\\n
-\f0  using regex, not greedy).\
+On the Fnote panel, click Refresh. If there are pink rows in the table, find the problems and fix them. When all rows are white or green, look at each footnote by clicking on the Key value once to see the anchor and again to see the note. There is no substitute for looking at every footnote this way to ensure that PPQT has correctly recognized the scope of each Note and paired Anchors and Notes correctly.\
 \
 When all footnotes are correct, renumber them. Decide on the numbering convention, select the correct number streams at the bottom of the Fnote panel, and click Renumber. Then click Refresh and look for problems; if any, use ctl-z to back out the renumbering.\
 \
-For inline footnotes, that is all for now. For out-of-line footnotes, now define the footnote sections using 
+For out-of-line footnotes, now define the footnote sections using 
 \f1 /F..F/
 \f0  markup at the end of each chapter or the end of the book. Click Move Notes on the Fnote panel. Check the results; use ctl-z to back out.\
 \
@@ -453,7 +463,7 @@ For inline footnotes, that is all for now. For out-of-line footnotes, now define
 \
 Load the find buttons 
 \f1 extras/unbalancedRE.utf
-\f0 . Buttons 22, 23, and 24 set up to find unbalanced smallcap, bold and italic markup respectively. If they find anything, fix it.\
+\f0 . Buttons 22, 23, and 24 set up to find unbalanced smallcap, bold and italic markup respectively. \
 \
 
 \b 20. Fork etext and html versions
@@ -490,9 +500,9 @@ Button 24 sets up to find an entire italicized phrase. Replace 1 changes the
 \
 Buttons 23 and 22 load find/replace sets for bold and smallcap markup respectively. Each selects the entire markup phrase. Replace-1 just eliminates the markup; replace-2 puts the phrase back with dollar-signs (an old PG convention for bold).\
 \
-PPQT cannot automatically uppercase text as part of find/replace. If you want to represent bold and/or smallcap as all-cap, use two keystrokes per phrase. Start by clicking First to select the first bold or smallcap phrase. Key ctl-U (the accelerator for Edit > ToUpper) making the phrase uppercase. Key ctl-T which performs Replace-1 (dropping the markup) and goes on to the next find. \
+PPQT cannot automatically uppercase text as part of find/replace. If you want to represent bold and/or smallcap as all-cap, use two keystrokes per phrase. Start by clicking First to select the first bold or smallcap phrase. Key ctl-u (the accelerator for Edit > ToUpper) making the phrase uppercase. Key ctl-t which performs Replace-1 (dropping the markup) and goes on to the next find. Repeat ctl-u, ctl-t as needed.\
 \
-In some cases, for example a Table of Contents in which all the chapter titles are smallcap, you may elect not to uppercase. Just use only ctl-T to drop the markup, leaving the text mixed-case.\
+In some cases you may elect not to uppercase (for example a Table of Contents in which all the chapter titles are smallcap). Don't use ctl-u; just use ctl-T to drop the markup leaving the text mixed-case.\
 \
 Button 21 sets up to find the 
 \f1 <sd> 
@@ -518,45 +528,7 @@ Make the Find panel visible. Click button 19. This sets up to find the opening o
 \
 Click Find First. Make the Flow panel visible. Walk through the document with ctl-g. At each block markup, you can test the markup by highlighting the section and clicking Reflow Selection, to make sure that the block markup reflows as you want it.\
 \
-Now is the time to fiddle with table markups to get the table and column widths correct. Use 
-\f1 COLUMN(WIDTH:w ALIGN:x)
-\f0 to set default width and/or alignment for all columns. Use 
-\i c
-\f1\i0 (WIDTH:
-\f0\i w
-\f1\i0\fs24  
-\fs28 ALIGN:
-\f0\i x
-\f1\i0 )
-\f0  to specify the width and alignment of the single column 
-\i c
-\i0 . For example a book Table of Contents might have been proofed as:\
-
-\f1 \
-/*\
-                                              Page\
-I.  First Chapter Has a Long and Rambling\
-      Title on Multiple Lines                    5\
-II. Second Chapter With an Equally Stultifying\
-      and Meandering Title                      27\
-*/\
-
-\f0 \
-It can be marked up thus:\
-
-\f1 \
-/TM C(A:R W:6) 2(A:L W:54)\
-@  @  Page\
-\
-I.  First Chapter Has a Long and Rambling\
-@     Title on Multiple Lines                5\
-\
-II.  Second Chapter With an Equally Stultifying\
-@     and Meandering Title                      27\
-T/\
-
-\f0 \
-The T.O.C. is being treated as a table with three columns. The first (the roman numeral) and last (page number) will be aligned right and 6 chars wide. The middle column  will be left-aligned and 54 characters wide, giving 6+6+54 for data, plus 2+2 spaces for column delimiters, plus the 2-space indent, or 72 characters total width. The @-sign is used to fill in two empty cells on the first line and also where the roman numerals are omitted in the first column of folded title lines. You can always check the results of any markup by selecting it and clicking Reflow Selection in the Flow panel. Hit ctl-Z to undo.\
+Now is the time to fiddle with table markups to get the table and column widths correct.\
 \
 When you are satisfied all block markups reflow correctly, click Reflow Document. Scroll through the entire document and verify that the format looks correct. Key ctl-Z to undo the reflow if necessary.\
 \
@@ -598,9 +570,9 @@ Go to the Pages panel. By double-clicking on the cells of the Format, Action, an
 \
 After making changes, click Update to check the folio values that result. When the Folios in the table match the images of front matter, go to the last page of the book and see if its folio matches up to the Pages table. If not, find where in the book the numbers diverge. For example, find the place where there was a "plate" illustration and the "plate" and its reverse side had no folios. Set such pages to Skip Folio.\
 \
-When the folios shown in the Pages table agree with the scanned images throughout, use the text field and the Insert button of the Pages panel to insert visible folio text. Whatever you insert will go at the left margin (because it goes at the point of a page break, which necessarily precedes a new line). If you end the inserted text with 
+When the folios shown in the Pages table agree with the scanned images on all pages, use the Insert button of the Pages panel to insert visible folio text. Whatever you insert will go at the left margin (because it goes at the point of a page break, which necessarily precedes a new line). If you end the inserted text with 
 \f1 \\n
-\f0 , the inserted text will be on a line of its own. If not, it will run-in to the text. The full markup string is:\
+\f0 , the inserted text will be on a line of its own. If not, it will run-in to the text. The full HTML markup for visible page numbers is:\
 \
 
 \f1 <span class='pgnum'><a id='Page_%f' name='Page_%f' href='#Page_%f'>[%f]</a></span>\\n
@@ -609,7 +581,7 @@ When the folios shown in the Pages table agree with the scanned images throughou
 \f0\fs28 \
 After inserting the text, do the following searches to correct bad folio placement. First, search for something unique to the inserted text followed by two newlines (for example, search for 
 \f1 /span>\\n\\n
-\f0 ). This finds a folio string that falls either above a heading (make sure there are still 2 or 4 blank lines above the heading), or at the end of a paragraph. When the folio string is at the end of a paragraph, it will appear in the margin aligned with the end of the paragraph. It is more accurate if the marginal folio begins the following paragraph, which would be the first at the top of that page; so move the newlines so that the folio string is the first line of the lower paragraph rather than the last line of the upper one.\
+\f0 ). This finds a folio string that falls either above a heading (make sure there are exactly 2 or 4 blank lines above the heading), or at the end of a paragraph. When the folio string is at the end of a paragraph, it will appear in the margin aligned with the end of the paragraph. It is more accurate if the marginal folio begins the following paragraph, which would be the first at the top of that page; so move the newlines so that the folio string is the first line of the lower paragraph rather than the last line of the upper one.\
 \
 Second, search for places where two folios are adjacent, e.g. search for\
 
@@ -618,30 +590,46 @@ Second, search for places where two folios are adjacent, e.g. search for\
 When two folios are adjacent it is because there was only a blank page between them. Often such a pair will be in reverse numeric sequence. If these are not separated they will overlap in the margin. If they have a blank line between them, bulk conversion will put them in separate paragraphs, which will separate them vertically so they display correctly. Or you can just delete the folio string for the smaller folio number, the blank page.\
 \
 
-\b 26. Fix emdash, [oe] and folios.\
+\b 26. Fix emdash, [oe] and other things.\
 
 \b0 \
 Use Find/replace to convert 
 \f1 --
 \f0  to 
 \f1 &mdash;
-\f0  however do this one at a time. There may be dashes within tables or other figures that should not be converted. You may use replace-all with Respect Case on to convert:\
-
+\f0  however do this one at a time. There may be dashes within tables or other figures that should not be converted. Use replace-all with Respect Case on to convert 
 \f1 [oe]
 \f0  to 
 \f1 &oelig;
-\f0 \
-
+\f0  and 
 \f1 [OE]
 \f0  to 
 \f1 &OElig;
 \f0 \
 \
+Load Find Buttons 
+\f1 extras/htmlFixes.utf
+\f0 . This sets up to convert some miscellaneous things. Click button 24 to find any superscripts marked up as per the guidelines. Replace-1 changes the markup to HTML 
+\f1 <sup>
+\f0  form. Button 23 sets up to convert subscript markup.\
+\
+Button 22 finds Sidenote markup and changes it to a sidenote class of div. Button 20 looks for Illustration markup and changes it to HTML. You must edit the result to insert the path to the illustration file. Also the title and alt values are set to the first 30 characters of the caption and need to be checked for correct syntax.\
+\
+Button 19 is like button 20, but it expects that you have typed the filename and filetype of the image immediately after the colon, for example:\
+\
+
+\f1 [Illustration:fig_17.jpg Figure 17: Spleen of a frog.]
+\f0 \
+
+\f1 \
+
+\f0 The image path is inserted in the markup.\
+\
 
 \b 27. Bulk HTML Conversion.\
 
 \b0 \
-On the Flow panel, click HTML Convert: Document and OK the warning. Go to the Pvw (Preview) panel and click Refresh. The converted document is rendered here. It will look absolutely terrible, but you can see:\
+On the Flow panel, click HTML Convert: Document and OK the warning. Go to the Pvw (Preview) panel and click Refresh. The converted document is rendered here. It may look terrible, but you can see:\
 \
 * The sections marked 
 \f1 /C
@@ -729,60 +717,13 @@ The corrected word has a faint gray underscore and the original pops up when the
 
 \b0 \
 If the book has any poetry (search for 
-\f1 class="poetry"
+\f1 class="poem"
 \f0 ), check it for proper indentation and stanza breaks. If there are poem line numbers check that they are properly spaced to the right (or change the CSS to put them on the left). Delete any poetry indent CSS classes not used. (If there is no poetry, delete that whole CSS section.)\
-
-\b \
-32. Sidenotes.\
-
-\b0 \
-PPQT does not convert Sidenotes. After bulk conversion they are paragraphs, like this:\
-
-\f1 <p>\
-[Sidenote:
-\fs24  
-\f0\i\fs28 Text of Note
-\f1\i0 ]\
-</p>\
-
-\f0 Use find/replace to change these into \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural
-
-\f1 \cf0 <p class="sidenote">\
-
-\f0\i Text of Note
-\f1\i0 \
-</p>
-\f0 \
-as discussed at 
-\i www.pgdp.net/wiki/CSS_Cookbook/Sidenotes
-\i0 .\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\ql\qnatural\pardirnatural
 \cf0 \
-
-\b 33. Illustrations.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural
-
-\b0 \cf0 \
-PPQT does not convert Illustration markups. After bulk conversion, they are paragraphs, like this:\
-
-\f1 <p>\
-[Illustration: 
-\f0\i caption text\'85 
-\f1\i0 ]\
-</p>
-\f0 \
-Use image editing software to prepare the high resolution images and store them in the 
-\f1 images
-\f0  folder in the book folder (step 1). Use Find/replace to convert the illustration markups into HTML as discussed at 
-\i http://www.pgdp.net/wiki/CSS_Cookbook/Images\
-\
-
-\i0 Refresh the preview to see the images in context. If you code the images as clickable thumbnails linked to higher-resolution versions, you can click them in the preview to see the larger version. Use ctl-b or ctl-[ to get back to the book preview after linking out.\
-\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\ql\qnatural\pardirnatural
 
-\b \cf0 34. Index.\
+\b \cf0 32. Index.\
 
 \b0 \
 If the book has an index, it was probably marked as 
@@ -791,7 +732,7 @@ If the book has an index, it was probably marked as
 \i http://www.pgdp.net/wiki/CSS_Cookbook/TOC_and_Index#Indexes
 \i0 \
 \
-Use find/replace to convert the page numbers into links to the folio anchors, installed in step 25.\
+Use find/replace to convert the page numbers in the index into links to the folio anchors installed in step 25.\
 \
 
 \b 35. Tables, Front Matter, and other format problems.\
@@ -809,8 +750,7 @@ Highly-formatted material such as the title pages were marked in
 \f0  which puts them in a monospaced font with literal line breaks. Tables are coded as HTML tables but likely do not have the exact look you would like.\
 \
 Work through the book finding these sections and editing the HTML to best convey the intent of the original author and editor.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural
-\cf0 \
+\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural\pardirnatural
 
 \b \cf0 36. Review Notes.\
@@ -818,8 +758,7 @@ Work through the book finding these sections and editing the HTML to best convey
 
 \b0 \cf0 \
 Review the notes you put in the Notes tab and resolve any remaining issues.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural
-\cf0 \
+\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural\pardirnatural
 
 \b \cf0 37. Validation.\
