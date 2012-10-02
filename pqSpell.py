@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "0.1.0" # refer to PEP-0008
+__version__ = "1.0.0" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
@@ -439,7 +439,7 @@ if __name__ == "__main__":
 	print("de_DE as main: ",sp.setMainDict(u"de_DE"))
 	#wl = ['-8.7', 'AND','bazongas','101st', 'run-of-the-mill', 'basse-terre', '  ','lait','fraise',
 	      #'Englishman', 'oiseau', 'oiseaux','Paris']
-	wl = unicode('\xfcberwinden \xfcberwindende \xfcberwindet \xfcbertragen \xfcbertragenen \xfcberstark \xfcberschreibt \xfcberschreitet \xfcberraschender \xfcberraschend').split()
+	wl = unicode('unbewu\xdft \xfcberwinden \xfcberwindende \xfcberwindet \xfcbertragen \xfcbertragenen \xfcberstark \xfcberschreibt \xfcberschreitet \xfcberraschender \xfcberraschend').split()
 	print("==Main dict==")
 	for w in wl:
             if sp.check(w):

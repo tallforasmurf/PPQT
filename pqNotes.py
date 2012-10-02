@@ -5,7 +5,14 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "0.1.0" # refer to PEP-0008
+'''
+Create a plain-text editor for the user's personal notes, saved with the
+file metadata. Implement extra keystrokes to allow easy storing of the
+current line- or page-number of the main document or navigation to a
+noted line or page.
+'''
+
+__version__ = "1.0.0" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
@@ -29,23 +36,6 @@ __license__ = '''
     <http://www.gnu.org/licenses/>.
 '''
 
-'''
-Create a plain-text editor for the user's personal notes, saved with the
-file metadata. Implement extra keystrokes to allow easy storing of the
-current line- or page-number of the main document or navigation to a
-noted line or page.
-'''
-
-__version__ = "0.1.0" # refer to PEP-0008
-__author__  = "David Cortesi"
-__copyright__ = "Copyright 2011, David Cortesi"
-__maintainer__ = "?"
-__email__ = "nobody@pgdp.net"
-__status__ = "first-draft"
-__license__ = '''
-Attribution-NonCommercial-ShareAlike 3.0 Unported (CC BY-NC-SA 3.0)
-http://creativecommons.org/licenses/by-nc-sa/3.0/
-'''
 import pqMsgs
 
 from PyQt4.QtCore import ( QChar, QRegExp, QString, Qt, QString, SIGNAL)

@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "0.1.0" # refer to PEP-0008
+__version__ = "1.0.0" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
@@ -211,6 +211,8 @@ if pqTable.__version__ != __version__ :
 pqTable.IMC = IMC
 
 import pqFnote # footnote management
+if pqFnote.__version__ != __version__ :
+    print('pqFnote.py version {0}'.format(pqFnote.__version__))
 pqFnote.IMC = IMC
 
 import pqView # html preview
