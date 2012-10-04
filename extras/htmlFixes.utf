@@ -1,4 +1,25 @@
-# every backslash witin a string must be doubled! 
+
+#
+# Replace [typo:original:corrected] with 
+# <ins class='correction' title='original'>corrected</ins> 
+# The regex picks up "original" as everything between colons
+# and "corrected as whatever then precedes a "]"
+#
+17: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : True,
+	u'find' : u'\\[typo:([^:]+):([^\\]]+)\\]',
+	u'greedy' : False,
+	u'insel' : False,
+	u'label' : u'typo-to-ins',
+	u'tooltip' : u'[typo:orig:corr] -> &lt;ins',
+	u'regex' : True,
+	u'rep1' : u"<ins class='correction' title='\\1'>\\2</ins>",
+	u'rep2' : u'',
+	u'rep3' : u'',
+	u'word' : False
+}
 #
 # Special version of illustration change. Edit your [Illustration: stuff]
 # markups inserting the image file after the colon as [Illustration:filename.typ stuff]
@@ -13,6 +34,7 @@
 	u'greedy' : False,
 	u'insel' : False,
 	u'label' : u'Illo:file.typ',
+	u'tooltip' : u'[Illustration:filename.typ caption] to centered image with caption',
 	u'regex' : True,
 	u'rep1' : u"<div class='center'>\\n  <img src='images/\\1'\\n    title='\\2...' alt='\\2...'\\n  />\\n<p class='caption'>\\2\\3</p>\\n</div>",
 	u'rep2' : u'',
@@ -44,9 +66,32 @@
 	u'greedy' : False,
 	u'insel' : False,
 	u'label' : u'Illo-no file',
+	u'tooltip' : u'[Illustration: caption] to centered image with caption',
 	u'regex' : True,
 	u'rep1' : u"<div class='center'>\\n  <img src='#'\\n    title='\\1...' alt='\\1...'\\n  />\\n<p class='caption'>\\1\\2</p>\\n</div>",
 	u'rep2' : u'\\2',
+	u'rep3' : u'',
+	u'word' : False
+}
+
+#
+# Replace <sc>stuff</sc> with 
+# <span class='smcap'>stuff</span> 
+# The regex picks up "stuff" as anything not matching </sc>
+# including newlines.
+#
+20: { 	u'all' : False,
+	u'andnext' : False,
+	u'andprior' : False,
+	u'case' : True,
+	u'find' : u'<sc>(.+)</sc>',
+	u'greedy' : False,
+	u'insel' : False,
+	u'label' : u'sc-smallcap',
+	u'tooltip' : u'&lt;sc> -> &lt;span class=smcap',
+	u'regex' : True,
+	u'rep1' : u"<span class='smcap'>\\1</span>",
+	u'rep2' : u'',
 	u'rep3' : u'',
 	u'word' : False
 }
@@ -67,6 +112,7 @@
 	u'greedy' : False,
 	u'insel' : False,
 	u'label' : u'sidenote',
+	u'tooltip' : u'[Sidenote: text] to div class=sidenote',
 	u'regex' : True,
 	u'rep1' : u"\\n<div class='sidenote'>\\1</div>",
 	u'rep2' : u'',
@@ -86,6 +132,7 @@
 	u'greedy' : False,
 	u'insel' : False,
 	u'label' : u'subscript',
+	u'tooltip' : u'Convert _subscripts to html',
 	u'regex' : True,
 	u'rep1' : u'<sub>\\2\\3</sub>',
 	u'rep2' : u'',
@@ -115,6 +162,7 @@
 	u'greedy' : False,
 	u'insel' : False,
 	u'label' : u'superscript',
+	u'tooltip' : u'Convert ^ superscripts to html',
 	u'regex' : True,
 	u'rep1' : u'<sup>\\2\\3</sup>',
 	u'rep2' : u'',
