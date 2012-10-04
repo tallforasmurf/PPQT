@@ -590,14 +590,16 @@ Second, search for places where two folios are adjacent, e.g. search for\
 When two folios are adjacent it is because there was only a blank page between them. Often such a pair will be in reverse numeric sequence. If these are not separated they will overlap in the margin. If they have a blank line between them, bulk conversion will put them in separate paragraphs, which will separate them vertically so they display correctly. Or you can just delete the folio string for the smaller folio number, the blank page.\
 \
 
-\b 26. Fix emdash, [oe] and other things.\
+\b 26. Convert emdash, [oe] etc., etc.\
 
 \b0 \
 Use Find/replace to convert 
 \f1 --
 \f0  to 
 \f1 &mdash;
-\f0  however do this one at a time. There may be dashes within tables or other figures that should not be converted. Use replace-all with Respect Case on to convert 
+\f0  however do this one at a time. There may be dashes within tables or other figures that should not be converted.\
+\
+Use replace-all with Respect Case on to convert 
 \f1 [oe]
 \f0  to 
 \f1 &oelig;
@@ -609,21 +611,51 @@ Use Find/replace to convert
 \
 Load Find Buttons 
 \f1 extras/htmlFixes.utf
-\f0 . This sets up to convert some miscellaneous things. Click button 24 to find any superscripts marked up as per the guidelines. Replace-1 changes the markup to HTML 
+\f0 . Click button 24 to find any superscripts marked up as per the guidelines. Replace-1 changes the markup to HTML 
 \f1 <sup>
-\f0  form. Button 23 sets up to convert subscript markup.\
+\f0  form. Button 23 sets up to find and convert subscript markup.\
 \
-Button 22 finds Sidenote markup and changes it to a sidenote class of div. Button 20 looks for Illustration markup and changes it to HTML. You must edit the result to insert the path to the illustration file. Also the title and alt values are set to the first 30 characters of the caption and need to be checked for correct syntax.\
+Button 22 finds 
+\f1 [Sidenote\'85]
+\f0  and replace-1 changes it to 
+\f1 <div class='sidenote'>
+\f0 .\
 \
-Button 19 is like button 20, but it expects that you have typed the filename and filetype of the image immediately after the colon, for example:\
+Button 21 looks for text marked 
+\f1 <sc>...</sc>
+\f0  and replace-1 changes it to 
+\f1 <span class='smcap'>
+\f0  markup.\
+\
+Button 20 looks for 
+\f1 [Illustration\'85]
+\f0  markup and changes it to HTML. You must edit the result to insert the path to the illustration file, which is left as 
+\f1 src='#'
+\f0 . The title and alt values are set to the first 30 characters of the caption text. You need to eyeball these because if that string contains an apostrophe the syntax will be wrong.\
+\
+Button 19 is like button 20, but it expects that you have coded the filename and filetype of the image immediately after the colon, for example:\
 \
 
-\f1 [Illustration:fig_17.jpg Figure 17: Spleen of a frog.]
+\f1 [Illustration:fig017.jpg Figure 17: Spleen of a frog.]
 \f0 \
 
 \f1 \
 
 \f0 The image path is inserted in the markup.\
+\
+Button 18 sets up to find your 
+\f1 [typo:
+\f0\i original
+\f1\i0 :
+\f0\i corrected
+\f1\i0 ]
+\f0  markup and convert it into 
+\f1 <ins class='correction' title='
+\f0\i original
+\f1\i0 '>
+\f0\i corrected
+\f1\i0 </ins>
+\f0 .\
 \
 
 \b 27. Bulk HTML Conversion.\
@@ -693,27 +725,7 @@ If the book has Greek or Cyrillic passages, search for the
 The entities make the text look like the original, but the beta-code pops up if the mouse is hovered over it.\
 \
 
-\b 30. Typos.\
-
-\b0 \
-Search for 
-\f1 [typo:
-\f0\i original
-\f1\i0 :
-\f0\i corrected
-\f1\i0 ]
-\f0  markup. Use find/replace to convert them to this markup:\
-
-\f1 <ins class='correction' title='Original: 
-\f0\i original
-\f1\i0 '>
-\f0\i corrected
-\f1\i0 </ins>
-\f0 \
-The corrected word has a faint gray underscore and the original pops up when the mouse hovers it.\
-\
-
-\b 31. Poetry.\
+\b 30. Poetry.\
 
 \b0 \
 If the book has any poetry (search for 
@@ -723,7 +735,7 @@ If the book has any poetry (search for
 \cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\ql\qnatural\pardirnatural
 
-\b \cf0 32. Index.\
+\b \cf0 31. Index.\
 
 \b0 \
 If the book has an index, it was probably marked as 
@@ -735,7 +747,7 @@ If the book has an index, it was probably marked as
 Use find/replace to convert the page numbers in the index into links to the folio anchors installed in step 25.\
 \
 
-\b 35. Tables, Front Matter, and other format problems.\
+\b 32. Tables, Front Matter, and other format problems.\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural
 
 \b0 \cf0 \
@@ -753,7 +765,7 @@ Work through the book finding these sections and editing the HTML to best convey
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural\pardirnatural
 
-\b \cf0 36. Review Notes.\
+\b \cf0 33. Review your notes.\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural
 
 \b0 \cf0 \
@@ -761,7 +773,7 @@ Review the notes you put in the Notes tab and resolve any remaining issues.\
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural\pardirnatural
 
-\b \cf0 37. Validation.\
+\b \cf0 34. Validation.\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural
 
 \b0 \cf0 \
@@ -771,13 +783,13 @@ Go to the W3C Validation service at
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural\pardirnatural
 
-\b \cf0 38. Transcriber Notes.\
+\b \cf0 35. Transcriber Notes.\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\pardeftab720\ri-720\ql\qnatural
 
 \b0 \cf0 \
 Add a Transcriber's Note to the top of the ASCII version if needed to document variations from the original text such as typo corrections, coding of special characters like [oe], transliterations, or the relocation of footnotes.\
 \
-Add a Transcriber's Note to the top of the HTML version if needed to document typo corrections or the relocation of footnotes, or special features of linking.\
+Add a Transcriber's Note to the top of the HTML version if needed to document typo corrections, or the relocation of footnotes, or special features of linking.\
 \
 Prepare the upload package with a nice note to the PPV person about any specific design choices you made.\
 }
