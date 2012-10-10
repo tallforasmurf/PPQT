@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.0.0" # refer to PEP-0008
+__version__ = "1.0.001" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
@@ -579,8 +579,8 @@ class findPanel(QWidget):
         if self.validHit(findTc): # got a hit and in-bounds
             IMC.editWidget.setTextCursor(findTc)
             IMC.editWidget.setFocus(Qt.TabFocusReason)
-        else:
-            pqMsgs.beep()
+        else: # tell user
+            pqMsgs.flash("Not found", True)
 
     # Called from one of the three replace buttons or from an edit keystroke
     # to do a replace. We replace the current selection. Arguments are 
@@ -650,7 +650,7 @@ class findPanel(QWidget):
                 findTc.setPosition(findTc.selectionEnd())
                 findTc = self.realSearch(doc,findTc,False)
             if 0 == len(hits):
-                pqMsgs.beep()
+                pqMsgs.flash("Not found",True)
                 return
             # We have at least 1 hit, ask the user for permission to fire.
             m1 = pqMsgs.trunc(self.findText.text(),25)
