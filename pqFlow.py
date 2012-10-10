@@ -488,7 +488,7 @@ The reflow work unit produced by parseText below is a dict with these members:
         doc = IMC.editWidget.document()
         # In order to have a single undo/redo operation we have to use a
         # single QTextCursor, which is this one:
-        tc = IMC.editWidget.textCursor()
+        tc = QTextCursor(IMC.editWidget.textCursor())
         tc.beginEditBlock() # start single undo/redo macro
 	topBlockNumber = topBlock.blockNumber()
 	endBlockNumber = endBlock.blockNumber()
