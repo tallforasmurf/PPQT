@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.0.0" # refer to PEP-0008
+__version__ = "1.0.001" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
@@ -139,8 +139,14 @@ class htmlPreview(QWidget):
     def loadEnds(self,bool):
 	pqMsgs.endBar()
 	if bool:
-	    # load was ok, reset scroll position now the rendering is finished
+	    # load was ok, reset scroll position now the rendering is finished.
 	    self.preview.page().mainFrame().setScrollPosition(self.scrollPosition)
+	    # our panel is visible (else how was Refresh clicked?) but it may
+	    # not have the keyboard focus. Right after refresh one usually wants
+	    # to use keys like page-up/dn, so get the focus to our webview
+	    # widget (not the page in it because the webview has the scroll
+	    # bars and other mechanism.)
+	    self.preview.setFocus(Qt.MouseFocusReason)	    
 	else:
 	    pqMsgs.warningMsg("Some problem loading html")
 		
