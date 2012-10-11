@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.0.0" # refer to PEP-0008
+__version__ = "1.0.001" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
@@ -90,14 +90,18 @@ class pngDisplay(QWidget):
         qv = IMC.settings.value("pngs/zoomFactor",QVariant(1.0))
         self.zoomFactor = qv.toFloat()[0]
         self.clear()
+    
+    # local subroutine to show a blank gray frame and "No Image" below.
+    # Called from clear() below, and when the cursor is above the first page.
+    def noImage(self) :
+        self.imLabel.setPixmap(self.defaultPM)
+        self.txLabel.setText(u"No image")
         
     # local subroutine to initialize our contents for an empty edit.
     # called from _init_ and from newPosition when we discover the file
     # has been cleared on us. Don't reset the zoomFactor, leave it as
     # the user las set it.
     def clear(self):
-        self.imLabel.setPixmap(self.defaultPM)
-        self.txLabel.setText(u"No image")
         # Variables to speed up our position look-up
         IMC.currentPageNumber = QString() # last page e.g. "002"
         self.lastPage = QString() # last file name e.g. "002.png"
@@ -106,6 +110,7 @@ class pngDisplay(QWidget):
         self.lastIndex = -1 # index of last page in pageTable or -1
         IMC.currentPageIndex = None
         self.ready = False
+        self.noImage() # show gray image
     
     # this slot gets the main window's signal shuttingDown.
     # we write our current zoom factor into IMC.settings.
@@ -136,35 +141,41 @@ class pngDisplay(QWidget):
     # This function is the slot that is connected to the editor's 
     # cursorPositionChanged signal.
     def newPosition(self):
-        if not self.ready : return # no file loaded or no pngs folder
+        if not self.ready : # no file loaded or no pngs folder
+            return
         if 0 == len(IMC.pageTable): # no book open, or no pngs with it
             # this could happen on the first call at startup, the first
             # call after a document has been loaded but before the metadata
             # has been built, or after a File>New. Just bail.
             return
-        else:
-            # find our most advanced position in the text
-            pos = IMC.editWidget.textCursor().selectionEnd()
-            # here we go with bisect_right to find the last page table entry
-            # <= to our present position. We know the table is not empty, but
-            # after pseps are removed, there can be multiple pages with the
-            # same starting offset.
-            hi = len(IMC.pageTable)
-            lo = 0
-            while lo < hi:
-                mid = (lo + hi)//2
-                if pos < IMC.pageTable[mid][0].position(): hi = mid
-                else: lo = mid+1
-            # the page at lo-1 is the greatest <= pos. If it is the same as
-            # we already displayed then bail out.
-            lo -= 1
-            if self.lastIndex == (lo) :
-                return # nothing to do, we are there
-            # On another page, save its index as IMC.currentPageIndex for use
-            # by pqNotes and here as lastIndex. Then display it.
-            self.lastIndex = lo
-            IMC.currentPageIndex = lo
-            self.showPage()
+        # find our most advanced position in the text
+        pos = IMC.editWidget.textCursor().selectionEnd()
+        # if that position is above the first page, which can happen if the
+        # user has entered some text above the first psep line, show a
+        # blank image.
+        if pos < IMC.pageTable[0][0].position() :
+            self.noImage()
+            return
+        # here we go with bisect_right to find the last page table entry
+        # <= to our present position. We know the table is not empty, but
+        # after pseps are removed, there can be multiple pages with the
+        # same starting offset.
+        hi = len(IMC.pageTable)
+        lo = 0
+        while lo < hi:
+            mid = (lo + hi)//2
+            if pos < IMC.pageTable[mid][0].position(): hi = mid
+            else: lo = mid+1
+        # the page at lo-1 is the greatest <= pos. If it is the same as
+        # we already displayed then bail out.
+        lo -= 1
+        if self.lastIndex == (lo) :
+            return # nothing to do, we are there
+        # On another page, save its index as IMC.currentPageIndex for use
+        # by pqNotes and here as lastIndex. Then display it.
+        self.lastIndex = lo
+        IMC.currentPageIndex = lo
+        self.showPage()
     # Display the page indexed by self.lastPage.
     # Get its filename Qstring, e.g. "025", add ".png"
     # and save as self.lastPage. Make full path to the image and load it.
