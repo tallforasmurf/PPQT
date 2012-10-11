@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.0.0" # refer to PEP-0008
+__version__ = "1.0.001" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
@@ -236,7 +236,7 @@ class charsPanel(QWidget):
     # This slot receives the main window's docWillChange signal.
     # It comes with a file path but we can ignore that.
     def docWillChange(self):
-        self.view.setSortingEnabled(False)
+        #self.view.setSortingEnabled(False)
         self.model.beginResetModel()
 
     # Subroutine to reset the visual appearance of the table view,
@@ -244,7 +244,7 @@ class charsPanel(QWidget):
     # Bump up the width of column 0 because when it sets it to its contents
     # there isn't room for the header plus the sort triangle
     def setUpTableView(self):
-        self.view.sortByColumn(0,Qt.AscendingOrder)
+        #self.view.sortByColumn(0,Qt.AscendingOrder)
         self.view.resizeColumnsToContents()
         self.view.setColumnWidth(0,20+self.view.columnWidth(0))
         self.view.setColumnWidth(2,8+self.view.columnWidth(2))
@@ -264,7 +264,7 @@ class charsPanel(QWidget):
     # model we are resetting everything so the view will suck up new
     # data. Then call our editor to rebuild the metadata.
     def refresh(self):
-        self.view.setSortingEnabled(False)
+        #self.view.setSortingEnabled(False)
         self.model.beginResetModel()
         IMC.editWidget.rebuildMetadata()
         self.model.endResetModel()
