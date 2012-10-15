@@ -197,15 +197,14 @@ class myTableView(QTableView):
 
     # Reimplement the parent (QTableView) KeyPressEvent in order to trap
     # the ctl/cmd-c key and copy the selected word(s) to the clipboard.
-    # BUG: for reasons as yet unknown, the Edit menu in the menubar preempts
-    # the cmd-c Qt.Key_Copy signal, even when this widget has the focus.
-    # For now we are looking specifically for Key_C with the control modifier
-    # which can be entered here by the workaround of SHIFT-CMD-C.
+    # We never see the Qt.Key_Copy signal (0x010000cf) but we do see the
+    # Key_C (x43) with the control modifier.
     def keyPressEvent(self, event):
-        code = int(event.key())
+        key = int(event.key())
         mods = int(event.modifiers())
-        #print('key {0:X} mod {1:X}'.format(code,mods))
-        if (code == Qt.Key_C) and (mods & Qt.ControlModifier) :
+        #pqMsgs.printKeyEvent(event)
+        if (key == Qt.Key_C) and (mods & Qt.ControlModifier) :
+            event.accept()
             # PyQt4's implementation of QTableView::selectedIndexes() does 
             # not return a QList but rather a Python list of indices.
             lix = self.selectedIndexes()
@@ -218,6 +217,32 @@ class myTableView(QTableView):
                     ans.append(u' ')
                 ans.chop(1) # drop final space
                 QApplication.clipboard().setText(ans)
+	elif (0 == key & 0x01000000) and \
+	     ( (mods == Qt.NoModifier) or (mods == Qt.ShiftModifier) ) and \
+	     ( 0 == self.horizontalHeader().sortIndicatorSection()) and \
+	     ( Qt.AscendingOrder == self.horizontalHeader().sortIndicatorOrder() ):
+	    # An ordinary data key with or without shift, and the table
+	    # is sorted on column 0, the words, and sorted ascending.
+	    event.accept()
+	    sortProxy = self.panelRef.proxy
+	    rc = self.panelRef.caseSwitch.isChecked()
+	    qc = QChar(key)
+	    if rc and (mods == Qt.NoModifier) :
+		qc = qc.toLower()
+	    hi = sortProxy.rowCount()
+	    lo = 0
+	    while (lo < hi) :
+		mid = (lo + hi) // 2
+		cc = sortProxy.data(sortProxy.index(mid,0)).toString().at(0)
+		if not rc : cc = cc.toUpper()
+		if qc > cc :
+		    lo = mid + 1
+		else :
+		    hi = mid
+	    self.scrollTo(sortProxy.index(lo,0))
+	if not event.isAccepted() : # if we didn't handle it, pass it up
+	    super(myTableView, self).keyPressEvent(event)
+        
     
     # A context menu event means a right-click anywhere, ctrl-click (Mac)
     # or Menu button (Windows). We ignore any such except on column 0,
