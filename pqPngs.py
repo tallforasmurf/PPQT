@@ -208,7 +208,7 @@ class pngDisplay(QWidget):
         event.ignore()
         # If we are initialized and have displayed some page, look at the key
         if (self.ready) and (IMC.currentPageIndex is not None):
-            kkey = int(event.modifiers())+int(event.key())
+            kkey = int( int(event.modifiers()) & IMC.keypadDeModifier) | int(event.key())
             if kkey in IMC.zoomKeys :
                 # ctl/cmd + or -, do the zoom
                 event.accept()

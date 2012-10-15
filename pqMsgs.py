@@ -257,9 +257,11 @@ def printKeyEvent(event):
 	print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
     else:
 	cmods = u''
-	if mods & Qt.ControlModifier : cmods += u'Ctl + '
-	if mods & Qt.AltModifier: cmods += u'Alt + '
+	if mods & Qt.ControlModifier : cmods += u'Ctl '
+	if mods & Qt.AltModifier: cmods += u'Alt '
 	if mods & Qt.ShiftModifier : cmods += u'Shft '
+	if mods & Qt.KeypadModifier : cmods += u'Kpd '
+	if mods & Qt.MetaModifier : cmods += u'Meta '
 	cmods += "'{0:c}'".format(key)
 	print(u'data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
     

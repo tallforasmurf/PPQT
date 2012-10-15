@@ -102,8 +102,8 @@ class helpDisplay(QWebView):
     # down by one point. We set a limit of 0.375 (6 points) at the low
     # end and 4.0 (64 points) at the top.
     def keyPressEvent(self, event):
-	kkey = int(event.modifiers())+int(event.key())
-	#print('key {0:X}'.format(kkey))
+	#pqMsgs.printKeyEvent(event)
+	kkey = int( int(event.modifiers()) & IMC.keypadDeModifier) | int(event.key())
 	if (kkey == IMC.ctl_F) or (kkey == IMC.ctl_G) : # ctl/cmd f/g
 	    event.accept()
 	    self.doFind(kkey)

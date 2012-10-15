@@ -255,8 +255,8 @@ class PPTextEditor(QPlainTextEdit):
     # ctrl-<n> for n in 1..9 jumps the insertion point to bookmark <n>
     # ctrl-alt-<n> sets bookmark n at the current position
     def keyPressEvent(self, event):
-        #print('key {0:x} mod {1:x}'.format(int(event.key()),int(event.modifiers())))
-        kkey = int(event.modifiers())+int(event.key())
+        #pqMsgs.printKeyEvent(event)
+        kkey = int( int(event.modifiers()) & IMC.keypadDeModifier) | int(event.key())
         # add as little overhead as possible: if it isn't ours, pass it on.
         if kkey in IMC.keysOfInterest : # we trust python to do this quickly
             event.accept() # we handle this one

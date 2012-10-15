@@ -131,6 +131,7 @@ class tricorder():
         # ^l and ^-alt-l, ^p and ^-alt-p for the Notes panel
         # Define these in a way easy to check in a keyEvent slot, and also put
         # them in python lists for quick lookup.
+        self.keypadDeModifier = int(0xffffffff ^ Qt.KeypadModifier)
         self.ctl_G = Qt.ControlModifier | Qt.Key_G
         self.ctl_shft_G = Qt.ShiftModifier | self.ctl_G
         self.ctl_F = Qt.ControlModifier | Qt.Key_F
