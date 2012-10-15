@@ -254,7 +254,7 @@ def printKeyEvent(event):
     key = int(event.key())
     mods = int(event.modifiers())
     if key & 0x01000000 : # special/standard key
-	print('standard key: mods {0:08X} key {1:08X}'.format(mods,key))
+	print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
     else:
 	cmods = u''
 	if mods & Qt.ControlModifier : cmods += u'Ctl + '
