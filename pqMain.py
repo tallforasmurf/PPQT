@@ -669,20 +669,22 @@ class MainWindow(QMainWindow):
         IMC.spellingHiliteSwitch = willDoIt
         self.editor.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
     
-    # Early on we set DPCustomMono2 as the font, period, but later realized
-    # it has very limited Unicode coverage, while other monos are just as
-    # distinct for proofing and have full Unicode. So added View>Font and just
-    # throw up a QFontDialog and let the user pick something. That gets saved
-    # at shutdown and reloaded next time.
+    # Handle View>Font... by throwing up a QFontDialog initialized with an
+    # available monospaced family and the last-chosen font size. Store the
+    # user's choice of family and size in the IMC and install it in the Editors.
     def viewFont(self):
-        defont = QFont(IMC.fontFamily)
+        if IMC.fontFamily is None:
+            # first time after installation
+            IMC.fontFamily = pqMsgs.getMonoFont()
+        defont = QFont(IMC.fontFamily, IMC.fontSize)
         (refont,ok) = QFontDialog.getFont(defont, self,
                         QString("Choose a monospaced font"))
         if ok:
-            finf = QFontInfo(refont)
-            IMC.fontFamily = finf.family()
-            IMC.editWidget.setFont(refont)
-            IMC.notesEditor.setFont(refont)
+            finf = QFontInfo(refont) # get actual info as chosen
+            IMC.fontFamily = finf.family() # remember the family
+            IMC.fontSize = finf.pointSize() # remember the chosen size
+            IMC.editWidget.setFont(refont) # tell the editor
+            IMC.notesEditor.setFont(refont) # tell the notes editor
 
     # Get the current dictionary tag from the spell checker (e.g. "en_US")
     # and the list of available languages. Throw up a dialog with a popup

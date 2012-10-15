@@ -48,9 +48,9 @@ from PyQt4.QtGui import (QApplication,
     QTextCursor,
     QTextDocument)
 
-# Subroutine to get a QFont for a monospaced font, preferably using the font
-# family named in IMC.fontFamily -- set from the View menu in pqMain. If the
-# msg parm is True and we don't get the requested font, we notify the user.
+# Subroutine to get a QFont for an available monospaced font, preferably using
+# the font family named in IMC.fontFamily -- set from the View menu in pqMain.
+# If the msg parm is True and we don't get the requested font, we notify the user.
 # (Only happens when pqEdit is setting up.)
 def getMonoFont(fontsize=12, msg=False):
     monofont = QFont()
