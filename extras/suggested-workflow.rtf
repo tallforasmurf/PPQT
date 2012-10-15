@@ -3,7 +3,7 @@
 \f3\fnil\fcharset0 LucidaGrande;\f4\fmodern\fcharset0 CourierNewPSMT;\f5\fnil\fcharset0 DPCustomMono2;
 }
 {\colortbl;\red255\green255\blue255;}
-\margl1440\margr1440\vieww10380\viewh15100\viewkind0
+\margl1440\margr1440\vieww11020\viewh17480\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\qc\pardirnatural
 
 \f0\b\fs28 \cf0 A Post-Processing Workflow\
@@ -550,7 +550,9 @@ The following steps relate to the HTML version. However remember that you may fi
 \b 24. HTML 1: Footnote conversion.\
 
 \b0 \
-Footnotes were edited and verified and moved to footnote sections in step 18. On the Fnote panel click Refresh one last time, then click HTML Cvt. The anchors, notes and /F markers are converted.
+Footnotes were edited and verified and moved to footnote sections in step 18. On the Fnote panel click Refresh one last time, then click HTML Cvt. The anchors and notes are converted (the 
+\f1 /F..F/
+\f0  markers are converted later).
 \b \
 
 \b0 \
@@ -616,22 +618,22 @@ Load Find Buttons
 \f0  form. Button 23 sets up to find and convert subscript markup.\
 \
 Button 22 finds 
-\f1 [Sidenote\'85]
+\f1 [Sidenote: text..]
 \f0  and replace-1 changes it to 
-\f1 <div class='sidenote'>
+\f1 <div class='sidenote'>text..</div>
 \f0 .\
 \
 Button 21 looks for text marked 
-\f1 <sc>...</sc>
+\f1 <sc>\'85</sc>
 \f0  and replace-1 changes it to 
-\f1 <span class='smcap'>
+\f1 <span class='smcap'>\'85</span>
 \f0  markup.\
 \
 Button 20 looks for 
 \f1 [Illustration\'85]
 \f0  markup and changes it to HTML. You must edit the result to insert the path to the illustration file, which is left as 
 \f1 src='#'
-\f0 . The title and alt values are set to the first 30 characters of the caption text. You need to eyeball these because if that string contains an apostrophe the syntax will be wrong.\
+\f0 . The title and alt values are set to the first 30 characters of the caption text. You need to eyeball these because if that string contains an apostrophe, the syntax will be wrong.\
 \
 Button 19 is like button 20, but it expects that you have coded the filename and filetype of the image immediately after the colon, for example:\
 \
@@ -641,7 +643,9 @@ Button 19 is like button 20, but it expects that you have coded the filename and
 
 \f1 \
 
-\f0 The image path is inserted in the markup.\
+\f0 The image path is inserted in the markup, e.g. 
+\f1 src='images/fig017.jpg'
+\f0 .\
 \
 Button 18 sets up to find your 
 \f1 [typo:
