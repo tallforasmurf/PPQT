@@ -137,6 +137,9 @@ class PPTextEditor(QPlainTextEdit):
         self.hiliter = wordHighLighter(self.nulDoc)
         # all the metadata lists will be initialized when self.clear() is
         # called from pqMain, shortly.
+        # save a regex for quickly finding if a selection is a single word
+        self.oneWordRE = QRegExp(u'^\W*(\w{2,})\W*$')
+        self.menuWord = QString()
 
     # switch on or off our text-highlighting. By switching the highlighter
     # to a null document we remove highlighting; by switching it back to
@@ -175,6 +178,9 @@ class PPTextEditor(QPlainTextEdit):
     # was in Latin-1! We use the QChar and QString facilities to do it, and
     # a regex in a loop to pick off words. Restore the current selection after
     # so another operation can be done on it.
+    # N.B. it is not possible to do self.textCursor().setPosition(), it seems
+    # that self.textCursor() is "const". One has to create a new cursor,
+    # position it, and install it on the document with self.setTextCursor().
     def toUpperCase(self):
         global WordMatch # the regex \b\w+\b
         tc = self.textCursor()
@@ -253,6 +259,7 @@ class PPTextEditor(QPlainTextEdit):
     #  ctrl-shift-equals instead of plus)
     # ctrl-minus decreases the edit font size 1 pt
     # ctrl-<n> for n in 1..9 jumps the insertion point to bookmark <n>
+    # ctrl-shift-<n> extends the selection ot bookmark <n>
     # ctrl-alt-<n> sets bookmark n at the current position
     def keyPressEvent(self, event):
         #pqMsgs.printKeyEvent(event)
@@ -296,7 +303,28 @@ class PPTextEditor(QPlainTextEdit):
         else: # not in keysOfInterest, so pass it up to parent
             event.ignore()
             super(PPTextEditor, self).keyPressEvent(event)
-     
+
+    # Catch the contextMenu event and extend the standard context menu with
+    # a separator and the option to add a word to good-words, but only when
+    # there is a selection and it encompasses just one word.
+    def contextMenuEvent(self,event) :
+        ctx_menu = self.createStandardContextMenu()
+        if self.textCursor().hasSelection :
+            qs = self.textCursor().selectedText()
+            if 0 == self.oneWordRE.indexIn(qs) : # it matches at 0 or not at all
+                self.menuWord = self.oneWordRE.cap(1) # save the word
+                ctx_menu.addSeparator()
+                gw_name = QString(self.menuWord) # make a copy
+                gw_action = ctx_menu.addAction(gw_name.append(QString(u' -> Goodwords')))
+                self.connect(gw_action, SIGNAL("triggered()"), self.addToGW)
+        ctx_menu.exec_(event.globalPos())
+
+    # This slot receives the "someword -> good_words" context menu action
+    def addToGW(self) :
+        IMC.goodWordList.insert(self.menuWord)
+        IMC.needMetadataSave = True
+        IMC.mainWindow.setWinModStatus()
+  
     # Implement save: the main window opens the files for output using 
     # QIODevice::WriteOnly, which wipes the contents (contrary to the doc)
     # so we need to write the document and metadata regardless of whether
