@@ -606,19 +606,27 @@ class MainWindow(QMainWindow):
         sfname = (QFileDialog.getOpenFileName(self,
                 "PPQT - choose a list of common scannos",
                 startdir,
-                "text files (*.txt *.asc *.ltn *.utf)"))
+                "text files (*.txt *.asc *.ltn *.utf *.utx)"))
         if not sfname.isEmpty(): # user selected a file, we are "go"
             self.scannoPath = sfname
             self.scannoLoad()
 
     # Called during initialization and from scannoOpen, check that the
-    # scannoPath exists (probably), load the list
+    # scannoPath exists (probably), load the list. Before loading the list,
+    # turn off the hilites if they are on. Clear the list so as not to get
+    # the superset (doh!). If the hilites were on, put them back with new words.
     def scannoLoad(self):
         (sh, fh) = self.openSomeFile(self.scannoPath,
                 QIODevice.ReadOnly, self.codecFromFileSuffix(self.scannoPath))
         if sh is not None:
+            scanno_sw = IMC.scannoHiliteSwitch
+            if scanno_sw :
+                self.viewSetScannos(False)
+            IMC.scannoList.clear()
             IMC.scannoList.load(sh)
             fh.close()
+            if scanno_sw :
+                self.viewSetScannos(True)
         else:
             self.scannoPath.clear()
 
