@@ -280,9 +280,17 @@ class PPTextEditor(QPlainTextEdit):
                 bkn = kkey - IMC.ctl_1 # make it 0-8
                 if self.bookMarkList[bkn] is not None: # if that bookmark is set,
                     self.setTextCursor(self.bookMarkList[bkn]) # jump to it
+            elif kkey in IMC.markShiftKeys : # shift-ctl-1/9, select to mark
+                # Make our document cursor's selection go from our current ANCHOR
+                # to the POSITION from the bookmark cursor. 
+                mark_tc = self.bookMarkList[kkey - IMC.ctl_shft_1]
+                if mark_tc is not None:
+                    tc = QTextCursor(self.textCursor())
+                    tc.setPosition(mark_tc.position(),QTextCursor.KeepAnchor)
+                    self.setTextCursor(tc)
             elif kkey in IMC.markSetKeys : # ctl-alt-1-9, set a bookmark
                 bkn = kkey - IMC.ctl_alt_1 # make it 0-8
-                self.bookMarkList[bkn] = self.textCursor()
+                self.bookMarkList[bkn] = QTextCursor(self.textCursor())
                 self.bookMarkList[bkn].clearSelection() # don't save the selection
                 IMC.needMetadataSave = True # need to save metadata
         else: # not in keysOfInterest, so pass it up to parent

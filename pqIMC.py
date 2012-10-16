@@ -135,6 +135,7 @@ class tricorder():
         self.ctl_G = Qt.ControlModifier | Qt.Key_G
         self.ctl_shft_G = Qt.ShiftModifier | self.ctl_G
         self.ctl_F = Qt.ControlModifier | Qt.Key_F
+        self.ctl_shft_F = Qt.ShiftModifier | self.ctl_F
         self.ctl_T = Qt.ControlModifier | Qt.Key_T
         self.ctl_shft_T = Qt.ShiftModifier | self.ctl_T
         self.ctl_1 = Qt.ControlModifier | Qt.Key_1
@@ -146,7 +147,15 @@ class tricorder():
         self.ctl_7 = Qt.ControlModifier | Qt.Key_7
         self.ctl_8 = Qt.ControlModifier | Qt.Key_8
         self.ctl_9 = Qt.ControlModifier | Qt.Key_9
-        self.ctl_shft_F = Qt.ShiftModifier | self.ctl_F
+        self.ctl_shft_1 = Qt.ShiftModifier | self.ctl_1
+        self.ctl_shft_2 = Qt.ShiftModifier | self.ctl_2
+        self.ctl_shft_3 = Qt.ShiftModifier | self.ctl_3
+        self.ctl_shft_4 = Qt.ShiftModifier | self.ctl_4
+        self.ctl_shft_5 = Qt.ShiftModifier | self.ctl_5
+        self.ctl_shft_6 = Qt.ShiftModifier | self.ctl_6
+        self.ctl_shft_7 = Qt.ShiftModifier | self.ctl_7
+        self.ctl_shft_8 = Qt.ShiftModifier | self.ctl_8
+        self.ctl_shft_9 = Qt.ShiftModifier | self.ctl_9
         self.ctl_alt_1 = Qt.AltModifier | self.ctl_1
         self.ctl_alt_2 = Qt.AltModifier | self.ctl_2
         self.ctl_alt_3 = Qt.AltModifier | self.ctl_3
@@ -169,26 +178,33 @@ class tricorder():
         self.ctl_left_pad = self.ctl_Left | Qt.KeypadModifier
         self.ctl_LBracket = Qt.ControlModifier | Qt.Key_BracketLeft
         self.ctl_B = Qt.ControlModifier | Qt.Key_B
-        self.backKeys = [self.ctl_B, self.ctl_Left, self.ctl_LBracket, self.ctl_left_pad]
-        self.keysOfInterest = [self.ctl_G, self.ctl_shft_G, self.ctl_F, self.ctl_T,
-                              self.ctl_equal, self.ctl_shft_T,
+        self.keysOfInterest = [
+                self.ctl_G, self.ctl_shft_G, self.ctl_F, self.ctl_shft_F,
+                self.ctl_T, self.ctl_shft_T, self.ctl_equal,
                 self.ctl_1, self.ctl_2, self.ctl_3, self.ctl_4, self.ctl_5,
                 self.ctl_6, self.ctl_7, self.ctl_8, self.ctl_9,
-                self.ctl_shft_F, self.ctl_alt_1, self.ctl_alt_2, self.ctl_alt_3,
-                self.ctl_alt_4,  self.ctl_alt_5,  self.ctl_alt_6,  self.ctl_alt_7,
-                self.ctl_alt_8,  self.ctl_alt_9,
+                self.ctl_shft_1, self.ctl_shft_2, self.ctl_shft_3,
+                self.ctl_shft_4, self.ctl_shft_5, self.ctl_shft_6,
+                self.ctl_shft_7, self.ctl_shft_8, self.ctl_shft_9,
+                self.ctl_alt_1, self.ctl_alt_2, self.ctl_alt_3,
+                self.ctl_alt_4,  self.ctl_alt_5,  self.ctl_alt_6,
+                self.ctl_alt_7, self.ctl_alt_8,  self.ctl_alt_9,
                 self.ctl_minus, self.ctl_plus, self.ctl_shft_equal,
                 self.ctl_shft_plus,
                 self.ctl_L,self.ctl_alt_L,self.ctl_P,self.ctl_alt_P]
+        self.backKeys = [self.ctl_B, self.ctl_Left, self.ctl_LBracket, self.ctl_left_pad]
+        self.zoomKeys = [self.ctl_minus, self.ctl_plus,
+                         self.ctl_shft_equal, self.ctl_shft_plus]
         self.findKeys = [self.ctl_G, self.ctl_shft_G, self.ctl_F, self.ctl_shft_F,
                         self.ctl_T, self.ctl_equal, self.ctl_shft_T]
         self.markKeys = [self.ctl_1, self.ctl_2, self.ctl_3, self.ctl_4, self.ctl_5,
-                self.ctl_6, self.ctl_7, self.ctl_8, self.ctl_9]
+                self.ctl_6, self.ctl_7, self.ctl_8, self.ctl_9 ]
         self.markSetKeys = [self.ctl_alt_1, self.ctl_alt_2, self.ctl_alt_3,
                 self.ctl_alt_4,  self.ctl_alt_5,  self.ctl_alt_6,  self.ctl_alt_7,
-                self.ctl_alt_8,  self.ctl_alt_9]
-        self.zoomKeys = [self.ctl_minus, self.ctl_plus,
-                         self.ctl_shft_equal, self.ctl_shft_plus]
+                self.ctl_alt_8,  self.ctl_alt_9 ]
+        self.markShiftKeys = [self.ctl_shft_1, self.ctl_shft_2, self.ctl_shft_3,
+                self.ctl_shft_4, self.ctl_shft_5, self.ctl_shft_6,
+                self.ctl_shft_7, self.ctl_shft_8, self.ctl_shft_9 ]
 
         # A list of the 252 Named Entities of HTML 4. The names are indexed
         # by the unicode characters they translate. To complete an entity
