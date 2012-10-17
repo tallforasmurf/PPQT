@@ -86,7 +86,7 @@ class notesEditor(QPlainTextEdit):
     # ctl-P looks for a nearby [nnn] (brackets required), selects it, and
     # tells the main editor to jump to that page position.
     def keyPressEvent(self, event):
-	pqMsgs.printKeyEvent(event)
+	#pqMsgs.printKeyEvent(event)
 	kkey = int( int(event.modifiers()) & IMC.keypadDeModifier) | int(event.key())
 	if kkey in IMC.keysOfInterest :
 	    # tentatively assume we will process this key
