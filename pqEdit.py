@@ -538,7 +538,7 @@ class PPTextEditor(QPlainTextEdit):
                 if not ( IMC.spellCheck.check(w,d) ) :
                     wflags |= IMC.WordMisspelt
             IMC.wordCensus.setflags(i,wflags)
-            if 0 == i & 0x3f :
+            if 0 == i & 0x1f :
                 pqMsgs.rollBar(i)
         pqMsgs.endBar()
         IMC.needMetadataSave |= IMC.wordlistsChanged
@@ -592,12 +592,7 @@ class PPTextEditor(QPlainTextEdit):
         global reLineSep, reMarkup, qcDash, qcApost, qcLess, qcLbr, qslcLig
         global qsucLig, qsLine, qsDict, i, qcThis, uiCat, inWord
         global uiWordFlags, qsWord, nextAction, parseArray
-        IMC.needSpellCheck = True # after a census this is true
-        IMC.needMetadataSave |= IMC.wordlistsChanged
-        IMC.wordCensus.clear()
-        IMC.charCensus.clear()
-        localCharCensus = {}
-        iFolio = 0 # page number for line separator records
+        # actions called from the finite-state table
         def GET(): # acquire the next char and category, push action
             global qcThis, uiCat, nextAction, i
             qcThis = qsLine.at(i)
@@ -740,6 +735,10 @@ class PPTextEditor(QPlainTextEdit):
             (PUNCOPENW, ), (WORDEND, ), (WORDEND, ), (WORDEND, ), 
             (PUNCAPO, ), (WORDENDLT, ),(WORDEND, ),(WORDEND, ),(WORDEND, )] ]
 
+        IMC.wordCensus.clear()
+        IMC.charCensus.clear()
+        localCharCensus = {}
+        iFolio = 0 # page number for line separator records
         pqMsgs.startBar(self.document().blockCount(),"Counting words and chars...")    
         qtb = self.document().begin() # first text block
         if IMC.bookType.startsWith(QString(u"htm")) \
@@ -791,7 +790,9 @@ class PPTextEditor(QPlainTextEdit):
         for uc in sorted(localCharCensus.keys()):
             qc = QChar(uc) # long int to QChar
             IMC.charCensus.append(QString(qc),localCharCensus[uc],qc.category())
-                                  
+        IMC.needSpellCheck = True # after a census this is true
+        IMC.needMetadataSave |= IMC.wordlistsChanged
+
 # The following are global names referenced from inside the parsing functions
 # Regex to exactly match all of a page separator line. Note that the proofer
 # names can contain almost any junk; proofer names can be null (\name\\name);
