@@ -704,13 +704,12 @@ class MainWindow(QMainWindow):
                     QIODevice.WriteOnly, "UTF-8")
         if (bookStream is not None) and (metaStream is not None) :
             try:
+                # the following clears IMC.needMetadataSave and the document
+                # modified flags in edit and notes documents, as well as
+                # triggering setWinModStatus above.
                 self.editor.save(bookStream, metaStream)
                 retval = True # success
                 self.addRecentFile(self.bookFile)
-                IMC.notesEditor.document().setModified(False)
-                IMC.needMetadataSave = 0x00
-                # the following triggers a signal to setWinModStatus above
-                self.editor.document().setModified(False)
             except (IOError, OSError), e:
                 QMessageBox.warning(self, "Error on output: {0}".format(e))
                 retval = False
@@ -747,9 +746,9 @@ class MainWindow(QMainWindow):
         if not self.ohWaitAreWeDirty():
             return False # dirty doc & user said cancel or save failed
         self.emit(SIGNAL("docWillChange"),QString())
+        # the following clears IMC.needMetadataSave
         self.editor.clear()
         IMC.notesEditor.clear()
-        IMC.needMetadataSave = 0x00
         self.emit(SIGNAL("docHasChanged"),QString())
         self.bookPath = QString()
         IMC.bookPath = self.bookPath

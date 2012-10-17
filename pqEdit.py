@@ -330,9 +330,9 @@ class PPTextEditor(QPlainTextEdit):
     def save(self, dataStream, metaStream):
         self.writeDocument(dataStream)
         #self.rebuildMetadata() # update any census that needs it
-        self.document().setModified(False)
         self.writeMetadata(metaStream)
         IMC.needMetadataSave = 0x00
+        self.document().setModified(False) # this triggers main.setWinModStatus()
 
     def writeDocument(self,dataStream):
         # writing the file is pretty easy...
@@ -373,6 +373,7 @@ class PPTextEditor(QPlainTextEdit):
                 if t.startsWith("{{"):
                     t.prepend(u"\xfffd") # Unicode Replacement char
                 metaStream << t + "\n"
+            IMC.notesEditor.document().setModified(False)
         metaStream << u"{{/NOTES}}\n"
         if IMC.goodWordList.active() : # have some good words
             metaStream << u"{{GOODWORDS}}\n"
