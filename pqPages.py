@@ -218,7 +218,7 @@ class myTableModel(QAbstractTableModel):
             else:
                 raise Error
         self.endResetModel()
-        IMC.needMetadataSave = True
+        IMC.needMetadataSave |= IMC.pagePanelChanged
         IMC.mainWindow.setWinModStatus()
 
 # A quick summary of WTF a custom delegate is: an object that represents a
@@ -243,7 +243,7 @@ class formatDelegate(QItemDelegate):
         cb.setCurrentIndex(v)
     def setModelData(self,cb,model,index):
         IMC.pageTable[index.row()][4] = cb.currentIndex()
-        IMC.needMetadataSave = True
+        IMC.needMetadataSave |= IMC.pagePanelChanged
         IMC.mainWindow.setWinModStatus()
 
 # Implement a custom delegate for column 2, folio action.
@@ -259,7 +259,7 @@ class actionDelegate(QItemDelegate):
         cb.setCurrentIndex(v)
     def setModelData(self,cb,model,index):
         IMC.pageTable[index.row()][3] = cb.currentIndex()
-        IMC.needMetadataSave = True
+        IMC.needMetadataSave |= IMC.pagePanelChanged
         IMC.mainWindow.setWinModStatus()
 
 # Implement a custom delegate for column 3, the folio value,
@@ -276,7 +276,7 @@ class folioDelegate(QItemDelegate):
     def setModelData(self,sb,model,index):
         IMC.pageTable[index.row()][5] = sb.value()
         IMC.pageTable[index.row()][3] = IMC.FolioRuleSet
-        IMC.needMetadataSave = True
+        IMC.needMetadataSave |= IMC.pagePanelChanged
 
 
 class pagesPanel(QWidget):

@@ -68,11 +68,13 @@ class notesEditor(QPlainTextEdit):
     # slot to receive the modificationChanged(bool) signal from our document.
     # if it indicates we are modified, set needMetadataSave true if it isn't
     # already. Should the user undo out of all changes, modval will be false
-    # but we can't assume that negates a need to save metadata, some other
-    # module might have set the flag since we did.
+    # and we clear our flag, possibly making the flag 0.
     def eek(self,modval):
 	if not self.clearing :
-	    IMC.needMetadataSave |= modval
+	    if modval :
+		IMC.needMetadataSave |= IMC.notePanelChanged
+	    else :
+		IMC.needMetadataSave &= (0xff ^ IMC.notePanelChanged)
 	IMC.mainWindow.setWinModStatus()
 
     # Re-implement the parent's keyPressEvent in order to provide zoom:

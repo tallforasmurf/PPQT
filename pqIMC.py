@@ -51,11 +51,15 @@ class tricorder():
         # different main dictionary is selected. Cleared when a spellcheck is
         # done, e.g. from the Refresh button in the Word panel.
         self.needSpellCheck = False
-        # needMetadataSave when: a bookmark is set, the Notes panel is edited,
+        # needMetadataSave is a bit set of:
+        self.goodwordsChanged = 0x01
+        self.notePanelChanged = 0x02
+        self.pagePanelChanged = 0x04
+        self.bookmarksChanged = 0x08
+        self.wordlistsChanged = 0x10
         # a word is added to goodwords, or we do a spellcheck or a word census.
-        # Note this can be true when needBookSave is false. Cleared on Save
-        # Save-As or New.
-        self.needMetadataSave = False
+        # Cleared on Save, Save-As or New.
+        self.needMetadataSave = 0x00
         # Note that the equivalent switch "needDocumentSave" is kept by the
         # QTextDocument as IMC.editWidget.document().isModified() -- we rely on
         # that because it tracks the undo/redo actions and knows if the user

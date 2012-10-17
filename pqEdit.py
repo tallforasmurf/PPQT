@@ -168,9 +168,7 @@ class PPTextEditor(QPlainTextEdit):
         IMC.notesEditor.clear()
         IMC.pngPanel.clear()
         IMC.needSpellCheck = False
-        IMC.needWordCensus = False
-        IMC.needMetadataSave = False
-        IMC.needBookSave = False
+        IMC.needMetadataSave = 0x00
 
     # Implement the Edit menu items: 
     # Edit > ToUpper,  Edit > ToTitle,  Edit > ToLower
@@ -299,7 +297,7 @@ class PPTextEditor(QPlainTextEdit):
                 bkn = kkey - IMC.ctl_alt_1 # make it 0-8
                 self.bookMarkList[bkn] = QTextCursor(self.textCursor())
                 self.bookMarkList[bkn].clearSelection() # don't save the selection
-                IMC.needMetadataSave = True # need to save metadata
+                IMC.needMetadataSave |= IMC.bookmarksChanged 
         else: # not in keysOfInterest, so pass it up to parent
             event.ignore()
             super(PPTextEditor, self).keyPressEvent(event)
@@ -322,7 +320,7 @@ class PPTextEditor(QPlainTextEdit):
     # This slot receives the "someword -> good_words" context menu action
     def addToGW(self) :
         IMC.goodWordList.insert(self.menuWord)
-        IMC.needMetadataSave = True
+        IMC.needMetadataSave |= IMC.goodwordsChanged
         IMC.mainWindow.setWinModStatus()
   
     # Implement save: the main window opens the files for output using 
@@ -334,7 +332,7 @@ class PPTextEditor(QPlainTextEdit):
         #self.rebuildMetadata() # update any census that needs it
         self.document().setModified(False)
         self.writeMetadata(metaStream)
-        IMC.needMetadataSave = False
+        IMC.needMetadataSave = 0x00
 
     def writeDocument(self,dataStream):
         # writing the file is pretty easy...
@@ -526,8 +524,6 @@ class PPTextEditor(QPlainTextEdit):
         nwords = IMC.wordCensus.size()
         if 0 >= nwords : # could be zero in a null document
             return
-        IMC.needMetadataSave = True
-        IMC.needSpellCheck = False
         pqMsgs.startBar(nwords,"Checking spelling...")
         for i in range(IMC.wordCensus.size()):
             (qword, cnt, wflags) = IMC.wordCensus.get(i)
@@ -545,6 +541,8 @@ class PPTextEditor(QPlainTextEdit):
             if 0 == i & 0x3f :
                 pqMsgs.rollBar(i)
         pqMsgs.endBar()
+        IMC.needMetadataSave |= IMC.wordlistsChanged
+        IMC.needSpellCheck = False
         if IMC.spellingHiliteSwitch :
             self.setHighlight(True) # force refresh of spell underlines
 
@@ -595,7 +593,7 @@ class PPTextEditor(QPlainTextEdit):
         global qsucLig, qsLine, qsDict, i, qcThis, uiCat, inWord
         global uiWordFlags, qsWord, nextAction, parseArray
         IMC.needSpellCheck = True # after a census this is true
-        IMC.needMetadataSave = True
+        IMC.needMetadataSave |= IMC.wordlistsChanged
         IMC.wordCensus.clear()
         IMC.charCensus.clear()
         localCharCensus = {}

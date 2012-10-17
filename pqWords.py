@@ -287,7 +287,7 @@ class myTableView(QTableView):
                 (flag, b) = self.model().data(findex, Qt.UserRole).toInt()
                 flag &= 0xfff - IMC.WordMisspelt
                 self.model().setData(findex,flag,Qt.UserRole)
-                IMC.needMetadataSave = True
+                IMC.needMetadataSave |= IMC.wordlistsChanged
                 IMC.mainWindow.setWinModStatus()
             # and, having done it, spellcheck is now appropriate
             IMC.needSpellCheck = True

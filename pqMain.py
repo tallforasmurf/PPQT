@@ -429,7 +429,7 @@ class MainWindow(QMainWindow):
     # displays an asterisk after the filename in the titlebar.
     def setWinModStatus(self):
         self.setWindowModified(
-            self.editor.document().isModified() | IMC.needMetadataSave
+    self.editor.document().isModified() | (0 != IMC.needMetadataSave)
                             )        
     # Slot to receive the modificationChanged signal from the main editor.
     def ohModificationChanged(self,newValue):
@@ -531,7 +531,7 @@ class MainWindow(QMainWindow):
     # it is safe to proceed with Quit/New/Open.
     def ohWaitAreWeDirty(self):
         if self.editor.document().isModified() \
-        or IMC.needMetadataSave:
+        or (0 != IMC.needMetadataSave) :
             reply = QMessageBox.question(self,
                             "There are unsaved changes!",
                             "Save the book and metadata first?",
@@ -708,7 +708,7 @@ class MainWindow(QMainWindow):
                 retval = True # success
                 self.addRecentFile(self.bookFile)
                 IMC.notesEditor.document().setModified(False)
-                IMC.needMetadataSave = False
+                IMC.needMetadataSave = 0x00
                 # the following triggers a signal to setWinModStatus above
                 self.editor.document().setModified(False)
             except (IOError, OSError), e:
@@ -747,8 +747,9 @@ class MainWindow(QMainWindow):
         if not self.ohWaitAreWeDirty():
             return False # dirty doc & user said cancel or save failed
         self.emit(SIGNAL("docWillChange"),QString())
-        # !!! clear notes doc? clear IMC.needMetaDataSave?
         self.editor.clear()
+        IMC.notesEditor.clear()
+        IMC.needMetadataSave = 0x00
         self.emit(SIGNAL("docHasChanged"),QString())
         self.bookPath = QString()
         IMC.bookPath = self.bookPath
