@@ -1277,7 +1277,6 @@ if __name__ == "__main__":
     IMC.editWidget.setFont(pqMsgs.getMonoFont())
     IMC.settings = QSettings()
     widj = flowPanel()
-    IMC.flowPanel = widj
     MW = QMainWindow()
     MW.setCentralWidget(widj)
     pqMsgs.makeBarIn(MW.statusBar())
