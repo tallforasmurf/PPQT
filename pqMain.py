@@ -433,6 +433,10 @@ class MainWindow(QMainWindow):
                             )        
     # Slot to receive the modificationChanged signal from the main editor.
     def ohModificationChanged(self,newValue):
+        if newValue : # doc has changed
+            IMC.staleCensus |= IMC.staleCensusAcquired
+        else : # doc is, has become, unchanged
+            IMC.staleCensus &= (0xff ^ IMC.staleCensusAcquired)
         self.setWinModStatus()
 
     # -----------------------------------------------------------------

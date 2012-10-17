@@ -169,6 +169,7 @@ class PPTextEditor(QPlainTextEdit):
         IMC.pngPanel.clear()
         IMC.needSpellCheck = False
         IMC.needMetadataSave = 0x00
+        IMC.staleCensus = 0x00
 
     # Implement the Edit menu items: 
     # Edit > ToUpper,  Edit > ToTitle,  Edit > ToLower
@@ -321,6 +322,7 @@ class PPTextEditor(QPlainTextEdit):
     def addToGW(self) :
         IMC.goodWordList.insert(self.menuWord)
         IMC.needMetadataSave |= IMC.goodwordsChanged
+        IMC.needSpellCheck = True
         IMC.mainWindow.setWinModStatus()
   
     # Implement save: the main window opens the files for output using 
@@ -343,6 +345,18 @@ class PPTextEditor(QPlainTextEdit):
         # Writing the metadata takes a bit more work.
         # pageTable goes out between {{PAGETABLE}}..{{/PAGETABLE}}
         metaStream << u"{{VERSION 0}}\n" # meaningless at the moment
+        metaStream << u"{{STALECENSUS "
+        if 0 == IMC.staleCensus :
+            metaStream << u"FALSE"
+        else:
+            metaStream << u"TRUE"
+        metaStream << u"}}\n"
+        metaStream << u"{{NEEDSPELLCHECK "
+        if 0 == IMC.needSpellCheck :
+            metaStream << u"FALSE"
+        else:
+            metaStream << u"TRUE"
+        metaStream << u"}}\n"
         if len(IMC.pageTable) :
             metaStream << u"{{PAGETABLE}}\n"
             for (tc,fn,pr,f1,f2,f3) in IMC.pageTable :
@@ -416,8 +430,11 @@ class PPTextEditor(QPlainTextEdit):
     # we take the input line to a Python u-string and split it. For
     # the word/char census we have to take the key back to a QString.
     def loadMetadata(self,metaStream):
-        sectionRE = QRegExp(
-    u"\{\{(PAGETABLE|CHARCENSUS|WORDCENSUS|BOOKMARKS|NOTES|GOODWORDS|BADWORDS|CURSOR|VERSION)([^\}]*)\}\}",
+        sectionRE = QRegExp( u"\{\{(" + '|'.join (
+            ['PAGETABLE','CHARCENSUS','WORDCENSUS','BOOKMARKS',
+             'NOTES','GOODWORDS','BADWORDS','CURSOR','VERSION',
+             'STALECENSUS','NEEDSPELLCHECK'] ) \
+                             + u")([^\}]*)\}\}",
             Qt.CaseSensitive)
         metaVersion = 0 # base version
         while not metaStream.atEnd() :
@@ -431,6 +448,14 @@ class PPTextEditor(QPlainTextEdit):
                     if not qv.isEmpty() :
                         metaVersion = int(qv)  
                     continue # no more data after {{VERSION x }}
+                elif section == u"STALECENSUS" :
+                    if unicode(sectionRE.cap(2).trimmed()) == u"TRUE" :
+                        IMC.staleCensus = IMC.staleCensusLoaded
+                    continue # no more data after {{STALECENSUS x}}
+                elif section == u"NEEDSPELLCHECK" :
+                    if unicode(sectionRE.cap(2).trimmed()) == u"TRUE" :
+                        IMC.needSpellCheck = True
+                    continue # no more data after {{NEEDSPELLCHECK x}}
                 elif section == u"PAGETABLE":
                     qline = metaStream.readLine()
                     while (not qline.startsWith(endsec)) and (not qline.isEmpty()):
@@ -511,7 +536,7 @@ class PPTextEditor(QPlainTextEdit):
     # rerun the full char/word census. But if not, we might still need a
     # spellcheck, if the dictionary has changed.
     def rebuildMetadata(self,page=False):
-        if page or self.document().isModified() :
+        if page or (0 != IMC.staleCensus) :
             self.doCensus(page)
         if IMC.needSpellCheck :
             self.doSpellcheck()
@@ -792,6 +817,7 @@ class PPTextEditor(QPlainTextEdit):
             qc = QChar(uc) # long int to QChar
             IMC.charCensus.append(QString(qc),localCharCensus[uc],qc.category())
         IMC.needSpellCheck = True # after a census this is true
+        IMC.staleCensus = 0 # but this is not true
         IMC.needMetadataSave |= IMC.wordlistsChanged
 
 # The following are global names referenced from inside the parsing functions

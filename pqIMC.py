@@ -51,6 +51,10 @@ class tricorder():
         # different main dictionary is selected. Cleared when a spellcheck is
         # done, e.g. from the Refresh button in the Word panel.
         self.needSpellCheck = False
+        # Stale census has two bits:
+        self.staleCensusLoaded = 0x02 # census was stale as of File>Load
+        self.staleCensusAcquired = 0x01 # doc changed since last census
+        self.staleCensus = 0x00
         # needMetadataSave is a bit set of:
         self.goodwordsChanged = 0x01
         self.notePanelChanged = 0x02
