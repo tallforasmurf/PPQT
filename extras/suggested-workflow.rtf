@@ -3,7 +3,7 @@
 \f3\fnil\fcharset0 LucidaGrande;\f4\fmodern\fcharset0 CourierNewPSMT;\f5\fnil\fcharset0 DPCustomMono2;
 }
 {\colortbl;\red255\green255\blue255;}
-\margl1440\margr1440\vieww11020\viewh17480\viewkind0
+\margl1440\margr1440\vieww11020\viewh15120\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx9360\ri-720\qc\pardirnatural
 
 \f0\b\fs28 \cf0 A Post-Processing Workflow\
@@ -45,7 +45,7 @@ Unzip the folder of scan images, move it to the book folder, and rename it to
 If the book has illustrations, create the 
 \f1 images
 \f0  folder to contain them, in this same book folder. If there are high-resolution scans for illustrations, create another folder to hold them (I usually name it 
-\f1 figs
+\f1 hires
 \f0 )
 \f2\fs24 .
 \f0\fs28  Drag the high-res images out of 
@@ -64,9 +64,11 @@ Turn
 \i off
 \i0  Spellcheck in the View menu if it is checked (underlining misspelled words is not useful at this point). Turn 
 \i on
-\i0  Scannos in the View Menu if it is not checked.\
+\i0  Scannos in the View Menu if it is not checked (and open a scannos file if necessary, such as 
+\f1 extras/en-common.txt
+\f0 ).\
 \
-Open the book text file. Wait while PPQT counts words and characters and performs spellcheck. Wait more until the purple scanno highlights appear.\
+Open the book file. Wait while PPQT counts words and characters and performs spellcheck. Wait more until the lilac scanno highlights appear.\
 \
 Click in the text of the first page and verify that a page image is shown in the Pngs tab. \
 \
@@ -423,7 +425,7 @@ If the book has significant passages in a second language, you can mark such tex
 \
 After correcting all misspelt words, save the document and refresh the word panel. From the popup menu select alnumeric. Scan the list of tokens having digits and letters. Look for mis-scanned one/ell and oh/zero.\
 \
-With Respect Case checked, filter on mixEdcase. At the top of the list look for words starting with zero for O. Scroll to the bottom where there may be words that start with lowercase but contain uppercase. Look for oddities.\
+With Respect Case checked, filter on mixEdcase. If the list is long, click the column head to make it sort from last to first; this puts words that start with lowercase at the top. Words that have only an initial cap will be at the end. Look for oddities. At the end of the list, look for words that start with one or zero.\
  \
 You might also filter on UPPERCASE and scan that subset for oddities.\
 \
@@ -441,7 +443,7 @@ Double-click Illustration to put it in the Find text, set Whole Word on and and 
 \b0 \
 In the Word panel find Sidenote. Right-click and apply Second Harmonic to see if there are versions with different capitalization or spelling errors. Correct any that appear.\
 \
-Double-click Sidenote to put it in the Find text, set Whole Word on and Respect Case off, and use search to step through the document. Make sure each is on a line by itself just above the paragraph it describes. (If a paragraph is long, the PM may want you to break the paragraph and put the Sidenote just above the sentence to which it refers.)\
+Double-click Sidenote to put it in the Find text, set Whole Word on and Respect Case off, and use search to step through the document. Make sure each is on a line by itself just above the paragraph it describes.\
 \
 
 \b 18. Footnote Verification and Numbering
@@ -449,9 +451,9 @@ Double-click Sidenote to put it in the Find text, set Whole Word on and Respect 
 \
 In the Word panel find Footnote. Right-click and apply Second Harmonic to see if there are versions with different capitalization or spelling errors. Examine each spelling different from initial-cap Footnote, and if they are in what should be Footnote markup, correct them.\
 \
-On the Fnote panel, click Refresh. If there are pink rows in the table, find the problems and fix them. When all rows are white or green, look at each footnote by clicking on the Key value once to see the anchor and again to see the note. There is no substitute for looking at every footnote this way to ensure that PPQT has correctly recognized the scope of each Note and paired Anchors and Notes correctly.\
+On the Fnote panel, click Refresh. If there are pink rows in the table, find the problems and fix them. When all rows are white or green, look at each footnote in order: click on the Key value once to see the anchor and again to see the note. There is simply no substitute for looking at every footnote this way to ensure that PPQT has correctly recognized the scope of each Note and paired Anchors and Notes correctly. (Here's a common error. Often most keys are A or B or C. If some Note A is malformed, the Key A that should match it will grab the next well-formed Note A, and that forces every Key-A/Note-A pair for the rest of the book to be mismatched. Sequential checking from the top down finds this quickly.)\
 \
-When all footnotes are correct, renumber them. Decide on the numbering convention, select the correct number streams at the bottom of the Fnote panel, and click Renumber. Then click Refresh and look for problems; if any, use ctl-z to back out the renumbering.\
+Only when all footnotes are correct and correctly matched, renumber them. Decide on the numbering convention, select the correct number streams at the bottom of the Fnote panel, and click Renumber. Then click Refresh and look for problems; if any, use ctl-z to back out the renumbering.\
 \
 For out-of-line footnotes, now define the footnote sections using 
 \f1 /F..F/
@@ -471,12 +473,14 @@ Load the find buttons
 \
 It is time to "fork" the etext and html versions of the book. Save the current text, this will be the etext version.\
 \
-The HTML version must be Latin-1 or 7-bit ascii. Go to the Char panel and select \'acLatin-1 from the filter pop-up. If any characters are shown, replace them with their HTML entity codes. To do this, double-click in the Entity column. The character is loaded as the Find text, and its entity code is loaded as the replace-1 text. Use find and replace to change all these characters to their entity codes. (Turn on the Respect case switch, or Find will confuse \'e6 and \'c6.)\
+The HTML version can be UTF-8 (preferred by the HTML standard), or Latin-1 (with 
+\f1 charset=ISO-8859-1
+\f0  in the head section). If it's to be the latter, go to the Chars panel and select \'acLatin-1 from the filter pop-up. If any characters are shown, replace them with their HTML entity codes. To do this, double-click in the Entity column of the characters table. The character is loaded as the Find text, and its entity code is loaded as the replace-1 text. (Isn't that convenient!) Use find and replace to change all these characters to their entity codes. (Turn on the Respect case switch, or Find will confuse \'e6 and \'c6.)\
 \
 Save this file as 
 \i bookname
 \f5\i0\fs24 .html
-\f0\fs28 . You now have two versions. From now on, any error you find in the text must be corrected in both versions.\
+\f0\fs28 . You now have two versions. Henceforth, any error you find in the text must be corrected in both versions.\
 \
 
 \b 21. Finalize text markups.\
@@ -496,13 +500,13 @@ Button 24 sets up to find an entire italicized phrase. Replace 1 changes the
 \f1 <i>
 \f0  and 
 \f1 </i>
-\f0  to underscores. Or use Replace-2 to remove the markup entirely. Click Find First and step through the document keying ctl-T (replace and find) or clicking Repl.\
+\f0  to underscores. Or use Replace-2 to remove the markup entirely. Click Find First and step through the document keying ctl-T (replace and find). Or set the "& Next" switch and step through by clicking Replace-1 or Replace-2.\
 \
 Buttons 23 and 22 load find/replace sets for bold and smallcap markup respectively. Each selects the entire markup phrase. Replace-1 just eliminates the markup; replace-2 puts the phrase back with dollar-signs (an old PG convention for bold).\
 \
 PPQT cannot automatically uppercase text as part of find/replace. If you want to represent bold and/or smallcap as all-cap, use two keystrokes per phrase. Start by clicking First to select the first bold or smallcap phrase. Key ctl-u (the accelerator for Edit > ToUpper) making the phrase uppercase. Key ctl-t which performs Replace-1 (dropping the markup) and goes on to the next find. Repeat ctl-u, ctl-t as needed.\
 \
-In some cases you may elect not to uppercase (for example a Table of Contents in which all the chapter titles are smallcap). Don't use ctl-u; just use ctl-T to drop the markup leaving the text mixed-case.\
+In some cases you may elect not to uppercase (for example a Table of Contents in which all the chapter titles are smallcap might be more readable left as mixed-case). Don't use ctl-u; just use ctl-t to drop the markup leaving the text mixed-case.\
 \
 Button 21 sets up to find the 
 \f1 <sd> 
@@ -520,7 +524,7 @@ Button 20 sets up to find the
 \b 22. Reflow and delete block markup.
 \b0 \
 \
-Make the Find panel visible. Click button 19. This sets up to find the opening or closing line of block markup (
+Find button 19 sets up to find the opening or closing line of block markup (
 \f1 /C
 \f0 , 
 \f1 Q/
@@ -532,7 +536,7 @@ Now is the time to fiddle with table markups to get the table and column widths 
 \
 When you are satisfied all block markups reflow correctly, click Reflow Document. Scroll through the entire document and verify that the format looks correct. Key ctl-Z to undo the reflow if necessary.\
 \
-When the reflow is satisfactory, use Find button 19 to walk through and delete all block markup. If you used @ signs for empty cells in tables, find them and replace with spaces.\
+When the reflow is satisfactory, use Find button 19 to walk through again, this time using ctl-t to delete the block markups. If you used @ signs for empty cells in tables, find them and replace with spaces.\
 \
 
 \b 23. Finalize thought breaks.
@@ -583,7 +587,7 @@ When the folios shown in the Pages table agree with the scanned images on all pa
 \f0\fs28 \
 After inserting the text, do the following searches to correct bad folio placement. First, search for something unique to the inserted text followed by two newlines (for example, search for 
 \f1 /span>\\n\\n
-\f0 ). This finds a folio string that falls either above a heading (make sure there are exactly 2 or 4 blank lines above the heading), or at the end of a paragraph. When the folio string is at the end of a paragraph, it will appear in the margin aligned with the end of the paragraph. It is more accurate if the marginal folio begins the following paragraph, which would be the first at the top of that page; so move the newlines so that the folio string is the first line of the lower paragraph rather than the last line of the upper one.\
+\f0 ). This finds a folio string that falls either above a heading (make sure there are exactly 2 or 4 blank lines above the heading), or at the end of a paragraph. When the folio string is at the end of a paragraph, it will appear in the margin aligned with the end of the paragraph. It is more accurate if the marginal folio begins the following paragraph, which would be the first at the top of that page; drag newlines around so that the folio string is the first line of the lower paragraph rather than the last line of the upper one.\
 \
 Second, search for places where two folios are adjacent, e.g. search for\
 
@@ -615,7 +619,7 @@ Load Find Buttons
 \f1 extras/htmlFixes.utf
 \f0 . Click button 24 to find any superscripts marked up as per the guidelines. Replace-1 changes the markup to HTML 
 \f1 <sup>
-\f0  form. Button 23 sets up to find and convert subscript markup.\
+\f0  form. Button 23 sets up to find and convert subscript markup in the same way.\
 \
 Button 22 finds 
 \f1 [Sidenote: text..]
@@ -633,7 +637,7 @@ Button 20 looks for
 \f1 [Illustration\'85]
 \f0  markup and changes it to HTML. You must edit the result to insert the path to the illustration file, which is left as 
 \f1 src='#'
-\f0 . The title and alt values are set to the first 30 characters of the caption text. You need to eyeball these because if that string contains an apostrophe, the syntax will be wrong.\
+\f0 . The title and alt values are set to the first 30 characters of the caption text. You need to eyeball these because if those 30 characters contain an apostrophe, the syntax will be wrong.\
 \
 Button 19 is like button 20, but it expects that you have coded the filename and filetype of the image immediately after the colon, for example:\
 \
