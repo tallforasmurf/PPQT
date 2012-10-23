@@ -30,9 +30,8 @@ __license__ = '''
 <h1>Introduction</h1>
 <p>PPQT is a unified tool for use by the volunteers who post-process books for Distributed Proofreaders. It provides a text editor that integrates a number of features useful during post-processing, including display of the book's scanned pages, regular expression find/replace, spellcheck, pagination, footnoting, and html preview. This Help is its main documentation. Some additional info can
 be found in the <a href='#Extras'>Extras</a> folder in the PPQT folder.</p>
-<p>You can read this help text in the Help panel of the program; or just locate <tt>pqHelp.html</tt> in the PPQT folder and open it in any browser.</p>
-<p>If while reading this text in the Help panel you click on a link, you can get
-back to the text by keying ctl-[ or ctl-b (mac users see next paragraph).</p>
+<p>You can read this help text in the Help panel of the program or simply find the file <tt>pqHelp.html</tt> in the PPQT folder and open it in any browser.</p>
+<p>While reading this text in the Help panel, if you click on a link, you can get back to the text by keying ctl-[ or ctl-b (mac users see next paragraph).</p>
 <h2>Mac Users Note</h2>
 <p> Throughout this Help, when you read <b>ctl-</b>
 you think <b>cmd-</b>. And when you read <b>alt-</b>, you think <b>opt-</b>.
@@ -69,7 +68,7 @@ See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 <li><a href='#Extras'>The Extras</a> documents the miscellania in the <tt>extras</tt> folder.</li>
 </ul>
 <h2 id='New'>What's New in This Version</h2>
-<h3>What's New in 1.01 (22 Oct. 2012)</h3>
+<h3>What's New in 1.01 (24 Oct. 2012)</h3>
 <p>Fixes:</p>
 <ul>
 <li>When you select a font with the View > Font... dialog the font size you
@@ -81,21 +80,17 @@ the image of the last page.</li>
 Edit, Notes, Pngs, Preview and Help panels) works with keys on the keypad as well as on the main keyboard.</li>
  <li>When you load a different file of scannos, the hiliting of the words
  from the previous scanno file is cleared out.</li>
- <li>The save-needed status in the title bar changes correctly
- along with changes in the notes and other metadata, as well as changes
- in the document.</li>
+ <li>The save-needed status in the title bar changes correctly as changes occur in the notes and other metadata, as well as with changes in the document.</li>
  <li>PPQT now remembers whether a census of words and characters or a spellcheck is needed over save/load. If you change the text or the good-words
  list and save the file, when you next load it and click Refresh, the
  census and spellcheck are done.</li>
 </ul>
 <p>New or changed function:</p>
 <ul>
-<li>How the encoding for an input file is chosen has changed, and a new command has been added to the File menu: Open With Encoding. See the <a href='#'>File Encodings</a> topic below.</li>
-<li>When a single word is selected in the Edit panel, the standard context
-menu has an option to add that word to the good-words list.</li>
-<li>When the keyboard focus is in the <a href='#Words'>Words panel</a>, and the table is sorted ascending on column 0, keying a letter jumps to the approximate position of words beginning with that letter.</li>
-<li>Holding the shift key when going to a bookmark (that is, ctl-shift-1 to 9)
-causes the current selection to be extended to the bookmark location.</li>
+<li>There have been major changes in how the encoding for an input file is chosen, and a new command has been added to the File menu: Open With Encoding. See the <a href='#Encodings'>File Encodings</a> topic below.</li>
+<li>When a single word is selected in the Edit panel, the standard <a href='#ContextMenu'>context menu</a> has an option to add that word to the good-words list.</li>
+<li>When the keyboard focus is in the <a href='#Words'>Words panel</a> and the table is sorted ascending on column 0, keying a letter jumps to the approximate position of words beginning with that letter.</li>
+<li>Holding the shift key when going to a bookmark causes the current selection to be extended to the bookmark location.</li>
 </ul>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
@@ -109,7 +104,7 @@ lacks Greek and Cyrillic. Courier New, however, has a wide repertoire including
 Hebrew and Arabic.</li>
 <li>Although it can display alphabets such as Arabic, PPQT does not understand right to left editing. The edit cursor only moves left to right during text entry.</li>
 </ul>
-<p>Documents on disk are encoded in some way. The important encodings are:</p>
+<p>The characters in documents on disk are encoded in some way. The important encodings are:</p>
 <ul>
 <li>UTF-8, which can represent any Unicode character.</li>
 <li>ISO-8859-1, aka Latin-1, a set of 191 characters.</li>
@@ -120,11 +115,11 @@ that are not in Latin-1. CP1252 is not supported by PG, but Windows utilities su
 <p>There are many other encodings but PPQT only supports the above four for input, and only UTF-8 and Latin-1 for output.</p>
 <p>In order to load a document with its special characters intact and un-garbled, PPQT needs to know which encoding the file uses. It has several ways of finding this out.</p>
 <ol>
-<li>When saving a file, PPQT writes the encoding into the metadata file (next topic). Thus once you have saved a book it always reopens with the correct encoding.</li>
-<li>Project Gutenberg (PG) requires all etext files to have the suffix <tt>.txt</tt> regardless of their encoding (sad, but true). However it is conventional to indicate UTF-8 by ending the filename with <tt>-u</tt>, <tt>-utf</tt>, or <tt>-utf8</tt>, for example, <tt>afinebook-utf.txt</tt>. PPQT recognizes this and opens the file as UTF-8.</li>
-<li>You can also end a filename with <tt>-l</tt> or <tt>-ltn</tt> to signal that it is encoded Latin-1: <tt>myfinebook-ltn.txt</tt>.</li>
-<li>Per the standard, HTML files should either be UTF-8 or else they should have a <tt>charset=</tt><i>encoding</i> parameter in the <tt>&lt;head&gt;</tt> section. When opening a file of type <tt>.htm</tt> or <tt>.html</tt>, PPQT looks for this parameter and uses the encoding specified. If there is no parameter, it opens an HTML file as UTF-8.</li>
-<li>Although PG does not permit using file suffixes other than <tt>.txt</tt> for an etext, this is still useful for other files such as a good_words or "scannos" word list. Hence PPQT looks for these file suffixes:
+<li>When saving a file, PPQT writes the encoding into the metadata file (next topic). Thus once you have saved a book it always reopens with the same encoding.</li>
+<li>Project Gutenberg (PG) requires all etext files to have the suffix <tt>.txt</tt> regardless of their encoding (crazy, but true). However it is conventional to indicate UTF-8 by ending the filename with <tt>-u</tt>, <tt>-utf</tt>, or <tt>-utf8</tt>, for example, <tt>afinebook-utf.txt</tt>. PPQT recognizes this and opens such a file as UTF-8.</li>
+<li>You can also end a filename with <tt>-l</tt>, <tt>-ltn</tt> or <tt>-ltn1</tt> to signal that it is encoded Latin-1, for example <tt>myfinebook-ltn.txt</tt>.</li>
+<li>Per the standard, HTML files should either be UTF-8 or else they should have a <tt>charset=</tt><i>encoding</i> parameter in the first 1024 characters of the file. When loading or saving a file of type <tt>.htm</tt> or <tt>.html</tt>, PPQT looks for this parameter and uses the encoding specified. If there is no parameter, it uses UTF-8.</li>
+<li>Although PG does not permit using file suffixes other than <tt>.txt</tt> for an etext, other suffixes are still useful for non-book files such as a good_words or "scannos" word list. Hence PPQT looks for these file suffixes:
 <ul>
 <li><tt>.utf</tt> or <tt>.utx</tt> to signal UTF-8</li>
 <li><tt>.ltn</tt> to signal Latin-1</li>
@@ -132,15 +127,15 @@ that are not in Latin-1. CP1252 is not supported by PG, but Windows utilities su
 <li><tt>.mac</tt> to signal Mac Roman</li>
 </ul>
 </li>
-<li>When none of these methods reveal the encoding, PPQT feeds the first 4096 bytes of the file to a package that attempts to infer the encoding from the byte values used. If the package reports an encoding at a high confidence level PPQT uses that encoding. Otherwise it displays an error message.</li>
+<li>When none of methods 1-5 reveal the encoding, PPQT feeds the first 4096 bytes of the file to a package that attempts to infer the encoding from the byte values used. If the package reports an encoding at a high confidence level PPQT uses that encoding. Otherwise it displays an error message.</li>
 </ol>
-<p>You can bypass this complexity by using the File menu command Open With Encoding, and selecting one the encoding from the sub-menu. The file you select is opened with that encoding.</p>
-<p>When saving a file, PPQT will only use UTF-8 or Latin-1. If the file had any other encoding when it was opened, it will be saved as UTF-8. To force one or the other, save the file with an indicator in the filename or file suffix, e.g. to force saving as Latin-1, save to <i>bookname</i><tt>-ltn.txt</tt>.</p>
+<p>You can bypass this complexity by using the File menu command Open With Encoding, and selecting one encoding from the sub-menu. The file you select is opened with that encoding.</p>
+<p>When saving a file, PPQT will only use UTF-8 or Latin-1. It applies rules 2-5 above to discover which you want to use. To force one or the other, save the file with an indicator in the filename or file suffix, e.g. to force saving as Latin-1, save to <i>bookname</i><tt>-ltn.txt</tt>.</p>
 <h3>Metadata</h3>
 When opening  <tt>afinebook.txt</tt>, PPQT looks for a file named  <tt>afinebook.txt.meta</tt> in the same location (i.e. the full book name
 plus <tt>.meta</tt>). If the meta file
 is not found, PPQT assumes this is the first time it has opened this book.
-It scans the text gathering information including the location of page separator lines, and counting words and characters. These metadata will be stored in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
+It scans the text gathering information including the location of page separator lines, and counting words and characters. These items and other useful things (defined bookmarks, your notes, the file encoding, etc.) are saved in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
 exist, PPQT loads the metadata items from it.</p>
 <p>Feel free to examine or edit the metadata file, but be aware that it is encoded UTF-8. If strange characters appear, your editor app did not use the utf-encoding to load it. Do not save the metadata file unless you are sure you are loading and saving it in UTF-8 format.</p>
 <h3>Page Images</h3>
@@ -307,11 +302,11 @@ repeat that operation, click the button. All the find/replace
 controls are returned to the stored settings.
 The button contents are remembered from session to session.</p>
 <p>To clear the contents of a button, right-click it, clear the label field to empty, and click OK.</p>
-<p>To save the button settings to a file, select File&nbsp;&gt;&nbsp;Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (a suffix of <tt>.utf</tt> is a good idea). In the saved file each non-empty button is represented in text form. (Feel free to edit it.)</p>
-<p>To load button settings from a file, select File&nbsp;>&nbsp;Load Find Buttons and choose a file of saved buttons. The file's encoding can be indicated by the name or suffix, or will be assumed to be UTF-8. Any valid button definitions in the file are assigned to the buttons. Rather strict controls are applied but no diagnostics are issued; an invalid button definition is just silently ignored.</p>
+<p>To save the button settings to a file, select File&nbsp;&gt;&nbsp;Save Find Buttons. Provide the name and location for the saved file. PPQT uses its <a href='#Encodings'>encoding rules 2-5</a> to select between UTF-8 and Latin-1 for this file. A suffix of <tt>.utf</tt> is the simplest way to make sure all special characters are preserved. In the saved file each non-empty button is represented in text form. (Feel free to edit it.)</p>
+<p>To load button settings from a file, select File&nbsp;>&nbsp;Load Find Buttons and choose a file of saved buttons. The file's encoding can be indicated by the name or suffix, or will be assumed to be UTF-8. Any valid button definitions in the file are assigned to the buttons. Rather strict controls are applied, but no diagnostics are issued. An invalid button definition is just silently ignored.</p>
 <p>
 The intent of saving and loading buttons is to be able to save
-and re-use complex search operations, and exchange them with other
+and re-use complex search operations, and to exchange them with other
 users. See the <a href='#Extras'>Extras</a> folder in the PPQT folder for some saved button definitions and a note on the format of a file of saved buttons.</p>
 <h3>Regex Syntax</h3>
 <p>The Regular Expression (regex) support provided by Qt4 is similar to, but has fewer features than, the Perl regexes used in guiguts. (Qt version 5, planned for 2013, has better support.) The following forms are used to match text.</p>
@@ -556,7 +551,7 @@ a /P poetry section within a /Q block quote section or a /U list section.
 You can nest a /R right align section in poetry or a quote to provide a signature or letterhead line. Multiple levels of nesting (/R within /P within /Q) are possible. The First, Left and Right indents for a nested section are taken relative to the indents for its containing section.</p>
 <h3 id='Table'>Table Markup</h3>
 PPQT treats tables as a special kind of reflow. You mark up the table text with <b>/T...T/</b> and some other parameters. During reflow the table is formatted. If the result is not perfect, undo, adjust the markup, try again.</p>
-<p>The column values within each row are separated in one of two ways: by strings of two or more spaces, or with stile (|) characters.</p>
+<p>A table is a series of column values arranged in rows. The column values within each row are separated in one of two ways: by strings of two or more spaces, or with stile (|) characters.</p>
 <p>A single-line table has one table row per text line. It is marked up with  <b>/T..T/</b> Here is a simple table with two rows and two columns.</p>
 <pre>/T
 column 1    755.00
@@ -573,7 +568,7 @@ Chapter IV. The Nature and
 Properties of Clay   29
 T/
 </pre>
-<p>PPQT indents a table two spaces (an etext requirement for formatted text), more if the table is nested in another markup. By default the table is formatted to fill the maximum paragraph width (not the optimal width) so the table is narrower when nested in a markup with a left and right indents.</p>
+<p>PPQT indents a table two spaces, an etext requirement that prevents an etext reader from reflowing formatted text. It indents more if the table is nested in another markup. By default the table is formatted to fill the maximum paragraph width set in the controls, or narrower when the table is nested in a markup with left and right indents.</p>
 <p>By default column text is aligned left, and columns are given widths
 roughly in proportion to their contents. However, you can specify detailed controls on the opening markup line.</p>
 <p>Specify properties of the whole table with <b>T(</b><i>properties</i><b>)</b> where the <i>properties</i> can be:</p>
@@ -587,13 +582,15 @@ stile characters.</li>
 the <i>properties</i> can be:</p>
 <ul><li><b>W:</b><i>nn</i> for the minimum width of every column.
 (PPQT will give columns more width than this to fill the table width, or to fit the contents of the widest cell.)</li>
-<li><b>A:R/L/C/D</b> to align the cell contents left, right, centered
-or decimal.</li>
+<li><b>A:R/L/C/D</b> to align the cell contents left, right, centered or decimal.</li>
 <li><b>B:'-'</b> to have each cell have a line of hyphens under it.</li>
 <li><b>S:'|'</b> to have the left side of each column be a column of stiles.</li>
 </ul>
-<p>You can set the width and alignment properties of a specific
-column <i>n</i> by writing <i>n</i><b>(</b><i>properties</i><b>)</b>.
+<p>You can set the width and alignment properties of a specific column <i>n</i> by writing <i>n</i><b>(</b><i>properties</i><b>)</b>. The properties you can give for a specific column are:</p>
+<ul><li><b>W:</b><i>nn</i> for the minimum width of that column.</li>
+<li><b>A:R/L/C/D</b> to align the cell contents left, right, centered or decimal.</li>
+<li><b>S:'&nbsp;'</b> to have the left side of this column be blank.</li>
+</ul>
 Here is a fully-specified table before reflow:</p>
 <pre>/TM TABLE(TOP:'-' WIDTH:40 SIDE:'|') COL(B:'-' S:'|') 2(A:R W:12)
 cell  cell   now is the time for all 
@@ -643,9 +640,8 @@ T/</pre>
   Marshmallows       &euro; 124,80 
 T/
 </pre>
-<p>Decimal alignment can produce odd results when applied to cells that
-contain text, especially in a multi-line table. For example you may find
-it best to format a heading row manually over a decimal table.</p>
+<p>Sadly, decimal alignment is not supported in HTML, and such cells are aligned left. Also, decimal alignment can produce odd results when applied to cells that contain text, especially in a multi-line table.</p>
+<p>Getting a table to flow properly can be tedious. The first time you flow it, it is likely to have many errors, often because there are extra spaces that cause false column breaks, or missing spaces that cause column values to run together. But with work it is usually possible to get a table to look right. Post a sample of a recalcitrant table to the forum and ask for advice.</p>
 <h3 id='html'>HTML Conversion</h3>
 <p>ASCII reflow is designed so you can do it repeatedly. HTML conversion
 is a one-shot deal that wipes out the reflow markup lines and the spacing
