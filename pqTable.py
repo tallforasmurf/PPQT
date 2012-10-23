@@ -59,8 +59,8 @@ Configurable properties of a table as a whole:
     top-border fill character(s)
             default is None, meaning no top border,
             option is - (hyphen)
-    left-side vertical border character
-            default is None, meaning no left vertical border
+    right-side vertical border character
+            default is None, meaning no right vertical border
             option is | (stile)
 
 Properties of any single column:
@@ -80,10 +80,10 @@ Properties of any single column:
             default is space: no division in a single-line table, in a
                 multi-line, bottom of each row is a line of spaces
             option is - (hyphen), bottom of each row is a line of ----
-    right-side vertical border character
-            default is None, meaning put two spaces to the right of all
-                except for rightmost column
-            option is | (stile), right side of all cells consists of |
+    left-side vertical border character
+            default is None, meaning put two spaces to the left of all
+                except for leftmost column
+            option is | (stile), left side of all cells consists of |
 
 In framing the table, the right vertical border and the bottom border of each
 cell are determined by the column spec. The top border of the top row and
@@ -108,6 +108,7 @@ The optional-spec syntax is:
         <1-9>(
         [Align:Left|Center|Right|Decimal]
         [Width:ww[.ff] ]
+        [Side:' ']
         ) ...
     ]
 In the above, square brackets and lowercase indicate optional items.
@@ -120,16 +121,16 @@ given (W:ww.ff) the minimum width is ww+ff+1.
 The /T line is not "parsed", items are just recognized using REs. Only the 
 initials are looked for. Unrecognized params are simply ignored!
 
-/T T(T:'-' S:'|') Col(B:'-' S:'|') 2(A:C) 3(A:R W:8) 4(ALIGN:DECIMAL)
+/T T(T:'-' S:'|') Col(B:'-' S:'|') 1(S:' ') 2(A:C) 3(A:R W:8) 4(ALIGN:DECIMAL)
 one  two  75  654321
 three  @  200  .123456
 T/
 
 This should reflow to the following table:
 -----------------------------------------    (top row from T(T:'-')
-| one   | two |      75 | 654321        |
+  one   | two |      75 | 654321        |
 -----------------------------------------
-| three |  @  |     200 |       .123456 |
+  three |  @  |     200 |       .123456 |
 -----------------------------------------
 
 A constraint of this code is that all inner cells must be represented by content
@@ -343,6 +344,14 @@ class tableProperties:
                     propdic[u'S'] = s
                 else:
                     self.badTableParm(u'Only stile supported for Side option')
+        else : # not C(stuff) but n(stuff), allow S' ' to override
+            s = self.getStringOption(copts, u'S')
+            if s is not None:
+                if unicode(s) == u' ':
+                    propdic[u'S'] = None
+                else:
+                    self.badTableParm(u'Only space supported for Side option')
+           
     # Error message to user about a problem with the /T line
     def badTableParm(self,msg):
         pqMsgs.warningMsg(
@@ -365,7 +374,7 @@ class tableProperties:
         return self.tProps[u'T']
     def columnBottomString(self):
         return self.cProps[u'B']
-    def columnSideString(self):
+    def columnSideString(self): # will be None or QString('|') reflecting C()
         return self.cProps[u'S']
     # return a column property for a given column: the one specified for that
     # column alone, or the generic one from C(xx) if not.
@@ -374,6 +383,11 @@ class tableProperties:
         if c in self.c1to9Props:
             return self.c1to9Props[c][key]
         return self.cProps[key]
+    def oneColumnDelimiter(self,c) : # will be None or QString('|') reflecting n()
+        return self.someColumnValue(c,u'S')
+    def oneColumnSideString(self,c) : # will be QString('  ') or QString('|')
+        qs = self.oneColumnDelimiter(c)
+        return qs if qs is not None else QString('  ')
     def columnAlignment(self,c):
         return self.someColumnValue(c,u'A')
     def columnFractionWidth(self,c):
@@ -653,16 +667,11 @@ def tableReflow(tc,doc,unitList):
     # logical row/column slots. Now figure out how wide to make each column.
     # The input to this is targetTableWidth, developed above for the table as a
     # whole, and targetDataWidth which we are just about to calculate:
-    totalDelimiterWidths = 0
-    cellDelimiterString = tprops.columnSideString()
-    if cellDelimiterString is None:
-        # no side stiles, delimit cells with 2 spaces
-        cellDelimiterString = QString(u'  ') # internal delimiter
-    else:
-        # include the width of the left-edge stile in the delimiters
-        totalDelimiterWidths = cellDelimiterString.size()
-    # add widths of internal delimiters
-    totalDelimiterWidths += cellDelimiterString.size() * (tcells.columnCount() - 1)
+    # Initial delimiter is 0 when columns are space-delimited, else 1 for '|'
+    totalDelimiterWidths = 0 if tprops.oneColumnDelimiter(1) is None else 1
+    # delimiters between columns are 2 for spaces, 1 for stile.
+    for c in range(2,tcells.columnCount()+1):
+        totalDelimiterWidths += 2 if tprops.oneColumnDelimiter(c) is None else 1
     # add the right side delimiter
     tableSideString = tprops.tableSideString()
     if tableSideString is None:
@@ -749,12 +758,10 @@ def tableReflow(tc,doc,unitList):
     # set the head of each text line, indent with optional stile
     leftIndent = QString(u' ' * unitList[1]['L']) # indent by L
     lineStart = QString(leftIndent)
-    #dbg = unicode(lineStart)
-    if tprops.columnSideString() is not None:
-        lineStart.append(cellDelimiterString) # plus optional stile
+    if tprops.oneColumnDelimiter(1) is not None:
+        lineStart.append(tprops.oneColumnSideString(1)) # plus optional stile
     # set the right-side delimiter of stile or nothing
     lineEnd = QString(tableSideString)
-    #dbg = unicode(lineEnd)
     # set the between-rows constant of nothing, linebreak, or hyphens+linebreak
     cellBottom = QString() # nothing, for a single-line table with no botChar
     if botChar is not None:
@@ -764,7 +771,6 @@ def tableReflow(tc,doc,unitList):
     else: # even if no botChar, multiline table still needs empty lines
         if tprops.isMultiLine() :            
             cellBottom.append(IMC.QtLineDelim)
-    #dbg = unicode(cellBottom)
     # accumulate the table top delimiter if requested
     if topChar is not None:
         tableText.append(leftIndent)
@@ -781,8 +787,8 @@ def tableReflow(tc,doc,unitList):
                 tcells.columnAlignment(c), tcells.columnDecimal(c),
                 tcells.columnDecWidth(c))
             asciiLines = max(asciiLines,rowdata[c].count())
+        # read out each line x of each cell across a text line, with delimiters
         for x in range(asciiLines):
-            # read out line x of each cell across a text line, with delimiters
             qsLine = QString(lineStart) # start with a copy of the indent
             for c in range(1,tcells.columnCount()+1):
                 if rowdata[c].count() > x: # this cell has data on line x
@@ -790,7 +796,8 @@ def tableReflow(tc,doc,unitList):
                 else: # this cell is empty on line x, fill with spaces
                     cqs = QString(u' ' * allSugWidths[c])
                 if c < tcells.columnCount() :
-                    cqs.append(cellDelimiterString) # add internal delimiter
+                    # add internal cell delimiter of 2 spaces or 1 stile
+                    cqs.append(tprops.oneColumnSideString(c))
                 qsLine.append(cqs)
             # finish the line: append the stile border, or strip trailing spaces.
             if lineEnd.isEmpty():

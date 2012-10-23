@@ -51,6 +51,7 @@ See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 <p>First, a deep bow of respect to Steve Shulz (Thundergnat) who created Guiguts, the program from which PPQT takes its inspiration (and lots of ideas). Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Development with PyQt</i> that showed how to build PPQT.</p>
 <h2>Contents</h2>
 <ul>
+<li style='font-weight:bold;'><a href='#New'>What's New</a> lists what is different about this version of PPQT!</li>
 <li><a href='#Files'>Files and Folders</a> says where PPQT looks for the book text, images, and related files.</li>
 <li><a href='#Main'>The Main Window</a> describes that.</li>
 <li><a href='#Edit'>The Edit Panel</a> tells about selecting text and the use of many special keys.</li>
@@ -67,28 +68,81 @@ See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 <li><a href='#Foot'>The Footnote Panel</a> tells how to find, number and convert footnotes.</li>
 <li><a href='#Extras'>The Extras</a> documents the miscellania in the <tt>extras</tt> folder.</li>
 </ul>
+<h2 id='New'>What's New in This Version</h2>
+<h3>What's New in 1.01 (22 Oct. 2012)</h3>
+<p>Fixes:</p>
+<ul>
+<li>When you select a font with the View > Font... dialog the font size you
+pick is remembered for the next session.</li>
+<li>When you place the edit cursor above the text of the first page,
+the Pngs panel shows the gray "No Image" image instead of showing
+the image of the last page.</li>
+<li>Zooming in and out with ctl-plus and ctl-minus (supported in the
+Edit, Notes, Pngs, Preview and Help panels) works with keys on the keypad as well as on the main keyboard.</li>
+ <li>When you load a different file of scannos, the hiliting of the words
+ from the previous scanno file is cleared out.</li>
+ <li>The save-needed status in the title bar changes correctly
+ along with changes in the notes and other metadata, as well as changes
+ in the document.</li>
+ <li>PPQT now remembers whether a census of words and characters or a spellcheck is needed over save/load. If you change the text or the good-words
+ list and save the file, when you next load it and click Refresh, the
+ census and spellcheck are done.</li>
+</ul>
+<p>New or changed function:</p>
+<ul>
+<li>How the encoding for an input file is chosen has changed, and a new command has been added to the File menu: Open With Encoding. See the <a href='#'>File Encodings</a> topic below.</li>
+<li>When a single word is selected in the Edit panel, the standard context
+menu has an option to add that word to the good-words list.</li>
+<li>When the keyboard focus is in the <a href='#Words'>Words panel</a>, and the table is sorted ascending on column 0, keying a letter jumps to the approximate position of words beginning with that letter.</li>
+<li>Holding the shift key when going to a bookmark (that is, ctl-shift-1 to 9)
+causes the current selection to be extended to the bookmark location.</li>
+</ul>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
-<h3>File Encodings and Suffixes</h3>
-<p>PPQT is entirely Unicode internally. The file contents are converted to Unicode on input, and back to some byte code on output, based only on the file suffix. Rename a new file as needed to cause conversion from or to these encodings:</p>
-<table border='1' style='border-collapse:collapse;'>
-<head><td>Suffix</td><td>Uses encoding</td></head>
-<tr><td style='width:4em;'><tt>.txt</tt></td><td>Latin-1 or 7-bit Ascii (PPQT cannot distinguish between these)</td></tr>
-<tr><td><tt>.utf</tt></td><td>UTF-8 encoding of Unicode, preferred for text with non-latin characters</td></tr>
-<tr><td><tt>.win</tt></td><td>Windows code page 1252, the US and European Windows alphabet.</td></tr>
-<tr><td><tt>.mac</tt></td><td>Mac Roman, the Apple alphabet.</td></tr>
-<tr><td><tt>.isr</tt></td><td>Windows code page 1255, Windows Hebrew</td></tr> <tr><td><tt>.cyr</tt></td><td>Windows code page 1251, Windows Cyrillic alphabet.</td></tr>
-<tr><td><tt>.kir</tt></td><td>KOI8-R, Cyrillic-Russian.</td></tr>
-<tr><td><tt>.kiu</tt></td><td>KOI8-U, Cyrillic-Ukranian.</td></tr>
-</table>
-<p>It is best to save to <tt>.utf</tt> if there is any chance the text contains non-Latin-1 characters; prefer <tt>.txt</tt> when you are sure it is pure  Latin-1 or ASCII.</p>
+If you need to open a second document (for example, a commented copy from Smooth Reading), just start a second copy of PPQT.</p>
+<h3 id='Encodings'>File Encodings and Suffixes</h3>
+<p>PPQT holds the document in memory in Unicode, which supports virtually any alphabet or special characters. This is subject to two limitations:</p>
+<ul>
+<li>PPQT can only display characters that are defined in the font you select
+(see <a href='#Edit'>Edit Panel</a> below). DPCustomMono2, for example,
+lacks Greek and Cyrillic. Courier New, however, has a wide repertoire including
+Hebrew and Arabic.</li>
+<li>Although it can display alphabets such as Arabic, PPQT does not understand right to left editing. The edit cursor only moves left to right during text entry.</li>
+</ul>
+<p>Documents on disk are encoded in some way. The important encodings are:</p>
+<ul>
+<li>UTF-8, which can represent any Unicode character.</li>
+<li>ISO-8859-1, aka Latin-1, a set of 191 characters.</li>
+<li>Windows CP1252 contains the same 191 characters as Latin-1 but adds 27 more
+that are not in Latin-1. CP1252 is not supported by PG, but Windows utilities such as Wordpad may save files in that encoding.</li>
+<li>Mac Roman defines many, but not all, of the characters in CP1252 (but with different numeric values), and also some special characters not in either CP1252 or Latin-1. Mac Roman is not supported by PG, but Mac utilities such as Textedit may save files in that encoding.</li>
+</ul>
+<p>There are many other encodings but PPQT only supports the above four for input, and only UTF-8 and Latin-1 for output.</p>
+<p>In order to load a document with its special characters intact and un-garbled, PPQT needs to know which encoding the file uses. It has several ways of finding this out.</p>
+<ol>
+<li>When saving a file, PPQT writes the encoding into the metadata file (next topic). Thus once you have saved a book it always reopens with the correct encoding.</li>
+<li>Project Gutenberg (PG) requires all etext files to have the suffix <tt>.txt</tt> regardless of their encoding (sad, but true). However it is conventional to indicate UTF-8 by ending the filename with <tt>-u</tt>, <tt>-utf</tt>, or <tt>-utf8</tt>, for example, <tt>afinebook-utf.txt</tt>. PPQT recognizes this and opens the file as UTF-8.</li>
+<li>You can also end a filename with <tt>-l</tt> or <tt>-ltn</tt> to signal that it is encoded Latin-1: <tt>myfinebook-ltn.txt</tt>.</li>
+<li>Per the standard, HTML files should either be UTF-8 or else they should have a <tt>charset=</tt><i>encoding</i> parameter in the <tt>&lt;head&gt;</tt> section. When opening a file of type <tt>.htm</tt> or <tt>.html</tt>, PPQT looks for this parameter and uses the encoding specified. If there is no parameter, it opens an HTML file as UTF-8.</li>
+<li>Although PG does not permit using file suffixes other than <tt>.txt</tt> for an etext, this is still useful for other files such as a good_words or "scannos" word list. Hence PPQT looks for these file suffixes:
+<ul>
+<li><tt>.utf</tt> or <tt>.utx</tt> to signal UTF-8</li>
+<li><tt>.ltn</tt> to signal Latin-1</li>
+<li><tt>.win</tt> to signal Windows CP1252</li>
+<li><tt>.mac</tt> to signal Mac Roman</li>
+</ul>
+</li>
+<li>When none of these methods reveal the encoding, PPQT feeds the first 4096 bytes of the file to a package that attempts to infer the encoding from the byte values used. If the package reports an encoding at a high confidence level PPQT uses that encoding. Otherwise it displays an error message.</li>
+</ol>
+<p>You can bypass this complexity by using the File menu command Open With Encoding, and selecting one the encoding from the sub-menu. The file you select is opened with that encoding.</p>
+<p>When saving a file, PPQT will only use UTF-8 or Latin-1. If the file had any other encoding when it was opened, it will be saved as UTF-8. To force one or the other, save the file with an indicator in the filename or file suffix, e.g. to force saving as Latin-1, save to <i>bookname</i><tt>-ltn.txt</tt>.</p>
 <h3>Metadata</h3>
 When opening  <tt>afinebook.txt</tt>, PPQT looks for a file named  <tt>afinebook.txt.meta</tt> in the same location (i.e. the full book name
 plus <tt>.meta</tt>). If the meta file
 is not found, PPQT assumes this is the first time it has opened this book.
 It scans the text gathering information including the location of page separator lines, and counting words and characters. These metadata will be stored in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
 exist, PPQT loads the metadata items from it.</p>
-<p>Feel free to examine or edit the metadata file, but be aware that it is written in UTF-8 format. If strange characters appear, your editor app did not use the utf-encoding to load it. Do not save the metadata file unless you are sure you are loading and saving it in UTF-8 format.</p>
+<p>Feel free to examine or edit the metadata file, but be aware that it is encoded UTF-8. If strange characters appear, your editor app did not use the utf-encoding to load it. Do not save the metadata file unless you are sure you are loading and saving it in UTF-8 format.</p>
 <h3>Page Images</h3>
 <p>PPQT expects to find a folder named <tt>pngs</tt> in the same location as
 the text file, containing the scan images for the book. These are displayed in 
@@ -99,33 +153,31 @@ is a tabbed set of panels for different functions. All these panels are describe
 <p>You can adjust the size of the main window and its location on the screen. You can drag the vertical "splitter" left and right to give more or less space to each half. These geometry changes are remembered from session to session.</p>
 <h2 id='Edit'>The Edit Panel</h2>
 <p>The left-side panel is a typical modern plain text line-editor.
-It uses a monospaced font, defaulting to
-<a href="http://dejavu-fonts.org/wiki/Main_Page">Deja Vu Mono</a>
-or to Courier New, either of which is legible and has a full range of Unicode characters. (The DpCustomMono2 font often used at PGDP lacks most Unicode characters.)</p>
-<p>Use the View&nbsp;>&nbsp;Font... command to select a font from your system, which will be remembered from session to session. It would be a very bad idea to use anything but a monospaced font.</p>
+It uses a monospaced font, defaulting to Deja Vu Mono when available
+or to Courier New.
+Use the View&nbsp;>&nbsp;Font... command to select a font from your system, which will be remembered from session to session. It would be a very bad idea to use anything but a monospaced font.</p>
 <p>Below the edit panel is a status area where activity messages appear
 from time to time. Bottom center is a line-number field displaying the
 line number of the edit cursor. Type a new number in
 that field and press Return to jump to a different line. Further to the
 right is a progress bar that shows the status of some long-running operations.</p>
 <h3>Selecting Text</h3>
-<p>Select text
-by dragging, or by click then shift-click, or by doubleclick (word) or 
-tripleclick (line). Extend a selection by holding the shift key and
-using an arrow key. PPQT does not support rectangular selections or discontinuous selections.</p>
-<p>You can move text by dragging the selection, or copy text by alt-dragging; as well as by the usual copy and paste keystrokes and Edit menu commands.</p>
+<p>Select text as usual by dragging,
+or by click then shift-click,
+or by doubleclick (word) or  tripleclick (line).
+Extend a selection by holding the shift key and using an arrow key,
+or selecting a bookmark (see below).
+PPQT does not support rectangular selections or discontinuous selections.</p>
+<p>You can move text by dragging the selection, and
+you can copy text by alt-dragging,
+in addition to the usual copy and paste keystrokes and Edit menu commands.</p>
 <h3>Edit Keys</h3>
 <p>The Edit panel supports the following special keystrokes.</p>
 <h4>Cursor Movement Keys</h4>
-<ul>
-<li>up/dn/left/right arrows move the cursor one character or line.</li>
-<li>Home, also ctl-up: move to the top of text</li>
-<li>End, also ctl-dn: move to the bottom of text</li>
-<li>PgUp/PgDn: move one editor screen up or down</li>
-<li>ctl-left and ctl-right: move to the beginning or end of the line</li>
-<li>alt-left and alt-right: move one word left or right</li>
-</ul>
-<p>Add the shift key to any of these cursor moves to extend the selection by that amount.</p>
+The arrow keys, Home, End, PageUp and PageDown keys work together
+with the control key to move the edit cursor
+following the usual conventions for your operating system.
+Add the shift key to any cursor move to extend the selection by that amount.</p>
 <h4>Editing Keys</h4>
 <ul>
 <li>ctl-c/ctl-x/ctl-v: copy/cut/paste</li>
@@ -148,15 +200,28 @@ using an arrow key. PPQT does not support rectangular selections or discontinuou
 <ul>
 <li>ctl-hyphen: display text 1pt smaller</li>
 <li>ctl-+: display text 1pt larger</li>
-<li>ctl-1 through ctl-9: jump to bookmark 1-9</li>
 <li>ctl-alt-1 through ctl-alt-9: set bookmark 1-9 to cursor (bookmarks
 are saved in the metadata file)</li>
+<li>ctl-1 through ctl-9: jump to bookmark 1-9</li>
+<li>ctl-shift-1 through ctl-shift-9: extend selection to bookmark 1-9.
+(Note to Mac users: cmd-shift-3 is "capture screen" and cmd-shift-4 is "capture selection". If you want to use these as bookmark 3 or 4 with selection, go to System Preferences, Keyboard, Keyboard shortcuts, click on Screen Shots,
+and disable these two keys.</li>
 </ul>
+<h4 id='ContextMenu'>Context Menu</h4>
+<p>Right-click (Mac: <b>control</b>-click) anywhere in the Edit pane to 
+bring up a context menu with some edit commands. If the current
+selection is a single word, this context menu has an item that will
+enter that word in the good-words list; see <a href='#Spellcheck'>Spellcheck</a>. This cannot be undone (except by editing the meta file).
 <h2 id='Scannos'>Scanno Highlighting</h2>
-<p>Use the File > Scannos menu command to load a file of scannos: a text file with one word per line (e.g. <tt>extras/en-common</tt>). The scannos file may be a UTF file (suffix of <tt>.utf</tt>). The same file will be re-loaded each time PPQT is restarted, if it can be found.</p>
+<p>Use the File > Scannos menu command to load a file of scannos: a text file with one word per line (e.g. <tt>extras/en-common</tt>). (You can use any
+of the filename or suffix rules listed <a href='#Encodings'>above</a> to indicate the encoding of the scannos file.)</p>
+<p>The path to the scannos file is remembered from session to session and it is re-loaded each time PPQT is restarted, if it can be found.</p>
 <p>Use the View > Scannos menu command to turn on scanno highlighting. This puts a lilac background on any word that appears in the scannos file. Be patient when initiating scanno highlighting, it may tie up PPQT for several seconds in a large book.</p>
 <h2 id='Spellcheck'>Spellcheck</h2>
-<p>PPQT looks for a file <tt>good_words.</tt> (<tt>txt</tt> or <tt>utf</tt>) when it opens the text for the first time, and loads its contents. It looks for a file <tt>bad_words.</tt> (<tt>txt</tt> or <tt>utf</tt>)  also. These lists of "good" and "bad" words are saved in the metadata file thereafter. More "good" words can be added from the <a href='#Words'>Words panel</a>.</p>
+<p>When PPQT opens a book for the first time (no <tt>.meta</tt> file exists), it looks in the same folder for a file whose name begins with <tt>good_words</tt>
+and loads its contents. It looks for a file whose name begins with <tt>bad_words</tt> also. You can use any
+of the filename or suffix rules listed <a href='#Encodings'>above</a> to indicate the encoding of these files.</p>
+<p>These lists of "good" and "bad" words are saved in the metadata file thereafter. More "good" words can be added from the <a href='#Words'>Words panel</a> or with the <a href='#ContextMenu'>context menu</a>.</p>
 <p>Use View&nbsp;>&nbsp;Dictionary to select a dictionary for the main language of the book. This choice of main dictionary is remembered from session to session. Dictionaries for several languages are included; more can be added by a procedure documented elsewhere. After changing the main dictionary, click Refresh in the <a href='#Words'>Words panel</a> to re-check all spelling.</p>
 <p>When building or refreshing its metadata, PPQT checks all words for spelling. A "bad" word is assumed to be misspelt. A "good" word is assumed to be correct. Any word that is not in those lists is presented to the spell-checker for testing against the current dictionary.</p>
 <p>Use the View&nbsp;>&nbsp;Spelling command to turn on red-underlining of misspelt words. Be patient, this may lock up PPQT for several seconds in a large book.</p>
@@ -242,15 +307,12 @@ repeat that operation, click the button. All the find/replace
 controls are returned to the stored settings.
 The button contents are remembered from session to session.</p>
 <p>To clear the contents of a button, right-click it, clear the label field to empty, and click OK.</p>
-<p>To save the button settings to a file, select File&nbsp;&gt;&nbsp;Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (so a suffix of .utf is a good idea). In the saved file each non-empty button is represented in text form. (Feel free to edit it.)</p>
-<p>To load button settings from a file, select File&nbsp;>&nbsp;Load Find Buttons.
-Any valid button definitions in the file are assigned to the buttons.
-Rather strict controls are applied but no diagnostics are issued; an invalid
-button definition is just silently ignored.</p>
+<p>To save the button settings to a file, select File&nbsp;&gt;&nbsp;Save Find Buttons. Provide the name and location for the saved file, which will be saved with UTF-8 encoding (a suffix of <tt>.utf</tt> is a good idea). In the saved file each non-empty button is represented in text form. (Feel free to edit it.)</p>
+<p>To load button settings from a file, select File&nbsp;>&nbsp;Load Find Buttons and choose a file of saved buttons. The file's encoding can be indicated by the name or suffix, or will be assumed to be UTF-8. Any valid button definitions in the file are assigned to the buttons. Rather strict controls are applied but no diagnostics are issued; an invalid button definition is just silently ignored.</p>
 <p>
 The intent of saving and loading buttons is to be able to save
 and re-use complex search operations, and exchange them with other
-users. See the<a href='#Extras'>Extras</a> folder in the PPQT folder for some saved button definitions and a note on the format of a file of saved buttons.</p>
+users. See the <a href='#Extras'>Extras</a> folder in the PPQT folder for some saved button definitions and a note on the format of a file of saved buttons.</p>
 <h3>Regex Syntax</h3>
 <p>The Regular Expression (regex) support provided by Qt4 is similar to, but has fewer features than, the Perl regexes used in guiguts. (Qt version 5, planned for 2013, has better support.) The following forms are used to match text.</p>
 <table border='1' style='border-collapse:collapse;'>
@@ -343,7 +405,14 @@ for example <tt>Aa---X</tt>. These codes contain, from left to right:
 </ul>
 </ul>
 Click on any column to sort on that column. Set the Respect Case
-checkbox to decide if the Word column sort is case-sensitive.</p>
+checkbox to decide if the Word column sort is case-sensitive.
+When the table is large you can quickly locate words beginning with
+a particular letter. With the keyboard focus is in the Words panel
+and the table sorted ascending on the first column, key the
+initial letter you want. The table scrolls to show the first word
+beginning with that letter. The jump is case-sensitive when the 
+Respect Case switch is checked; that is, use shift-E to find words
+beginning with uppercase E.</p>
 <p>Double-click a word to copy that word into the paste buffer, load the word in the Find text, and do a First search to highlight the first use of the word in the document.</p>
 <p>
 After the text is edited the table is out of date.
