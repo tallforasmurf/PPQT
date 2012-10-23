@@ -112,8 +112,10 @@ class tricorder():
         self.mainWindow = None # ref to main window
 
         # Pointers initialized in pqMain to various major objects
-        self.bookPath = None # path to book file
+        self.bookPath = None # absolute path to book file
+        self.bookDirPath = None # absolute path to book directory
         self.bookType = None # book file suffix used to detect .hmt(l)
+        self.bookSaveEncoding = None # encoding for saves: UTF-8 or ISO-8859-1
         self.fontFamily = None # last-chosen font
         self.fontSize = 12 # last-chosen font size in Edit panel
         self.pngPanel = None # ref to Pngs panel
