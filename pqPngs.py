@@ -43,7 +43,8 @@ the size hint of the pixmap; it scales, and the parent scrollarea scrolls.
 
 The method cursorMoved() is connect to the cursorPositionChanged signal emitted
 by the editor. It gets the current position, looks it up in IMC.pageTable,
-gets the filename and IMC.bookPath to give to the load method of QPixMap.
+and passes the filename and path to the load method of QPixMap. The path
+comes from the pqMain's docHasChanged signal.
 
 N.B. there is a cryptic comment in the QPixmap doc page that "QPixmaps are
 automatically added to the QPixmapCache when loaded from a file." This seems
