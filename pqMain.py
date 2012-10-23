@@ -34,9 +34,13 @@ editor on the left, tabs on the right. Create menus and menu actions.
 Most of this is based on code from Summerfield's book, without which not.
 
 '''
+ # used in detecting encodings of ambiguous files
+import io 
+from chardet.universaldetector import UniversalDetector
+
 from PyQt4.QtCore import ( pyqtSignal, Qt,
     QFile, QFileInfo, QDir,
-    QIODevice, QPoint, QSize,
+    QIODevice, QPoint, QRegExp, QSize,
     QSettings,
     QString, QStringList,
     QTextStream,
@@ -49,12 +53,13 @@ from PyQt4.QtGui import (
     QFont, QFontDialog, QFontInfo,
     QFrame,
     QKeySequence,
-    QMainWindow,QMenuBar,
+    QMainWindow, QMenu, QMenuBar,
     QMessageBox,
     QSizePolicy,
     QSplitter,
     QStatusBar,
-    QTabWidget)
+    QTabWidget,
+    QTextCursor)
 
 import pqEdit
 import pqPngs
@@ -80,15 +85,20 @@ class MainWindow(QMainWindow):
         IMC.mainWindow = self # give other panels our address during init
         # -----------------------------------------------------------------
         # Set up the file paths and related stuff used by our methods:
-        #  * self.bookFile is the full path to the current document; when
-        #    bookFile.isEmpty() there is no current document.
-        self.bookFile = QString()
-        #  * IMC.bookPath is the leading part of bookFile, used to
+        #  * IMC.bookPath is the full path to the current document; when
+        #    IMC.bookPath.isEmpty() there is no current document.
+        IMC.bookPath = QString()
+        #  * IMC.bookDirPath is the leading part of bookFile, used to
         #    look for pngs, goodwords etc, and to start open/save dialogs.
-        self.bookPath = QString()
-        IMC.bookPath = self.bookPath # for use in other modules
+        IMC.bookDirPath = QString()
         #  * IMC.bookType is the file suffix, for those who care.
         IMC.bookType = QString()
+        #  * character detector object used when opening an ambiguous file
+        self.charDetector = None # instantiated when first needed
+        self.utfEncoding = u'UTF-8' # handy consts
+        self.ltnEncoding = u'ISO-8859-1'
+        #  * IMC.saveEncoding is the encoding ID as a python string
+        IMC.saveEncoding = self.utfEncoding
         # Recall a scannoPath if we had one, else get a default empty QString
         # See closeEvent() below for how this and other settings are saved.
         self.scannoPath = IMC.settings.value("main/scannoPath",
@@ -235,8 +245,21 @@ class MainWindow(QMainWindow):
         # Their shortcuts are always active.
         fileNewAction = self.createAction("&New...", None, self.fileNew,
                 QKeySequence.New, "Clear to an empty state")
-        fileOpenAction = self.createAction("&Open...", None, self.fileOpen,
+        fileOpenAction = self.createAction("&Open...", None, 
+                lambda : self.fileOpen(None),
                 QKeySequence.Open, "Open a book and its metadata")
+        fileOpenWithUTF = self.createAction("Open UTF-8", None,
+                lambda : self.fileOpen(u'UTF-8'),
+                None, "Open a book encoded UTF-8")
+        fileOpenWithLTN = self.createAction("Open Latin-1", None,
+                lambda : self.fileOpen(u'ISO-8859-1'),
+                None, "Open a book encoded ISO-8859-1")
+        fileOpenWithWIN = self.createAction("Open CP1252", None,
+                lambda : self.fileOpen(u'CP1252'),
+                None, "Open a book encoded Windows CP1252")
+        fileOpenWithMAC = self.createAction("Open MacRoman", None,
+                lambda : self.fileOpen(u'macintosh'),
+                None, "Open a book encoded Mac Roman")
         fileSaveAction = self.createAction("&Save", None, self.fileSave,
                 QKeySequence.Save, "Save the book and metadata")
         fileSaveAsAction = self.createAction("Save &As...", None,
@@ -252,13 +275,20 @@ class MainWindow(QMainWindow):
                 QKeySequence.Quit, "Close the application")
         # -----------------------------------------------------------------
         # Create the File menu but don't populate it yet. We do that on the
-        # fly, adding recent files to it. Save the prepared actions as a tuple
+        # fly, adding recent files to it. Save the prepared actions as tuples
         # for convenient use when it is time to populate the menu.
         self.fileMenu = self.menuBar().addMenu("&File")
-        self.fileMenuActions = (fileNewAction, fileOpenAction,
-                fileSaveAction, fileSaveAsAction, fileScannosAction,
-                fileButtonLoadAction, fileButtonSaveAction, None, 
-                fileQuitAction)
+        # actions preceding the open with encoding submenu
+        self.fileMenuActions1 = (fileNewAction, fileOpenAction)
+        self.openWithMenu = QMenu("Open With Encoding")
+        self.openWithMenu.addAction(fileOpenWithUTF)
+        self.openWithMenu.addAction(fileOpenWithLTN)
+        self.openWithMenu.addAction(fileOpenWithWIN)
+        self.openWithMenu.addAction(fileOpenWithMAC)
+        # actions following the open with encoding submenu
+        self.fileMenuActions2 = (fileSaveAction, fileSaveAsAction,
+                                 fileScannosAction, fileButtonLoadAction,
+                                 fileButtonSaveAction, None, fileQuitAction)
         # Recall our list of recently-opened files from saved settings.
         self.recentFiles = IMC.settings.value("main/recentFiles",
                             QVariant(QVariant.StringList)).toStringList()
@@ -390,10 +420,13 @@ class MainWindow(QMainWindow):
     def updateFileMenu(self):
         self.fileMenu.clear()
         # add all our file actions except the last, Quit, to the menu
-        self.addActions(self.fileMenu, self.fileMenuActions[:-1])
-        current = None if self.bookFile.isEmpty() else self.bookFile
+        self.addActions(self.fileMenu, self.fileMenuActions1)
+        self.fileMenu.addMenu(self.openWithMenu)
+        self.addActions(self.fileMenu, self.fileMenuActions2[:-1])
+        current = None if IMC.bookPath.isEmpty() else IMC.bookPath
         # make a list of recent files, excluding the current one and
         # any that might have been deleted meantime.
+        current = None if IMC.bookPath.isEmpty() else IMC.bookPath
         recentFiles = QStringList()
         for fname in self.recentFiles:
             if fname != current and QFile.exists(fname):
@@ -548,46 +581,136 @@ class MainWindow(QMainWindow):
         return True
     
     # -----------------------------------------------------------------
-    # Choose the correct I/O codec based on the file suffix of current doc.
-    # Return a name string accepted by QTextStream.setCodec().
-    # .txt, .ltn, .asc -- "latin1"
-    # .win -- "cp1252"
-    # .mac -- "macintosh"
-    # .utf -- "UTF-8"
-    # We depend on the user to know the encoding of an input file, and the
-    # desired encoding of an output file. On input we convert anything to
-    # unicode, with incorrect substitutions if the wrong codec is chosen.
-    # On output, any document chars that cannot be represented in the target
-    # codec will be written as "?"s. No errors are raised in either case.
-    # (In particular we have no way to enforce 7-bit ascii output. Qt does
-    # not provide such a codec. You must use "latin1" but ensure that no
-    # chars >127 are in the file; see the character census view.)
-    # TODO: File submenu "Open with encoding" > list of encodings would be
-    # a good addition.
+    # Infer the correct I/O codec for a file based on the filename.suffix
+    # and, for input files and only when necessary, based on file contents. 
+    # Return a name string accepted by QTextStream.setCodec(), or None if
+    # the codec cannot be determined.
+    #
+    # The input is a QFileInfo for the file of interest, a QFileInfo for
+    # its .meta file if there is one (a null QFileInfo if none), and a boolean
+    # forInput = True if the file is being loaded, not saved.
+    #
+    # PG wants etexts to be suffixed .txt regardless of their encoding!
+    # It is optional to end the filename with -u[tf[8]] to indicate UTF or
+    # -l[tn[1]] to indicate Latin-1. Without that flag it could be US-ASCII,
+    # ISO-8859-1, UTF-8 or UTF-16 or who knows what.
+    #
+    # We look for the name-flags first. Then, if the suffix is .htm[l] and
+    # the file is for input, we look in the first 1024 bytes for a charset=
+    # parameter and if found, return what that says. Otherwise, HTML defaults
+    # to UTF-8, per the W3 standards website.
+    #
+    # Then we look for some file suffixes that PG does not support, but which
+    # are convenient for local uses:
+    #  .ltn -- "ISO 8859-1"  when you know that's what you have or want
+    #  .utf or .utx -- "UTF-8"  convenient for good_words and scanno files.
+    #  .win -- "cp1252"      for input only, when you know that's what you got
+    #  .mac -- "macintosh"   for input only, when you know that's what you got
+    #
+    # Failing all that (no flag in the name, suffix is .txt or unknown), if the
+    # file is for input, open it in python as a byte stream and feed up to 4k
+    # of it to the chardet package. If it comes up >= 90% confidence, return
+    # that string. Else return None.
     
-    def codecFromFileSuffix(self, path=None):
-        fp = (self.bookFile if path is None else path)
-        sfx = QFileInfo(fp).suffix()
-        if sfx == u"utf" : return "UTF-8"
-        if sfx == u"win" : return "cp1252"
-        if sfx == u"mac" : return "macintosh"
-        if sfx == u"isr" : return "cp1255"
-        if sfx == u"cyr" : return "cp1251"
-        if sfx == u"kir" : return "KOI8-R"
-        if sfx == u"kiu" : return "KOI8-U"
-        return "latin1" # for .txt, .ltn, .htm(l) and unknown
-    
+    def inferTheCodec(self, fileInfo, metaInfo, forInput):
+        # the quickest and easiest test is for a -u or -l flag in the filename.
+        fileName = fileInfo.fileName() # const QString name
+        utfRE = QRegExp(u'-(u|utf|utf8)\.')
+        if utfRE.indexIn(fileName) > -1 :
+            return self.utfEncoding # filename ends in -u[tf[8]]. 
+        ltnRE = QRegExp(u'-(l|ltn|ltn1)\.')
+        if ltnRE.indexIn(fileName) > -1 :
+            return self.ltnEncoding # filename ends in -l[tn[1]]
+        # if the file was saved by us there is a .meta file. Somewhere in the
+        # first few lines of that should be {{ENCODING FOOBAR}}. If we find
+        # that, return FOOBAR.
+        if forInput and metaInfo.exists() :
+            (mStream, mHandle) = self.openSomeFile(
+                metaInfo.absoluteFilePath(), QIODevice.ReadOnly, 'UTF-8' )
+            if mStream is not None :
+                metaRE = QRegExp(u'''\{\{ENCODING ([\w\-\_\d]+)\}\}''')
+                mqs = mStream.read(512)
+                mHandle.close()
+                if metaRE.indexIn(mqs) > -1 :
+                    return metaRE.cap(1)
+        # Alright let's look at file suffixes, starting with htm[l]
+        fileSuffix = fileInfo.suffix()
+        if fileSuffix == 'htm' or fileSuffix == 'html' or fileSuffix == 'xml':
+            # The HTML 4, 5, and XHTML standards say page files should be UTF-8
+            # and if not, must have a charset= or encoding= parameter within
+            # the first 1024 bytes, eg: <?xml version="1.0" encoding="UTF-8"?>
+            # <meta charset="UTF-8"> <meta... content="text/html;charset=UTF-8">
+            # So now look for that either on disk (forInput) or in memory.
+            if forInput :
+                # html file on disk: read 1K of it (as UTF which includes ascii)
+                (htmStream, htmHandle) = self.openSomeFile(
+                    fileInfo.absoluteFilePath(), QIODevice.ReadOnly, self.utfEncoding )
+                if htmStream is None :
+                    return None # couldn't open it, as forInput it fails
+                htmqs = htmStream.read(1024) # grab first 1K
+                htmHandle.close()
+            else :
+                # html file in memory. get access to its first 1K from the
+                # editor document.
+                doc = IMC.editWidget.document()
+                tc = QTextCursor(doc)
+                tc.setPosition(0)
+                tc.setPosition(min(1024,doc.characterCount()),
+                               QTextCursor.KeepAnchor)
+                htmqs = tc.selectedText()
+            # The encoding names are specified to be from the IANA registry
+            # (http://www.iana.org/assignments/character-sets) which shows that
+            # there are no names with embedded spaces. So the regex can use
+            # a space, quote or > as a terminal marker.
+            htmRE = QRegExp(u'''(charset|encoding)\s*=\s*['"]?([\w\-\_\d]+)[;'">\s]''')
+            if htmRE.indexIn(htmqs) > -1 :
+                    return unicode(htmRE.cap(2))
+            # no charset parameter seen. Return the W3 standard encoding for HTML.
+            return self.utfEncoding 
+        # OK, look for useful suffixes PG doesn't support but we do.
+        if fileSuffix == u'utf' or fileSuffix == u'utx' :
+            return self.utfEncoding
+        if fileSuffix == u'ltn' :
+            return self.ltnEncoding
+        if fileSuffix == u'win' :
+            return u'cp1252'
+        if fileSuffix == u'mac' :
+            return u'macintosh'
+        # Unhelpful file name and suffix. If this is an output file we can 
+        # infer nothing more so let's default to UTF8.
+        if not forInput :
+            return self.utfEncoding
+        # The file is supposed to exist, so let us grab some of it as raw
+        # bytes, shove it into the decoder and see if it can tell anything.
+        if self.charDetector is None : # first time this session
+            self.charDetector = UniversalDetector() # create bulky object
+        self.charDetector.reset() # reset detector
+        try:
+            pyfile = io.open(unicode(fileInfo.absoluteFilePath()),'rb')
+        except:
+            return None # didn't open, can't tell encoding
+        # file is open, read some of it and decode it.
+        self.charDetector.feed(pyfile.read(4096))
+        pyfile.close()
+        result = self.charDetector.close()
+        if ('confidence' in result) : # detector is working
+            if result['confidence'] > 0.85 : # detector is confident
+                return result['encoding']
+        # The detector isn't confident and neither are we.
+        return None
+
     # -----------------------------------------------------------------
-    # Take care of opening a file for input or output, with appropriate
+    # Take care of opening any file for input or output, with appropriate
     # error messages. Input is the complete file path as a QString,
     # the open mode from QIODevice, and the id string for the codec.
-    # Allow for an input file that doesn't exist. Return a tuple:
-    #   on success, (handles of the open QTextStream of the file)
+    # Allow for an input file that doesn't exist (as a convenience to 
+    # loadFile, which uses this code to test for it). Return a tuple:
+    #   on success, (handle of the open QTextStream, handle of the file)
     #   on failure, (None, None)
     def openSomeFile(self, path, mode, codec):
         filehandle = QFile(path)
         if mode == QIODevice.ReadOnly :
-            if not filehandle.exists() :
+            if not filehandle.exists() or codec is None:
                 return (None, None)
         try:
             if not filehandle.open(mode):
@@ -604,9 +727,9 @@ class MainWindow(QMainWindow):
         return (streamhandle, filehandle)
 
     # -----------------------------------------------------------------
-    # This is the target of a File menu action based on the name of a recent
+    # This is the target of a File menu action based on the name of a previous
     # file. Get the path from the user data field of the event. Make sure we
-    # save a modified doc. That done, set the bookFile and do loadFile().
+    # save a modified doc. That done, call loadFile().
     def recentFile(self):
         action = self.sender() # QObject method for the invoking action of a slot
         if isinstance(action, QAction): # it was an action not something else?
@@ -617,103 +740,174 @@ class MainWindow(QMainWindow):
             if not self.ohWaitAreWeDirty():
                 return # dirty doc & user said cancel or save failed
             else:
-                self.bookFile = fname
-                self.loadFile()
+                self.loadFile(fname, None)
     
     # -----------------------------------------------------------------
-    # File>Open clicked. Make sure to save a working file. Ask the user for a
-    # file to open. The starting directory for the dialog is either the 
-    # folder for the current book, or '.' if there is no current book.
-    # If a path is select, pass it to loadFile().
-    def fileOpen(self):
+    # This is the action slot for the File>Open and File>Open With Encoding
+    # menu commands. (Actually, the slots for the five 'triggered' signals are
+    # lambdas that call this with the appropriate encoding parameter.)
+    # An encoding id is passed when known, or None.
+    # Make sure to save a working file. Ask the user for a file.
+    # The starting directory for the dialog is the folder for the current book,
+    # or '.' if there is none. If a path is selected, pass it to loadFile().
+    def fileOpen(self, encoding = None):
         if not self.ohWaitAreWeDirty():
-            return False # dirty doc & user said cancel or save failed
-        startdir = (QString(".") if self.bookPath.isEmpty() else self.bookPath)
-        bookname = QFileDialog.getOpenFileName(self,
-                "PPQT - choose a book file to edit",
-                startdir)
+            return False # dirty doc & user said cancel, or save failed
+        startdir = (QString(".") if IMC.bookPath.isEmpty() else IMC.bookPath)
+        msg = "PPQT - choose a book file to open"
+        if encoding is not None :
+            msg = "PPQT - choose book encoded {0} to open".format(encoding)
+        bookname = QFileDialog.getOpenFileName(self,msg,startdir)
         if not bookname.isEmpty(): # user selected a file, we are "go"
-            self.bookFile = bookname
-            self.loadFile()
-            self.addRecentFile(self.bookFile)
+            self.loadFile(bookname, encoding)
+            self.addRecentFile(IMC.bookPath)
     
     # -----------------------------------------------------------------
-    # Heart of opening a document: File>Load or File>recent-file-name have
-    # loaded self.bookFile with the desired file path. Get that and
-    # its related meta, good_words, and bad_words files as text streams
-    # and pass them to the editor for loading.
-    def loadFile(self):
-        # Use Qt's facilities, rather than Pythons os module, to get the
-        # absolute path and the directory path.
-        finf = QFileInfo(self.bookFile)
-        self.bookPath = finf.absolutePath()
-        qdir = QDir(self.bookPath)
-        # By invoking QFileInfo with a directory path and a filename, we can
-        # get info on files without having to know if it's Unix or Windows.
-        # !! this has to change: get-codec has to work for these too
-        gwinf = QFileInfo(qdir,QString(u"good_words.txt"))
-        if not gwinf.exists():
-            gwinf = QFileInfo(qdir,QString(u"good_words.utf"))
-        # !! this has to change: get-codec has to work for these too
-        gwpath = gwinf.absoluteFilePath()
-        bwinf = QFileInfo(qdir,QString(u"bad_words.txt"))
-        if not bwinf.exists():
-            bwinf = QFileInfo(qdir,QString(u"bad_words.utf"))
-        bwpath = bwinf.absoluteFilePath()
-        self.setWindowTitle("PPQT - loading...")
-        (bookStream, bfh) = self.openSomeFile(self.bookFile,
-                    QIODevice.ReadOnly, self.codecFromFileSuffix())
-        # If the book file at least opened, we can proceed.
+    # Heart of opening a document: called by way of the File menu actions
+    # Open, Open With Encoding, and recent-file-name. Each passes the path
+    # to the book and the encoding when known. Locate the book file and its
+    # associated .meta, good_words, and bad_words files. Learn or infer the
+    # proper codec for each. Open them as text streams. Finally, pass the
+    # streams to the Edit module for actual loading.
+    #
+    # We use the Qt file API because it is convenient and platform-independent.
+    # The Python io module is pretty nearly as nice, but QFileInfo is a very
+    # convenient way to learn about a file, and QDir a great way to get names,
+    # without any platform dependency. NB: QFile(None).exist() ==> False
+    
+    def loadFile(self, path, encoding):
+        bookInfo = QFileInfo(path)
+        # Note the complete path to the book directory. note the difference:
+        # bookInfo.absoluteFilePath includes the filename, absolutePath 
+        # is only the path through the directory.
+        bookPath = bookInfo.absoluteFilePath()
+        bookDirPath = bookInfo.absolutePath()
+        bookDir = QDir(bookDirPath)
+        # find the .meta file if it exists.
+        metaInfo = QFileInfo(QString(unicode(IMC.bookPath) + u'.meta'))
+        # Get the encoding if we weren't told it
+        if encoding is None:
+            encoding = self.inferTheCodec(bookInfo,metaInfo,True)
+        if encoding is None: # cannot infer an encoding
+            pqMsgs.warningMsg(
+                u'Cannot guess the encoding of '+unicode(bookInfo.fileName()),
+                u'Please change the name or use File>Open With Encoding')
+            return
+        # Find the good_words and bad_words files without requiring suffixes.
+        # Sort the list by type-reversed, so if there is more than one of that
+        # name, we will get good_words.utf before good_words.bak. Filter is
+        # good_words*.* so you could make good_words-utf.txt and we will find it.
+        bookDir.setFilter(QDir.Files | QDir.Readable)
+        bookDir.setSorting(QDir.Type | QDir.Reversed)
+        bookDir.setNameFilters( QStringList( QString( u'good_words*.*') ) )
+        listOfFiles = bookDir.entryList()
+        goodwordsEncoding = None
+        goodwordsPath = None
+        if listOfFiles.count() > 0 : # at least one good_words*.*
+            goodwordsPath = bookDir.absoluteFilePath(listOfFiles[0]) # the alpha-last one
+            goodwordsEncoding = self.inferTheCodec(
+                QFileInfo(goodwordsPath),QFileInfo(),True)
+        bookDir.setNameFilters( QStringList( QString( u'bad_words*.*') ) )
+        listOfFiles = bookDir.entryList()
+        badwordsEncoding = None
+        badwordsPath = None
+        if listOfFiles.count() > 0 : # at least one bad_words*.*
+            badwordsPath = bookDir.absoluteFilePath(listOfFiles[0]) # the alpha-last one\
+            badwordsEncoding = self.inferTheCodec(
+                QFileInfo(badwordsPath),QFileInfo(),True)
+        # OK we have all the ducks in a row, get serious about this.
+        (bookStream, bookHandle) = self.openSomeFile(
+                    bookInfo.absoluteFilePath(), QIODevice.ReadOnly, encoding)
+        # If the book file, at least, opened, we can proceed.
         if bookStream is not None :
-            (metaStream, mfh) = self.openSomeFile(self.bookFile + u".meta",
-                        QIODevice.ReadOnly, "UTF-8")
-            # !!!! This has to change, codec from contents
-            (goodStream, gfh) =self.openSomeFile(gwpath,QIODevice.ReadOnly,"UTF-8")
-            # !!!! This has to change, codec from contents
-            (badStream, xfh) = self.openSomeFile(bwpath,QIODevice.ReadOnly,"UTF-8")
+            self.setWindowTitle("PPQT - loading...")
+            (metaStream, metaHandle) = self.openSomeFile(
+                    metaInfo.absoluteFilePath(), QIODevice.ReadOnly, "UTF-8")
+            (goodStream, goodHandle) =self.openSomeFile(
+                    goodwordsPath, QIODevice.ReadOnly, goodwordsEncoding)
+            (badStream, badHandle) = self.openSomeFile(
+                    badwordsPath, QIODevice.ReadOnly, badwordsEncoding)
             # emit signal to any panels that care before the edit window changes.
-            self.emit(SIGNAL("docWillChange"),self.bookFile)
+            self.emit(SIGNAL("docWillChange"),IMC.bookPath)
             # tell the editor to clear itself in preparation for loading.
             self.editor.clear()
+            IMC.notesEditor.clear()
             try:
                 self.editor.load(bookStream, metaStream, goodStream, badStream)
-                self.setWindowTitle(u"PPQT - {0}[*]".format(finf.fileName()))
-                IMC.bookPath = self.bookPath
-                IMC.bookType = finf.suffix()
+                self.setWindowTitle(u"PPQT - {0}[*]".format(bookInfo.fileName()))
+                IMC.bookDirPath = bookDirPath
+                IMC.bookPath = bookPath
+                IMC.bookType = bookInfo.suffix()
+                # if the encoding is Latin-1, save as that. Any other, use UTF
+                if encoding == self.ltnEncoding :
+                    IMC.bookSaveEncoding = encoding
+                else :
+                    IMC.bookSaveEncoding = self.utfEncoding
             except (IOError, OSError), e:
                 pqMsgs.warningMsg(u"Error during load: {0}".format(e))
                 self.setWindowTitle(u"PPQT - new file[*]")
             finally:
-                bfh.close()
-                if metaStream is not None: mfh.close()
-                if goodStream is not None: gfh.close()
-                if badStream is not None: xfh.close()
-                self.emit(SIGNAL("docHasChanged"),self.bookFile)
+                bookHandle.close()
+                if metaStream is not None : metaHandle.close()
+                if goodStream is not None : goodHandle.close()
+                if badStream is not None : badHandle.close()
+                self.emit(SIGNAL("docHasChanged"),bookPath)
+                self.setWinModStatus() # notice if metadata changed
         # else: we didn't get a book file, so nothing has changed, the editor
         # was not cleared and the window title hasn't changed.
 
     # -----------------------------------------------------------------
+    # File > New comes here. Check for a modified file, then tell the editor
+    # to clear, and clear our filepath info.
+    def fileNew(self):
+        if not self.ohWaitAreWeDirty():
+            return False # dirty doc & user said cancel or save failed
+        self.emit(SIGNAL("docWillChange"),QString())
+        # the following clears IMC.needMetadataSave etc
+        self.editor.clear()
+        IMC.notesEditor.clear()
+        self.emit(SIGNAL("docHasChanged"),QString())
+        IMC.bookPath = QString()
+        IMC.bookDirPath = QString()
+        IMC.bookType = QString()
+        IMC.bookSaveEncoding = u'UTF-8'
+        self.setWindowTitle("PPQT - new file[*]")
+        self.setWinModStatus() # notice if metadata changed
+
+    # -----------------------------------------------------------------
     # File>Save clicked, or this is called from ohWaitAreWeDirty() above.
-    # If we don't know a bookFile we must be working on a New: go to Save As
+    # If we don't know a bookFile we must be working on a New, so call Save As
     # (which will recurse to here after it gets a file path).
     # Otherwise, try to open bookFile and bookFile+".meta" for writing,
     # and pass them to the editor to do the save. Trap any errors it gets.
     def fileSave(self):
-        if self.bookFile.isEmpty():
+        if IMC.bookPath.isEmpty():
             return self.fileSaveAs()
-        # !!!! this changes: codec from IMC
-        (bookStream, bfh) = self.openSomeFile(self.bookFile,
-                    QIODevice.WriteOnly, self.codecFromFileSuffix() )
-        (metaStream, mfh) = self.openSomeFile(self.bookFile + ".meta",
-                    QIODevice.WriteOnly, "UTF-8")
+        bookInfo = QFileInfo(IMC.bookPath)
+        metaInfo = QFileInfo(QString(unicode(IMC.bookPath) + u'.meta'))
+        bookEncoding = self.inferTheCodec(bookInfo,metaInfo,False)
+        if bookEncoding is None :
+            bookEncoding = IMC.bookSaveEncoding
+        if bookEncoding != self.utfEncoding and bookEncoding != self.ltnEncoding :
+            if pqMsgs.okCancelMsg(
+                u'Cannot save to {0} encoding'.format(bookEncoding),
+                u'Click OK to save in UTF-8') :
+                bookEncoding = self.utfEncoding
+            else :
+                return False
+        (bookStream, bfh) = self.openSomeFile(bookInfo.absoluteFilePath(),
+                    QIODevice.WriteOnly, bookEncoding )
+        (metaStream, mfh) = self.openSomeFile(metaInfo.absoluteFilePath(),
+                    QIODevice.WriteOnly, self.utfEncoding)
         if (bookStream is not None) and (metaStream is not None) :
             try:
+                IMC.bookSaveEncoding = bookEncoding
                 # the following clears IMC.needMetadataSave and the document
                 # modified flags in edit and notes documents, as well as
                 # triggering setWinModStatus above.
                 self.editor.save(bookStream, metaStream)
                 retval = True # success
-                self.addRecentFile(self.bookFile)
+                self.addRecentFile(IMC.bookPath)
             except (IOError, OSError), e:
                 QMessageBox.warning(self, "Error on output: {0}".format(e))
                 retval = False
@@ -728,43 +922,24 @@ class MainWindow(QMainWindow):
     # apply it.
     
     def fileSaveAs(self):
-        startPath = QString(".") if self.bookPath.isEmpty() else self.bookPath
+        startPath = QString(".") if IMC.bookDirPath.isEmpty() else IMC.bookDirPath
         savename = QFileDialog.getSaveFileName(self,
                 "Save book text As", startPath)
         if not savename.isEmpty():
-            # !!! need to check encoding versus filename/extension
-            self.bookFile = savename
             finf = QFileInfo(savename)
-            self.bookPath = finf.path()
-            IMC.bookPath = self.bookPath
+            IMC.bookPath= finf.absoluteFilePath()
+            IMC.bookDirPath = finf.absolutePath()
+            IMC.bookType = finf.suffix()
             self.setWindowTitle("PPQT - {0}[*]".format(finf.fileName()))
             # with file path set up, we can go on to the real Save
             return self.fileSave()
         # oops, user cancelled out of the dialog
         return False
-
-    # -----------------------------------------------------------------
-    # File > New comes here. Check for a modified file, then tell the editor
-    # to clear, and clear our filepath info.
-    def fileNew(self):
-        if not self.ohWaitAreWeDirty():
-            return False # dirty doc & user said cancel or save failed
-        self.emit(SIGNAL("docWillChange"),QString())
-        # the following clears IMC.needMetadataSave
-        self.editor.clear()
-        IMC.notesEditor.clear()
-        self.emit(SIGNAL("docHasChanged"),QString())
-        self.bookPath = QString()
-        IMC.bookPath = self.bookPath
-        self.filePath = QString()
-        self.bookFile = QString()
-        self.setWindowTitle("PPQT - new file[*]")
     
     # -----------------------------------------------------------------
     # File>Scanno clicked. Ask the user for a file to open and if one is given,
     # store it as self.scannoPath, open it, and use it to load IMC.scannoList.
-    # If we know a scannoPath, use that as the starting directory in the
-    # dialog. Do not pass a list of file extensions.
+    # If we know a scannoPath, use that as the starting directory.
         
     def scannoOpen(self):
         startdir = (QString(".") if self.scannoPath.isEmpty() else self.scannoPath)
@@ -776,60 +951,74 @@ class MainWindow(QMainWindow):
             self.scannoLoad()
 
     # -----------------------------------------------------------------
-    # Called during initialization and from scannoOpen, check that the
-    # scannoPath exists (probably, but perhaps the file was moved between
-    # PPQT sessions). Determine its file encoding. Load the list. Before
-    # loading the list, turn off the hilites if they are on. Clear the list
-    # so as not to get the superset of old and new lists (doh!).
+    # Called during initialization to load a scanno file from the settings,
+    # and from scannoOpen. Check that the scannoPath exists (probably, but
+    # perhaps the file was moved or deleted between sessions). Determine
+    # its file encoding. Clear the list so as not to get the superset of old
+    # and new lists (doh!). Turn off the hilites if they are on, so as not
+    # to leave residual purple marks (doh!). Load the list.
     # If the hilites were on, turn them back on to show new words.
+    
     def scannoLoad(self):
-        # !!! this must change to get codec
         scanno_sw = IMC.scannoHiliteSwitch
-        (sh, fh) = self.openSomeFile(self.scannoPath,
-                QIODevice.ReadOnly, self.codecFromFileSuffix(self.scannoPath))
+        if scanno_sw : # highlighting is on
+            # regardless of whether we can open the file, clear scannos now
+            self.viewSetScannos(False) # turn it off
+            IMC.scannoList.clear() # clear out the list
+        scannoInfo = QFileInfo(self.scannoPath)
+        scannoCodec = self.inferTheCodec(scannoInfo,QFileInfo(),True)
+        if scannoCodec is None :
+            # can't get the encoding (v. unlikely), just silently steal away
+            IMC.scannoHilitSwitch = False # make sure switch is off
+            return
+        # Could get the encoding, so try to open it.
+        (sh, fh) = self.openSomeFile(self.scannoPath, QIODevice.ReadOnly, scannoCodec)
         if sh is not None:
-            if scanno_sw :
-                self.viewSetScannos(False)
-            IMC.scannoList.clear()
             IMC.scannoList.load(sh)
             fh.close()
-            if scanno_sw :
-                self.viewSetScannos(True)
+            # new list is loaded,
+            if scanno_sw : # if highlighting was on,
+                self.viewSetScannos(True) # turn it on again
         else:
             if scanno_sw :
-                # We were showing hilites but the file isn't there
-                self.viewSetScannos(False)
-                IMC.scannoList.clear()
-            self.scannoPath.clear()
+                IMC.scannoHilitSwitch = False # make sure switch is off
 
     # -----------------------------------------------------------------
     # File> Load Find Buttons clicked. Ask the user for a file to open and
-    # if one is given, open it and pass the text stream to the Find panel
-    # loadUserButtons method. Start the search in the book folder, as we
-    # expect user buttons to be book-related.
+    # if one is given, get its codec and open it. Pass the text stream to the
+    # Find panel loadUserButtons method. Start the search in the book folder,
+    # as we expect user buttons to be book-related.
+    
     def buttonLoad(self):
-        startPath = QString(".") if self.bookPath.isEmpty() else self.bookPath
+        startPath = QString(".") if IMC.bookPath.isEmpty() else IMC.bookPath
         bfName = QFileDialog.getOpenFileName(self,
                 "PPQT - choose a file of saved user button definitions",
                 startPath)
-        if not bfName.isEmpty():
+        if not bfName.isEmpty(): # a file was chosen
+            bfInfo = QFileInfo(bfName)
+            bfCodec = self.inferTheCodec(bfInfo,QFileInfo(),True)
+            # if no codec inferred, very unlikely, just silently do nothing
             (buttonStream, fh) = self.openSomeFile(bfName,
-                                                   QIODevice.ReadOnly, "UTF-8")
+                                        QIODevice.ReadOnly, bfCodec)
             if buttonStream is not None:
                 IMC.findPanel.loadUserButtons(buttonStream)
                 fh.close()
 
     # -----------------------------------------------------------------
-    # File> Save Find Buttons clicked. Ask the user for a file to open and
-    # if one is given, open it for output and pass the stream to the Find
-    # panel saveUserButtons method.
+    # File> Save Find Buttons clicked. Ask the user for a file to open.
+    # If one is given, determine its coded, and open it for output and
+    # pass the stream to the Find panel saveUserButtons method.
     def buttonSave(self):
-        startPath = QString(".") if self.bookPath.isEmpty() else self.bookPath
+        startPath = QString(".") if IMC.bookPath.isEmpty() else IMC.bookPath
         bfName = QFileDialog.getSaveFileName(self,
                 "Save user-defined buttons as:", startPath)
         if not bfName.isEmpty():
+            bfInfo = QFileInfo(bfName)
+            bfCodec = self.inferTheCodec(bfInfo,QFileInfo(),False)
+            if bfCodec is None : # pooh, default to UTF
+                bfCodec = self.utfEncoding
             (buttonStream, fh) = self.openSomeFile(bfName,
-                                                   QIODevice.WriteOnly, "UTF-8")
+                                        QIODevice.WriteOnly, bfCodec)
             if buttonStream is not None:
                 IMC.findPanel.saveUserButtons(buttonStream)
                 fh.close()
