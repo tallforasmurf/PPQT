@@ -118,7 +118,7 @@ class htmlPreview(QWidget):
 	# this could be first refresh for this book file, so set the
 	# base URL for its images.
 	sep = QChar(u'/')
-	qsp = QString(IMC.bookPath)
+	qsp = QString(IMC.bookDirPath)
 	if not qsp.endsWith(sep):
 	    qsp.append(sep)
 	self.baseURL = QUrl.fromLocalFile(qsp)
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     if not utfile.open(QIODevice.ReadOnly):
         raise IOError, unicode(utfile.errorString())
     utinfo = QFileInfo(utfile)
-    IMC.bookPath = utinfo.absolutePath()
+    IMC.bookDirPath = utinfo.absolutePath()
     utstream = QTextStream(utfile)
     utstream.setCodec("UTF-8")
     utqs = utstream.readAll()
