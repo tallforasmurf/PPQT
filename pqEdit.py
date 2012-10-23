@@ -345,6 +345,9 @@ class PPTextEditor(QPlainTextEdit):
         # Writing the metadata takes a bit more work.
         # pageTable goes out between {{PAGETABLE}}..{{/PAGETABLE}}
         metaStream << u"{{VERSION 0}}\n" # meaningless at the moment
+        metaStream << u"{{ENCODING "
+        metaStream << unicode(IMC.bookSaveEncoding)
+        metaStream << u"}}\n"
         metaStream << u"{{STALECENSUS "
         if 0 == IMC.staleCensus :
             metaStream << u"FALSE"
@@ -456,6 +459,9 @@ class PPTextEditor(QPlainTextEdit):
                     if unicode(sectionRE.cap(2).trimmed()) == u"TRUE" :
                         IMC.needSpellCheck = True
                     continue # no more data after {{NEEDSPELLCHECK x}}
+                elif section == u"ENCODING" :
+                    IMC.bookSaveEncoding = unicode(sectionRE.cap(2).trimmed())
+                    continue
                 elif section == u"PAGETABLE":
                     qline = metaStream.readLine()
                     while (not qline.startsWith(endsec)) and (not qline.isEmpty()):
