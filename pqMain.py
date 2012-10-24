@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.0.0" # refer to PEP-0008
+__version__ = "1.01.0" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
@@ -451,7 +451,7 @@ class MainWindow(QMainWindow):
                 fnum += 1
         # and put the Quit action at the end of the menu
         self.fileMenu.addSeparator()
-        self.fileMenu.addAction(self.fileMenuActions[-1])
+        self.fileMenu.addAction(self.fileMenuActions2[-1])
 
     # -----------------------------------------------------------------
     # Set the main window's windowModified status, based on whether

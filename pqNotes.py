@@ -12,7 +12,7 @@ current line- or page-number of the main document or navigation to a
 noted line or page.
 '''
 
-__version__ = "1.0.0" # refer to PEP-0008
+__version__ = "1.01.0" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
