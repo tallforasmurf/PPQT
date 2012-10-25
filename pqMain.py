@@ -460,8 +460,13 @@ class MainWindow(QMainWindow):
     # cleared in pqEdit. Setting windowModified true in Mac OS sets the
     # modified dot in the red close gumdrop, and on other platforms, 
     # displays an asterisk after the filename in the titlebar.
+    #
+    # On the non-mac platforms, we have to avoid caling setWindowModified()
+    # when there is no asterisk in the window title, because it produces
+    # an annoying message on the console.
     def setWinModStatus(self):
-        self.setWindowModified(
+        if self.windowTitle().contains(u'*') :
+            self.setWindowModified(
     self.editor.document().isModified() | (0 != IMC.needMetadataSave)
                             )        
     # Slot to receive the modificationChanged signal from the main editor.
@@ -908,6 +913,7 @@ class MainWindow(QMainWindow):
                 self.editor.save(bookStream, metaStream)
                 retval = True # success
                 self.addRecentFile(IMC.bookPath)
+                self.setWinModStatus() # notice if metadata changed
             except (IOError, OSError), e:
                 QMessageBox.warning(self, "Error on output: {0}".format(e))
                 retval = False
