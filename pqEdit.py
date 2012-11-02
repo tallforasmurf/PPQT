@@ -436,7 +436,7 @@ class PPTextEditor(QPlainTextEdit):
         sectionRE = QRegExp( u"\{\{(" + '|'.join (
             ['PAGETABLE','CHARCENSUS','WORDCENSUS','BOOKMARKS',
              'NOTES','GOODWORDS','BADWORDS','CURSOR','VERSION',
-             'STALECENSUS','NEEDSPELLCHECK'] ) \
+             'STALECENSUS','NEEDSPELLCHECK','ENCODING'] ) \
                              + u")([^\}]*)\}\}",
             Qt.CaseSensitive)
         metaVersion = 0 # base version
