@@ -789,7 +789,7 @@ class MainWindow(QMainWindow):
         bookDirPath = bookInfo.absolutePath()
         bookDir = QDir(bookDirPath)
         # find the .meta file if it exists.
-        metaInfo = QFileInfo(QString(unicode(IMC.bookPath) + u'.meta'))
+        metaInfo = QFileInfo(QString(unicode(bookPath) + u'.meta'))
         # Get the encoding if we weren't told it
         if encoding is None:
             encoding = self.inferTheCodec(bookInfo,metaInfo,True)
@@ -798,28 +798,30 @@ class MainWindow(QMainWindow):
                 u'Cannot guess the encoding of '+unicode(bookInfo.fileName()),
                 u'Please change the name or use File>Open With Encoding')
             return
-        # Find the good_words and bad_words files without requiring suffixes.
-        # Sort the list by type-reversed, so if there is more than one of that
-        # name, we will get good_words.utf before good_words.bak. Filter is
-        # good_words*.* so you could make good_words-utf.txt and we will find it.
-        bookDir.setFilter(QDir.Files | QDir.Readable)
-        bookDir.setSorting(QDir.Type | QDir.Reversed)
-        bookDir.setNameFilters( QStringList( QString( u'good_words*.*') ) )
-        listOfFiles = bookDir.entryList()
+        # If we don't have a .meta file, find the good_words and bad_words files.
         goodwordsEncoding = None
         goodwordsPath = None
-        if listOfFiles.count() > 0 : # at least one good_words*.*
-            goodwordsPath = bookDir.absoluteFilePath(listOfFiles[0]) # the alpha-last one
-            goodwordsEncoding = self.inferTheCodec(
-                QFileInfo(goodwordsPath),QFileInfo(),True)
-        bookDir.setNameFilters( QStringList( QString( u'bad_words*.*') ) )
-        listOfFiles = bookDir.entryList()
         badwordsEncoding = None
         badwordsPath = None
-        if listOfFiles.count() > 0 : # at least one bad_words*.*
-            badwordsPath = bookDir.absoluteFilePath(listOfFiles[0]) # the alpha-last one\
-            badwordsEncoding = self.inferTheCodec(
-                QFileInfo(badwordsPath),QFileInfo(),True)
+        if not metaInfo.exists() :
+            # Locate these without requiring particular suffixes. Set the dir
+            # object to sort the list by suffix, reversed, so if there is more
+            # than one of that name, we will get good_words.utf before .bak.
+            # Filter is good_words*.* so we find good_words-utf.txt
+            bookDir.setFilter(QDir.Files | QDir.Readable)
+            bookDir.setSorting(QDir.Type | QDir.Reversed)
+            bookDir.setNameFilters( QStringList( QString( u'good_words*.*') ) )
+            listOfFiles = bookDir.entryList()
+            if listOfFiles.count() > 0 : # at least one good_words*.*
+                goodwordsPath = bookDir.absoluteFilePath(listOfFiles[0]) # the alpha-last one
+                goodwordsEncoding = self.inferTheCodec(
+                    QFileInfo(goodwordsPath),QFileInfo(),True)
+            bookDir.setNameFilters( QStringList( QString( u'bad_words*.*') ) )
+            listOfFiles = bookDir.entryList()
+            if listOfFiles.count() > 0 : # at least one bad_words*.*
+                badwordsPath = bookDir.absoluteFilePath(listOfFiles[0]) # the alpha-last one\
+                badwordsEncoding = self.inferTheCodec(
+                    QFileInfo(badwordsPath),QFileInfo(),True)
         # OK we have all the ducks in a row, get serious about this.
         (bookStream, bookHandle) = self.openSomeFile(
                     bookInfo.absoluteFilePath(), QIODevice.ReadOnly, encoding)
@@ -833,7 +835,7 @@ class MainWindow(QMainWindow):
             (badStream, badHandle) = self.openSomeFile(
                     badwordsPath, QIODevice.ReadOnly, badwordsEncoding)
             # emit signal to any panels that care before the edit window changes.
-            self.emit(SIGNAL("docWillChange"),IMC.bookPath)
+            self.emit(SIGNAL("docWillChange"),bookPath)
             # tell the editor to clear itself in preparation for loading.
             self.editor.clear()
             IMC.notesEditor.clear()
