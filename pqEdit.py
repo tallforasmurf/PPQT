@@ -182,7 +182,7 @@ class PPTextEditor(QPlainTextEdit):
     # position it, and install it on the document with self.setTextCursor().
     def toUpperCase(self):
         global WordMatch # the regex \b\w+\b
-        tc = self.textCursor()
+        tc = QTextCursor(self.textCursor())
         if not tc.hasSelection() :
             return # no selection, nothing to do
         startpos = tc.selectionStart()
@@ -205,7 +205,7 @@ class PPTextEditor(QPlainTextEdit):
     # to-lower is identical except for the method call.
     def toLowerCase(self):
         global WordMatch # the regex \b\w+\b
-        tc = self.textCursor()
+        tc = QTextCursor(self.textCursor())
         if not tc.hasSelection() :
             return # no selection, nothing to do
         startpos = tc.selectionStart()
@@ -225,13 +225,15 @@ class PPTextEditor(QPlainTextEdit):
         tc.setPosition(endpos,QTextCursor.KeepAnchor)   # drag
         self.setTextCursor(tc)
 
-    # toTitle is similar but we only change the initial character of the word.
+    # toTitle is similar but we have to change the word to lowercase (in case
+    # it is uppercase now) and then change the initial character to upper.
     # Note it would be possible to write a smarter version that looked up the
     # word in a list of common adjectives, connectives, and adverbs and avoided
     # capitalizing a, and, of, by and so forth. Not gonna happen.
     def toTitleCase(self):
         global WordMatch # the regex \b\w+\b
-        tc = self.textCursor()
+        self.toLowerCase()
+        tc = QTextCursor(self.textCursor())
         if not tc.hasSelection() :
             return # no selection, nothing to do
         startpos = tc.selectionStart()
