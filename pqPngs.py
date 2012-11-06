@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.01.0" # refer to PEP-0008
+__version__ = "1.01.1" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
@@ -52,12 +52,12 @@ to mean that it will avoid a second disk load when we revisit a page, and
 the performance would indicate this is so.
 '''
 
-from PyQt4.QtCore import ( Qt, QFileInfo, QString, QSettings, QVariant )
+from PyQt4.QtCore import ( Qt, QFileInfo, QString, QSettings, QVariant, SIGNAL )
 from PyQt4.QtGui import (
-    QColor,
-    QFrame, QKeyEvent, QLabel, QPalette, QPixmap,
-    QScrollArea, QSizePolicy,
-    QVBoxLayout, QWidget)
+    QColor, QImage, QPixmap,
+    QFrame, QKeyEvent, QLabel, QPalette, QPushButton,
+    QScrollArea, QSizePolicy, QSlider,
+    QHBoxLayout, QVBoxLayout, QWidget)
 
 class pngDisplay(QWidget):
     def __init__(self, parent=None):
@@ -68,8 +68,12 @@ class pngDisplay(QWidget):
         self.imLabel.setBackgroundRole(QPalette.Base)
         self.imLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.imLabel.setScaledContents(True)
+        # Create a gray field to use when no png is available
         self.defaultPM = QPixmap(700,900)
         self.defaultPM.fill(QColor("gray"))
+        # Create a scroll area within which to display our imLabel, this
+        # enables the creation of horizontal and vertical scroll bars, when
+        # the imLabel exceeds the size of the scroll area.
         self.scarea = QScrollArea()
         # The following two lines make sure that page up/dn gets through
         # the scrollarea widget and up to us.
@@ -81,15 +85,44 @@ class pngDisplay(QWidget):
         self.txLabel = QLabel(u"No image")
         self.txLabel.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
         self.txLabel.setFrameStyle(QFrame.Sunken | QFrame.StyledPanel)
-        # create our layout
+        # Create a slider that runs from 15 to 200 with a label:
+        self.minZoom = 0.15
+        self.maxZoom = 2.00
+        self.zlider = QSlider(Qt.Horizontal)
+        self.zlider.setRange(int(100*self.minZoom),int(100*self.maxZoom))
+        self.zlider.setSingleStep(10) # arrow key goes 10%
+        self.zlider.setPageStep(50) # pgup/dn goes 50
+        self.zlider.setTickInterval(25)
+        self.zlider.setTickPosition(QSlider.TicksBelow)
+        self.zlider.setTracking(True)
+        # connect the zlider-released signal to a slot to handle it
+        self.connect(self.zlider, SIGNAL("sliderReleased()"), self.newZoomFactor)
+        # create the to-width and to-height zoom buttons
+        zoomWidthButton = QPushButton(u'to Width')
+        self.connect(zoomWidthButton, SIGNAL("clicked()"), self.zoomToWidth)
+        zoomHeightButton = QPushButton(u'to Height')
+        self.connect(zoomHeightButton, SIGNAL("clicked()"), self.zoomToHeight)
+        # Make an hbox to contain the slider and a buddy label
+        zlabel = QLabel(u"&Zoom 25-250%")
+        zlabel.setBuddy(self.zlider)
+        zhbox = QHBoxLayout()
+        zhbox.addWidget(zlabel,0,Qt.AlignLeft)
+        zhbox.addWidget(self.zlider,9)
+        zhbox.addStretch(0)
+        zhbox.addWidget(zoomWidthButton)
+        zhbox.addWidget(zoomHeightButton)        
+        # With all the pieces in hand, create our layout basically a
+        # vertical stack: scroll area, label, slider box.
         vbox = QVBoxLayout()
         # the image gets a high stretch and default alignment, the text
         # label hugs the bottom and doesn't stretch at all.
         vbox.addWidget(self.scarea,10)
         vbox.addWidget(self.txLabel,0,Qt.AlignBottom)
+        vbox.addLayout(zhbox)
         self.setLayout(vbox)
         qv = IMC.settings.value("pngs/zoomFactor",QVariant(1.0))
         self.zoomFactor = qv.toFloat()[0]
+        self.zlider.setValue(int(self.zoomFactor*100))
         self.clear()
     
     # local subroutine to show a blank gray frame and "No Image" below.
@@ -111,6 +144,7 @@ class pngDisplay(QWidget):
         self.lastIndex = -1 # index of last page in pageTable or -1
         IMC.currentPageIndex = None
         self.ready = False
+        self.pixmap = QPixmap() # null pixmap
         self.noImage() # show gray image
     
     # this slot gets the main window's signal shuttingDown.
@@ -177,23 +211,162 @@ class pngDisplay(QWidget):
         self.lastIndex = lo
         IMC.currentPageIndex = lo
         self.showPage()
-    # Display the page indexed by self.lastPage.
-    # Get its filename Qstring, e.g. "025", add ".png"
-    # and save as self.lastPage. Make full path to the image and load it.
-    # Update our image label with the filename and zoom factor.
+    # Display the page indexed by self.lastIndex. Form its filename as a
+    # Qstring, e.g. "025", append ".png" and save that as self.lastPage.
+    # Form the full path to the image. Load it as a QImage, which will be
+    # an indexed-color format (one byte per pixel). Convert that to a QPixmap
+    # and install it as the contents of our displayed label, and scale it
+    # to the current zoom factor. The pixmap always has RGB32 format, 4 bytes
+    # per pixel. However PG pngs are (always?) monochrome, so the only pixels
+    # in the Image are 0x00 or 0xff, and in the pixmap are ff000000 or ffffffff.
     def showPage(self):
         self.lastPage = QString(IMC.pageTable[self.lastIndex][1]+u".png")
-        png = self.pngPath + self.lastPage
-        pxmap = QPixmap(png,'PNG',Qt.ColorOnly)
-        if not pxmap.isNull(): # successfully got a pixmap from a file
-            self.imLabel.setPixmap(pxmap)
-            self.imLabel.resize( self.zoomFactor * pxmap.size() )
+        pngName = self.pngPath + self.lastPage
+        self.image = QImage(pngName,'PNG')
+        self.pixmap = QPixmap.fromImage(self.image,Qt.ColorOnly)
+        if not self.pixmap.isNull(): # we did find and load a file
+            self.imLabel.setPixmap(self.pixmap)
+            self.imLabel.resize( self.zoomFactor * self.pixmap.size() )
             self.txLabel.setText(
             u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
                                 )
-        else: # no file - it's ok if pages are missing
+        else: # no file was loaded. It's ok if pages are missing
             self.imLabel.setPixmap(self.defaultPM)
             self.txLabel.setText(u"No image")
+    
+    # Catch the signal from the slider that it has been released.
+    # Store the new value as a float and if we have a page, repaint it.
+    def newZoomFactor(self):
+        self.zoomFactor = self.zlider.value() / 100
+        if self.ready :
+            self.showPage()
+
+    # Catch the click on zoom-to-width and zoom-to height. The job is basically
+    # the same for both. 1: Using the QImage that should be in self.image,
+    # scan the pixels to find the width (height) of the nonwhite area.
+    # 2. Get the ratio of that to our image label's viewport width (height).
+    # 4. Set that ratio as the zoom factor and redraw the image. And finally
+    # 5. Set the scroll position(s) of our scroll area to left-justify the text.
+    #
+    # We get access to the pixels using QImage:bits() which gives us a PyQt4
+    # "voidptr" that we can index to get byte values.
+    #
+    def zoomToWidth(self):
+        if (not self.ready) or (self.image.isNull()) :
+            return # nothing to do here
+        # Our QImage, being loaded from an 8-bit monochrome PNG, should be
+        # in Format_Indexed8. It might be Format_Mono (1 bit/pixel) or even
+        # Format_RGB32. So make it Indexed8, easiest to handle.
+        if self.image.format() != QImage.Format_Indexed8 :
+            self.image = self.image.convertToFormat(QImage.Format_Indexed8,Qt.ColorOnly)
+        # Query the Color look-up table and build a list of the Green values
+        # corresponding to each possible pixel value. Probably there are just
+        # two colors so colortab is [0,255] but there could be more, depending
+        # on how the PNG was defined, 16 or 32 or even 255 grayscale.
+        colortab = [ int((self.image.color(c) >> 4) & 255)
+                    for c in range(self.image.colorCount()) ]
+        ncols = self.image.width() # number of logical pixels across
+        stride = (ncols + 3) & (-4) # number of bytes per scanline
+        nrows = self.image.height() # number of pixels high
+        vptr = self.image.bits() # uchar * bunch-o-pixel-bytes
+        vptr.setsize(stride * nrows) # make the pointer indexable
+        # Scan in from left and right to find the outermost dark spots.
+        # Looking for single pixels yeilds too many false positives, so we
+        # look for three adjacent pixels that sum to less than 32.
+        left_side = int(ncols/2) # leftmost dark spot seen so far
+        offset = 0
+        for r in range(nrows) :
+            pa, pb = 255, 255 # virtual white outside border
+            for c in range(left_side):
+                pc = colortab[ ord(vptr[offset + c]) ]
+                if (pa + pb + pc) < 32 : # black or dark gray pair
+                    left_side = c # new, further-left, left margin
+                    break # no need to look further on this line
+                pa, pb = pb, pc
+            offset += stride
+        offset = 0
+        right_side = int(ncols/2) # rightmost dark spot seen so far
+        for r in range(nrows) :
+            pa, pb = 255, 255 # virtual white outside border
+            for c in range(ncols-1,right_side,-1) :
+                pc = colortab[ ord(vptr[offset + c]) ]
+                if (pa + pb + pc) < 32 : # black or dark gray pair
+                    right_side = c # new, further-right, right margin
+                    break
+                pa, pb = pb, pc
+            offset += stride
+        # The area with color runs from left_side to right_side. How does
+        # that compare to the size of our viewport? Scale to that and redraw.
+        text_size = right_side - left_side + 2
+        port_width = self.scarea.viewport().width()
+        self.zoomFactor = max( 0.25, min( 2.5, port_width / text_size ) )
+        self.zlider.setValue(int(100*self.zoomFactor))
+        self.showPage() 
+        # Set the scrollbar to show the page from its left margin.
+        self.scarea.horizontalScrollBar().setValue(int( left_side * self.zoomFactor) )
+        
+
+    def zoomToHeight(self):
+        if (not self.ready) or (self.image.isNull()) :
+            return # nothing to do here
+        # Our QImage, being loaded from an 8-bit monochrome PNG, should be
+        # in Format_Indexed8. It might be Format_Mono (1 bit/pixel) or even
+        # Format_RGB32. So make it Indexed8, easiest to handle.
+        if self.image.format() != QImage.Format_Indexed8 :
+            self.image = self.image.convertToFormat(QImage.Format_Indexed8,Qt.ColorOnly)
+        # Query the Color look-up table and build a list of the Green values
+        # corresponding to each possible pixel value. Probably there are just
+        # two colors so colortab is [0,255] but there could be more, depending
+        # on how the PNG was defined, 16 or 32 or even 255 grayscale.
+        colortab = [ int((self.image.color(c) >> 4) & 255)
+                    for c in range(self.image.colorCount()) ]
+        ncols = self.image.width() # number of logical pixels across
+        stride = (ncols + 3) & (-4) # number of bytes per scanline
+        nrows = self.image.height() # number of pixels high
+        vptr = self.image.bits() # uchar * bunch-o-pixel-bytes
+        vptr.setsize(stride * nrows) # make the pointer indexable
+        # Scan in from top and bottom to find the outermost rows with
+        # significant pixels.
+        top_side = 0
+        offset = 0
+        for r in range(nrows) :
+            pa, pb = 255, 255 # virtual white outside border
+            for c in range(ncols) :
+                pc = colortab[ ord(vptr[offset + c]) ]
+                if (pa + pb + pc) < 32 : # black or dark gray triplet
+                    top_side = r # that's it
+                    break
+                pa, pb = pb, pc
+            if top_side > 0 : # we hit
+                break
+            offset += stride # continue to next row
+        # top_side is the first row with a significant blot
+        if top_side == 0 : # seems to be an all-white page. bug out.
+            return
+        bottom_side = nrows
+        offset = stride * nrows
+        for r in range(nrows,top_side,-1) :
+            offset -= stride
+            pa, pb = 255, 255 # virtual white outside border
+            for c in range(ncols) :
+                pc = colortab[ ord(vptr[offset + c]) ]
+                if (pa + pb + pc) < 32 : # black or dark gray triplet
+                    bottom_side = r
+                    break
+                pa, pb = pb, pc
+            if bottom_side < nrows : # we hit
+                break
+        # bottom_side is the lowest row with significant pixels
+        if bottom_side < (top_side+100) :
+            return # seems to be a mostly-white page, give up
+        # The text area runs from scanline top_side to bottom_side.
+        text_height = bottom_side - top_side + 2
+        port_height = self.scarea.viewport().height()
+        self.zoomFactor = max( 0.25, min( 2.5, port_height / text_height ) )
+        self.zlider.setValue(int(100*self.zoomFactor))
+        self.showPage() 
+        # Set the scrollbar to show the page from its top margin.
+        self.scarea.verticalScrollBar().setValue(int( top_side * self.zoomFactor) )
 
     # Re-implement the parent's keyPressEvent in order to provide zoom:
     # ctrl-plus increases the image size by 1.25
@@ -215,12 +388,10 @@ class pngDisplay(QWidget):
                 event.accept()
                 fac = (0.8) if (kkey == IMC.ctl_minus) else (1.25)
                 fac *= self.zoomFactor # target zoom factor
-                if (fac >= 0.2) and (fac <= 3.0): # keep in bounds
-                    self.imLabel.resize( fac * self.imLabel.pixmap().size() )
+                if (fac >= self.minZoom) and (fac <= self.maxZoom): # keep in bounds
                     self.zoomFactor = fac
-                    self.txLabel.setText(
-                u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
-                                         )
+                    self.zlider.setValue(int(100*fac))
+                    self.showPage()
             elif (event.key() == Qt.Key_PageUp) or (event.key() == Qt.Key_PageDown) :
                 event.accept() # real pgUp or pgDn, we do it
                 fac = 1 if (event.key() == Qt.Key_PageDown) else -1
@@ -235,17 +406,14 @@ class pngDisplay(QWidget):
 
 if __name__ == "__main__":
     import sys
-    from PyQt4.QtCore import (Qt,QSettings)
+    from PyQt4.QtCore import (Qt,QSettings,QFileInfo)
     from PyQt4.QtGui import (QApplication,QFileDialog)
     import pqIMC
-    IMC = pqIMC.tricorder() # set up a fake IMC for unit test
-    IMC.settings = QSettings()
-    app = QApplication(sys.argv) # create an app
-    widj = pngDisplay()
-    apng = QFileDialog.getOpenFileName(widj,"Pick a Png",".","page files (*.png)")
-    pm = QPixmap(apng,'PNG',Qt.ColorOnly)
-    widj.imLabel.setPixmap(pm)
-    widj.imLabel.adjustSize()
-    widj.show()
-    app.exec_()
-
+    #IMC = pqIMC.tricorder() # set up a fake IMC for unit test
+    #IMC.settings = QSettings()
+    #app = QApplication(sys.argv) # create an app
+    #widj = pngDisplay()
+    #widj.pngPath = QFileDialog.getOpenFileName(widj,"Pick a Folder of Pngs",".")
+    #widj.showPage()
+    #widj.show()
+    #app.exec_()
