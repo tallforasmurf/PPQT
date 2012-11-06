@@ -116,9 +116,9 @@ class pngDisplay(QWidget):
         vbox = QVBoxLayout()
         # the image gets a high stretch and default alignment, the text
         # label hugs the bottom and doesn't stretch at all.
-        vbox.addWidget(self.scarea,10)
         vbox.addWidget(self.txLabel,0,Qt.AlignBottom)
-        vbox.addLayout(zhbox)
+        vbox.addWidget(self.scarea,10)
+        vbox.addLayout(zhbox,0)
         self.setLayout(vbox)
         qv = IMC.settings.value("pngs/zoomFactor",QVariant(1.0))
         self.zoomFactor = qv.toFloat()[0]
@@ -299,7 +299,7 @@ class pngDisplay(QWidget):
         # that compare to the size of our viewport? Scale to that and redraw.
         text_size = right_side - left_side + 2
         port_width = self.scarea.viewport().width()
-        self.zoomFactor = max( 0.25, min( 2.5, port_width / text_size ) )
+        self.zoomFactor = max( self.minZoom, min( self.maxZoom, port_width / text_size ) )
         self.zlider.setValue(int(100*self.zoomFactor))
         self.showPage() 
         # Set the scrollbar to show the page from its left margin.
@@ -362,7 +362,7 @@ class pngDisplay(QWidget):
         # The text area runs from scanline top_side to bottom_side.
         text_height = bottom_side - top_side + 2
         port_height = self.scarea.viewport().height()
-        self.zoomFactor = max( 0.25, min( 2.5, port_height / text_height ) )
+        self.zoomFactor = max( self.minZoom, min( self.maxZoom, port_height / text_height ) )
         self.zlider.setValue(int(100*self.zoomFactor))
         self.showPage() 
         # Set the scrollbar to show the page from its top margin.
