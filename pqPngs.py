@@ -56,7 +56,7 @@ from PyQt4.QtCore import ( Qt, QFileInfo, QString, QSettings, QVariant, SIGNAL )
 from PyQt4.QtGui import (
     QColor, QImage, QPixmap,
     QFrame, QKeyEvent, QLabel, QPalette, QPushButton,
-    QScrollArea, QSizePolicy, QSlider,
+    QScrollArea, QSizePolicy, QSlider, QSpinBox,
     QHBoxLayout, QVBoxLayout, QWidget)
 
 class pngDisplay(QWidget):
@@ -85,32 +85,31 @@ class pngDisplay(QWidget):
         self.txLabel = QLabel(u"No image")
         self.txLabel.setAlignment(Qt.AlignBottom | Qt.AlignHCenter)
         self.txLabel.setFrameStyle(QFrame.Sunken | QFrame.StyledPanel)
-        # Create a slider that runs from 15 to 200 with a label:
+        # Create a spinbox to set the zoom from 15 to 200 with a label:
+        # (originally a slider, hence the name)
         self.minZoom = 0.15
         self.maxZoom = 2.00
-        self.zlider = QSlider(Qt.Horizontal)
+        self.zlider = QSpinBox()
         self.zlider.setRange(int(100*self.minZoom),int(100*self.maxZoom))
-        self.zlider.setSingleStep(10) # arrow key goes 10%
-        self.zlider.setPageStep(50) # pgup/dn goes 50
-        self.zlider.setTickInterval(25)
-        self.zlider.setTickPosition(QSlider.TicksBelow)
-        self.zlider.setTracking(True)
-        # connect the zlider-released signal to a slot to handle it
-        self.connect(self.zlider, SIGNAL("sliderReleased()"), self.newZoomFactor)
+        # connect the value change signal to a slot to handle it
+        self.connect(self.zlider, SIGNAL("valueChanged(int)"), self.newZoomFactor)
         # create the to-width and to-height zoom buttons
         zoomWidthButton = QPushButton(u'to Width')
         self.connect(zoomWidthButton, SIGNAL("clicked()"), self.zoomToWidth)
         zoomHeightButton = QPushButton(u'to Height')
         self.connect(zoomHeightButton, SIGNAL("clicked()"), self.zoomToHeight)
-        # Make an hbox to contain the slider and a buddy label
+        # Make an hbox to contain the spinbox and two pushbuttons, with 
+        # stretch on left and right to center the group.
         zlabel = QLabel(u"&Zoom 25-250%")
         zlabel.setBuddy(self.zlider)
         zhbox = QHBoxLayout()
+        zhbox.addStretch(1)
         zhbox.addWidget(zlabel,0,Qt.AlignLeft)
-        zhbox.addWidget(self.zlider,9)
-        zhbox.addStretch(0)
+        zhbox.addWidget(self.zlider,0)
+        zhbox.addStretch(1)
         zhbox.addWidget(zoomWidthButton)
-        zhbox.addWidget(zoomHeightButton)        
+        zhbox.addWidget(zoomHeightButton)   
+        zhbox.addStretch(1)
         # With all the pieces in hand, create our layout basically a
         # vertical stack: scroll area, label, slider box.
         vbox = QVBoxLayout()
@@ -120,6 +119,7 @@ class pngDisplay(QWidget):
         vbox.addWidget(self.scarea,10)
         vbox.addLayout(zhbox,0)
         self.setLayout(vbox)
+        self.ready = False
         qv = IMC.settings.value("pngs/zoomFactor",QVariant(1.0))
         self.zoomFactor = qv.toFloat()[0]
         self.zlider.setValue(int(self.zoomFactor*100))
@@ -234,10 +234,10 @@ class pngDisplay(QWidget):
             self.imLabel.setPixmap(self.defaultPM)
             self.txLabel.setText(u"No image")
     
-    # Catch the signal from the slider that it has been released.
+    # Catch the signal from the spinbox with a new value.
     # Store the new value as a float and if we have a page, repaint it.
-    def newZoomFactor(self):
-        self.zoomFactor = self.zlider.value() / 100
+    def newZoomFactor(self,new_value):
+        self.zoomFactor = new_value / 100
         if self.ready :
             self.showPage()
 
@@ -300,8 +300,7 @@ class pngDisplay(QWidget):
         text_size = right_side - left_side + 2
         port_width = self.scarea.viewport().width()
         self.zoomFactor = max( self.minZoom, min( self.maxZoom, port_width / text_size ) )
-        self.zlider.setValue(int(100*self.zoomFactor))
-        self.showPage() 
+        self.zlider.setValue(int(100*self.zoomFactor)) # this goes to newZoomFactor
         # Set the scrollbar to show the page from its left margin.
         self.scarea.horizontalScrollBar().setValue(int( left_side * self.zoomFactor) )
         
@@ -363,8 +362,7 @@ class pngDisplay(QWidget):
         text_height = bottom_side - top_side + 2
         port_height = self.scarea.viewport().height()
         self.zoomFactor = max( self.minZoom, min( self.maxZoom, port_height / text_height ) )
-        self.zlider.setValue(int(100*self.zoomFactor))
-        self.showPage() 
+        self.zlider.setValue(int(100*self.zoomFactor)) # this goes to newZoomFactor
         # Set the scrollbar to show the page from its top margin.
         self.scarea.verticalScrollBar().setValue(int( top_side * self.zoomFactor) )
 
