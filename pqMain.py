@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.01.0" # refer to PEP-0008
+__version__ = "1.01.1" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012 David Cortesi"
 __maintainer__ = "?"
@@ -706,8 +706,10 @@ class MainWindow(QMainWindow):
 
     # -----------------------------------------------------------------
     # Take care of opening any file for input or output, with appropriate
-    # error messages. Input is the complete file path as a QString,
-    # the open mode from QIODevice, and the id string for the codec.
+    # error messages. Input is:
+    # the complete file path as a QString,
+    # the open mode, either QIODevice.ReadOnly or QIODevice.WriteOnly, and
+    # the id string for the codec.
     # Allow for an input file that doesn't exist (as a convenience to 
     # loadFile, which uses this code to test for it). Return a tuple:
     #   on success, (handle of the open QTextStream, handle of the file)
@@ -717,6 +719,9 @@ class MainWindow(QMainWindow):
         if mode == QIODevice.ReadOnly :
             if not filehandle.exists() or codec is None:
                 return (None, None)
+        if mode == QIODevice.WriteOnly :
+            # need to add this to get crlf line-ends on Windows
+            mode |= QIODevice.Text
         try:
             if not filehandle.open(mode):
                 raise IOError
