@@ -451,9 +451,11 @@ Double-click Sidenote to put it in the Find text, set Whole Word on and Respect 
 \
 In the Word panel find Footnote. Right-click and apply Second Harmonic to see if there are versions with different capitalization or spelling errors. Examine each spelling different from initial-cap Footnote, and if they are in what should be Footnote markup, correct them.\
 \
-On the Fnote panel, click Refresh. If there are pink rows in the table, find the problems and fix them. When all rows are white or green, look at each footnote in order: click on the Key value once to see the anchor and again to see the note. There is simply no substitute for looking at every footnote this way to ensure that PPQT has correctly recognized the scope of each Note and paired Anchors and Notes correctly. (Here's a common error. Often most keys are A or B or C. If some Note A is malformed, the Key A that should match it will grab the next well-formed Note A, and that forces every Key-A/Note-A pair for the rest of the book to be mismatched. Sequential checking from the top down finds this quickly.)\
+On the Fnote panel, click Refresh. If there are pink rows in the table, find the problems and fix them. (Here's a common error. If some Note A is malformed, the Key A that should be matched to it will instead grab the next well-formed Note A after it. This forces every Key-A/Note-A pair for the rest of the book to be mismatched -- but only the very last Key A will be pink because it couldn't be matched to a note. This is best fixed by sequential checking from the top down.)\
 \
-Only when all footnotes are correct and correctly matched, renumber them. Decide on the numbering convention, select the correct number streams at the bottom of the Fnote panel, and click Renumber. Then click Refresh and look for problems; if any, use ctl-z to back out the renumbering.\
+When all but the last pink rows are white or green, look at each footnote in order: click on the Key value once to see the anchor, and again to see the note that has been paired with it. Repeat for each note in sequence. There is simply no substitute for looking at every footnote this way to ensure that PPQT has correctly recognized the scope of each Note, and has paired Anchors and Notes correctly.\
+\
+Only when all footnotes are correctly matched, renumber them. Decide on the numbering convention, select the correct number streams at the bottom of the Fnote panel, and click Renumber. Then click Refresh and look for problems; if any, use ctl-z to back out the renumbering.\
 \
 For out-of-line footnotes, now define the footnote sections using 
 \f1 /F..F/
@@ -518,7 +520,7 @@ Button 20 sets up to find the
 \f1\i0 :
 \f0\i corrected
 \f1\i0 ]
-\f0  markup you may have used in step 4, and replace it with only the corrected string.\
+\f0  markup you may have used in step 4, and replace it with only the corrected string. Here you can use replace-All, but afterward do a quick search for "typo" just to make sure you didn't mis-code one.\
 \
 
 \b 22. Reflow and delete block markup.
