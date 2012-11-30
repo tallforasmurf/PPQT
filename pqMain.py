@@ -104,7 +104,12 @@ class MainWindow(QMainWindow):
         self.scannoPath = IMC.settings.value("main/scannoPath",
                                              QString()).toString()
         # If we had a scannoPath, try to load it.
-        if not self.scannoPath.isEmpty() : self.scannoLoad()
+        if not self.scannoPath.isEmpty() :
+            
+            # +++++++ Temp O'Rary +++++
+            pqMsgs.noteEvent("..Loading scanno file")
+            
+            self.scannoLoad()
         # Recall the setting of the scanno hilite switch and adjust for whether
         # we were able to load the recalled file.
         IMC.scannoHiliteSwitch = IMC.settings.value("main/scannoSwitch",
@@ -120,11 +125,18 @@ class MainWindow(QMainWindow):
         # Create the editor for the left-hand pane. Put a reference in the
         # IMC for other modules to use in calling edit members. Hook up the
         # signal for document-modification-state-change to our slot where
-        # we set the document title bar status flag.
+        # we set the document title bar status flag, and the signal for 
+        # text change for where we note a change of text.
+        
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating edit panel")
+
         self.editor = pqEdit.PPTextEditor(self,IMC.fontSize)
         IMC.editWidget = self.editor # let other modules access edit methods
         self.connect(self.editor, SIGNAL("modificationChanged(bool)"),
                      self.ohModificationChanged)
+        self.connect(self.editor, SIGNAL("textChanged()"),
+                     self.ohTextChanged)
         # -----------------------------------------------------------------
         # Format the window as a split between an editor and a tab array
         # to hold all the other panels.
@@ -139,6 +151,10 @@ class MainWindow(QMainWindow):
         # 1. Create the pngs display and connect it to the editors
         # cursor-move signal and our doc-has-changed and shut-down signals.
         #
+        
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating Pngs panel")
+
         IMC.pngPanel = pqPngs.pngDisplay()
         self.tabSet.addTab(IMC.pngPanel, u"&Pngs")
         self.connect(self.editor, SIGNAL("cursorPositionChanged()"),
@@ -148,11 +164,19 @@ class MainWindow(QMainWindow):
         #
         # 2. Create the notes panel editor.
         #
+        
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating Notes panel")
+        
         IMC.notesEditor = pqNotes.notesEditor()
         self.tabSet.addTab(IMC.notesEditor, u"No&tes")
         #
         # 3. Create the find panel and connect it to the editor's ^f keypress
         # signal and our doc-has-changed and shut-down signals.
+
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating Find panel")
+        
         IMC.findPanel = pqFind.findPanel()
         self.tabSet.addTab(IMC.findPanel, u"&Find")
         self.connect(self.editor, SIGNAL("editKeyPress"),
@@ -162,18 +186,30 @@ class MainWindow(QMainWindow):
         #
         # 4. Create Char Census panel and give it both the doc-has-changed
         # and the preceding doc-will-change signals (but not shutdown).
+
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating Chars panel")
+        
         self.charPanel = pqChars.charsPanel()
         self.tabSet.addTab(self.charPanel, u"&Char")
         self.connect(self, SIGNAL("docWillChange"), self.charPanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.charPanel.docHasChanged)   
         #
         # 5. Create Word Census Panel and give it signals.
+
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating Words panel")
+        
         self.wordPanel = pqWords.wordsPanel()
         self.tabSet.addTab(self.wordPanel, u"&Word")
         self.connect(self, SIGNAL("docWillChange"), self.wordPanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.wordPanel.docHasChanged)   
         #
         # 6. Create Pages Panel and give it signals.
+
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating Pages panel")
+        
         self.pagePanel = pqPages.pagesPanel()
         self.tabSet.addTab(self.pagePanel, u"&Pages")
         self.connect(self, SIGNAL("docWillChange"), self.pagePanel.docWillChange)
@@ -181,22 +217,40 @@ class MainWindow(QMainWindow):
         #
         # 7. Create the Flow panel. It only gets the shutdown signal, which it 
         # uses to save all its user settings.
+
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating Flow panel")
+        
+        
         self.flowPanel = pqFlow.flowPanel()
         self.tabSet.addTab(self.flowPanel, u"Fl&ow")
         self.connect(self, SIGNAL("shuttingDown"), self.flowPanel.shuttingDown)
         #
         # 8. Create the Footnote Panel which gets both sides of doc-changed
         # to clear its table.
+
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating Fnote panel")
+        
         self.fnotePanel = pqFnote.fnotePanel()
         self.tabSet.addTab(self.fnotePanel, u"F&note")
         self.connect(self, SIGNAL("docWillChange"), self.fnotePanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.fnotePanel.docHasChanged)   
         #
         # 9. Create the html Preview Panel - it's simple, needs no signals
+
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating View panel")
+        
         self.pvwPanel = pqView.htmlPreview()
         self.tabSet.addTab(self.pvwPanel, u"P&vw")
         #
         # 10. Lastly, the Help panel:
+
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..creating Help panel")
+        
+        
         self.helpPanel = pqHelp.helpDisplay()
         self.tabSet.addTab(self.helpPanel, u"&Help")
         # We could now do either self.tabSet.setCurrentIndex(1) to make the
@@ -206,6 +260,10 @@ class MainWindow(QMainWindow):
         # ------------------------------------------------------------------
         # Now set up the bottom of the window: status, line#, and progress bar.
         #
+
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..completing main window")
+        
         status = self.statusBar()
         status.setSizeGripEnabled(False)
         # Create the progress bar in our status bar, in pqMsgs because that
@@ -237,6 +295,10 @@ class MainWindow(QMainWindow):
         # -----------------------------------------------------------------
         # Put a message in our status bar for 5 seconds.
         status.showMessage("Ready", 5000)
+
+        # +++++++ Temp O'Rary +++++
+        pqMsgs.noteEvent("..setting up menus")
+        
         #
         # -----------------------------------------------------------------
         # Set up the menu actions, then create menus to invoke them.
@@ -352,7 +414,7 @@ class MainWindow(QMainWindow):
                                    self.viewFontAction,
                                    self.viewDictAction))
         self.viewScannosAction.setChecked(IMC.scannoHiliteSwitch)
-        
+
     # ---------------------------------------------------------------------
     # This convenience function, lifted from Summerfield's examples, 
     # encapsulates the boilerplate of creating a menu action. (We are not
@@ -470,12 +532,17 @@ class MainWindow(QMainWindow):
     self.editor.document().isModified() | (0 != IMC.needMetadataSave)
                             )        
     # Slot to receive the modificationChanged signal from the main editor.
+    # This signal only comes when the document goes from unmodified to 
+    # modified, or the reverse (on ^z). It does not come on every text change,
+    # only on the first text change.
     def ohModificationChanged(self,newValue):
-        if newValue : # doc has changed
-            IMC.staleCensus |= IMC.staleCensusAcquired
-        else : # doc is, has become, unchanged
+        if not newValue : # doc is, has become, unchanged
             IMC.staleCensus &= (0xff ^ IMC.staleCensusAcquired)
         self.setWinModStatus()
+    # Slot to receive the textChanged signal from the editor. This comes
+    # very frequently, like every edit keystroke. So be quick.
+    def ohTextChanged(self):
+        IMC.staleCensus |= IMC.staleCensusAcquired
 
     # -----------------------------------------------------------------
     # Called by a tab that wants to be visible (currently only the Find panel

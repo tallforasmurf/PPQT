@@ -230,6 +230,9 @@ if pqMain.__version__ != __version__ :
     print('pqMain.py version {0}'.format(pqMain.__version__))
 pqMain.IMC = IMC
 
+# +++++++ Temp O'Rary +++++
+pqMsgs.noteEvent("Done with most imports, opening settings")
+
 # and awayyyyyy we go:
 # Create the application and sign it with our names so that
 # saved settings go in reasonable places
@@ -245,6 +248,10 @@ app.setApplicationName("PPQT")
 # * Windows : in the Registry under /Software/PGDP.
 IMC.settings = QSettings()
 
+# +++++++ Temp O'Rary +++++
+pqMsgs.noteEvent("Getting path to dictionaries")
+
+
 # Establish what should be a path to our spellcheck dictionary folder "dict"
 # We expect the folder of dicts to be at the same level as this executable,
 # -- yes, cheesy as heck! -- but we get our path different ways depending
@@ -256,6 +263,10 @@ else: # running under normal python e.g. from command line or an IDE
 IMC.appBasePath = base
 IMC.dictPath = os.path.join(base,u"dict")
 
+# +++++++ Temp O'Rary +++++
+pqMsgs.noteEvent("Creating spellchecker (which loads a dict)")
+
+
 import pqSpell # Spell-check routines (which use the settings)
 if pqSpell.__version__ != __version__ :
     print('pqSpell.py version {0}'.format(pqSpell.__version__))
@@ -264,8 +275,17 @@ pqSpell.IMC = IMC
 # create the spellcheck, loading the last-set dictionary
 IMC.spellCheck = pqSpell.makeSpellCheck()
 
+# +++++++ Temp O'Rary +++++
+pqMsgs.noteEvent("Creating main window...")
+
+
 # Create the main window and all the tabs in it
 IMC.mainWindow = pqMain.MainWindow()
 # Display and execute!
+
+# +++++++ Temp O'Rary +++++
+pqMsgs.noteEvent("Starting the app (event loop)")
+
+
 IMC.mainWindow.show()
 app.exec_()

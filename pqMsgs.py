@@ -264,7 +264,15 @@ def printKeyEvent(event):
 	if mods & Qt.MetaModifier : cmods += u'Meta '
 	cmods += "'{0:c}'".format(key)
 	print(u'data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
-    
+
+# debugging function to note an event and its time on the console.
+import time
+time_now = time.clock() # moment module is imported
+
+def noteEvent(description) :
+    stamp = int(1000 * (time.clock() - time_now))
+    print(u'{0:08d} {1}'.format(stamp,description))
+
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv) # create an app
@@ -273,13 +281,16 @@ if __name__ == "__main__":
     IMC = pqIMC.tricorder()
     IMC.mainWindow = QWidget()
     beep()
+    noteEvent("about to call infoMsg")
     infoMsg("This is the message","Did you hear that beep?")
+    noteEvent("about to call getStringMsg")
     (s, b) = getStringMsg("TITLE STRING", "label text")
     if b : print( "got "+s)
     else: print("cancel")
     (s, b) = getStringMsg("TITLE STRING", "what you should enter", "prepared")
     if b : print( "got "+s)
     else: print("cancel")    
+    noteEvent("Whatever...")
     #ew = QTextEdit()
     #(b,qs) = getFindMsg(ew)
     #print(b,qs)
