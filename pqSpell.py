@@ -288,7 +288,10 @@ class spellDict():
 		if not (word in self.dictData):
 		    self.dictData[word] = aflags
 		else : # dup entry
+		    dbg = self.dictData[word]
 		    self.dictData[word] += aflags
+		    dbg = self.dictData[word]
+
 	# And that is all there is to loading a dictionary!
 
     '''
@@ -300,18 +303,26 @@ class spellDict():
     (we do NOT support the Hunspell multi-char or numeric class ids);
     Y|N says whether rules can be compounded (we always assume Y, too bad);
     and rule-count is the number of actual rules of this class to follow.
-    We ignore this line. Following lines are of the form:
+    We ignore this line.
+    
+    Following lines in that class are of the form:
         [S|P]FX classid cstrip cadd test
-    where: cstrip is the characters that would be removed before applying
-    the affix, with '0' meaning none; cadd is the affix string; and test
-    is a form of regex to see if the affix can be used.
+    where:
+      * cstrip is the characters to remove before applying the affix,
+	with '0' meaning none (remove no characters);
+      * cadd is the affix string;
+      * test is a form of regex to see if the affix can be used.
     That is the simple story the hunspell docs would tell however there is more.
+    
     Some hunspell dicts contain cadd of -xxx or xxx- so that hyphenated
     compound words can be treated as affixes. We break up hyphenated tokens
     before checking (see makeSpellCheck.check), so affix rules of this type
-    are not saved. Also, some rules have cadd=='0' meaning, add nothing.
-    These are in effect suffix-strippers that remove cstrip and replace it with
-    the null string. We treat this as applying globally (see stripAndLookUp).    
+    are not saved.
+    
+    Also, some rules have cadd=='0' meaning, add nothing. In effect they are
+    reverse suffixers, the word in the dict may end in cstrip, the test word
+    may lack cstrip.
+    
     We store an affix as a fourple (cadd, len(cadd), cstrip, classid). Because
     we discard the test field we get quite a few duplicates (many affix rules
     differ only in the test applied); these we eliminate with a set.
@@ -324,15 +335,19 @@ class spellDict():
 	    line = unicode(line) # let's keep it all Unicode
 	    if line[0:3]==verb : # either PFX or SFX
 		p = line.split()
-		if not p[3].isdigit() : # not first line of a class
-		    classid = p[1]
-		    cstrip = u'' if p[2] == u'0' else p[2]
-		    cadd = u'' if p[3] == u'0' else p[3]
-		    if u'-' in cadd: continue # skip compounding rules
-		    key = cadd+classid+cstrip
-		    if not key in keySet :
-			keySet.add(key)
-			rules.append( (cadd, len(cadd), cstrip, classid) )
+		if p[3].isdigit and (p[2] == 'Y' or p[2] == 'N') :
+		    continue # first line of a class, skip it
+		if u'-' in p[3] :
+		    continue # compounding rule, skip it
+		classid = p[1]
+		cstrip = u'' if p[2] == u'0' else p[2]
+		cadd = u'' if p[3] == u'0' else p[3]
+		if p[3] == '0' : # dbg
+		    pass
+		key = cadd+classid+cstrip
+		if not key in keySet :
+		    keySet.add(key)
+		    rules.append( (cadd, len(cadd), cstrip, classid) )
 	rules.sort(key = lambda fourple : fourple[0])
 	return rules
 
@@ -357,15 +372,14 @@ class spellDict():
 			    if self.stripAndLookup(xw,depth+1): # try to shorten it more
 				return True # shorter word was a hit
 		# else keep trying suffixes
-	    else : # cadd is null, see if we can just strip cstrip
-		if tw[-len(cstrip):] == cstrip :
-		    xw = tw[:-len(strip)]
-		    if xw in self.dictData : # don't care about classid
-			return True
-		    else:
-			if depth < 2 :
-			    if self.stripAndLooup(xw, depth+1):
-				return True
+	    else : # cadd is null, try adding cstrip
+		xw = tw + cstrip
+		if xw in self.dictData : # don't care about classid
+		    return True
+		#else:
+		    #if depth < 2 :
+			#if self.stripAndLookup(xw, depth+1):
+			    #return True
 
 	# We have run through all the suffixes with no luck; try prefixes
 	for (cadd,ladd,cstrip,classid) in self.pfxRules:
@@ -439,7 +453,9 @@ if __name__ == "__main__":
 	print("de_DE as main: ",sp.setMainDict(u"de_DE"))
 	#wl = ['-8.7', 'AND','bazongas','101st', 'run-of-the-mill', 'basse-terre', '  ','lait','fraise',
 	      #'Englishman', 'oiseau', 'oiseaux','Paris']
-	wl = unicode('unbewu\xdft \xfcberwinden \xfcberwindende \xfcberwindet \xfcbertragen \xfcbertragenen \xfcberstark \xfcberschreibt \xfcberschreitet \xfcberraschender \xfcberraschend').split()
+#	wl = unicode('erschien Heldengedicht unbewu\xdft \xfcberwinden \xfcberwindende \xfcberwindet \xfcbertragen \xfcbertragenen \xfcberstark \xfcberschreibt \xfcberschreitet \xfcberraschender \xfcberraschend').split()
+        wl = u' Lateinschule Vaterstadt Kindererz:ahlungen Selbstvertrauen Kuchenteig Grundlage Grundverm:ogen Dichtkunst Marktstrasse Wohnhaus Heldengedicht'.split()
+	
 	print("==Main dict==")
 	for w in wl:
             if sp.check(w):
