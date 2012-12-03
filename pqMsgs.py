@@ -170,7 +170,7 @@ def getFindMsg( parentWidget, prepText = None ):
     
 # Functions to create and manage a progress bar in our status bar
 # makeBar is called from pqMain to initialize the bar, on the right in
-# the status area.
+# the status area (addPermanentWidget installs to the right).
 def makeBarIn(status):
     IMC.statusBar = status # keep global ref to status bar
     IMC.progressBar = QProgressBar() # Keep a global ref to progress bar too

@@ -275,7 +275,7 @@ class MainWindow(QMainWindow):
         self.connect(self.editor, SIGNAL("cursorPositionChanged()"),
                         self.lnum.cursorMoved)
         self.connect(self.lnum, SIGNAL("returnPressed()"), self.lnum.moveCursor)
-        status.insertPermanentWidget(0,self.lnum)
+        status.addWidget(self.lnum)
         #
         # -----------------------------------------------------------------
         # Get our window geometry from the settings file and set it, restoring
