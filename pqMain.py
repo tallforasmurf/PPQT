@@ -473,7 +473,6 @@ class MainWindow(QMainWindow):
                 target.addSeparator()
             else:
                 target.addAction(action)
-                action.setShortcutContext(Qt.WidgetShortcut)
 
     # -----------------------------------------------------------------
     # This slot is entered on the File menu signal aboutToShow. Quick like
