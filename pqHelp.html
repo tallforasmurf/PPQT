@@ -68,32 +68,18 @@ See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 <li><a href='#Extras'>The Extras</a> documents the miscellania in the <tt>extras</tt> folder.</li>
 </ul>
 <h2 id='New'>What's New in This Version</h2>
-<h3>What's New in 1.01.01 (6 Nov. 2012)</h3>
-<p>The Edit > Titlecase command now operates correctly when the selected words are uppercase or mixed-case.</p>
-<p>The Pngs panel now features new zoom controls, see <a href='#Pngs'>The Pngs Panel</a> below.</p>
-<h3>What's New in 1.01 (24 Oct. 2012)</h3>
-<p>Fixes:</p>
+<h3>What's New as of 4 December 2012</h3>
+<p>A number of small fixes thanks to input from users julo and Bibimbop:</p>
 <ul>
-<li>When you select a font with the View > Font... dialog the font size you
-pick is remembered for the next session.</li>
-<li>When you place the edit cursor above the text of the first page,
-the Pngs panel shows the gray "No Image" image instead of showing
-the image of the last page.</li>
-<li>Zooming in and out with ctl-plus and ctl-minus (supported in the
-Edit, Notes, Pngs, Preview and Help panels) works with keys on the keypad as well as on the main keyboard.</li>
- <li>When you load a different file of scannos, the hiliting of the words
- from the previous scanno file is cleared out.</li>
- <li>The save-needed status in the title bar changes correctly as changes occur in the notes and other metadata, as well as with changes in the document.</li>
- <li>PPQT now remembers whether a census of words and characters or a spellcheck is needed over save/load. If you change the text or the good-words
- list and save the file, when you next load it and click Refresh, the
- census and spellcheck are done.</li>
-</ul>
-<p>New or changed function:</p>
-<ul>
-<li>There have been major changes in how the encoding for an input file is chosen, and a new command has been added to the File menu: Open With Encoding. See the <a href='#Encodings'>File Encodings</a> topic below.</li>
-<li>When a single word is selected in the Edit panel, the standard <a href='#ContextMenu'>context menu</a> has an option to add that word to the good-words list.</li>
-<li>When the keyboard focus is in the <a href='#Words'>Words panel</a> and the table is sorted ascending on column 0, keying a letter jumps to the approximate position of words beginning with that letter.</li>
-<li>Holding the shift key when going to a bookmark causes the current selection to be extended to the bookmark location.</li>
+<li>Corrected the label of the zoom slider on the Pngs panel.</li>
+<li>Cleared the default filename from the Save Find Buttons dialog to reduce the chance of saving over the document(!).</li>
+<li>Moved the line number field to the left of the status bar.</li>
+<li>Fixed ctl-s and ctl-shift-s to work as shortcuts for File>Save and Save-As in Ubuntu and Windows.</li>
+<li>Fixed the previous-strings popups in Find and Replace to work correctly on Windows, and to not show a scrap of a character on Ubuntu.</li>
+<li>On ctl-f when focus goes to the Find panel, the Find text is all-selected so it is easy to type a new find string.</li>
+<li>The View > Dictionary dialog presents dictionary names in sorted order and with the current dictionary selected.</li>
+<li>Proper CRLF line-ends written on Windows.</li>
+<li>The document-modified indicator turns on more reliably in some cases.</li>
 </ul>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
@@ -796,5 +782,34 @@ superscripts, subscripts, Side notes, Illustrations, and typo markups to HTML.</
 <li><tt>syntax-of-find-button-files.txt</tt> has sketchy documentation of the format of a Find button file.</li>
 <li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS style section described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match what PPQT generates).</li>
 </ul>
+<h2 id='OldNew'>What Was New</h2>
+<h3>What's New in 1.01.01 (6 Nov. 2012)</h3>
+<p>The Edit > Titlecase command now operates correctly when the selected words are uppercase or mixed-case.</p>
+<p>The Pngs panel now features new zoom controls, see <a href='#Pngs'>The Pngs Panel</a> below.</p>
+<h3>What's New in 1.01 (24 Oct. 2012)</h3>
+<p>Fixes:</p>
+<ul>
+<li>When you select a font with the View > Font... dialog the font size you
+pick is remembered for the next session.</li>
+<li>When you place the edit cursor above the text of the first page,
+the Pngs panel shows the gray "No Image" image instead of showing
+the image of the last page.</li>
+<li>Zooming in and out with ctl-plus and ctl-minus (supported in the
+Edit, Notes, Pngs, Preview and Help panels) works with keys on the keypad as well as on the main keyboard.</li>
+ <li>When you load a different file of scannos, the hiliting of the words
+ from the previous scanno file is cleared out.</li>
+ <li>The save-needed status in the title bar changes correctly as changes occur in the notes and other metadata, as well as with changes in the document.</li>
+ <li>PPQT now remembers whether a census of words and characters or a spellcheck is needed over save/load. If you change the text or the good-words
+ list and save the file, when you next load it and click Refresh, the
+ census and spellcheck are done.</li>
+</ul>
+<p>New or changed function:</p>
+<ul>
+<li>There have been major changes in how the encoding for an input file is chosen, and a new command has been added to the File menu: Open With Encoding. See the <a href='#Encodings'>File Encodings</a> topic below.</li>
+<li>When a single word is selected in the Edit panel, the standard <a href='#ContextMenu'>context menu</a> has an option to add that word to the good-words list.</li>
+<li>When the keyboard focus is in the <a href='#Words'>Words panel</a> and the table is sorted ascending on column 0, keying a letter jumps to the approximate position of words beginning with that letter.</li>
+<li>Holding the shift key when going to a bookmark causes the current selection to be extended to the bookmark location.</li>
+</ul>
+
 </body>
 </html>
