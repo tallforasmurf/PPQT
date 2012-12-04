@@ -710,6 +710,7 @@ class findPanel(QWidget):
             if not self.isVisible() :
                 IMC.mainWindow.makeMyPanelCurrent(self) 
             self.findText.setFocus() # get keyboard focus to find string
+            self.findText.selectAll() # and select what's there for EZ input
         elif kkey == IMC.ctl_shft_F : # ^F means focus to find with selection
             # make a copy of the selection
             qs = QString(IMC.editWidget.textCursor().selectedText())
