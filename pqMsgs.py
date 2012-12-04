@@ -140,9 +140,9 @@ def getStringMsg( title, text, preset=None ):
 # QInputDialog returns a boolean True for OK, false for Cancel,
 # and the actual text of the selected item or of the default item.
 
-def getChoiceMsg( title, text, qsl):
+def getChoiceMsg( title, text, qsl, current=0):
     (ans, ok) = QInputDialog.getItem(IMC.mainWindow,title,text,qsl,
-                                     0,False)
+                                     current,False)
     return (ans, ok)
 
 # This is the UI to a simple find, used by the Notes, Preview, and Help panels.
