@@ -910,12 +910,23 @@ class findPanel(QWidget):
 # is passed and this constructor clips its activated(QString) signal to
 # the lineEdit's setText(QString) function.
 
+#  Under Mac and Ubuntu, the default combobox given a very narrow
+# maxWidth looks like a button but pops up a list the width of the longest
+# list item. Under Windows XP & 7, the list that pops up is constrained to
+# the maxWidth value, showing only the initial and an ellipsis. So we override
+# the default and force the Cleanlooks style which works correctly in all.
+#
+from PyQt4.QtGui import QStyleFactory
+
 class recentStrings(QComboBox):
     def __init__(self, myLineEdit, oldList=None, parent=None):
         super(recentStrings, self).__init__(parent)
-        self.setMaximumWidth(32)
+        self.setMaximumWidth(29)
         self.setSizeAdjustPolicy(QComboBox.AdjustToContents)
         self.setEditable(False)
+        if IMC.osType == 'Win' :
+            self.setStyle(QStyleFactory().create(u'Cleanlooks'))
+            self.setMaximumWidth(24)
         self.setMaxCount(10)
         self.buddy = myLineEdit # save ref to associated findRepEdit
         self.lastString = QString()
