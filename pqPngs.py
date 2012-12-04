@@ -100,7 +100,9 @@ class pngDisplay(QWidget):
         self.connect(zoomHeightButton, SIGNAL("clicked()"), self.zoomToHeight)
         # Make an hbox to contain the spinbox and two pushbuttons, with 
         # stretch on left and right to center the group.
-        zlabel = QLabel(u"&Zoom 25-250%")
+        zlabel = QLabel(
+            u'&Zoom ' + str(self.zlider.minimum())
+            + '-' + str(self.zlider.maximum()) + '%')
         zlabel.setBuddy(self.zlider)
         zhbox = QHBoxLayout()
         zhbox.addStretch(1)
