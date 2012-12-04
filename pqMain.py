@@ -271,6 +271,8 @@ class MainWindow(QMainWindow):
         pqMsgs.makeBarIn(status)
         # Create the line number widget. The widget definition is in pqMsgs.
         # It gets the cursor movement signal from the editor, obviously.
+        # status.addWidget puts it at the extreme left, effectively "under"
+        # the permanent status message area, which may sometimes overlay it.
         self.lnum = pqMsgs.lineLabel()
         self.connect(self.editor, SIGNAL("cursorPositionChanged()"),
                         self.lnum.cursorMoved)
@@ -1089,7 +1091,7 @@ class MainWindow(QMainWindow):
     # If one is given, determine its coded, and open it for output and
     # pass the stream to the Find panel saveUserButtons method.
     def buttonSave(self):
-        startPath = QString(".") if IMC.bookPath.isEmpty() else IMC.bookPath
+        startPath = QString(".") if IMC.bookPath.isEmpty() else IMC.bookDirPath
         bfName = QFileDialog.getSaveFileName(self,
                 "Save user-defined buttons as:", startPath)
         if not bfName.isEmpty():
