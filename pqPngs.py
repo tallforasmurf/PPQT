@@ -80,6 +80,8 @@ class pngDisplay(QWidget):
         self.setFocusPolicy(Qt.ClickFocus)
         self.scarea.setFocusProxy(self)
         self.scarea.setBackgroundRole(QPalette.Dark)
+        #self.scarea.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        #self.scarea.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.scarea.setWidget(self.imLabel)
         # create the text label that will have the page number in it
         self.txLabel = QLabel(u"No image")
@@ -302,7 +304,7 @@ class pngDisplay(QWidget):
         text_size = right_side - left_side + 2
         port_width = self.scarea.viewport().width()
         self.zoomFactor = max( self.minZoom, min( self.maxZoom, port_width / text_size ) )
-        self.zlider.setValue(int(100*self.zoomFactor)) # this goes to newZoomFactor
+        self.zlider.setValue(int(100*self.zoomFactor)) # this signals newZoomFactor
         # Set the scrollbar to show the page from its left margin.
         self.scarea.horizontalScrollBar().setValue(int( left_side * self.zoomFactor) )
         
@@ -328,24 +330,24 @@ class pngDisplay(QWidget):
         vptr.setsize(stride * nrows) # make the pointer indexable
         # Scan in from top and bottom to find the outermost rows with
         # significant pixels.
-        top_side = 0
-        offset = 0
+        top_side = -1 # The uppermost row with a significant spot of black
+        offset = 0 # vptr index to the first/next pixel row
         for r in range(nrows) :
             pa, pb = 255, 255 # virtual white outside border
             for c in range(ncols) :
                 pc = colortab[ ord(vptr[offset + c]) ]
                 if (pa + pb + pc) < 32 : # black or dark gray triplet
-                    top_side = r # that's it
-                    break
+                    top_side = r # that's the row,
+                    break # ..so stop scanning
                 pa, pb = pb, pc
-            if top_side > 0 : # we hit
-                break
+            if top_side >= 0 : # we hit
+                break # ..so don't scan down any further
             offset += stride # continue to next row
-        # top_side is the first row with a significant blot
-        if top_side == 0 : # seems to be an all-white page. bug out.
+        # top_side indexes the first row with a significant blot
+        if top_side == -1 : # never found one: an all-white page. bug out.
             return
-        bottom_side = nrows
-        offset = stride * nrows
+        bottom_side = nrows # The lowest row with a significant blot
+        offset = stride * nrows # vptr index to last/next row of pixels
         for r in range(nrows,top_side,-1) :
             offset -= stride
             pa, pb = 255, 255 # virtual white outside border
@@ -357,14 +359,16 @@ class pngDisplay(QWidget):
                 pa, pb = pb, pc
             if bottom_side < nrows : # we hit
                 break
-        # bottom_side is the lowest row with significant pixels
+        # bottom_side is the lowest row with significant pixels. It must be
+        # < nrows, there is at least one row (top_side) with a dot in it.
+        # However if the page is mostly white, don't zoom to that extent.
         if bottom_side < (top_side+100) :
             return # seems to be a mostly-white page, give up
         # The text area runs from scanline top_side to bottom_side.
-        text_height = bottom_side - top_side + 2
+        text_height = bottom_side - top_side + 1
         port_height = self.scarea.viewport().height()
         self.zoomFactor = max( self.minZoom, min( self.maxZoom, port_height / text_height ) )
-        self.zlider.setValue(int(100*self.zoomFactor)) # this goes to newZoomFactor
+        self.zlider.setValue(int(100*self.zoomFactor)) # this signals newZoomFactor
         # Set the scrollbar to show the page from its top margin.
         self.scarea.verticalScrollBar().setValue(int( top_side * self.zoomFactor) )
 
@@ -405,15 +409,16 @@ class pngDisplay(QWidget):
             super(pngDisplay, self).keyPressEvent(event)
 
 if __name__ == "__main__":
-    import sys
-    from PyQt4.QtCore import (Qt,QSettings,QFileInfo)
-    from PyQt4.QtGui import (QApplication,QFileDialog)
-    import pqIMC
+    pass
+    #import sys
+    #from PyQt4.QtCore import (Qt,QSettings,QFileInfo)
+    #from PyQt4.QtGui import (QApplication,QFileDialog)
+    #import pqIMC
     #IMC = pqIMC.tricorder() # set up a fake IMC for unit test
     #IMC.settings = QSettings()
     #app = QApplication(sys.argv) # create an app
     #widj = pngDisplay()
-    #widj.pngPath = QFileDialog.getOpenFileName(widj,"Pick a Folder of Pngs",".")
+    #widj.pngPath = QFileDialog.getExistingDirectory(widj,"Pick a Folder of Pngs",".")
     #widj.showPage()
     #widj.show()
     #app.exec_()
