@@ -596,11 +596,17 @@ class MainWindow(QMainWindow):
     def viewDict(self):
         qsl = IMC.spellCheck.dictList()
         if qsl.count() : # then we know about some dicts
+            qsl.sort() # put the list in order
             qsmt = IMC.spellCheck.mainTag if IMC.spellCheck.isUp() else u'(none)'
+            # get the index of the current main dict tag, if any
+            current = qsl.indexOf(qsmt)
+            if current < 0 : # appears there isn't a current main dict
+                current = 0 # so don't spec which item to make current
             # The explanatory label is needlessly wordy to force the dialog
             # to be wide enough to display the full title o_o
             (qs,b) = pqMsgs.getChoiceMsg("Select Default Dictionary",
-                    "The currently selected language is "+unicode(qsmt), qsl)
+                    "The currently selected language is "+unicode(qsmt),
+                    qsl, current)
             if b: # user clicked OK
                 IMC.spellCheck.setMainDict(qs)
                 IMC.needSpellCheck = True
