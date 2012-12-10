@@ -214,7 +214,8 @@ def beep():
     QApplication.beep()
 
 # Subclass of QLineEdit to make our line-number widget for the status bar.
-# Instantiated and hooked up to signals in pqMain.
+# Defined here because it's a "message" of sorts. But actually it is
+# instantiated and hooked up to signals in pqMain.
 
 class lineLabel(QLineEdit):
     def __init__(self, parent=None):
