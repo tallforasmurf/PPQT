@@ -360,6 +360,9 @@ class MainWindow(QMainWindow):
         # with the actions and files above.
         self.connect(self.fileMenu, SIGNAL("aboutToShow()"),
                      self.updateFileMenu)
+        # Update the file menu one time explicitly so that the accelerator
+        # keys will work the first time before the menu has been displayed.
+        self.updateFileMenu()
         # -----------------------------------------------------------------
         # Create actions for the Edit menu. Direct cut/copy/paste to the
         # inherited methods of the QPlainTextEdit object. Direct the ones
