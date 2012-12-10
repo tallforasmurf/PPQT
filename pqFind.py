@@ -245,6 +245,9 @@ class findPanel(QWidget):
         # Flags for when find or rep has been loaded from a user button (and
         # hence shouldn't be saved in the popup menu)
         self.userLoad = [False, False, False, False]
+        # Flag for when the current selection is the result of Find, and
+        # so Replace is a valid thing to do -- or not.
+        self.selectionFromFind = False
         # Create all subwidgets and lay them out:
         # Per the Qt doc, we need to create a layout and parent it, that is,
         # add it to its parent layout, before we populate it. So here we
@@ -324,6 +327,10 @@ class findPanel(QWidget):
         # of that text -- the natural expectation of the find box.
         self.connect(self.findText, SIGNAL("returnPressed()"),
                                 self.nextButton, SLOT("click()") )
+        # Connect the edit panel's selectionChanged signal to our slot
+        # to note the selection is not from find any longer.
+        self.connect(IMC.editWidget, SIGNAL("selectionChanged()"),
+                                self.selectionChanged )
         # Set up the rep container layouts and parent them
         repHolderHbox = QHBoxLayout()
         mainLayout.addLayout(repHolderHbox,0)
@@ -447,6 +454,11 @@ class findPanel(QWidget):
     def inSelChange(self,state):
         if not state:
             self.setFullRange()
+
+    # Slot for the selectionChanged signal from the edit panel,
+    # to clear the selectionFromFind flag.
+    def selectionChanged(self) :
+        self.selectionFromFind = False
 
     # Subroutine to set the search range cursors to the full document.
     # Make each a copy of the document's cursor, not merely a ref to it.
@@ -579,14 +591,18 @@ class findPanel(QWidget):
         if self.validHit(findTc): # got a hit and in-bounds
             IMC.editWidget.setTextCursor(findTc)
             IMC.editWidget.setFocus(Qt.TabFocusReason)
+            self.selectionFromFind = True
         else: # tell user
             pqMsgs.flash("Not found", True)
 
     # Called from one of the three replace buttons or from an edit keystroke
-    # to do a replace. We replace the current selection. Arguments are 
-    # the number of the replace field (1-3), and the truth of and-next,
-    # and-prior, and rep-all switches. When a Replace button is clicked,
-    # these values are sampled by the lambda that is the signal slot,
+    # to do a replace. For single replace (not All) we replace the current
+    # selection but only if it is the result of a Find operation. For global
+    # replace we search to make a list of all targets and get user agreement.
+    #
+    # Arguments are the number of the replace field (1-3), and the truth of
+    # and-next, and-prior, and rep-all switches. When any Replace button is
+    # clicked, these values are sampled by the lambda that is the signal slot,
     # so repno is the button number 1/2/3, and the next three args are
     # the checked status of the interface buttons. 
     #
@@ -599,14 +615,20 @@ class findPanel(QWidget):
     # Following the replace we need to adjust the edit cursor position.
     # Qt's default on .insertText is to clear the selection and leave
     # the cursor after the last inserted char. We recreate the selection
-    # by "dragging" backwards to the starting position.
+    # by "dragging" backwards to the starting position. (This will naturally
+    # clear the selectionFromFind switch so replace will not work twice in
+    # a row).
+    #
     # See also comments in the Prolog about regex replace.
     
     def doReplace(self,repno,andNext=False,andPrior=False, doAll=False):
-        self.popups[repno].noteString() # any use gets pushed on the popup list
         tc = IMC.editWidget.textCursor() # reference to the edit cursor
         p = tc.selectionStart()
-        if not doAll : # one-shot replace
+        if not doAll : # one-shot replace, must be of found-selection
+            if not self.selectionFromFind :
+                pqMsgs.beep() # let user know we don't want to do this
+                return
+            self.popups[repno].noteString() # note use on the popup list
             if self.regexSwitch.isChecked() :
                 # make a copy of the current find regexp including its latest
                 # settings of case-sensitive and minimal.
@@ -639,6 +661,7 @@ class findPanel(QWidget):
             # For replace all we assume the bounds were set by a prior First
             # button. We loop doing finds from the top boundary until no-match,
             # saving a text cursor representing each hit.
+            self.popups[repno].noteString() # note use on the popup list
             hits = []
             doc = IMC.editWidget.document()
             findTc = self.realSearch(doc,self.rangeTop,False)
