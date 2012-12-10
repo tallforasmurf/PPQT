@@ -470,7 +470,8 @@ class wordsPanel(QWidget):
             # also matches today.
             qs.replace(QChar(u'-'),QString(u'[\-\s]*'))
             rex = True
-        IMC.findPanel.censusFinder(qs,None,rex)
+	# Call for a find with no replace, whole word true, regex as req'd
+        IMC.findPanel.censusFinder(qs, None, rex, True)
 
     # This slot receives a change of the respect case checkbox. Set the
     # case sensitivity of the sort proxy model accordingly.

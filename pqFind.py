@@ -754,14 +754,17 @@ class findPanel(QWidget):
     # row is double-clicked, throw the char/word into the find text and 
     # bring the find panel to the front. Char panel sometimes passes a
     # replace string, and Words sometimes wants a regex search.
-    def censusFinder(self,qs,repl=None,rex=False):
+    # Both want Respect Case on, and Word wants Whole Word set.
+    def censusFinder(self,qs,repl=None,rex=False, wword=False ):
         self.findText.setText(qs)
         self.regexSwitch.setChecked(rex)
+        self.wholeWordSwitch.setChecked(wword)
+        self.caseSwitch.setChecked(True)
         if repl is not None:
             self.repEdits[1].setText(repl)
-        if not self.isVisible() :
-            IMC.mainWindow.makeMyPanelCurrent(self)
-        self.findText.setFocus() # get keyboard focus to find string
+        #if not self.isVisible() :
+            #IMC.mainWindow.makeMyPanelCurrent(self)
+        # self.findText.setFocus() # get keyboard focus to find string
         self.findText.userLoad = True # don't save it in the pushdown list
         self.doSearch(2) # do the First search for the word.
 

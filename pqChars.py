@@ -222,7 +222,8 @@ class charsPanel(QWidget):
             # get reference to column 0
             qmi = qmi.sibling(qmi.row(),0)
         qs = qmi.data(Qt.DisplayRole).toString()
-        IMC.findPanel.censusFinder(qs,rep)
+        # Call for a find with respect case on, whole word and regex off
+        IMC.findPanel.censusFinder(qs,rep, False, False)
 
     # this slot gets the activated(row) signal from the combo-box.
     # Based on the row, set self.filterLambda to a lambda that will
