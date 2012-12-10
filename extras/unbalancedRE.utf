@@ -1,10 +1,14 @@
 # every backslash must be doubled! 
-# Finds Unbalanced <i> markup
+# Finds most unbalanced <i> markup: 
+#  <i>[^<]+<(?!/i) finds <i> not followed by </i>
+# [^i]>[^<]+</i> finds non-i markup ending in </i>
+# Does not find <i> not followed by markup of any kind,
+# does not find </i> not preceded by markup of any kind
 23: {  u'all' : False,
  u'andnext' : False,
  u'andprior' : False,
  u'case' : False,
- u'find' : u'\\<i>[^<]+<(?!/i)',
+ u'find' : u'<i>[^<]+<(?!/i)|[^i]>[^<]+</i>',
  u'greedy' : False,
  u'insel' : False,
  u'label' : u'unbal i',
@@ -15,12 +19,13 @@
  u'rep3' : u'',
  u'word' : False
 }
-# Finds Unbalanced <b> markup
+# Finds most unbalanced <b> markup but not all, same remarks
+# as for unbalanced <i> above
 22: {  u'all' : False,
  u'andnext' : False,
  u'andprior' : False,
  u'case' : False,
- u'find' : u'\\<b>[^<]+<(?!/b)',
+ u'find' : u'<b>[^<]+<(?!/b)|[^b]>[^<]+</b>',
  u'greedy' : False,
  u'insel' : False,
  u'label' : u'unbal b',
@@ -31,12 +36,19 @@
  u'rep3' : u'',
  u'word' : False
 }
-# Finds Unbalanced <sc> markup
+# Finds SOME unbalanced <sc> markup:
+# <sc>[^<]+<(?!/sc) finds <sc> without closing </sc>
+# [^c]>[^<]+</sc> finds e.g. <b>asdf</sc>
+# [^s]c>[^<]+</sc> finds e.g. <dc>asdf</sc>
+# Does not find <sc> with no markup following, nor
+# finds </sc> with no markup of any kind preceding
+# Note that this can be shortened when in Qt5 we get
+# proper regexes with negative lookbehind assertions
 21: {  u'all' : False,
  u'andnext' : False,
  u'andprior' : False,
  u'case' : False,
- u'find' : u'\\<sd>[^<]+<(?!/sc)',
+ u'find' : u'<sc>[^<]+<(?!/sc)|[^c]>[^<]+</sc>|[^s]c>[^<]+</sc>',
  u'greedy' : False,
  u'insel' : False,
  u'label' : u'unbal sc',
