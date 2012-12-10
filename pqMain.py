@@ -156,7 +156,7 @@ class MainWindow(QMainWindow):
         pqMsgs.noteEvent("..creating Pngs panel")
 
         IMC.pngPanel = pqPngs.pngDisplay()
-        self.tabSet.addTab(IMC.pngPanel, u"&Pngs")
+        self.tabSet.addTab(IMC.pngPanel, u"Pngs")
         self.connect(self.editor, SIGNAL("cursorPositionChanged()"),
                         IMC.pngPanel.newPosition)
         self.connect(self, SIGNAL("docHasChanged"), IMC.pngPanel.newFile)
@@ -169,7 +169,7 @@ class MainWindow(QMainWindow):
         pqMsgs.noteEvent("..creating Notes panel")
         
         IMC.notesEditor = pqNotes.notesEditor()
-        self.tabSet.addTab(IMC.notesEditor, u"No&tes")
+        self.tabSet.addTab(IMC.notesEditor, u"Notes")
         #
         # 3. Create the find panel and connect it to the editor's ^f keypress
         # signal and our doc-has-changed and shut-down signals.
@@ -178,7 +178,7 @@ class MainWindow(QMainWindow):
         pqMsgs.noteEvent("..creating Find panel")
         
         IMC.findPanel = pqFind.findPanel()
-        self.tabSet.addTab(IMC.findPanel, u"&Find")
+        self.tabSet.addTab(IMC.findPanel, u"Find")
         self.connect(self.editor, SIGNAL("editKeyPress"),
                      IMC.findPanel.editKeyPress)
         self.connect(self, SIGNAL("shuttingDown"), IMC.findPanel.shuttingDown)
@@ -191,7 +191,7 @@ class MainWindow(QMainWindow):
         pqMsgs.noteEvent("..creating Chars panel")
         
         self.charPanel = pqChars.charsPanel()
-        self.tabSet.addTab(self.charPanel, u"&Char")
+        self.tabSet.addTab(self.charPanel, u"Char")
         self.connect(self, SIGNAL("docWillChange"), self.charPanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.charPanel.docHasChanged)   
         #
@@ -201,7 +201,7 @@ class MainWindow(QMainWindow):
         pqMsgs.noteEvent("..creating Words panel")
         
         self.wordPanel = pqWords.wordsPanel()
-        self.tabSet.addTab(self.wordPanel, u"&Word")
+        self.tabSet.addTab(self.wordPanel, u"Word")
         self.connect(self, SIGNAL("docWillChange"), self.wordPanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.wordPanel.docHasChanged)   
         #
@@ -211,7 +211,7 @@ class MainWindow(QMainWindow):
         pqMsgs.noteEvent("..creating Pages panel")
         
         self.pagePanel = pqPages.pagesPanel()
-        self.tabSet.addTab(self.pagePanel, u"&Pages")
+        self.tabSet.addTab(self.pagePanel, u"Pages")
         self.connect(self, SIGNAL("docWillChange"), self.pagePanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.pagePanel.docHasChanged)
         #
@@ -223,7 +223,7 @@ class MainWindow(QMainWindow):
         
         
         self.flowPanel = pqFlow.flowPanel()
-        self.tabSet.addTab(self.flowPanel, u"Fl&ow")
+        self.tabSet.addTab(self.flowPanel, u"Flow")
         self.connect(self, SIGNAL("shuttingDown"), self.flowPanel.shuttingDown)
         #
         # 8. Create the Footnote Panel which gets both sides of doc-changed
@@ -233,7 +233,7 @@ class MainWindow(QMainWindow):
         pqMsgs.noteEvent("..creating Fnote panel")
         
         self.fnotePanel = pqFnote.fnotePanel()
-        self.tabSet.addTab(self.fnotePanel, u"F&note")
+        self.tabSet.addTab(self.fnotePanel, u"Fnote")
         self.connect(self, SIGNAL("docWillChange"), self.fnotePanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.fnotePanel.docHasChanged)   
         #
@@ -243,7 +243,7 @@ class MainWindow(QMainWindow):
         pqMsgs.noteEvent("..creating View panel")
         
         self.pvwPanel = pqView.htmlPreview()
-        self.tabSet.addTab(self.pvwPanel, u"P&vw")
+        self.tabSet.addTab(self.pvwPanel, u"Pvw")
         #
         # 10. Lastly, the Help panel:
 
@@ -252,7 +252,7 @@ class MainWindow(QMainWindow):
         
         
         self.helpPanel = pqHelp.helpDisplay()
-        self.tabSet.addTab(self.helpPanel, u"&Help")
+        self.tabSet.addTab(self.helpPanel, u"Help")
         # We could now do either self.tabSet.setCurrentIndex(1) to make the
         # pngs panel current, but that seems to happen by default. Or, we 
         # could at shutdown save the last-set tab index and restore it?
