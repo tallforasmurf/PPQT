@@ -304,10 +304,10 @@ class findPanel(QWidget):
         # Make a horizontal row of the finding buttons
         nextPriorHbox = QHBoxLayout()
         mainLayout.addLayout(nextPriorHbox,0)
-        self.nextButton = QPushButton(u"&Next")
-        self.priorButton = QPushButton(u"&Prior")
-        self.firstButton = QPushButton(u"Firs&t")
-        self.lastButton = QPushButton(u"&Last")
+        self.nextButton = QPushButton(u"Next")
+        self.priorButton = QPushButton(u"Prior")
+        self.firstButton = QPushButton(u"First")
+        self.lastButton = QPushButton(u"Last")
         nextPriorHbox.addWidget(self.nextButton,0)
         nextPriorHbox.addWidget(self.priorButton,0)
         nextPriorHbox.addStretch(1) # keep n/p buttons left, f/l right
