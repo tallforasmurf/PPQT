@@ -95,10 +95,10 @@ class MainWindow(QMainWindow):
         IMC.bookType = QString()
         #  * character detector object used when opening an ambiguous file
         self.charDetector = None # instantiated when first needed
-        self.utfEncoding = u'UTF-8' # handy consts
-        self.ltnEncoding = u'ISO-8859-1'
+        self.utfEncoding = QString(u'UTF-8') # handy consts
+        self.ltnEncoding = QString(u'ISO-8859-1')
         #  * IMC.saveEncoding is the encoding ID as a python string
-        IMC.saveEncoding = self.utfEncoding
+        IMC.saveEncoding = unicode(self.utfEncoding)
         # Recall a scannoPath if we had one, else get a default empty QString
         # See closeEvent() below for how this and other settings are saved.
         self.scannoPath = IMC.settings.value("main/scannoPath",
@@ -755,9 +755,9 @@ class MainWindow(QMainWindow):
         if fileSuffix == u'ltn' :
             return self.ltnEncoding
         if fileSuffix == u'win' :
-            return u'cp1252'
+            return QString(u'cp1252')
         if fileSuffix == u'mac' :
-            return u'macintosh'
+            return QString(u'macintosh')
         # Unhelpful file name and suffix. If this is an output file we can 
         # infer nothing more so let's default to UTF8.
         if not forInput :
@@ -777,7 +777,7 @@ class MainWindow(QMainWindow):
         result = self.charDetector.close()
         if ('confidence' in result) : # detector is working
             if result['confidence'] > 0.85 : # detector is confident
-                return result['encoding']
+                return QString(result['encoding'])
         # The detector isn't confident and neither are we.
         return None
 
@@ -959,7 +959,7 @@ class MainWindow(QMainWindow):
         IMC.bookPath = QString()
         IMC.bookDirPath = QString()
         IMC.bookType = QString()
-        IMC.bookSaveEncoding = u'UTF-8'
+        IMC.bookSaveEncoding = QString(u'UTF-8')
         self.setWindowTitle("PPQT - new file[*]")
         self.setWinModStatus() # notice if metadata changed
 
@@ -977,11 +977,12 @@ class MainWindow(QMainWindow):
         bookEncoding = self.inferTheCodec(bookInfo,metaInfo,False)
         if bookEncoding is None :
             bookEncoding = IMC.bookSaveEncoding
-        if bookEncoding != self.utfEncoding and bookEncoding != self.ltnEncoding :
+        if (0 != self.utfEncoding.compare(bookEncoding,Qt.CaseInsensitive)) \
+        and (0 != self.ltnEncoding.compare(bookEncoding,Qt.CaseInsensitive)) :
             if pqMsgs.okCancelMsg(
                 u'Cannot save to {0} encoding'.format(bookEncoding),
                 u'Click OK to save in UTF-8') :
-                bookEncoding = self.utfEncoding
+                bookEncoding = QString(self.utfEncoding)
             else :
                 return False
         (bookStream, bfh) = self.openSomeFile(bookInfo.absoluteFilePath(),
