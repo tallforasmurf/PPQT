@@ -42,35 +42,35 @@ __license__ = '''
  The main window has two panes divided by a splitter. The left pane has
  the text for editing (QPlainTextEdit). The right pane is tabbed and offers a
  variety of panels, each with a specific function:
- 
+
     Pngs :   Shows the scan image (nnn.png) for the text at the insertion point
 	     from the pngs folder.
-    
+
     Find :   A variety of search/replace controls including predefined regex
              searches in a user-programmable button array.
-    
+
     Notes :  A QPlainTextEdit where the user can keep notes that are saved as
 	     part of the metadata.
 
     Pages :  A table of all pages with their scan (.png) numbers, folio
              (pagination) controls, and proofer ids. Page boundaries are kept
 	     in the metadata after page delimiters are purged.
-    
+
     Chars :  A table of the character census, showing for each its glyph,
              hex value, count, and Unicode class, sortable on any column.
-    
+
     Words :  A table of the word census, showing for each its text, count,
              and class info (all-cap, fails spellcheck, etc), sortable
              by text and count, and filterable on class.
-    
+
     Flow :   Various controls for text reflow, ascii table processing,
              and HTML conversion.
-    
+
     View :   Live preview of the (html) document (QWebView)
 
     FNote(TBS) :  Controls related to footnote processing and a table of the
              footnotes found, with errors indicated.
-    
+
     Help :   Terse documentation of all features
 '''
 
@@ -257,9 +257,9 @@ pqMsgs.noteEvent("Getting path to dictionaries")
 # -- yes, cheesy as heck! -- but we get our path different ways depending
 # on whether we are running in development or bundled by pyinstaller.
 if hasattr(sys, 'frozen') : # bundled by pyinstaller?
-	base = os.path.dirname(sys.executable)
+    base = os.path.dirname(sys.executable)
 else: # running under normal python e.g. from command line or an IDE
-	base = os.path.dirname(__file__)
+    base = os.path.dirname(__file__)
 IMC.appBasePath = base
 IMC.dictPath = os.path.join(base,u"dict")
 
