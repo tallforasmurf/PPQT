@@ -591,6 +591,7 @@ class findPanel(QWidget):
         if self.validHit(findTc): # got a hit and in-bounds
             IMC.editWidget.setTextCursor(findTc)
             IMC.editWidget.setFocus(Qt.TabFocusReason)
+            IMC.editWidget.centerCursor()
             self.selectionFromFind = True
         else: # tell user
             pqMsgs.flash("Not found", True)

@@ -57,7 +57,7 @@ program source syntax coloring) in order to provide scanno-hiliting and
 spell-check-twiddly-red-underlines.
 '''
 
-from PyQt4.QtCore import (Qt, QChar, QRegExp, QString, SIGNAL)
+from PyQt4.QtCore import (Qt, QChar, QRect, QRegExp, QString, SIGNAL)
 from PyQt4.QtGui import (
     QBrush, QColor, QFont, QFontInfo, QMessageBox,
     QPlainTextEdit, QSyntaxHighlighter, QProgressDialog,
@@ -305,6 +305,55 @@ class PPTextEditor(QPlainTextEdit):
             event.ignore()
             super(PPTextEditor, self).keyPressEvent(event)
 
+    # Called from pqFind after doing a successful search, this method centers the
+    # current selection (which is the result of the find) in the window. If the selection
+    # is large, put the top of the selection higher than center but on no account 
+    # above the top of the viewport. Two problems arise: One, the rectangles returned
+    # by .cursorRect() and by .viewport().geometry() are in pixel units, while the
+    # vertical scrollbar is sized in logical text lines. So we work out the adjustment
+    # as a fraction of the viewport, times the scrollbar's pageStep value to get lines.
+    # Two, cursorRect gives only the height of the actual cursor, not of the selected
+    # text. To find out the height of the full selection we have to get a cursorRect
+    # for the start of the selection, and another for the end of it. 
+    def centerCursor(self) :
+        tc = QTextCursor(self.textCursor()) # copy the working cursor with its selection
+        top_point = tc.position() # one end of selection, in character units
+        bot_point = tc.anchor() # ..and the other end
+        if top_point > bot_point : # often the position is > the anchor
+            (top_point, bot_point) = (bot_point, top_point)
+        tc.setPosition(top_point) # cursor for the top of the selection
+        selection_top = self.cursorRect(tc).top() # ..get its top pixel
+        line_height = self.cursorRect(tc).height() # and save height of one line
+        tc.setPosition(bot_point) # cursor for the end of the selection
+        selection_bot = self.cursorRect(tc).bottom() # ..selection's bottom pixel
+        selection_height = selection_bot - selection_top + 1 # selection height in pixels
+        view_height = self.viewport().geometry().height() # scrolled area's height in px
+        view_half = view_height >> 1 # int(view_height/2)
+        pixel_adjustment = 0
+        if selection_height < view_half :
+            # selected text is less than half the window height: center the top of the
+            # selection, i.e., make the cursor_top equal to view_half.
+            pixel_adjustment = selection_top - view_half # may be negative
+        else :
+            # selected text is taller than half the window, can we show it all?
+            if selection_height < (view_height - line_height) :
+                # all selected text fits in the viewport (with a little free): center it.
+                pixel_adjustment = (selection_top + (selection_height/2)) - view_half
+            else :
+                # not all selected text fits the window, put text top near window top
+                pixel_adjustment = selection_top - line_height
+        # OK, convert the pixel adjustment to a line-adjustment based on the assumption
+        # that a scrollbar pageStep is the height of the viewport in lines.
+        adjust_fraction = pixel_adjustment / view_height
+        vscroller = self.verticalScrollBar()
+        page_step = vscroller.pageStep() # lines in a viewport page, actually less 1
+        adjust_lines = int(page_step * adjust_fraction)
+        target = vscroller.value() + adjust_lines
+        if (target >= 0) and (target <= vscroller.maximum()) :
+            vscroller.setValue(target)
+            
+
+        
     # Catch the contextMenu event and extend the standard context menu with
     # a separator and the option to add a word to good-words, but only when
     # there is a selection and it encompasses just one word.
