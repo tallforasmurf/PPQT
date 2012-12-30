@@ -63,6 +63,8 @@ class htmlPreview(QWidget):
 	self.refreshButton = QPushButton(u"Refresh")
 	hbox.addWidget(self.refreshButton,0)
 	hbox.addStretch(1)
+	self.refreshAndClearButton = QPushButton(u"Refresh + Clear")
+	hbox.addWidget(self.refreshAndClearButton)
 	vbox = QVBoxLayout()
 	vbox.addLayout(hbox,0)
 	self.preview = QWebView(self)
@@ -91,8 +93,9 @@ class htmlPreview(QWidget):
 	self.settings.setAttribute(QWebSettings.ZoomTextOnly, True)
 	# the following causes a hard error in linux
 	#self.settings.setAttribute(QWebSettings.SiteSpecificQuirksEnabled, False)
-	# hook up the refresh button
-	self.connect(self.refreshButton, SIGNAL("clicked()"),self.refresh)
+	# hook up the refresh buttons
+	self.connect(self.refreshButton, SIGNAL("clicked()"),self.refresh1Click)
+	self.connect(self.refreshAndClearButton, SIGNAL("clicked()"),self.refresh2Click)
 	# hook up the load status signals
 	self.connect(self.preview,SIGNAL("loadStarted()"),self.loadStarts )
 	self.connect(self.preview,SIGNAL("loadProgress(int)"),self.loadProgresses )
@@ -109,12 +112,23 @@ class htmlPreview(QWidget):
 	# at construction time. It may be many hours before the user wants
 	# to preview html. So require an explicit refresh click to do it.	
     
-    # refresh button clicked. Get the current scroll position (a QPoint that
-    # reflects the position of the scrollbar "thumb" in the webview)
-    # from the QWebFrame -- associated with the QWebPage -- displayed in our
-    # QWebView -- and save it. See loadEnds() for use.
-    # Then reload the HTML contents from the editor.
-    def refresh(self):
+    # Plain Refresh clicked.
+    def refresh1Click(self) :
+	self.refresh(False)
+    # Refresh + Clear clicked.
+    def refresh2Click(self) :
+	self.refresh(True)
+
+    # One or the other refresh button clicked.
+    # Get the current scroll position (a QPoint that reflects the position of the
+    # scrollbar "thumb" in the webview) from the QWebFrame that is associated with
+    # the QWebPage that is displayed in our QWebView, and save it for use after
+    # the loadEnds() signal is received, to restore the previous scroll position.
+    # 
+    # If Refresh+Clear was clicked, clear the memory cache -- a function that is 
+    # strangely located in the web settings object, but whatever -- and then reload
+    # the HTML contents from the editor document,
+    def refresh(self, clearCache=False ):
 	# this could be first refresh for this book file, so set the
 	# base URL for its images.
 	sep = QChar(u'/')
@@ -128,6 +142,8 @@ class htmlPreview(QWidget):
 	# refresh the preview, you won't have to scroll down to the end
 	# for the 500th time to see your changes.
 	self.scrollPosition = self.preview.page().mainFrame().scrollPosition()
+	if clearCache :
+	    self.settings.clearMemoryCaches()
 	self.preview.setHtml(IMC.editWidget.toPlainText(),self.baseURL) 
 
     # handle the load-in-progress signals by running our main window's
