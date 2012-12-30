@@ -70,9 +70,11 @@ See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 <h2 id='New'>What's New in This Version</h2>
 <p>(See also <a href='#OldNew'>What Was New</a> for previous changes.)</p>
 <h3>What's New as of 22 December 2012</h3>
-<p>Just one change: at the request of user Bibimbop, after any successful
+<p>After any successful
 search the found text is centered in the text window. If the found selection is
 large, the top of the selection is always visible although the end of the selection might be out of sight.</p>
+<p>The Preview panel has a new button, "Refresh + Clear," which clears
+the browser cache so that images are reloaded from disk.</p>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
 If you need to open a second document (for example, a commented copy from Smooth Reading), just start a second copy of PPQT.</p>
@@ -669,7 +671,7 @@ td.c {text-align:center}</pre>
 this element of the HTML 4.0 standard is not supported by any browsers, so Decimal-aligned columns just default to left-alignment. Too bad.</p>
 <h2 id='View'>The Preview Panel</h2>
 <p>Click the Pvw tab to display the HTML Preview panel. Whenever
-you click the Refresh button on this panel, the complete contents of the
+you click either Refresh button on this panel, the complete contents of the
 Edit document are copied into this panel and displayed as HTML.</p>
 <p>The default font is set to Palatino and the initial text font size is set to 16 points. When the focus is in the Preview panel, you can key ctl-minus and ctl-plus to zoom to smaller and larger text font sizes.</p>
 <p>
@@ -680,6 +682,9 @@ so the <tt>images</tt> folder should be located at the same place as the book te
 <p>If you click a link in the preview (for example, to open a high-resolution image)
 the browser follows the link and displays the linked page or image.
 To return to the book preview, key ctl-B or ctl-[ (control-left bracket).</p>
+<p>The Refresh button only refreshes the HTML. When you click Refresh + Clear,
+the browser's memory cache is cleared and any images are reloaded from disk.
+Use this button if you make changes in the images.</p>
 <p>Key ctl-F in the Preview panel to open a simple Find dialog. Key ctl-G to search again for the found text.</p>
 <h2 id='Foot'>The Footnote Panel</h2>
 <p>Click the Fnote tab to display the Footnote management panel.</p>
