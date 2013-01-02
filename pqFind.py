@@ -620,6 +620,11 @@ class findPanel(QWidget):
     # clear the selectionFromFind switch so replace will not work twice in
     # a row).
     #
+    # Following the replacement of text at the end of a line with a newline
+    # (e.g. find </i>\n<i> replace \n) the editor display can be confused and
+    # show some residual or missing characters. To clear this we call .update()
+    # after any replace that contained a newline.
+    #
     # See also comments in the Prolog about regex replace.
     
     def doReplace(self,repno,andNext=False,andPrior=False, doAll=False):
@@ -649,6 +654,9 @@ class findPanel(QWidget):
                 # perform the replacement!
                 qs.replace(qrex,qrep)
                 tc.insertText(qs) # put the updated text back in the doc.
+                if qrep.contains(IMC.QtLineDelim) :
+                    # The display might be borked so make the panel repaint itself
+                    IMC.editWidget.update()
             else: # plain replace, just update the selection with new text
                 tc.insertText(self.repEdits[repno].text())
             # QTextEdit leaves the cursor at the end of insert;
