@@ -270,9 +270,6 @@ class MainWindow(QMainWindow):
         
         status = self.statusBar()
         status.setSizeGripEnabled(False)
-        # Create the progress bar in our status bar, in pqMsgs because that
-        # is where are all the routines to run it.
-        pqMsgs.makeBarIn(status)
         # Create the line number widget. The widget definition is in pqMsgs.
         # It gets the cursor movement signal from the editor, obviously.
         # status.addWidget puts it at the extreme left, effectively "under"
@@ -280,8 +277,10 @@ class MainWindow(QMainWindow):
         self.lnum = pqMsgs.lineLabel()
         self.connect(self.editor, SIGNAL("cursorPositionChanged()"),
                         self.lnum.cursorMoved)
-        self.connect(self.lnum, SIGNAL("returnPressed()"), self.lnum.moveCursor)
-        status.addWidget(self.lnum)
+        status.addPermanentWidget(self.lnum)
+        # Create the progress bar in our status bar, in pqMsgs because that
+        # is where are all the routines to run it. It adds at  the extreme right.
+        pqMsgs.makeBarIn(status)
         #
         # -----------------------------------------------------------------
         # Get our window geometry from the settings file and set it, restoring

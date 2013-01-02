@@ -33,12 +33,19 @@ __license__ = '''
 Misc message services factored out of various modules
 '''
 
-from PyQt4.QtCore import (Qt, QString, QStringList )
+from PyQt4.QtCore import (
+    Qt,
+    QString, 
+    QStringList,
+    SIGNAL, SLOT
+)
 from PyQt4.QtGui import (QApplication,
     QDialog,
     QFont,QFontInfo,
+    QHBoxLayout,
     QInputDialog,
     QIntValidator,
+    QLabel,
     QLineEdit,
     QProgressBar,
     QSizePolicy,
@@ -46,7 +53,9 @@ from PyQt4.QtGui import (QApplication,
     QMessageBox,
     QTextEdit,
     QTextCursor,
-    QTextDocument)
+    QTextDocument,
+    QWidget
+    )
 
 # Subroutine to get a QFont for an available monospaced font, preferably using
 # the font family named in IMC.fontFamily -- set from the View menu in pqMain.
@@ -214,26 +223,56 @@ def beep():
     QApplication.beep()
 
 # Subclass of QLineEdit to make our line-number widget for the status bar.
-# Defined here because it's a "message" of sorts. But actually it is
-# instantiated and hooked up to signals in pqMain.
+# Actually not a single widget but a widget containing an HBox layout with
+# TWO widgets (maybe someday three): a line number and a column number.
+# Combined in one because that lets us update both from a single
+# cursorPositionChanged signal, saving some overhead.
+# The object is instantiated from, and hooked to signal in, pqMain.
+#
 
-class lineLabel(QLineEdit):
+class lineLabel(QWidget):
     def __init__(self, parent=None):
-        super(QLineEdit, self).__init__(parent)
-        self.setAlignment(Qt.AlignRight)
-        # allow up to 5 digits. Editing a doc with > 99K lines? Good luck.
+	super(QWidget, self).__init__(parent)
+	# Make a layout frame
+	hb = QHBoxLayout()
+	lnumlab = QLabel(u"line")
+	lnumlab.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+	hb.addWidget(lnumlab)
+	# Create our line number widget
+	self.lnum = QLineEdit()
+        self.lnum.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        # allow up to 5 digits. Editing a doc with more than 99K lines? Good luck!
         val = QIntValidator()
         val.setRange(0,99999)
-        self.setValidator(val)
-        pxs = self.fontInfo().pixelSize()
-        self.setMaximumWidth(6*pxs)
-    # This slot receives the ReturnPressed signal from our widget, meaning
+        self.lnum.setValidator(val)
+	# Set a fixed width of 6+ digits.
+        pxs =  int( 6 * self.fontInfo().pixelSize() )
+        self.lnum.setMaximumWidth(pxs)
+	self.lnum.setMinimumWidth(pxs)
+	hb.addWidget(self.lnum)
+	# connect our lnum widget's ReturnPressed signal to our slot for that
+	self.connect(self.lnum, SIGNAL("returnPressed()"), self.moveCursor)
+	# Create a column-number widget
+	self.cnum = QLabel()
+	self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+	pxs = int(pxs / 2) # 3 digits wide
+	self.cnum.setMaximumWidth(pxs)
+	self.cnum.setMinimumWidth(pxs)
+	cnumlab = QLabel(u" col ")
+	cnumlab.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+	hb.addWidget(cnumlab)
+	hb.addWidget(self.cnum)
+	hb.addStretch()
+	# Set the hbox as our layout
+	self.setLayout(hb)
+	
+    # This slot receives the ReturnPressed signal from our lnum widget, meaning
     # the user has finished editing the number. Move the editor's cursor
     # to the start of that line, or to the end of the document. Then put the
     # keyboard focus back in the editor so the cursor can be seen.
     def moveCursor(self):
         doc = IMC.editWidget.document()
-        (bn, flag) = self.text().toInt()
+        (bn, flag) = self.lnum.text().toInt()
         tb = doc.findBlockByLineNumber(bn)
         if not tb.isValid():
             tb = doc.end()
@@ -244,9 +283,13 @@ class lineLabel(QLineEdit):
 
     # This slot is connected to the editor's cursorPositionChanged signal.
     # Change the contents of the line number display to match the new position.
+    # Change the contents of the column number display to match the new position.
     def cursorMoved(self):
-        bn = IMC.editWidget.textCursor().blockNumber()
-        self.setText(QString(repr(bn)))
+	tc = IMC.editWidget.textCursor()
+        bn = tc.blockNumber()
+        self.lnum.setText(QString(repr(bn)))
+	cn = tc.positionInBlock()
+	self.cnum.setText(QString(repr(cn)))	
 
 # debugging function to display a keyevent on the console
 from PyQt4.QtCore import (QEvent)
