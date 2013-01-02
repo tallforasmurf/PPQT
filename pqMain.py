@@ -90,9 +90,13 @@ class MainWindow(QMainWindow):
         IMC.bookPath = QString()
         #  * IMC.bookDirPath is the leading part of bookFile, used to
         #    look for pngs, goodwords etc, and to start open/save dialogs.
+        #    (also used in pqView as the URL basepath for image lookup)
         IMC.bookDirPath = QString()
         #  * IMC.bookType is the file suffix, for those who care.
         IMC.bookType = QString()
+        #  * self.buttonDirPath is the default directory start for opening
+        #    or saving user Find buttons. Initialize to our extras directory.
+        self.buttonDirPath = QString(IMC.appBasePath + u"/extras/" )
         #  * character detector object used when opening an ambiguous file
         self.charDetector = None # instantiated when first needed
         self.utfEncoding = QString(u'UTF-8') # handy consts
@@ -1077,11 +1081,11 @@ class MainWindow(QMainWindow):
     # -----------------------------------------------------------------
     # File> Load Find Buttons clicked. Ask the user for a file to open and
     # if one is given, get its codec and open it. Pass the text stream to the
-    # Find panel loadUserButtons method. Start the search in the book folder,
-    # as we expect user buttons to be book-related.
+    # Find panel loadUserButtons method. Start the search in the last-used
+    # button file folder, defaulting to our /extras (self.buttonDirPath).
     
     def buttonLoad(self):
-        startPath = QString(".") if IMC.bookPath.isEmpty() else IMC.bookPath
+        startPath = self.buttonDirPath
         bfName = QFileDialog.getOpenFileName(self,
                 "PPQT - choose a file of saved user button definitions",
                 startPath)
@@ -1094,13 +1098,15 @@ class MainWindow(QMainWindow):
             if buttonStream is not None:
                 IMC.findPanel.loadUserButtons(buttonStream)
                 fh.close()
+                # after successful use, update start path for saving
+                self.buttonDirPath = bfInfo.path()
 
     # -----------------------------------------------------------------
     # File> Save Find Buttons clicked. Ask the user for a file to open.
     # If one is given, determine its coded, and open it for output and
     # pass the stream to the Find panel saveUserButtons method.
     def buttonSave(self):
-        startPath = QString(".") if IMC.bookPath.isEmpty() else IMC.bookDirPath
+        startPath = self.buttonDirPath
         bfName = QFileDialog.getSaveFileName(self,
                 "Save user-defined buttons as:", startPath)
         if not bfName.isEmpty():
@@ -1113,6 +1119,8 @@ class MainWindow(QMainWindow):
             if buttonStream is not None:
                 IMC.findPanel.saveUserButtons(buttonStream)
                 fh.close()
+                # after successful use, update start path for saving
+                self.buttonDirPath = bfInfo.path()                
 
     # -----------------------------------------------------------------
     # reimplement QWidget::closeEvent() to check for a dirty file and save it.
