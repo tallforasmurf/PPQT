@@ -70,11 +70,22 @@ See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 <h2 id='New'>What's New in This Version</h2>
 <p>(See also <a href='#OldNew'>What Was New</a> for previous changes.)</p>
 <h3>What's New as of 22 December 2012</h3>
-<p>After any successful
+<ul>
+<li>The status bar of the main window now has both a line number and
+a column number display. The column number reflects the nominal position
+of the edit cursor. When there is a selection, the nominal position may be the
+left or the right end of the selected text, depending on how the selection was made.</li>
+<li>After any successful
 search the found text is centered in the text window. If the found selection is
-large, the top of the selection is always visible although the end of the selection might be out of sight.</p>
-<p>The Preview panel has a new button, "Refresh + Clear," which clears
-the browser cache so that images are reloaded from disk.</p>
+large, the top of the selection is always visible although the end of the selection might be out of sight.</li>
+<li>The Preview panel has a new button, "Refresh + Clear," which clears
+the browser cache so that images are reloaded from disk.</li>
+<li>Fixed a minor bug with the display of text after performing a replace
+of text at the end of a line with a newline.</li>
+<li>The file-open dialog for Load Find Buttons and Save Find Buttons is
+initialized to the PPQT "extras" folder, or to the last-used folder for loading
+or saving find buttons.</li>
+</ul>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
 If you need to open a second document (for example, a commented copy from Smooth Reading), just start a second copy of PPQT.</p>
@@ -137,13 +148,16 @@ Use the View&nbsp;>&nbsp;Font... command to select a font from your system, whic
 <p>Below the edit panel is a status area where activity messages appear
 from time to time. Bottom center is a line-number field displaying the
 line number of the edit cursor. Type a new number in
-that field and press Return to jump to a different line. Further to the
+that field and press Return to jump to a different line.</p>
+<p>Next to the line number field is a field showing the cursor column
+position. When no text is selected, this is the column number of the character to the right of the insertion point. When there is a selection, the position number is either the left or the right end of the selected text, depending on how the selection was made (e.g. by dragging left to right, or right to left).</p>
+<p>Further to the
 right is a progress bar that shows the status of some long-running operations.</p>
 <h3>Selecting Text</h3>
 <p>Select text as usual by dragging,
 or by click then shift-click,
 or by doubleclick (word) or  tripleclick (line).
-Extend a selection by holding the shift key and using an arrow key,
+Extend a selection by holding the shift key when using a cursor movement key
 or selecting a bookmark (see below).
 PPQT does not support rectangular selections or discontinuous selections.</p>
 <p>You can move text by dragging the selection, and
@@ -155,7 +169,8 @@ in addition to the usual copy and paste keystrokes and Edit menu commands.</p>
 The arrow keys, Home, End, PageUp and PageDown keys work together
 with the control key to move the edit cursor
 following the usual conventions for your operating system.
-Add the shift key to any cursor move to extend the selection by that amount.</p>
+Add the shift key to any cursor move to extend the selection by that amount.
+For example, ctl-right arrow goes to the end of the line, but shift-ctl-right arrow selects text to the end of the line.</p>
 <h4>Editing Keys</h4>
 <ul>
 <li>ctl-c/ctl-x/ctl-v: copy/cut/paste</li>
