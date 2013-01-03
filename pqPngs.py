@@ -5,9 +5,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.01.1" # refer to PEP-0008
+__version__ = "1.02.0" # refer to PEP-0008
 __author__  = "David Cortesi"
-__copyright__ = "Copyright 2011, 2012 David Cortesi"
+__copyright__ = "Copyright 2011, 2012, 2013 David Cortesi"
 __maintainer__ = "?"
 __email__ = "tallforasmurf@yahoo.com"
 __status__ = "first-draft"
