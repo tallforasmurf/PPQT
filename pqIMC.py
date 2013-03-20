@@ -40,7 +40,7 @@ one module. Might be a kludge, might be very clever.
 The ppqt module stuffs a reference to IMC into every module it imports,
 thus they all refer to the one instance.
 '''
-from PyQt4.QtCore import (Qt,QChar)
+from PyQt4.QtCore import (Qt,QChar,QSysInfo,PYQT_VERSION_STR,QT_VERSION_STR)
 #
 # Stupid star trek reference here.
 #
@@ -476,8 +476,9 @@ u'\u2663' : u'clubs', # black club suit (= shamrock)[f]
 u'\u2665' : u'hearts', # black heart suit (= valentine)[f]
 u'\u2666' : u'diams' # black diamond suit[f]            
                         }
-        # Identify the operating system, in case we find a reason to care
-        from PyQt4.QtCore import QSysInfo
+        # Identify the platform and operating system, in case we find a reason to care
+        self.version_pyqt = PYQT_VERSION_STR # python string eg '4.9.5'
+        self.version_qt = QT_VERSION_STR # python string e.g. '4.8.0'
         try:
             junk = QSysInfo.WindowsVersion
             self.osType = 'Win'
