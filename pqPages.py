@@ -379,11 +379,11 @@ class pagesPanel(QWidget):
         if b :  
             # Convert any '\n' in the text to the QT line delimiter char
             # we do this in the copy so the lineEdit text doesn't change
-            dbg = unicode(qi)
             qi.replace(QString(u'\\n'),QString(IMC.QtLineDelim))
-            dbg = unicode(qi)
             # get a cursor on the edit document
             tc = QTextCursor(IMC.editWidget.textCursor())
+            # Set to insert after the position?
+            tc.setKeepPositionOnInsert(True)
             tc.beginEditBlock() # start single undoable operation
             # Working from the end of the document backward, go to the
             # top of each page and insert the string
@@ -400,6 +400,9 @@ class pagesPanel(QWidget):
                     qf = QString(qi)
                     qf.replace(QString(u'%f'),f,Qt.CaseInsensitive)
                     tc.insertText(qf)
+                    # put the page cursor back at the start of the page
+                    page[0].movePosition(
+                        QTextCursor.Left,QTextCursor.MoveAnchor,qf.size())
             tc.endEditBlock() # wrap up the undo op
 
 
