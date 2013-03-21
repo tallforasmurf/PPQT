@@ -603,7 +603,7 @@ splitRE = QRegExp(u'( {2,}|\s*\|\s*)')
 
 def tableReflow(tc,doc,unitList):
     # Note the properties of the table including specified width, multiline etc.
-    tprops = tableProperties(getLineQs(tc,doc,unitList[0]['A']),unitList[0]['A'])
+    tprops = tableProperties(getLineQs(tc,doc,unitList[0]['A']))
     # If the width wasn't spec'd then develop a target width based on the
     # current max line width less any indents in the first work unit.
     # Take L and R from the first "real"
@@ -936,7 +936,7 @@ def getLineText(tc,doc,lineNumber):
 # aligned C or R, we insert class='TC' or class='TR' into the <td>.
 
 def tableHTML(tc,doc,unitList):
-    tprops = tableProperties(getLineQs(tc,doc,unitList[0]['A']),unitList[0]['A'])
+    tprops = tableProperties(getLineQs(tc,doc,unitList[0]['A']))
     # if the table width was specified, figure its percentage based
     # on the line width in effect (the table might be nested, e.g.).
     twpct = None

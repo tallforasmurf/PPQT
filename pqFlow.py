@@ -559,7 +559,8 @@ The reflow work unit produced by parseText below is a dict with these members:
 		tc.setPosition(blockZ.position()+blockZ.length())
 	    else:
 		tc.setPosition(blockZ.position()+blockZ.length()-1)
-	    # then drag to select up to the beginning of the first line
+	    # then drag to select up to the beginning of the first line.
+	    # Note the result of this is that tc.position < tc.anchor.
             blockA = blockZ if blockNumberA == blockNumberZ \
 	           else doc.findBlockByNumber(blockNumberA)
             tc.setPosition(blockA.position(),QTextCursor.KeepAnchor)
@@ -568,17 +569,28 @@ The reflow work unit produced by parseText below is a dict with these members:
 		# for example if they had previously been reflowed
 		unit['F'] = max(0, unit['F'] - leastIndent)
 		unit['L'] = max(0, unit['L'] - leastIndent)
+	    # At this point the text to be flowed is defined by tc.position()
+	    # and tc.anchor. Get a QString view of that text.
+	    flowText = tc.selectedText()
+	    # Record the indices of any page break cursors that point within
+	    # that text, and insert ZWNJ characters at the breaks.
+	    # This is moved out of line for readability and for access from pqTable.
+	    listOfBreaks = markPageBreaks(tc,flowText)
 	    # Optimal paragraph wrap is quite lengthy, I'm pulling the code
-	    # out of line for readability. Although "setting up a stack frame
-	    # is expensive" (Guido) it won't be significant over all.
-	    flowText = optimalWrap(tc,unit,
+	    # out of line for readability.
+	    flowText = optimalWrap(flowText,unit,
 	                           self.optParaWidth.value(),
 	                           self.maxParaWidth.value(),
 	                           self.itbosc)
             # flowText now has all the tokens of this paragraph or line,
-	    # including a poem line number if present. So just stick the
-	    # whole mess back into the document.
-	    tc.insertText(flowText) # replace selection with reflow
+	    # including a poem line number if present, appropriately divided
+	    # by space and linebreak characters. It may have ZWNJ page break marks.
+	    # Now remove those ZWNJs and update the listOfBreaks with new positions.
+	    unmarkPageBreaks(tc,flowText,listOfBreaks)
+	    # Insert the modified text into the document. This horks the pageTable
+	    # cursors but we will repair them.
+	    tc.insertText(flowText) # replace selection with reflowed text
+	    fixPageBreaks(listOfBreaks)
 	# end of "for u in reversed range of unitList" loop
         pqMsgs.endBar() # wipe out the progress bar
         tc.endEditBlock() # close the single undo/redo macro
@@ -1082,6 +1094,61 @@ markupZ = {
             '*':u'</pre>'
             }
 
+# These subroutines of theRealReflow are out of line for readability.
+
+# markPageBreaks receives a cursor and a qstring copy of its selection.
+# Find any page-break cursor in IMC.pageTable whose position is >= tc.position
+# and < tc.anchor. Create and return a list of those breaks in the form
+# [ [i,p]...] where i is the pageTable index and p its current position.
+# Also, inject \u200C ZWNJ at the position of each pagebreak.
+
+def markPageBreaks(tc,ft):
+    pbl = []
+    A = tc.position()
+    Z = tc.anchor()
+    # Use bisect-right to find the highest page table entry <= Z
+    # (ToDo: we could optimize this based on the knowledge that reflow works
+    # backward through the document and just do a sequential search back
+    # from the last-noted page break, saving the full search for the initial call.)
+    # (OTOH in a 500pp book the below loops at most 8 times. So K.I.S.S.)
+    hi = len(IMC.pageTable)
+    lo = 0
+    while lo < hi:
+	mid = (lo + hi)//2
+	if Z < IMC.pageTable[mid][0].position(): hi = mid
+	else: lo = mid+1
+    # the pagebreak cursor at lo-1 is the greatest <= Z. If it is also
+    # >A then we need to note it and maybe the one(s) preceding it.
+    while True :
+	lo -= 1
+	if lo < 0 :
+	    break # second or later iteration (on first, if pageTable is empty)
+	P = IMC.pageTable[lo][0].position()
+	if P <= A :
+	    break # will often happen on first iteration
+	pbl.append([lo,P])
+	ft.insert(P-A, IMC.ZWNJ)
+    return pbl
+
+# unmarkPageBreaks receives the original cursor, whose position is the base
+# offset of the text, and the reflowed text string, and the list prepared
+# by markPageBreaks. It finds and delete the ZWNJs, and updates the position
+# values in the pagebreak list.
+
+def unmarkPageBreaks(tc,ft,pbl):
+    P = tc.position() # base offset of the text
+    for i in reversed(range(len(pbl))) :
+	j = ft.indexOf(IMC.ZWNJ)
+	pbl[i][1] = P + j
+	ft.remove(j,1)
+
+# fixPageBreaks takes a list of pageTable indices and new position values
+# and updates those cursors.
+
+def fixPageBreaks(pbl):
+    for [i,p] in pbl:
+	IMC.pageTable[i][0].setPosition(p)
+
 # tokGen is a generator function that returns the successive tokens from the
 # text selected by a text cursor. Each token is returned as a tuple, (tok,tl)
 # where tok is a QString and tl is its logical length, which may be less than
@@ -1090,6 +1157,12 @@ markupZ = {
 # is a global function, not a method). Note that a multiline selection has
 # \u2029 instead of \n, but the regexes treat it as \s anyway so we don't care.
 
+# The Zero Width Non-Joiner, \u200C, may appear in a token to mark the position
+# of a page-break. \u200C is a nonspace so is part of a token matched by (\S+).
+# However its logical width is zero. We cannot assume there is only one such
+# in a token; it is possible to have 2 page breaks with nothing between,
+# falling inside one paragraph. Unlikely but...
+
 # This is the second version of tokGen; the first parsed the input character by
 # character much as a C prog would. This finds tokens using an RE, then looks
 # within the token for markups using another RE. The overhead of multiple RE
@@ -1097,12 +1170,11 @@ markupZ = {
 # so this takes less than half the time.
 ibsRE = QRegExp("</?(i|b|sc)>",Qt.CaseInsensitive)
 tokRE = QRegExp(u"\s*(\S+)") # default is greedy
-def tokGen(tc, itbosc):
+def tokGen(flowText, itbosc):
     global ibsRE, tokRE
-    searchText = tc.selectedText() # get a QString view of selected text
     j = 0 # index of last-found token
     while True : # once around per token returned
-        j = tokRE.indexIn(searchText,j)
+        j = tokRE.indexIn(flowText,j)
         if j < 0 : break # no more tokens, end of generation
         qs = QString(tokRE.cap(1)) # make a copy of the token text
         ll = qs.size() # assume its gross length is logical length
@@ -1115,6 +1187,7 @@ def tokGen(tc, itbosc):
             if x < 2 :
                 ll -= (ml-x) # treat the markup as size 0 or 1
             m = ibsRE.indexIn(qs,m+ml) # another markup in this token?
+	ll -= qs.count(IMC.ZWNJ)
         yield (qs, ll)
 
 # Optimal paragraph wrap. After considerable research, including reading
@@ -1129,7 +1202,7 @@ def tokGen(tc, itbosc):
 # values and, sometimes, a poem line number.
 # This RE matches the last/only line of a poem with a line number.
 poemLastLineRE = QRegExp(u'\u2029?(.+)( \d+)\u2029$')
-def optimalWrap(tc,unit,optimum,maximum,itbosc):
+def optimalWrap(flowText,unit,optimum,maximum,itbosc):
     global tokGen
     # Set up the "too much" cost factor
     SquareRootOfInfinity = 32767
@@ -1153,7 +1226,7 @@ def optimalWrap(tc,unit,optimum,maximum,itbosc):
     T = [] 
     W = []
     grossLen = 0
-    for (tok,ll) in tokGen(tc,itbosc) :
+    for (tok,ll) in tokGen(flowText,itbosc) :
 	T.append(tok)
 	W.append(ll)
 	grossLen += ll

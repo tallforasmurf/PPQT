@@ -126,6 +126,8 @@ class tricorder():
 
         # constant value for the line-delimiter used by QPlainTextEdit
         self.QtLineDelim = QChar(0x2029)
+        # constant value for the zero-width-non-joiner used as a marker in reflow
+        self.ZWNJ = QChar(0x200C)
 
         # Keystrokes checked by editor and other panels that monitor KeyEvent signals.
         # In rough order of frequency of use, we support:
