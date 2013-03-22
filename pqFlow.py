@@ -529,7 +529,7 @@ The reflow work unit produced by parseText below is a dict with these members:
 		# line of /X which we skip, or /T which we defer
 		continue # don't touch it
 	    if (markupCode == u'*') or (markupCode == u'C') or (markupCode == u'R') :
-		# For lines in R, *, and C, just adjust the leading spaces.
+		# For lines in /*, /C and /R, just adjust the leading spaces.
 		# F is how many spaces this line has (/*) or needs (/C, /R).
 		indentAmount = unit['F']
 		if markupCode == u'*' or \
@@ -537,18 +537,28 @@ The reflow work unit produced by parseText below is a dict with these members:
 		    # reduce that to bring the longest line to the proper
 		    # left margin, typically 2 but could be nested deeper.
 		    indentAmount = unit['F'] - leastIndent + unit['L']
-		# click and drag to select the whole line
+		# Click and drag to select the whole line, "dragging" right to left
+		# so as to work with markPageBreaks below. Note blockA.lenth()
+		# includes the linedelim at the end of the line.
 		blockA = doc.findBlockByNumber(blockNumberA)
-		tc.setPosition(blockA.position()) # click
-		tc.setPosition(blockA.position()+blockA.length(),
-		               QTextCursor.KeepAnchor) # and draaaag
-		# get the text to python land
-		lineText = unicode(tc.selectedText())
+		tc.setPosition(blockA.position()+blockA.length()) # click..
+		tc.setPosition(blockA.position(),QTextCursor.KeepAnchor) # ..and draaaag
+		# get the selected text as a QString and mark it up for
+		# page breaks. 98% of the time, listOfBreaks will be []
+		flowText = tc.selectedText()
+		listOfBreaks = markPageBreaks(tc,flowText)
 		# strip leading and trailing spaces, and prepend the number
 		# of spaces the line ought to have, and add a newline
-		lineText = (u' '*indentAmount)+lineText.strip()+u'\n'
-		# put that back in the document replacing the existing line
-		tc.insertText(QString(lineText))
+		flowText = flowText.trimmed()
+		flowText = flowText.prepend(QString(u' '*indentAmount))
+		flowText = flowText.append(IMC.QtLineDelim)
+		# Remove any pagebreak marker and note correct pagebreak positions
+		unmarkPageBreaks(tc,flowText,listOfBreaks)		
+		# put the text back in the document replacing the existing line,
+		# this horks any pagebreak cursor that fell in that line.
+		tc.insertText(flowText)
+		# Fix up a page break cursor.
+		fixPageBreaks(listOfBreaks)
 		continue # and that's that for this unit
 	    # This unit describes a paragraph of one or more lines to reflow.
 	    # This includes paras of open text, /Q, and /U, and lines of /P.
@@ -592,8 +602,13 @@ The reflow work unit produced by parseText below is a dict with these members:
 	    tc.insertText(flowText) # replace selection with reflowed text
 	    fixPageBreaks(listOfBreaks)
 	# end of "for u in reversed range of unitList" loop
-        pqMsgs.endBar() # wipe out the progress bar
-        tc.endEditBlock() # close the single undo/redo macro
+	# Clear the progress bar from the status area
+        pqMsgs.endBar()
+	# Close the single undo/redo macro
+        tc.endEditBlock()
+	# Reposition the document cursor at the top of the reflowed section,
+	# because otherwise on reflow document it ends up in the weeds at the end.
+	IMC.editWidget.textCursor().setPosition(topBlock.position())
 	# and that's reflow, folks.
 
     # This is the text parser used by theRealReflow and theRealHTML.
@@ -1097,6 +1112,8 @@ markupZ = {
 # These subroutines of theRealReflow are out of line for readability.
 
 # markPageBreaks receives a cursor and a qstring copy of its selection.
+# For this we assume that the selection was made by "dragging" left to right,
+# i.e. tc.position < tc.anchor.
 # Find any page-break cursor in IMC.pageTable whose position is >= tc.position
 # and < tc.anchor. Create and return a list of those breaks in the form
 # [ [i,p]...] where i is the pageTable index and p its current position.
@@ -1124,14 +1141,14 @@ def markPageBreaks(tc,ft):
 	if lo < 0 :
 	    break # second or later iteration (on first, if pageTable is empty)
 	P = IMC.pageTable[lo][0].position()
-	if P <= A :
+	if P < A :
 	    break # will often happen on first iteration
 	pbl.append([lo,P])
 	ft.insert(P-A, IMC.ZWNJ)
     return pbl
 
 # unmarkPageBreaks receives the original cursor, whose position is the base
-# offset of the text, and the reflowed text string, and the list prepared
+# offset of the text, the reflowed text string, and the list prepared
 # by markPageBreaks. It finds and delete the ZWNJs, and updates the position
 # values in the pagebreak list.
 
@@ -1143,7 +1160,8 @@ def unmarkPageBreaks(tc,ft,pbl):
 	ft.remove(j,1)
 
 # fixPageBreaks takes a list of pageTable indices and new position values
-# and updates those cursors.
+# and updates those cursors. Presumably text hs been changed that would
+# invalidate those cursors, but if not, no harm done.
 
 def fixPageBreaks(pbl):
     for [i,p] in pbl:
@@ -1329,7 +1347,7 @@ def optimalWrap(flowText,unit,optimum,maximum,itbosc):
 	        u'Line number is' + unicode(poemLastLineRE.cap(2))
 	    )
 	    available = 1
-	flowText.insert(flowText.size()-z, QString(u' '*available))
+	flowText.insert(flowText.size()-z-1, QString(u' '*available))
 
     return flowText
 
@@ -1342,6 +1360,7 @@ if __name__ == "__main__":
     IMC = pqIMC.tricorder() # set up a fake IMC for unit test
     IMC.fontFamily = QString("Courier")
     IMC.QtLineDelim = QChar(0x2029)
+    IMC.pageTable = []
     import pqMsgs
     pqMsgs.IMC = IMC
     import pqTable
