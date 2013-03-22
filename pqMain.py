@@ -132,7 +132,6 @@ class MainWindow(QMainWindow):
         # we set the document title bar status flag, and the signal for 
         # text change for where we note a change of text.
         
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating edit panel")
 
         self.editor = pqEdit.PPTextEditor(self,IMC.fontSize)
@@ -156,7 +155,6 @@ class MainWindow(QMainWindow):
         # cursor-move signal and our doc-has-changed and shut-down signals.
         #
         
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating Pngs panel")
 
         IMC.pngPanel = pqPngs.pngDisplay()
@@ -169,7 +167,6 @@ class MainWindow(QMainWindow):
         # 2. Create the notes panel editor.
         #
         
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating Notes panel")
         
         IMC.notesEditor = pqNotes.notesEditor()
@@ -178,7 +175,6 @@ class MainWindow(QMainWindow):
         # 3. Create the find panel and connect it to the editor's ^f keypress
         # signal and our doc-has-changed and shut-down signals.
 
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating Find panel")
         
         IMC.findPanel = pqFind.findPanel()
@@ -191,7 +187,6 @@ class MainWindow(QMainWindow):
         # 4. Create Char Census panel and give it both the doc-has-changed
         # and the preceding doc-will-change signals (but not shutdown).
 
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating Chars panel")
         
         self.charPanel = pqChars.charsPanel()
@@ -201,7 +196,6 @@ class MainWindow(QMainWindow):
         #
         # 5. Create Word Census Panel and give it signals.
 
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating Words panel")
         
         self.wordPanel = pqWords.wordsPanel()
@@ -211,7 +205,6 @@ class MainWindow(QMainWindow):
         #
         # 6. Create Pages Panel and give it signals.
 
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating Pages panel")
         
         self.pagePanel = pqPages.pagesPanel()
@@ -222,7 +215,6 @@ class MainWindow(QMainWindow):
         # 7. Create the Flow panel. It only gets the shutdown signal, which it 
         # uses to save all its user settings.
 
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating Flow panel")
         
         
@@ -233,7 +225,6 @@ class MainWindow(QMainWindow):
         # 8. Create the Footnote Panel which gets both sides of doc-changed
         # to clear its table.
 
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating Fnote panel")
         
         self.fnotePanel = pqFnote.fnotePanel()
@@ -243,7 +234,6 @@ class MainWindow(QMainWindow):
         #
         # 9. Create the html Preview Panel - it's simple, needs no signals
 
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating View panel")
         
         self.pvwPanel = pqView.htmlPreview()
@@ -251,7 +241,6 @@ class MainWindow(QMainWindow):
         #
         # 10. Lastly, the Help panel:
 
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..creating Help panel")
         
         
@@ -265,7 +254,6 @@ class MainWindow(QMainWindow):
         # Now set up the bottom of the window: status, line#, and progress bar.
         #
 
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..completing main window")
         
         status = self.statusBar()
@@ -301,7 +289,6 @@ class MainWindow(QMainWindow):
         # Put a message in our status bar for 5 seconds.
         status.showMessage("Ready", 5000)
 
-        # +++++++ Temp O'Rary +++++
         pqMsgs.noteEvent("..setting up menus")
         
         #

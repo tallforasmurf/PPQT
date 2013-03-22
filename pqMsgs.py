@@ -313,9 +313,13 @@ def printKeyEvent(event):
 import time
 time_now = time.clock() # moment module is imported
 
+# Routine called during initialization (or anytime really) to
+# note something with a timestamp on standard output. 
+# In theory one could take a command-line argument --log-level or
+# such and control this output at run-time.
 def noteEvent(description) :
     stamp = int(1000 * (time.clock() - time_now))
-    print(u'{0:08d} {1}'.format(stamp,description))
+    #print(u'{0:08d} {1}'.format(stamp,description))
 
 if __name__ == "__main__":
     import sys
