@@ -494,7 +494,7 @@ class PPTextEditor(QPlainTextEdit):
         # had a DOCHASH value for a different book or version. Warn the user.
         if IMC.metaHash != IMC.documentHash :
             pqMsgs.warningMsg(u"The document file and metadata file do not match!",
-                              u"Bookmarks, page breaks, other metadata will be wrong<br />Strongly recommend you not edit or save this book.")
+                              u"Bookmarks, page breaks and other metadata will be wrong! Strongly recommend you not edit or save this book.")
         # restore hiliting if the user wanted it. Note this can cause a 
         # serious delay if the new book is large. However the alternative is
         # to not set it on and then we are out of step with the View menu
