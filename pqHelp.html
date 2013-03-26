@@ -69,23 +69,38 @@ See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 </ul>
 <h2 id='New'>What's New in This Version</h2>
 <p>(See also <a href='#OldNew'>What Was New</a> for previous changes.)</p>
-<h3>What's New as of 22 December 2012</h3>
-<ul>
-<li>The status bar of the main window now has both a line number and
-a column number display. The column number reflects the nominal position
-of the edit cursor. When there is a selection, the nominal position may be the
-left or the right end of the selected text, depending on how the selection was made.</li>
-<li>After any successful
-search the found text is centered in the text window. If the found selection is
-large, the top of the selection is always visible although the end of the selection might be out of sight.</li>
-<li>The Preview panel has a new button, "Refresh + Clear," which clears
-the browser cache so that images are reloaded from disk.</li>
-<li>Fixed a minor bug with the display of text after performing a replace
-of text at the end of a line with a newline.</li>
-<li>The file-open dialog for Load Find Buttons and Save Find Buttons is
-initialized to the PPQT "extras" folder, or to the last-used folder for loading
-or saving find buttons.</li>
-</ul>
+<h3>What's New as of 27 March, 2013</h3>
+<p>The Preview window now zooms both text and images when
+you use the ctl-plus and ctl-minus keys. Previously it only zoomed the text
+and left the images unchanged; but that is not what most browsers do.</p>
+<p>Bug fixes, thanks to user <i>bibimbop</i>:</p>
+<p>When copying documents between disks,
+for example when restoring from backup,
+it is possible to copy the document file
+but not the matching metadata file.
+When the meta file is not of the same generation as the book,
+page breaks, bookmarks and many other things are all wrong.
+Now, when saving a document, PPQT  writes a hash signature
+of the document into the metadata file.
+When loading a document, it compares the hash in the metadata
+to a hash of the actual document.
+If they differ, it warns you that you have likely got the wrong metadata
+file and should immediately close without saving.</p>
+<p>After a reflow, the internal markers for page breaks were
+moving so that the scan images were no longer in sync
+with the text cursor. This is now fixed for reflow, but remains
+broken for two cases.</p>
+<p>
+The first is Table reflow. If a Table spans a page break,
+after reflow you will have to move the cursor past the end of
+the complete table before the scan image of the second table page
+appears. The second is Find/Replace.
+If you use Find/Replace to replace text that spans a page break,
+the marker for the page break moves to the end of the 
+replaced text. You have to move the cursor pas the end of
+the replaced text for the scan image of the next page
+to appear.</p>
+
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
 If you need to open a second document (for example, a commented copy from Smooth Reading), just start a second copy of PPQT.</p>
@@ -106,7 +121,9 @@ Hebrew and Arabic.</li>
 that are not in Latin-1. CP1252 is not supported by PG, but Windows utilities such as Wordpad may save files in that encoding.</li>
 <li>Mac Roman defines many, but not all, of the characters in CP1252 (but with different numeric values), and also some special characters not in either CP1252 or Latin-1. Mac Roman is not supported by PG, but Mac utilities such as Textedit may save files in that encoding.</li>
 </ul>
-<p>There are many other encodings but PPQT only supports the above four for input, and only UTF-8 and Latin-1 for output.</p>
+<p>There are many other encodings, but PPQT will
+only open files encoded with the above four, and it will
+only save files in UTF-8 or Latin-1.</p>
 <p>In order to load a document with its special characters intact and un-garbled, PPQT needs to know which encoding the file uses. It has several ways of finding this out.</p>
 <ol>
 <li>When saving a file, PPQT writes the encoding into the metadata file (next topic). Thus once you have saved a book it always reopens with the same encoding.</li>
@@ -129,8 +146,14 @@ that are not in Latin-1. CP1252 is not supported by PG, but Windows utilities su
 When opening  <tt>afinebook.txt</tt>, PPQT looks for a file named  <tt>afinebook.txt.meta</tt> in the same location (i.e. the full book name
 plus <tt>.meta</tt>). If the meta file
 is not found, PPQT assumes this is the first time it has opened this book.
-It scans the text gathering information including the location of page separator lines, and counting words and characters. These items and other useful things (defined bookmarks, your notes, the file encoding, etc.) are saved in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
+It scans the text gathering information including the location of page separator lines, and counting words and characters.</p>
+<p>These items and other useful things (defined bookmarks, your notes, the file encoding, etc.) are saved in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
 exist, PPQT loads the metadata items from it.</p>
+<p>Also saved in the <tt>.meta</tt> file is a unique code that identifies
+the document file. If by evil chance you open a book file that does not
+match its meta file (for example, if you restored the book from backup
+but not the matching meta file), PPQT will notice this and warn you.
+You should quit PPQT and resolve the conflict at once.</p>
 <p>Feel free to examine or edit the metadata file, but be aware that it is encoded UTF-8. If strange characters appear, your editor app did not use the utf-encoding to load it. Do not save the metadata file unless you are sure you are loading and saving it in UTF-8 format.</p>
 <h3>Page Images</h3>
 <p>PPQT expects to find a folder named <tt>pngs</tt> in the same location as
@@ -641,6 +664,11 @@ T/
 </pre>
 <p>Sadly, decimal alignment is not supported in HTML, and such cells are aligned left. Also, decimal alignment can produce odd results when applied to cells that contain text, especially in a multi-line table.</p>
 <p>Getting a table to flow properly can be tedious. The first time you flow it, it is likely to have many errors, often because there are extra spaces that cause false column breaks, or missing spaces that cause column values to run together. But with work it is usually possible to get a table to look right. Post a sample of a recalcitrant table to the forum and ask for advice.</p>
+<p>If the contents of a table start on one page of the book
+and end on another page, PPQT will display the scanned images in 
+the Pngs panel incorrectly. When the cursor is in the table contents,
+the first scanned image will be displayed. The image of the second table
+page will not appear until the cursor is at the end of the table contents.</p>
 <h3 id='html'>HTML Conversion</h3>
 <p>ASCII reflow is designed so you can do it repeatedly. HTML conversion
 is a one-shot deal that wipes out the reflow markup lines and the spacing
@@ -688,7 +716,9 @@ this element of the HTML 4.0 standard is not supported by any browsers, so Decim
 <p>Click the Pvw tab to display the HTML Preview panel. Whenever
 you click either Refresh button on this panel, the complete contents of the
 Edit document are copied into this panel and displayed as HTML.</p>
-<p>The default font is set to Palatino and the initial text font size is set to 16 points. When the focus is in the Preview panel, you can key ctl-minus and ctl-plus to zoom to smaller and larger text font sizes.</p>
+<p>The default font is set to Palatino and the initial text font size is set to 16 points. When the focus is in the Preview panel, you can key ctl-minus and ctl-plus to zoom the display.
+Each time you use a zoom key, the text and images increase or
+decrease by 1/16th.</p>
 <p>
 The HTML rendering is done by the open-source <a href='http://www.webkit.org'>WebKit engine</a>, the same HTML rendering code that is used by Apple's Safari and by KDE. It fully supports CSS and
 standard HTML code. Java and Javascript are disabled in the Preview panel, however.</p>
@@ -795,6 +825,23 @@ superscripts, subscripts, Side notes, Illustrations, and typo markups to HTML.</
 <li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS style section described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match what PPQT generates).</li>
 </ul>
 <h2 id='OldNew'>What Was New</h2>
+<h3>What's New as of 22 December 2012</h3>
+<ul>
+<li>The status bar of the main window now has both a line number and
+a column number display. The column number reflects the nominal position
+of the edit cursor. When there is a selection, the nominal position may be the
+left or the right end of the selected text, depending on how the selection was made.</li>
+<li>After any successful
+search the found text is centered in the text window. If the found selection is
+large, the top of the selection is always visible although the end of the selection might be out of sight.</li>
+<li>The Preview panel has a new button, "Refresh + Clear," which clears
+the browser cache so that images are reloaded from disk.</li>
+<li>Fixed a minor bug with the display of text after performing a replace
+of text at the end of a line with a newline.</li>
+<li>The file-open dialog for Load Find Buttons and Save Find Buttons is
+initialized to the PPQT "extras" folder, or to the last-used folder for loading
+or saving find buttons.</li>
+</ul>
 <h3>What's New as of 10 December 2012</h3>
 <ul>
 <li>Clicking one of the Replace buttons in the Find panel (or using ctl-= or ctl-t in the edit panel, which are the same) will only do the replace if the current selection was created by a find. If the selection has changed since a find was last done, the replace is not done and PPQT beeps.</li>
