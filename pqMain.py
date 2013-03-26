@@ -641,6 +641,11 @@ class MainWindow(QMainWindow):
     def ohWaitAreWeDirty(self):
         if self.editor.document().isModified() \
         or (0 != IMC.needMetadataSave) :
+            if IMC.documentHash != IMC.metaHash :
+                # the doc and meta didn't match and user is now trying to
+                # use New, Quit or Open -- just let that go ahead.
+                return True
+            # The doc and meta did match and there's been editing.
             reply = QMessageBox.question(self,
                             "There are unsaved changes!",
                             "Save the book and metadata first?",
@@ -946,6 +951,8 @@ class MainWindow(QMainWindow):
         self.editor.clear()
         IMC.notesEditor.clear()
         self.emit(SIGNAL("docHasChanged"),QString())
+        IMC.documentHash = ''
+        IMC.metaHash = ''
         IMC.bookPath = QString()
         IMC.bookDirPath = QString()
         IMC.bookType = QString()
@@ -953,6 +960,18 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PPQT - new file[*]")
         self.setWinModStatus() # notice if metadata changed
 
+    # -----------------------------------------------------------------
+    # For either Save or Save-As, check for a mismatch between the metadata file
+    # and the document file. Normally there is none and we return True.
+    def doHashesMatch(self):
+        if IMC.documentHash == IMC.metaHash :
+            return True
+        # There is a mismatch; this would have been detected and warned about when
+        # the file was opened but the user ignored that and now wants to save.
+        # Get one last confirmation. Result of okCancelMsg is True if "OK" clicked.
+        return pqMsgs.okCancelMsg(u"The document and metadata files do not match!",
+                               u"Are you sure you want to save this book?")
+        
     # -----------------------------------------------------------------
     # File>Save clicked, or this is called from ohWaitAreWeDirty() above.
     # If we don't know a bookFile we must be working on a New, so call Save As
@@ -962,6 +981,9 @@ class MainWindow(QMainWindow):
     def fileSave(self):
         if IMC.bookPath.isEmpty():
             return self.fileSaveAs()
+        # Test for mismatched doc/meta situation
+        if not self.doHashesMatch() :
+            return False # mismatch, and user thought better of save
         bookInfo = QFileInfo(IMC.bookPath)
         metaInfo = QFileInfo(QString(unicode(IMC.bookPath) + u'.meta'))
         bookEncoding = self.inferTheCodec(bookInfo,metaInfo,False)
@@ -1003,6 +1025,9 @@ class MainWindow(QMainWindow):
     # apply it.
     
     def fileSaveAs(self):
+        # Test for mismatched doc/meta situation
+        if not self.doHashesMatch() :
+            return False # mismatch, and user thought better of save
         startPath = QString(".") if IMC.bookDirPath.isEmpty() else IMC.bookDirPath
         savename = QFileDialog.getSaveFileName(self,
                 "Save book text As", startPath)

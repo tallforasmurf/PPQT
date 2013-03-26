@@ -57,7 +57,7 @@ program source syntax coloring) in order to provide scanno-hiliting and
 spell-check-twiddly-red-underlines.
 '''
 
-from PyQt4.QtCore import (Qt, QChar, QRect, QRegExp, QString, SIGNAL)
+from PyQt4.QtCore import (Qt, QChar, QCryptographicHash, QRect, QRegExp, QString, SIGNAL)
 from PyQt4.QtGui import (
     QBrush, QColor, QFont, QFontInfo, QMessageBox,
     QPlainTextEdit, QSyntaxHighlighter, QProgressDialog,
@@ -140,6 +140,8 @@ class PPTextEditor(QPlainTextEdit):
         # save a regex for quickly finding if a selection is a single word
         self.oneWordRE = QRegExp(u'^\W*(\w{2,})\W*$')
         self.menuWord = QString()
+        # Create and initialize an SHA-1 hash machine
+        self.cuisineart = QCryptographicHash(QCryptographicHash.Sha1)
 
     # switch on or off our text-highlighting. By switching the highlighter
     # to a null document we remove highlighting; by switching it back to
@@ -381,16 +383,21 @@ class PPTextEditor(QPlainTextEdit):
     # so we need to write the document and metadata regardless of whether
     # they've been modified. However we avoid rebuilding metadata if we can.        
     def save(self, dataStream, metaStream):
-        self.writeDocument(dataStream)
+        # Get the contents of the document as a QString
+        doc_text = self.toPlainText()
+        # Calculate the SHA-1 hash over the document and save it in both hash
+        # fields of the IMC.
+        self.cuisineart.reset()
+        self.cuisineart.addData(doc_text)
+        IMC.metaHash = IMC.documentHash = bytes(self.cuisineart.result()).__repr__()
+        # write the document, which is pretty simple in the QStream world
+        dataStream << doc_text
+        dataStream.flush()
         #self.rebuildMetadata() # update any census that needs it
         self.writeMetadata(metaStream)
+        metaStream.flush()
         IMC.needMetadataSave = 0x00
         self.document().setModified(False) # this triggers main.setWinModStatus()
-
-    def writeDocument(self,dataStream):
-        # writing the file is pretty easy...
-        dataStream << self.toPlainText()
-        dataStream.flush()
 
     def writeMetadata(self,metaStream):
         # Writing the metadata takes a bit more work.
@@ -411,6 +418,10 @@ class PPTextEditor(QPlainTextEdit):
         else:
             metaStream << u"TRUE"
         metaStream << u"}}\n"
+        # The hash could contain any character. Using __repr__ ensured
+        # it is enclosed in balanced single or double quotes but to be
+        # double sure we will fence it in characters we can spot with a regex.
+        metaStream << u"{{DOCHASH " + IMC.documentHash + u" }}\n"
         if len(IMC.pageTable) :
             metaStream << u"{{PAGETABLE}}\n"
             for (tc,fn,pr,f1,f2,f3) in IMC.pageTable :
@@ -463,7 +474,13 @@ class PPTextEditor(QPlainTextEdit):
     # empty, hiliting is off, etc.
     
     def load(self, dataStream, metaStream, goodStream, badStream):
+        # Load the document file into the editor
         self.setPlainText(dataStream.readAll())
+        # Initialize the hash value for the document, which will be equal unless
+        # we read something different from the metadata file.
+        self.cuisineart.reset()
+        self.cuisineart.addData(self.toPlainText())
+        IMC.metaHash = IMC.documentHash = bytes(self.cuisineart.result()).__repr__()
         if metaStream is None:
             # load goodwords, badwords, and take census
             if goodStream is not None:
@@ -473,6 +490,11 @@ class PPTextEditor(QPlainTextEdit):
             self.rebuildMetadata(page=True) # build page table & vocab from scratch
         else:
             self.loadMetadata(metaStream)
+        # If the metaData and document hashes now disagree, it is because the metadata
+        # had a DOCHASH value for a different book or version. Warn the user.
+        if IMC.metaHash != IMC.documentHash :
+            pqMsgs.warningMsg(u"The document file and metadata file do not match!",
+                              u"Bookmarks, page breaks, other metadata will be wrong<br />Strongly recommend you not edit or save this book.")
         # restore hiliting if the user wanted it. Note this can cause a 
         # serious delay if the new book is large. However the alternative is
         # to not set it on and then we are out of step with the View menu
@@ -487,7 +509,7 @@ class PPTextEditor(QPlainTextEdit):
         sectionRE = QRegExp( u"\{\{(" + '|'.join (
             ['PAGETABLE','CHARCENSUS','WORDCENSUS','BOOKMARKS',
              'NOTES','GOODWORDS','BADWORDS','CURSOR','VERSION',
-             'STALECENSUS','NEEDSPELLCHECK','ENCODING'] ) \
+             'STALECENSUS','NEEDSPELLCHECK','ENCODING', 'DOCHASH'] ) \
                              + u")([^\}]*)\}\}",
             Qt.CaseSensitive)
         metaVersion = 0 # base version
@@ -512,6 +534,9 @@ class PPTextEditor(QPlainTextEdit):
                     continue # no more data after {{NEEDSPELLCHECK x}}
                 elif section == u"ENCODING" :
                     IMC.bookSaveEncoding = unicode(sectionRE.cap(2).trimmed())
+                    continue
+                elif section == u"DOCHASH" :
+                    IMC.metaHash = unicode(sectionRE.cap(2).trimmed())
                     continue
                 elif section == u"PAGETABLE":
                     qline = metaStream.readLine()
