@@ -40,22 +40,22 @@ from PyQt4.QtCore import (
     SIGNAL, SLOT
 )
 from PyQt4.QtGui import (QApplication,
-    QDialog,
-    QFont,QFontInfo,
-    QHBoxLayout,
-    QInputDialog,
-    QIntValidator,
-    QLabel,
-    QLineEdit,
-    QProgressBar,
-    QSizePolicy,
-    QStatusBar,
-    QMessageBox,
-    QTextEdit,
-    QTextCursor,
-    QTextDocument,
-    QWidget
-    )
+                         QDialog,
+                         QFont,QFontInfo,
+                         QHBoxLayout,
+                         QInputDialog,
+                         QIntValidator,
+                         QLabel,
+                         QLineEdit,
+                         QProgressBar,
+                         QSizePolicy,
+                         QStatusBar,
+                         QMessageBox,
+                         QTextEdit,
+                         QTextCursor,
+                         QTextDocument,
+                         QWidget
+                         )
 
 # Subroutine to get a QFont for an available monospaced font, preferably using
 # the font family named in IMC.fontFamily -- set from the View menu in pqMain.
@@ -70,8 +70,8 @@ def getMonoFont(fontsize=12, msg=False):
     monofont.setPointSize(fontsize)
     monoinf = QFontInfo(monofont)
     if msg and (monoinf.family() != IMC.fontFamily):
-	infoMsg("Font {0} not available, using {1}".format(
-	    IMC.fontFamily, monoinf.family()) )
+        infoMsg("Font {0} not available, using {1}".format(
+            IMC.fontFamily, monoinf.family()) )
     return monofont
 
 # Convenience function to truncate a qstring to a given length and append ...
@@ -80,8 +80,8 @@ def getMonoFont(fontsize=12, msg=False):
 def trunc(qs,maxl):
     q2 = QString(qs) # make a copy
     if q2.length() > maxl:
-	q2.truncate(maxl-3)
-	q2.append(u"...")
+        q2.truncate(maxl-3)
+        q2.append(u"...")
     q2 = q2.replace(QString("<"),QString("&lt;"))
     return q2
 
@@ -93,7 +93,7 @@ def makeMsg ( text, icon, info = None):
     mb.setText( text )
     mb.setIcon( icon )
     if info is not None:
-	mb.setInformativeText( info )
+        mb.setInformativeText( info )
     return mb
 
 # Display a modal info message, blocking until the user clicks OK.
@@ -131,10 +131,10 @@ def okCancelMsg ( text, info = None ):
 
 def getStringMsg( title, text, preset=None ):
     if preset is None:
-	(ans, ok) = QInputDialog.getText(IMC.mainWindow, title, text)
+        (ans, ok) = QInputDialog.getText(IMC.mainWindow, title, text)
     else:
-	(ans, ok) = QInputDialog.getText(IMC.mainWindow, title, text,
-	                                 QLineEdit.Normal, preset)
+        (ans, ok) = QInputDialog.getText(IMC.mainWindow, title, text,
+                                         QLineEdit.Normal, preset)
     return (ans, ok)
 
 # Display a modal request for a selection from a list of options.
@@ -167,16 +167,16 @@ def getFindMsg( parentWidget, prepText = None ):
     qd.setOkButtonText(QString('Find'))
     qd.setLabelText(QString('Text to find'))
     if (prepText is not None):
-	if prepText.size() > 40 :
-	    prepText.truncate(40)
-	qd.setTextValue(prepText)
+        if prepText.size() > 40 :
+            prepText.truncate(40)
+        qd.setTextValue(prepText)
     b = (QDialog.Accepted == qd.exec_() )
     if b :
-	return (True, qd.textValue())
+        return (True, qd.textValue())
     else:
-	return (False, QString() )
+        return (False, QString() )
 
-    
+
 # Functions to create and manage a progress bar in our status bar
 # makeBar is called from pqMain to initialize the bar, on the right in
 # the status area (addPermanentWidget installs to the right).
@@ -216,8 +216,8 @@ def endBar():
 def flash(message, dobeep=False, msecs=1000):
     IMC.statusBar.showMessage(message,msecs)
     if dobeep:
-	beep()
-    
+        beep()
+
 # Make a noise of some kind.
 def beep():
     QApplication.beep()
@@ -232,40 +232,40 @@ def beep():
 
 class lineLabel(QWidget):
     def __init__(self, parent=None):
-	super(QWidget, self).__init__(parent)
-	# Make a layout frame
-	hb = QHBoxLayout()
-	lnumlab = QLabel(u"line")
-	lnumlab.setAlignment(Qt.AlignRight | Qt.AlignBottom)
-	hb.addWidget(lnumlab)
-	# Create our line number widget
-	self.lnum = QLineEdit()
+        super(QWidget, self).__init__(parent)
+        # Make a layout frame
+        hb = QHBoxLayout()
+        lnumlab = QLabel(u"line")
+        lnumlab.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        hb.addWidget(lnumlab)
+        # Create our line number widget
+        self.lnum = QLineEdit()
         self.lnum.setAlignment(Qt.AlignRight | Qt.AlignBottom)
         # allow up to 5 digits. Editing a doc with more than 99K lines? Good luck!
         val = QIntValidator()
         val.setRange(0,99999)
         self.lnum.setValidator(val)
-	# Set a fixed width of 6+ digits.
+        # Set a fixed width of 6+ digits.
         pxs =  int( 6 * self.fontInfo().pixelSize() )
         self.lnum.setMaximumWidth(pxs)
-	self.lnum.setMinimumWidth(pxs)
-	hb.addWidget(self.lnum)
-	# connect our lnum widget's ReturnPressed signal to our slot for that
-	self.connect(self.lnum, SIGNAL("returnPressed()"), self.moveCursor)
-	# Create a column-number widget
-	self.cnum = QLabel()
-	self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
-	pxs = int(pxs / 2) # 3 digits wide
-	self.cnum.setMaximumWidth(pxs)
-	self.cnum.setMinimumWidth(pxs)
-	cnumlab = QLabel(u" col ")
-	cnumlab.setAlignment(Qt.AlignRight | Qt.AlignBottom)
-	hb.addWidget(cnumlab)
-	hb.addWidget(self.cnum)
-	hb.addStretch()
-	# Set the hbox as our layout
-	self.setLayout(hb)
-	
+        self.lnum.setMinimumWidth(pxs)
+        hb.addWidget(self.lnum)
+        # connect our lnum widget's ReturnPressed signal to our slot for that
+        self.connect(self.lnum, SIGNAL("returnPressed()"), self.moveCursor)
+        # Create a column-number widget
+        self.cnum = QLabel()
+        self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        pxs = int(pxs / 2) # 3 digits wide
+        self.cnum.setMaximumWidth(pxs)
+        self.cnum.setMinimumWidth(pxs)
+        cnumlab = QLabel(u" col ")
+        cnumlab.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        hb.addWidget(cnumlab)
+        hb.addWidget(self.cnum)
+        hb.addStretch()
+        # Set the hbox as our layout
+        self.setLayout(hb)
+
     # This slot receives the ReturnPressed signal from our lnum widget, meaning
     # the user has finished editing the number. Move the editor's cursor
     # to the start of that line, or to the end of the document. Then put the
@@ -279,17 +279,17 @@ class lineLabel(QWidget):
         tc = IMC.editWidget.textCursor()
         tc.setPosition(tb.position())
         IMC.editWidget.setTextCursor(tc)
-	IMC.editWidget.setFocus(Qt.TabFocusReason)
+        IMC.editWidget.setFocus(Qt.TabFocusReason)
 
     # This slot is connected to the editor's cursorPositionChanged signal.
     # Change the contents of the line number display to match the new position.
     # Change the contents of the column number display to match the new position.
     def cursorMoved(self):
-	tc = IMC.editWidget.textCursor()
+        tc = IMC.editWidget.textCursor()
         bn = tc.blockNumber()
         self.lnum.setText(QString(repr(bn)))
-	cn = tc.positionInBlock()
-	self.cnum.setText(QString(repr(cn)))	
+        cn = tc.positionInBlock()
+        self.cnum.setText(QString(repr(cn)))	
 
 # debugging function to display a keyevent on the console
 from PyQt4.QtCore import (QEvent)
@@ -298,16 +298,16 @@ def printKeyEvent(event):
     key = int(event.key())
     mods = int(event.modifiers())
     if key & 0x01000000 : # special/standard key
-	print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
+        print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
     else:
-	cmods = u''
-	if mods & Qt.ControlModifier : cmods += u'Ctl '
-	if mods & Qt.AltModifier: cmods += u'Alt '
-	if mods & Qt.ShiftModifier : cmods += u'Shft '
-	if mods & Qt.KeypadModifier : cmods += u'Kpd '
-	if mods & Qt.MetaModifier : cmods += u'Meta '
-	cmods += "'{0:c}'".format(key)
-	print(u'data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
+        cmods = u''
+        if mods & Qt.ControlModifier : cmods += u'Ctl '
+        if mods & Qt.AltModifier: cmods += u'Alt '
+        if mods & Qt.ShiftModifier : cmods += u'Shft '
+        if mods & Qt.KeypadModifier : cmods += u'Kpd '
+        if mods & Qt.MetaModifier : cmods += u'Meta '
+        cmods += "'{0:c}'".format(key)
+        print(u'data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
 
 # debugging function to note an event and its time on the console.
 import time
@@ -350,4 +350,3 @@ if __name__ == "__main__":
     else: print ("Cancel "+unicode(s))
     printKeyEvent(
         QKeyEvent(QEvent.KeyPress,43,Qt.AltModifier|Qt.ControlModifier) )
-    
