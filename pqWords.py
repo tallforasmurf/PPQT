@@ -91,22 +91,22 @@ class myTableModel(QAbstractTableModel):
         # The values for tool/status tips for data and headers
         self.tipDict = { 0: "Word text",
                          1: "Number of occurrences",
-        2: "A:uppercase a:lowercase 9:digit h:hyphen p:apostrophe X:misspelt" }
+                         2: "A:uppercase a:lowercase 9:digit h:hyphen p:apostrophe X:misspelt" }
 
     def columnCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
         return 3 # word, count, features
-    
+
     def flags(self,index):
         ret = Qt.ItemIsEnabled
         if 0 == index.column():
             ret |= Qt.ItemIsSelectable
         return ret
-    
+
     def rowCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
         return IMC.wordCensus.size() # initially 0
-    
+
     def headerData(self, col, axis, role):
         if (axis == Qt.Horizontal) and (col >= 0):
             if role == Qt.DisplayRole : # wants actual text
@@ -114,7 +114,7 @@ class myTableModel(QAbstractTableModel):
             elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
                 return QString(self.tipDict[col])
         return QVariant() # we don't do that
-    
+
     def data(self, index, role ):
         if role == Qt.DisplayRole : # wants actual data
             (qs,count,flag) = IMC.wordCensus.get(index.row())
@@ -140,7 +140,7 @@ class myTableModel(QAbstractTableModel):
             return flag
         # don't support other roles
         return QVariant()
-    
+
     # The data in this table isn't normally editable but if the word is
     # added to goodwords, the flags may be changed -- see the context menu
     # in the view following. In which case the flag field gets changed.
@@ -159,7 +159,8 @@ class mySortFilterProxy(QSortFilterProxyModel):
     def __init__(self, parent=None):
         super(mySortFilterProxy, self).__init__(parent)
         self.panelRef = parent # save pointer to the panel widget
-        
+        self.setSortLocaleAware(True) # make sort respect accents? Defaults to off!
+
     # Get the data from column 2 of row (feature string), and apply
     # parent.filterLambda to it. The model/view abstractions get really thick
     # here: go to the parent for an index to the row/column, then go back to
@@ -212,38 +213,38 @@ class myTableView(QTableView):
                 ans = QString()
                 for ix in lix :
                     ans.append(
-                self.model().data(ix, Qt.DisplayRole).toString()
-                            )
+                        self.model().data(ix, Qt.DisplayRole).toString()
+                    )
                     ans.append(u' ')
                 ans.chop(1) # drop final space
                 QApplication.clipboard().setText(ans)
-	elif (0 == key & 0x01000000) and \
-	     ( (mods == Qt.NoModifier) or (mods == Qt.ShiftModifier) ) and \
-	     ( 0 == self.horizontalHeader().sortIndicatorSection()) and \
-	     ( Qt.AscendingOrder == self.horizontalHeader().sortIndicatorOrder() ):
-	    # An ordinary data key with or without shift, and the table
-	    # is sorted on column 0, the words, and sorted ascending.
-	    event.accept()
-	    sortProxy = self.panelRef.proxy
-	    rc = self.panelRef.caseSwitch.isChecked()
-	    qc = QChar(key)
-	    if rc and (mods == Qt.NoModifier) :
-		qc = qc.toLower()
-	    hi = sortProxy.rowCount()
-	    lo = 0
-	    while (lo < hi) :
-		mid = (lo + hi) // 2
-		cc = sortProxy.data(sortProxy.index(mid,0)).toString().at(0)
-		if not rc : cc = cc.toUpper()
-		if qc > cc :
-		    lo = mid + 1
-		else :
-		    hi = mid
-	    self.scrollTo(sortProxy.index(lo,0))
-	if not event.isAccepted() : # if we didn't handle it, pass it up
-	    super(myTableView, self).keyPressEvent(event)
-        
-    
+        elif (0 == key & 0x01000000) and \
+             ( (mods == Qt.NoModifier) or (mods == Qt.ShiftModifier) ) and \
+             ( 0 == self.horizontalHeader().sortIndicatorSection()) and \
+             ( Qt.AscendingOrder == self.horizontalHeader().sortIndicatorOrder() ):
+            # An ordinary data key with or without shift, and the table
+            # is sorted on column 0, the words, and sorted ascending.
+            event.accept()
+            sortProxy = self.panelRef.proxy
+            rc = self.panelRef.caseSwitch.isChecked()
+            qc = QChar(key)
+            if rc and (mods == Qt.NoModifier) :
+                qc = qc.toLower()
+            hi = sortProxy.rowCount()
+            lo = 0
+            while (lo < hi) :
+                mid = (lo + hi) // 2
+                cc = sortProxy.data(sortProxy.index(mid,0)).toString().at(0)
+                if not rc : cc = cc.toUpper()
+                if qc > cc :
+                    lo = mid + 1
+                else :
+                    hi = mid
+            self.scrollTo(sortProxy.index(lo,0))
+        if not event.isAccepted() : # if we didn't handle it, pass it up
+            super(myTableView, self).keyPressEvent(event)
+
+
     # A context menu event means a right-click anywhere, ctrl-click (Mac)
     # or Menu button (Windows). We ignore any such except on column 0,
     # the word. There we pop up our menu.
@@ -291,7 +292,7 @@ class myTableView(QTableView):
                 IMC.mainWindow.setWinModStatus()
             # and, having done it, spellcheck is now appropriate
             IMC.needSpellCheck = True
-        
+
     # The actual code of First and Second Harmonic. Run through the word list
     # and make a sublist of just the ones that are a Levenshtein distance of 1
     # (first) or 2 (second) from the current word. If there are none, pop up a
@@ -314,7 +315,7 @@ class myTableView(QTableView):
             self.panelRef.rowCountLabel.setNum(self.panelRef.proxy.rowCount())
         else:
             pqMsgs.infoMsg(
-        "There are no words in edit distance {0} edit of {1}".format(dist,word)
+                "There are no words in edit distance {0} edit of {1}".format(dist,word)
             )
 
     def firstHarmonic(self):
@@ -470,7 +471,7 @@ class wordsPanel(QWidget):
             # also matches today.
             qs.replace(QChar(u'-'),QString(u'[\-\s]*'))
             rex = True
-	# Call for a find with no replace, whole word true, regex as req'd
+        # Call for a find with no replace, whole word true, regex as req'd
         IMC.findPanel.censusFinder(qs, None, rex, True)
 
     # This slot receives a change of the respect case checkbox. Set the
@@ -513,7 +514,7 @@ class wordsPanel(QWidget):
         self.rowCountLabel.setNum(self.proxy.rowCount())
         #self.view.resizeRowsToContents()
         #self.view.setSortingEnabled(True)
-        
+
     # This slot receives the main window's docHasChanged signal.
     # Let the table view populate with all-new metadata (or empty
     # data if the command was File>New).
