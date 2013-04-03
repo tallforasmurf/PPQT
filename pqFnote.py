@@ -344,6 +344,7 @@ def textFromNote(tc):
 
 TheFootnoteList = [ ]
 TheCountOfUnpairedKeys = 0
+TheEditCountAtRefresh = -1
 
 # Make a database item given ref and note cursors as available.
 # Note we copy the text cursors so the caller doesn't have to worry about
@@ -389,9 +390,10 @@ def insertUnmatchedNote(notetc):
 
 # Based on the above spadework, do the Refresh operation
 def theRealRefresh():
-    global TheFootnoteList,TheCountOfUnpairedKeys
+    global TheFootnoteList, TheCountOfUnpairedKeys, TheEditCountAtRefresh
     TheFootnoteList = [] # wipe the slate
     TheCountOfUnpairedKeys = 0
+    TheEditCountAtRefresh = IMC.editCounter
     doc = IMC.editWidget.document() # get handle of document
     # initialize status message and progress bar
     barCount = doc.characterCount()
@@ -741,7 +743,7 @@ class fnotePanel(QWidget):
         return vb
 
     # The slot for a click of the Refresh button. Tell the table model we are
-    # changing stuff; then call theRealRefresh; the tell table we're good.
+    # changing stuff; then call theRealRefresh; then tell table we're good.
     def doRefresh(self):
         self.table.beginResetModel()
         theRealRefresh()
@@ -810,10 +812,13 @@ class fnotePanel(QWidget):
         TheFootnoteList = []
         self.table.endResetModel()
 
-    # Subroutine to check if it is ok to do a major revision such as renumber
-    # or move: if there are unpaired keys, display a message and return false.
+    # Subroutine to make sure it is ok to do a major revision such as renumber or move.
+    # First, if the document has changed since the last time we did a refresh, do one
+    # Second, if there are then any unpaired keys, display a message and return false.
     def canWeRevise(self,action):
-        global TheCountOfUnpairedKeys
+        global TheCountOfUnpairedKeys, TheEditCountAtRefresh
+        if TheEditCountAtRefresh != IMC.editCounter :
+            self.doRefresh()
         if TheCountOfUnpairedKeys is not 0 :
             pqMsgs.warningMsg(
         "Cannot {0} with orphan notes and anchors".format(action),
@@ -1216,6 +1221,8 @@ class fnotePanel(QWidget):
        
         
 if __name__ == "__main__":
+    def docEdit():
+        IMC.editCounter += 1
     import sys
     from PyQt4.QtCore import (Qt,QFile,QIODevice,QTextStream,QSettings)
     from PyQt4.QtGui import (QApplication,QPlainTextEdit,QFileDialog,QMainWindow)
@@ -1228,10 +1235,12 @@ if __name__ == "__main__":
     IMC.editWidget = QPlainTextEdit()
     IMC.editWidget.setFont(pqMsgs.getMonoFont())
     IMC.settings = QSettings()
+    IMC.editCounter = 0
     widj = fnotePanel()
     MW = QMainWindow()
     MW.setCentralWidget(widj)
     pqMsgs.makeBarIn(MW.statusBar())
+    MW.connect(IMC.editWidget, SIGNAL("textChanged()"), docEdit)    
     MW.show()
     utqs = QString('''
 
