@@ -126,7 +126,7 @@ from PyQt4.QtGui import ( QApplication )
 #
 #  pqFlow.py  defines the reflow controls widget
 #
-#  pqFoot.py defines the footnote manager widget
+#  pqFnote.py defines the footnote manager widget
 #
 #  pqHtml.py  defines the html conversion manager
 #
