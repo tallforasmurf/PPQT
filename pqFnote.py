@@ -1254,13 +1254,13 @@ This is another[q] reference.
 
 /F
 F/
-A lame symbol[§] reference.
+A lame symbol[\u00a7] reference.
 Ref to unmatched key[]
 /F
 this gets no notes
 F/
 [Footnot zz: orphan note]
-[Footnote §: footnote symbol]
+[Footnote \u00a7: footnote symbol]
 
 /F
 F/
