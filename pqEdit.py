@@ -510,7 +510,7 @@ class PPTextEditor(QPlainTextEdit):
             ['PAGETABLE','CHARCENSUS','WORDCENSUS','BOOKMARKS',
              'NOTES','GOODWORDS','BADWORDS','CURSOR','VERSION',
              'STALECENSUS','NEEDSPELLCHECK','ENCODING', 'DOCHASH'] ) \
-                             + u")([^\}]*)\}\}",
+                             + u")(.*)\}\}",
             Qt.CaseSensitive)
         metaVersion = 0 # base version
         while not metaStream.atEnd() :
@@ -518,25 +518,25 @@ class PPTextEditor(QPlainTextEdit):
             if qline.isEmpty() : continue # allow blank lines between sections
             if sectionRE.exactMatch(qline) : # section start
                 section = sectionRE.cap(1)
+                argument = unicode(sectionRE.cap(2).trimmed())
                 endsec = QString(u"{{/" + section + u"}}")
                 if section == u"VERSION":
-                    qv = sectionRE.cap(2).trimmed()
-                    if not qv.isEmpty() :
-                        metaVersion = int(qv)  
+                    if len(argument) != 0 :
+                        metaVersion = int(argument)  
                     continue # no more data after {{VERSION x }}
                 elif section == u"STALECENSUS" :
-                    if unicode(sectionRE.cap(2).trimmed()) == u"TRUE" :
+                    if argument == u"TRUE" :
                         IMC.staleCensus = IMC.staleCensusLoaded
                     continue # no more data after {{STALECENSUS x}}
                 elif section == u"NEEDSPELLCHECK" :
-                    if unicode(sectionRE.cap(2).trimmed()) == u"TRUE" :
+                    if argument == u"TRUE" :
                         IMC.needSpellCheck = True
                     continue # no more data after {{NEEDSPELLCHECK x}}
                 elif section == u"ENCODING" :
-                    IMC.bookSaveEncoding = unicode(sectionRE.cap(2).trimmed())
+                    IMC.bookSaveEncoding = argument
                     continue
                 elif section == u"DOCHASH" :
-                    IMC.metaHash = unicode(sectionRE.cap(2).trimmed())
+                    IMC.metaHash = argument
                     continue
                 elif section == u"PAGETABLE":
                     qline = metaStream.readLine()
@@ -595,7 +595,7 @@ class PPTextEditor(QPlainTextEdit):
                     w = IMC.badWordList.load(metaStream,endsec)
                     continue
                 elif section == u"CURSOR" : # restore selection as of save
-                    p1p2 = unicode(sectionRE.cap(2).trimmed()).split(' ')
+                    p1p2 = argument.split(' ')
                     tc = QTextCursor(self.document())
                     tc.setPosition(int(p1p2[0]),QTextCursor.MoveAnchor)
                     tc.setPosition(int(p1p2[1]),QTextCursor.KeepAnchor)
