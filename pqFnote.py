@@ -930,7 +930,7 @@ class fnotePanel(QWidget):
         # the F/. So we use a regex that will cap(0) the entire section. We are
         # not being Mr. Nice Guy and allowing \s* spaces either, it has to be
         # zackly \n/F\n.*\nF/\n.
-        sectRegex = QRegExp('\\n/F.*\\nF/\\n')
+        sectRegex = QRegExp(u'\\n/F.*\\nF/\\n')
         sectRegex.setMinimal(True) # minimal match for the .* above
         sectRegex.setCaseSensitivity(Qt.CaseSensitive)
         wholeDocQs = IMC.editWidget.toPlainText() # whole doc as qstring
@@ -983,24 +983,28 @@ class fnotePanel(QWidget):
             for s in range(len(sectList)):
                 (sectcA,sectcI,sectcB) = sectList[s]
                 if nln >= refLineNumber(sectcB):
-                    # this note starts below this section
-                    continue
+                    # this note starts below this section s
+                    continue #  to next s
                 # this note starts above the end of this section,
                 if nln >= refLineNumber(sectcA):
-                    # this note is inside this section already
-                    break
-                # this note is above and not within the current section,
+                    # however this note is inside this section already
+                    break # and move on to next i
+                # this note is above, and not within, the section sectList[s],
                 # so do the move. Start saving the length of the note as
                 # currently known.
                 notelen = notetc.position() - notetc.anchor()
-                # Extend the note selection over the \2029 after the right bracket.
-                notetc.movePosition(QTextCursor.Right,1,QTextCursor.KeepAnchor)
+                # Modify the note selection to include both the \2029 that
+                # precedes the note and the \2029 that follows the right bracket.
+                # This assumes that a note is not at the exact beginning of a document
+                # (seems safe enough) and not at the end either (the /F follows it).
+                new_anchor = notetc.anchor() - 1
+                new_position = notetc.position() + 1
+                notetc.setPosition(new_anchor)
+                notetc.setPosition(new_position,QTextCursor.KeepAnchor)
                 # point our worktc at the insertion point in this section
                 worktc.setPosition(sectcI.position())
                 # copy the note text inserting it in the section
                 worktc.insertText(notetc.selectedText())
-                # insert one more \n to put a blank line after the footnote
-                worktc.insertText(IMC.QtLineDelim)
                 # save the ending position as the new position of sectcI -- the
                 # next inserted note goes there
                 sectcI.setPosition(worktc.position())
@@ -1229,30 +1233,37 @@ if __name__ == "__main__":
     pqMsgs.makeBarIn(MW.statusBar())
     MW.show()
     utqs = QString('''
+
 This is text[A] with two anchors one at end of line.[2]
+
+[Footnote A: footnote A which
+extends onto 
+three lines]
+
+[Footnote 2: footnote 2 which has[A] a nested note]
+
+[Footnote A: nested ref in note 2]
+
 This is another[DCCCCLXXXXVIII] reference.
 This is another[q] reference.
+
+[Footnote DCCCCLXXXXVIII: footnote DCCCCLXXXXVIII]
+
+[Footnote q: footnote q]
+
 /F
 F/
-A lame symbol[\u00a7] reference.
+A lame symbol[§] reference.
 Ref to unmatched key[]
 /F
 this gets no notes
 F/
-[Footnote A: footnote A which
-extends onto 
-three lines]
 [Footnot zz: orphan note]
-[Footnote 2: footnote 2 which has[A] a nested note]
-[Footnote A: nested ref in note 2]
-[Footnote DCCCCLXXXXVIII: footnote DCCCCLXXXXVIII]
-[Footnote q: footnote q]
-[Footnote \u00a7: footnote symbol]
+[Footnote §: footnote symbol]
 
 /F
 F/
-
-    ''')
+''')
     IMC.editWidget.setPlainText(utqs)
     IMC.mainWindow = MW
     IMC.editWidget.show()
