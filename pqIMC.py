@@ -47,6 +47,8 @@ from PyQt4.QtCore import (Qt,QChar,QSysInfo,PYQT_VERSION_STR,QT_VERSION_STR)
 class tricorder():
     def __init__(self):
         # Document/file status variables: more than a simple "dirty" flag.
+        # Just a brute count of calls to the textChanged signal slot.
+        self.editCounter = 0
         # needSpellCheck when a word census has been done, or when a 
         # different main dictionary is selected. Cleared when a spellcheck is
         # done, e.g. from the Refresh button in the Word panel.
