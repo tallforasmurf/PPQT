@@ -1056,7 +1056,8 @@ class fnotePanel(QWidget):
         # Just in case the user had a spastic twitch and clicked in error,
         if not pqMsgs.okCancelMsg(
             "Going to convert {0} footnotes to HTML".format(dbcount),
-            "(Symbol class keys will be skipped)"):
+            "Don't do this unless you recently clicked Refresh.<br />\
+            Note Symbol class keys are skipped."):
             return
         # Set up a boilerplate string for the Anchor replacements.
         # We'll use QString.replace to install the key over $#$
@@ -1151,7 +1152,7 @@ class fnotePanel(QWidget):
         # Just in case the user had a spastic twitch and clicked in error,
         if not pqMsgs.okCancelMsg(
             "Going to convert {0} footnotes to /Q..Q/".format(dbcount),
-            ""):
+            "Don't do this unless you recently clicked Refresh."):
             return
         # Find the widest key string for each class.
         maxwids = [0,0,0,0,0,0]
@@ -1191,7 +1192,7 @@ class fnotePanel(QWidget):
             # newline Q/, and put it back.
             oldnote = worktc.selectedText()
             oldnote.chop(1)
-            oldnote.append(QString(u'\u2029Q/\u2029'))
+            oldnote.append(QString(u'\u2029Q/'))
             worktc.insertText(oldnote) # worktc now positioned after note
             # use the note string to recognize the length of [Footnote key:sp
             fntRE.setPattern(notepat)
