@@ -537,6 +537,7 @@ class MainWindow(QMainWindow):
     # very frequently, like every edit keystroke. So be quick.
     def ohTextChanged(self):
         IMC.staleCensus |= IMC.staleCensusAcquired
+        IMC.editCounter += 1
 
     # -----------------------------------------------------------------
     # Called by a tab that wants to be visible (currently only the Find panel
