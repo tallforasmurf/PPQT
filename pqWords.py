@@ -470,6 +470,10 @@ class wordsPanel(QWidget):
             # Replace hyphen with [\-\s]* and do a regex search so that to-day
             # also matches today.
             qs.replace(QChar(u'-'),QString(u'[\-\s]*'))
+            # Because regex find ignores the whole word switch (as clearly documented
+            # in the pqFind prolog, Doh!, bracket the word with \b markers.
+            qs.prepend(QString(u'\\b'))
+            qs.append(QString(u'\\b'))
             rex = True
         # Call for a find with no replace, whole word true, regex as req'd
         IMC.findPanel.censusFinder(qs, None, rex, True)
