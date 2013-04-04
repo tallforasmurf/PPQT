@@ -376,14 +376,12 @@ class pagesPanel(QWidget):
             return
         m = "Insert this string at the top of {0} pages?".format(n)
         b = pqMsgs.okCancelMsg(QString(m),pqMsgs.trunc(qi,35))
-        if b :  
+        if b :
             # Convert any '\n' in the text to the QT line delimiter char
             # we do this in the copy so the lineEdit text doesn't change
             qi.replace(QString(u'\\n'),QString(IMC.QtLineDelim))
             # get a cursor on the edit document
             tc = QTextCursor(IMC.editWidget.textCursor())
-            # Set to insert after the position?
-            tc.setKeepPositionOnInsert(True)
             tc.beginEditBlock() # start single undoable operation
             # Working from the end of the document backward, go to the
             # top of each page and insert the string
@@ -403,14 +401,17 @@ class pagesPanel(QWidget):
                     # put the page cursor back at the start of the page
                     page[0].movePosition(
                         QTextCursor.Left,QTextCursor.MoveAnchor,qf.size())
+                    pass
             tc.endEditBlock() # wrap up the undo op
 
 
 # Unit test code fairly elaborate due to learning curve for delegates
 
 if __name__ == "__main__":
+    def setWinModStatus():
+        print(IMC.needMetadataSave)
     import sys
-    from PyQt4.QtGui import (QApplication,QFileDialog,QPlainTextEdit, QTextCursor)
+    from PyQt4.QtGui import (QApplication,QFileDialog,QMainWindow,QPlainTextEdit, QTextCursor)
     from PyQt4.QtCore import (QFile, QTextStream, QString, QRegExp)
     app = QApplication(sys.argv) # create the app
     import pqIMC
@@ -421,8 +422,11 @@ if __name__ == "__main__":
     IMC.editWidget = QPlainTextEdit()
     IMC.pageTable = []
     widj = pagesPanel()
-    IMC.mainWindow = widj
-    widj.show()
+    MW = QMainWindow()
+    IMC.mainWindow = MW
+    MW.setCentralWidget(widj)
+    MW.setWinModStatus = setWinModStatus
+    MW.show()
     fn = QFileDialog.getOpenFileName(None,"Select a Test Book")
     print(fn)
     fh = QFile(fn)
