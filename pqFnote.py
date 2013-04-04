@@ -935,7 +935,7 @@ class fnotePanel(QWidget):
         # the F/. So we use a regex that will cap(0) the entire section. We are
         # not being Mr. Nice Guy and allowing \s* spaces either, it has to be
         # zackly \n/F\n.*\nF/\n.
-        sectRegex = QRegExp(u'\\n/F.*\\nF/\\n')
+        sectRegex = QRegExp(u'\\n/F.*\\nF/(\\n|$)')
         sectRegex.setMinimal(True) # minimal match for the .* above
         sectRegex.setCaseSensitivity(Qt.CaseSensitive)
         wholeDocQs = IMC.editWidget.toPlainText() # whole doc as qstring
