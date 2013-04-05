@@ -69,38 +69,25 @@ See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 </ul>
 <h2 id='New'>What's New in This Version</h2>
 <p>(See also <a href='#OldNew'>What Was New</a> for previous changes.)</p>
-<h3>What's New as of 27 March, 2013</h3>
-<p>The Preview window now zooms both text and images when
-you use the ctl-plus and ctl-minus keys. Previously it only zoomed the text
-and left the images unchanged; but that is not what most browsers do.</p>
-<p>Bug fixes, thanks to user <i>bibimbop</i>:</p>
-<p>When copying documents between disks,
-for example when restoring from backup,
-it is possible to copy the document file
-but not the matching metadata file.
-When the meta file is not of the same generation as the book,
-page breaks, bookmarks and many other things are all wrong.
-Now, when saving a document, PPQT  writes a hash signature
-of the document into the metadata file.
-When loading a document, it compares the hash in the metadata
-to a hash of the actual document.
-If they differ, it warns you that you have likely got the wrong metadata
-file and should immediately close without saving.</p>
-<p>After a reflow, the internal markers for page breaks were
-moving so that the scan images were no longer in sync
-with the text cursor. This is now fixed for reflow, but remains
-broken for two cases.</p>
-<p>
-The first is Table reflow. If a Table spans a page break,
-after reflow you will have to move the cursor past the end of
-the complete table before the scan image of the second table page
-appears. The second is Find/Replace.
-If you use Find/Replace to replace text that spans a page break,
-the marker for the page break moves to the end of the 
-replaced text. You have to move the cursor pas the end of
-the replaced text for the scan image of the next page
-to appear.</p>
-
+<h3>What's New as of 5 April 2013</h3>
+<p>Multiple minor changes and fixes, again thanks to the
+diligence of <i>bibimbop</i>:</p>
+<ul>
+<li>The Words panel sort now respects accents ("locale-aware" sorting).</li>
+<li>When you double-click a hyphenated word in the Words panel, the search
+now properly finds the whole phrase.</li>
+<li>Insertion of page numbers from the Pages panel now 
+behaves correctly when the inserted text includes a newline.</li>
+<li>The Footnotes panel, when moving the notes, now recognizes a /F..F/
+section that is at the very end of the document.</li>
+<li>Moving footnotes now moves the blank line preceding a note as well as the note.</li>
+<li>It was possible for the document hash string saved in the .meta file to
+include a curly brace as part of its valid content. File>Open now allows for that.</li>
+<li>Major footnote operations (renumber, move, ASCII- or html-convert)
+now automatically refresh the footnote table if necessary.</li>
+<li>Footnote conversion to ASCII no longer inserts explicit margin and
+indent values.</li>
+</ul>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
 If you need to open a second document (for example, a commented copy from Smooth Reading), just start a second copy of PPQT.</p>
@@ -797,10 +784,14 @@ F/</pre><p>Here, <tt>NOTES</tt> represents a subhead (because it is preceded and
 <p>Moving notes is a single-undo operation. Inspect the result and use ctl-z if it is not satisfactory.</p>
 <h3>ASCII Conversion</h3>
 <p>Click ASCII Cvt in the Footnote Panel to convert all Notes to block-quote /Q..Q/ markup. Each note is changed from:<pre>
-[Footnote key: Text of the note... ]</pre> into:<pre>/Q F:2 L:<i>w</i> R:2
+[Footnote key: Text of the note... ]</pre> into:<pre>/Q Fnote <i>xxx</i>
   [key] Text of the note...
-Q/</pre>The left-indent <i>w</i> is based on the widest key of that key class.
-These new /Q..Q/ sections can be reflowed in the <a href='#Flow'>Reflow Panel</a> ASCII reflow.
+Q/</pre>The code <i>xxx</i> shows the class of the key: <tt>ABC</tt>,
+<tt>123</tt>, <tt>ivx</tt> etc.
+These /Q..Q/ sections can be reflowed in the <a href='#Flow'>Reflow Panel</a> ASCII reflow.
+The <tt>Fnote</tt> <i>xxx</i> text is ignored by reflow.
+You can use it with Find to step through the converted Notes,
+or you could replace it with explicit First, Left and Right margins.
 </p>
 <p>Do this as the very last footnote operation in the plain text fork of the book. Afterward, the Footnote Panel is of no use because the Notes can no
 longer be recognized.</p>
@@ -808,7 +799,7 @@ longer be recognized.</p>
 <h3>HTML Conversion</h3>
 <p>HTML conversion of footnotes is divided between the Footnote Panel and the Reflow Panel.</p>
 <p>In the Footnote panel click HTML Cvt to convert all Anchors and Notes to HTML. This is a single-undo operation. Do this as the very last footnote operation in the HTML fork of the book. Afterward, the Footnote Panel is of no use, because the Notes can no longer be recognized.</p>
-<p>This does not convert the the markup tags <tt>/F..F/</tt>. Later, when you use HTML Convert in the <a href='#html'>Reflow Panel</a>, it converts the tags to <tt>&lt;div></tt> markup.</p>
+<p>This does not convert the the markup tags <tt>/F..F/</tt>. Later, when you use HTML Convert in the <a href='#html'>Reflow Panel</a>, it converts those tags to <tt>&lt;div></tt> markup.</p>
 <h2 id='Extras'>The Extras Folder</h2>
 <p>
 Within the distribution folder <tt>PPQT</tt> there is a folder named <tt>extras</tt> with some miscellaneous documents:</p>
@@ -825,6 +816,38 @@ superscripts, subscripts, Side notes, Illustrations, and typo markups to HTML.</
 <li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS style section described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match what PPQT generates).</li>
 </ul>
 <h2 id='OldNew'>What Was New</h2>
+<h3>What's New as of 27 March, 2013</h3>
+<p>The Preview window now zooms both text and images when
+you use the ctl-plus and ctl-minus keys. Previously it only zoomed the text
+and left the images unchanged; but that is not what most browsers do.</p>
+<p>Bug fixes, thanks to user <i>bibimbop</i>:</p>
+<p>When copying documents between disks,
+for example when restoring from backup,
+it is possible to copy the document file
+but not the matching metadata file.
+When the meta file is not of the same generation as the book,
+page breaks, bookmarks and many other things are all wrong.
+Now, when saving a document, PPQT  writes a hash signature
+of the document into the metadata file.
+When loading a document, it compares the hash in the metadata
+to a hash of the actual document.
+If they differ, it warns you that you have likely got the wrong metadata
+file and should immediately close without saving.</p>
+<p>After a reflow, the internal markers for page breaks were
+moving so that the scan images were no longer in sync
+with the text cursor. This is now fixed for reflow, but remains
+broken for two cases.</p>
+<p>
+The first is Table reflow. If a Table spans a page break,
+after reflow you will have to move the cursor past the end of
+the complete table before the scan image of the second table page
+appears. The second is Find/Replace.
+If you use Find/Replace to replace text that spans a page break,
+the marker for the page break moves to the end of the 
+replaced text. You have to move the cursor pas the end of
+the replaced text for the scan image of the next page
+to appear.</p>
+
 <h3>What's New as of 22 December 2012</h3>
 <ul>
 <li>The status bar of the main window now has both a line number and
