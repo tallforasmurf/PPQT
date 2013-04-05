@@ -1064,15 +1064,16 @@ class fnotePanel(QWidget):
             "Note Symbol class keys are skipped."):
             return
         # Set up a boilerplate string for the Anchor replacements.
-        # We'll use QString.replace to install the key over $#$
-        keyPattern = QString(u"$#$")
-        refPattern = QString(u"<a id='FA_$#$' name='FA_$#$' href='#FN_$#$' class='fnanchor'>[$#$]</a>")
+        # Each %n placeholder is replaced by a copy of the key value.
+        anchor_pattern = QString(u"<a id='FA_%1' name='FA_%2' href='#FN_%3' class='fnanchor'>[%4]</a>")
         # Set up a regex pattern to recognize [Footnote key:, being forgiving
         # about extra spaces and absorbing spaces after the colon.
-        fntPattern = QString(u"\[Footnote\s+$#$\s*:\s*")
-        fntRE = QRegExp()
-        # Set up a replacement boilerplate for [Footnote key:
-        fntRep = QString(u"<div class='footnote' id='FN_$#$' name='FN_$#$'>\u2029\u2029<span class='fnlabel'><a href='#FA_$#$'>[$#$]</a></span>")
+        # %1 is replaced by the key value.
+        fnt_pattern = QString(u"\[Footnote\s+%1\s*:\s*")
+        fnt_RE = QRegExp()
+        # Set up a replacement boilerplate for [Footnote key.
+        # Each %n placeholder is replaced by a copy of the key value.
+        fnt_rep = QString(u"<div class='footnote' id='FN_%1' name='FN_%2'>\u2029\u2029<span class='fnlabel'><a href='#FA_%3'>[%4]</a></span>")
         # Make a working textcursor, start the undo macro, advise the table
         worktc = QTextCursor(IMC.editWidget.textCursor())
         worktc.beginEditBlock()
@@ -1084,47 +1085,43 @@ class fnotePanel(QWidget):
             # Don't even try to convert symbol-class keys
             if item['C'] == KeyClass_sym :
                 continue
-            keyqs = item['K']
-            reftc = item['R']
+            key_qs = item['K'] # Key value as qstring
+            key_tc = item['R'] # cursor that selects the key
             # note the start position of the anchor, less 1 to include the [
-            refstart = reftc.anchor() - 1
-            # note the end position, plus 1 for the ]
-            refend = reftc.position()+1
-            # Copy the ref boilerplate and install the key in it
-            refqs = QString(refPattern).replace(keyPattern,keyqs,Qt.CaseSensitive)
+            anchor_start = key_tc.anchor() - 1
+            # note the anchor end position, plus 1 for the ]
+            anchor_end = key_tc.position() + 1
+            # Copy the anchor boilerplate and install the key in it
+            anchor_qs = anchor_pattern.arg(key_qs,key_qs,key_qs,key_qs)
             # Replace the anchor text, using the work cursor.
-            worktc.setPosition(refstart)
-            worktc.setPosition(refend,QTextCursor.KeepAnchor)
-            worktc.insertText(refqs)
-            # That also repositioned reftc to the end of the string, bring
-            # it back to the beginning again, but now with no selection.
-            reftc.setPosition(refstart)
+            worktc.setPosition(anchor_start)
+            worktc.setPosition(anchor_end,QTextCursor.KeepAnchor)
+            worktc.insertText(anchor_qs)
             # Note the start position of the note
-            notetc = item['N']
-            notestart = notetc.anchor()
+            note_tc = item['N']
+            note_start = note_tc.anchor()
             # Note its end position, which includes the closing ]
-            noteend = notetc.position()
+            note_end = note_tc.position()
             # Copy the note boilerplates and install the key in them.
-            notepat = QString(fntPattern).replace(keyPattern,keyqs,Qt.CaseSensitive)
-            noteqs = QString(fntRep).replace(keyPattern,keyqs,Qt.CaseSensitive)
+            note_pattern = fnt_pattern.arg(key_qs)
+            note_qs = fnt_rep.arg(key_qs,key_qs,key_qs,key_qs)
             # Point the work cursor at the note.
-            worktc.setPosition(notestart)
-            worktc.setPosition(noteend,QTextCursor.KeepAnchor)
-            # get the note as a string, truncate the closing ] and put it back.
+            worktc.setPosition(note_start)
+            worktc.setPosition(note_end,QTextCursor.KeepAnchor)
+            # get the note as a string, truncate the closing ],
+            # append </div> on a separate line, and put it back.
             oldnote = worktc.selectedText()
             oldnote.chop(1)
             oldnote.append(QString(u"\u2029\u2029</div>"))
             worktc.insertText(oldnote) # worktc now positioned after note
             # use the note string to recognize the length of [Footnote key:sp
-            fntRE.setPattern(notepat)
-            j = fntRE.indexIn(oldnote) # assert j==0
-            j = fntRE.cap(0).size() # size of the target portion
+            fnt_RE.setPattern(note_pattern)
+            j = fnt_RE.indexIn(oldnote) # assert j==0
+            j = fnt_RE.cap(0).size() # size of the target portion
             # set the work cursor to select just that, and replace it.
-            worktc.setPosition(notestart)
-            worktc.setPosition(notestart+j,QTextCursor.KeepAnchor)
-            worktc.insertText(noteqs)
-            # reset notetc to the start of the note, but with no selection
-            notetc.setPosition(notestart)
+            worktc.setPosition(note_start)
+            worktc.setPosition(note_start + j,QTextCursor.KeepAnchor)
+            worktc.insertText(note_qs)
             
             if dbcount >= self.enoughForABar and 0 == (i & 7):
                 pqMsgs.rollBar(dbcount - i)
@@ -1137,17 +1134,16 @@ class fnotePanel(QWidget):
         
  
     # The slot for the ASCII button. Make sure the db is clean and there is work
-    # to do. Then go through each item and note the longest string for each
-    # footnote class. Leaving Refs along, update all Notes as follows:
-    # Replace "[Footnote key:" with
-    # /Q F:2 L:max+5 R:2\n  [key]
-    # where max is the width of the widest key of this class, and 5 allows for
-    # a two-space indent plus the [] and a space.
+    # to do. Then go through all Notes (the Anchors are left alone)
+    # and update all Notes as follows:
+    # Replace "[Footnote key:" with /Q  Fnote XXX\n  [key]
+    #     where XXX is the KeyClassName, e.g. ABC or ivx.
     # Replace the final ] with \nQ/\n
-    # The idea is to change a footnote into a block quote with exdented [key]
+    # The idea is to change a footnote into a block quote tagged with the class
+    # which is ignored by reflow, but can be used to do find/replace.
     
     def doASCII(self):
-        global TheFootnoteList
+        global TheFootnoteList, KeyClassNames
         if not self.canWeRevise(u"Convert Footnotes to /Q..Q/") :
             return
         # If the database is actually empty, just do nothing.
@@ -1158,18 +1154,14 @@ class fnotePanel(QWidget):
             "Going to convert {0} footnotes to /Q..Q/".format(dbcount),
             ""):
             return
-        # Find the widest key string for each class.
-        maxwids = [0,0,0,0,0,0]
-        for item in TheFootnoteList:
-            maxwids[item['C']] = max(maxwids[item['C']],item['K'].size())
-        # Set up a boilerplate string for the replacements.
-        keyPattern = QString(u"$#$")
-        # Set up a regex pattern to recognize [Footnote key:, being forgiving
-        # about extra spaces and absorbing spaces after the colon.
-        fntPattern = QString(u"\[Footnote\s+$#$\s*:\s*")
-        fntRE = QRegExp()
-        # Set up a replacement boilerplate for [Footnote key:
-        fntRep = QString(u"/Q F:2 L:### R:2\u2029  [$#$] ")
+        # Set up a regex pattern to recognize [Footnote key: being forgiving
+        # about extra spaces and absorbing spaces after the colon. The %1
+        # marker is replaced in a QString.arg() operation with the key value.
+        fnt_pattern = QString(u"\[Footnote\s+%1\s*:\s*")
+        fnt_RE = QRegExp()
+        # Set up a replacement boilerplate for [Footnote key. Here %1 is
+        # replaced with the key classname and %2 with the key value.
+        fnt_rep = QString(u"/Q FNote %1\u2029  [%2] ")
         # Make a working textcursor, start the undo macro, advise the table
         worktc = QTextCursor(IMC.editWidget.textCursor())
         worktc.beginEditBlock()
@@ -1178,36 +1170,34 @@ class fnotePanel(QWidget):
             pqMsgs.startBar(dbcount,"Converting notes to ASCII...")
         for i in range(dbcount):
             item = TheFootnoteList[i]
-            keyqs = item['K']
-            # Note the start position of the note
-            notetc = item['N']
-            notestart = notetc.anchor()
-            # Note its end position, which includes the closing ]
-            noteend = notetc.position()
-            # Copy the note boilerplates and install the key in them.
-            notepat = QString(fntPattern).replace(keyPattern,keyqs,Qt.CaseSensitive)
-            noteqs = QString(fntRep)
-            noteqs.replace(keyPattern,keyqs,Qt.CaseSensitive)
-            noteqs.replace(QString(u'###'),QString(unicode(5+maxwids[item['C']])))
+            key_qs = item['K']
+            # Get the cursor that selects the Note.
+            note_tc = item['N']
+            # Record the start position of the note
+            note_start = note_tc.anchor()
+            # Record its end position, which includes the closing ]
+            note_end = note_tc.position()
+            # Copy the regex pattern with the actual key in it.
+            note_pat = fnt_pattern.arg(key_qs)
+            # Copy the replacement string with the keyclass and key in it
+            note_qs = fnt_rep.arg(KeyClassNames[item['C']]).arg(key_qs)
             # Point the work cursor at the note.
-            worktc.setPosition(notestart)
-            worktc.setPosition(noteend,QTextCursor.KeepAnchor)
+            worktc.setPosition(note_start)
+            worktc.setPosition(note_end,QTextCursor.KeepAnchor)
             # get the note as a string, truncate the closing ], add the 
-            # newline Q/, and put it back.
+            # newline and Q/, and put it back.
             oldnote = worktc.selectedText()
             oldnote.chop(1)
             oldnote.append(QString(u'\u2029Q/'))
             worktc.insertText(oldnote) # worktc now positioned after note
             # use the note string to recognize the length of [Footnote key:sp
-            fntRE.setPattern(notepat)
-            j = fntRE.indexIn(oldnote) # assert j==0
-            j = fntRE.cap(0).size() # size of the target portion
+            fnt_RE.setPattern(note_pat)
+            j = fnt_RE.indexIn(oldnote) # assert j==0
+            j = fnt_RE.cap(0).size() # size of the target portion
             # set the work cursor to select just that, and replace it.
-            worktc.setPosition(notestart)
-            worktc.setPosition(notestart+j,QTextCursor.KeepAnchor)
-            worktc.insertText(noteqs)
-            # reset notetc to the start of the note, but with no selection
-            notetc.setPosition(notestart)
+            worktc.setPosition(note_start)
+            worktc.setPosition(note_start + j,QTextCursor.KeepAnchor)
+            worktc.insertText(note_qs)
             
             if dbcount >= self.enoughForABar and 0 == (i & 7):
                 pqMsgs.rollBar(i)
