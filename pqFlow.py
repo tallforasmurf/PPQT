@@ -925,6 +925,7 @@ The reflow work unit produced by parseText below is a dict with these members:
         qdiva = QString(u'<div')
         qdivz = QString(u'</div')
         # process units from last to first
+        final_unit_index = len(unitList)-1 # index of last unit
         for u in reversed(range(len(unitList))):
             unit = unitList[u]
             unitBlockA = doc.findBlockByNumber(unit['A'])
@@ -949,13 +950,19 @@ The reflow work unit produced by parseText below is a dict with these members:
                         bA = u'<hr /> <!-- '
                         bZ = U' -->'
                     elif markupCode == ' ': # or, if len(markStack)==0
-                        # this is open text, check for headers
-                        if (unit['B'] == 2) and (u) and (unitList[u-1]['B'] != 4):
-                            # two-line blank not at top of reflow selection and
-                            # not following a head-2, make a head-3
+                        # This is a paragraph in open text, so check for headers.
+                        # A sub-head is preceded and followed by exactly 2 blank lines.
+                        # A chapter head is preceded by 4 and followed by 2.
+                        # To find out about "and followed" we have to
+                        # look at the B-count in the next unit, if there is a next unit.
+                        if (unit['B'] == 2) \
+                           and (u < final_unit_index) \
+                           and (unitList[u+1]['B'] == 2):
                             bA = bookendA['3']
                             bZ = bookendZ['3']
-                        if unit['B'] == 4 : # four-line blank, make head-2
+                        if unit['B'] == 4 \
+                           and (u < final_unit_index) \
+                           and (unitList[u+1]['B'] == 2) :
                             bA = bookendA['2']
                             bZ = bookendZ['2']
                     elif markupCode == 'P':
