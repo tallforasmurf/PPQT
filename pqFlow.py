@@ -565,10 +565,8 @@ The reflow work unit produced by parseText below is a dict with these members:
             # set up a text cursor that selects the text to be flowed: First,
             # set the virtual insertion point after the end of the last line,
             blockZ = doc.findBlockByNumber(blockNumberZ)
-            if blockZ != doc.lastBlock():
-                tc.setPosition(blockZ.position()+blockZ.length())
-            else:
-                tc.setPosition(blockZ.position()+blockZ.length()-1)
+            block_len = blockZ.length() - 0 if blockZ != doc.lastBlock() else 1
+            tc.setPosition(blockZ.position() + block_len)
             # then drag to select up to the beginning of the first line.
             # Note the result of this is that tc.position < tc.anchor.
             blockA = blockZ if blockNumberA == blockNumberZ \
@@ -880,7 +878,7 @@ The reflow work unit produced by parseText below is a dict with these members:
     We "enter" a markup at its end (Q/, T/, etc) and on entering push the
     prior markup type. WITHIN a markup we insert bookend texts around each
     work unit (paragraph or line) based on the active markup:
-    /Q, /R, and open code: <p> and </p>
+    /Q, /R, /F and open code: <p> and </p>
     /U : <li> and </li>
     /P : <span class="iX"> and </span><br /> where "iX" is based on F-W
     /*, /X, /C, and /T -- None
@@ -917,7 +915,7 @@ The reflow work unit produced by parseText below is a dict with these members:
             return # all-blank? or perhaps an error like unbalanced markup
         # In order to have a single undo/redo operation we have to use a
         # single QTextCursor, namely this one:
-        tc = IMC.editWidget.textCursor()
+        tc = QTextCursor(IMC.editWidget.textCursor())
         tc.beginEditBlock() # start single undo/redo macro
         pqMsgs.startBar((endBlockNumber - topBlockNumber), "Converting markup to HTML")
         # keep track of the current markup code and allow nesting
@@ -991,10 +989,15 @@ The reflow work unit produced by parseText below is a dict with these members:
                         bZ = QString(bZ)
                         bZ.append(IMC.QtLineDelim)
                         # insert bookends from bottom up to not invalidate #A
-                        tc.setPosition(unitBlockZ.position()+unitBlockZ.length())
+                        block_len = unitBlockZ.length() - 0 if unitBlockZ != doc.lastBlock() else 1
+                        tc.setPosition(unitBlockZ.position() + block_len)
                         tc.insertText(bZ)
+                        print('tc {0}:{1} gets {2}'.format(
+                            tc.position(), tc.anchor(), unicode(bZ) ) )
                         tc.setPosition(unitBlockA.position())
                         tc.insertText(bA)
+                        print('tc {0}:{1} gets {2}'.format(
+                            tc.position(), tc.anchor(), unicode(bA) ) )                        
                 # end of unit type P bookending all paras not in C/*/X markup    
             elif unit['T'] == '/' :
                 # this is an end-markup line such as Q/, so we are entering a
@@ -1006,7 +1009,8 @@ The reflow work unit produced by parseText below is a dict with these members:
                 # comments there, but for HTML we should wipe the whole line.
                 mzs = QString(markupZ[markupCode])
                 mzs.append(IMC.QtLineDelim)
-                tc.setPosition(unitBlockA.position()+unitBlockA.length()) # click
+                block_len = unitBlockA.length() - 0 if unitBlockA != doc.lastBlock() else 1
+                tc.setPosition(unitBlockA.position() + block_len) # click
                 tc.setPosition(unitBlockA.position(),QTextCursor.KeepAnchor) # drag 
                 tc.insertText(mzs)
                 # Note unit at the bottom of a table markup
