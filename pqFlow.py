@@ -565,7 +565,7 @@ The reflow work unit produced by parseText below is a dict with these members:
             # set up a text cursor that selects the text to be flowed: First,
             # set the virtual insertion point after the end of the last line,
             blockZ = doc.findBlockByNumber(blockNumberZ)
-            block_len = blockZ.length() - 0 if blockZ != doc.lastBlock() else 1
+            block_len = blockZ.length() - (0 if blockZ != doc.lastBlock() else 1)
             tc.setPosition(blockZ.position() + block_len)
             # then drag to select up to the beginning of the first line.
             # Note the result of this is that tc.position < tc.anchor.
@@ -989,15 +989,11 @@ The reflow work unit produced by parseText below is a dict with these members:
                         bZ = QString(bZ)
                         bZ.append(IMC.QtLineDelim)
                         # insert bookends from bottom up to not invalidate #A
-                        block_len = unitBlockZ.length() - 0 if unitBlockZ != doc.lastBlock() else 1
+                        block_len = unitBlockZ.length() - (0 if unitBlockZ != doc.lastBlock() else 1)
                         tc.setPosition(unitBlockZ.position() + block_len)
                         tc.insertText(bZ)
-                        print('tc {0}:{1} gets {2}'.format(
-                            tc.position(), tc.anchor(), unicode(bZ) ) )
                         tc.setPosition(unitBlockA.position())
                         tc.insertText(bA)
-                        print('tc {0}:{1} gets {2}'.format(
-                            tc.position(), tc.anchor(), unicode(bA) ) )                        
                 # end of unit type P bookending all paras not in C/*/X markup    
             elif unit['T'] == '/' :
                 # this is an end-markup line such as Q/, so we are entering a
@@ -1009,7 +1005,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                 # comments there, but for HTML we should wipe the whole line.
                 mzs = QString(markupZ[markupCode])
                 mzs.append(IMC.QtLineDelim)
-                block_len = unitBlockA.length() - 0 if unitBlockA != doc.lastBlock() else 1
+                block_len = unitBlockA.length() - (0 if unitBlockA != doc.lastBlock() else 1)
                 tc.setPosition(unitBlockA.position() + block_len) # click
                 tc.setPosition(unitBlockA.position(),QTextCursor.KeepAnchor) # drag 
                 tc.insertText(mzs)
@@ -1028,7 +1024,9 @@ The reflow work unit produced by parseText below is a dict with these members:
                     mza.append(IMC.QtLineDelim)
                     mza.prepend(IMC.QtLineDelim)
                     tc.setPosition(unitBlockA.position()+unitBlockA.length()) # click
-                    tc.setPosition(unitBlockA.position(),QTextCursor.KeepAnchor) # drag 
+                    tc.setPosition(unitBlockA.position(),QTextCursor.KeepAnchor) # drag
+                    print('tc {0}:{1} gets {2}'.format(
+                        tc.position(), tc.anchor(), markupA[markupCode] ) )
                     tc.insertText(mza)
                 # Exit this markup
                 markupCode = markStack.pop()
@@ -1489,7 +1487,9 @@ T/
 @  @  @
 T/
 
-    ''')
+/F
+
+F/''')
     IMC.editWidget.setPlainText(utqs)
     IMC.mainWindow = widj
     IMC.editWidget.show()
