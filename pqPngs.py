@@ -153,6 +153,7 @@ class pngDisplay(QWidget):
     def noImage(self) :
         self.imLabel.setPixmap(self.defaultPM)
         self.txLabel.setText(u"No image")
+        self.lastIndex = -1 # didn't see a prior page
     
     # This slot gets the main window's signal shuttingDown.
     # We save our current zoom factor into IMC.settings.
