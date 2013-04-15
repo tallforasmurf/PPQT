@@ -218,29 +218,39 @@ class pngDisplay(QWidget):
         lo -= 1
         if self.lastIndex == (lo) :
             return # nothing to do, we are there
-        # On another page, save its index as IMC.currentPageIndex for use
-        # by pqNotes and here as lastIndex. Then display it.
+        # On another page, display it.
         self.lastIndex = lo
-        IMC.currentPageIndex = lo
         self.showPage()
 
     # Display the page indexed by self.lastIndex. This is called when the cursor
     # moves to a new page (newPosition, above), or when the PageUp/Dn keys are used,
     # (keyPressEvent, below) or when the zoom factor changes in any of several ways.
-    #
-    # Form the image filename as a Qstring, e.g. "025"; then append ".png" and save
-    # that as self.lastPage. Form the full path to the image. Load it as a QImage,
+
     # which will be an indexed-color format (one byte per pixel).
     # Convert that to a QPixmap and install it as the contents of our displayed label,
     # and scale it to the current zoom factor. The pixmap always has RGB32 format,
     # 4 bytes per pixel. However PG pngs are always(?) monochrome, so the only pixels
     # in the Image are 0x00 or 0xff, and in the pixmap are ff000000 or ffffffff.
     def showPage(self):
-        self.lastPage = QString(IMC.pageTable[self.lastIndex][1]+u".png")
-        pngName = self.pngPath + self.lastPage
-        self.image = QImage(pngName,'PNG')
-        self.pixmap = QPixmap.fromImage(self.image,Qt.ColorOnly)
-        if not self.pixmap.isNull(): # we successfully found and loaded a file
+        # If self.lastPage is different from IMC.currentPageIndex = lo the page has
+        # changed, and we need to load a new image.
+        if self.lastPage != IMC.currentPageIndex:
+            IMC.currentPageIndex = self.lastPage # don't come here again until it changes.
+            # Form the image filename as a Qstring, e.g. "025"; then append ".png".
+            # Save as self.lastPage. Form the full path to the image. Load it as a QImage,
+            self.lastPage = QString(IMC.pageTable[self.lastIndex][1]+u".png")
+            pngName = self.pngPath + self.lastPage
+            self.image = QImage(pngName,'PNG')
+            # If that successfully loaded an image, make sure it is one byte/pixel.
+            # Being loaded from an 8-bit monochrome PNG, it should be Format_Indexed8.
+            # But it might be Format_Mono (1 bit/pixel) or even Format_RGB32.
+            if self.image.format() != QImage.Format_Indexed8 :
+                self.image = self.image.convertToFormat(QImage.Format_Indexed8,Qt.ColorOnly)
+            # Convert the image to a pixmap.
+            self.pixmap = QPixmap.fromImage(self.image,Qt.ColorOnly)
+        if not self.pixmap.isNull():
+            # We successfully found and loaded an image and converted it to pixmap.
+            # Load it in our label for display, set the zoom factor, and the caption.
             self.imLabel.setPixmap(self.pixmap)
             self.imLabel.resize( self.zoomFactor * self.pixmap.size() )
             self.txLabel.setText(
@@ -270,11 +280,6 @@ class pngDisplay(QWidget):
     def zoomToWidth(self):
         if (not self.ready) or (self.image.isNull()) :
             return # nothing to do here
-        # Our QImage, being loaded from an 8-bit monochrome PNG, should be
-        # in Format_Indexed8. It might be Format_Mono (1 bit/pixel) or even
-        # Format_RGB32. So make it Indexed8, easiest to handle.
-        if self.image.format() != QImage.Format_Indexed8 :
-            self.image = self.image.convertToFormat(QImage.Format_Indexed8,Qt.ColorOnly)
         # Query the Color look-up table and build a list of the Green values
         # corresponding to each possible pixel value. Probably there are just
         # two colors so colortab is [0,255] but there could be more, depending
@@ -324,11 +329,6 @@ class pngDisplay(QWidget):
     def zoomToHeight(self):
         if (not self.ready) or (self.image.isNull()) :
             return # nothing to do here
-        # Our QImage, being loaded from an 8-bit monochrome PNG, should be
-        # in Format_Indexed8. It might be Format_Mono (1 bit/pixel) or even
-        # Format_RGB32. So make it Indexed8, easiest to handle.
-        if self.image.format() != QImage.Format_Indexed8 :
-            self.image = self.image.convertToFormat(QImage.Format_Indexed8,Qt.ColorOnly)
         # Query the Color look-up table and build a list of the Green values
         # corresponding to each possible pixel value. Probably there are just
         # two colors so colortab is [0,255] but there could be more, depending
