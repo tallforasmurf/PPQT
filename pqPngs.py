@@ -167,7 +167,9 @@ class pngDisplay(QWidget):
     # If the latter, we convert that into the path to the pngs folder,
     # and see if bookPath/pngs is a directory. If so, we set self.ready
     # to true, indicating it is worthwhile to try opening image files.
-    # The next thing to happen will be a  cursorPositionChanged signal.
+    # At this point the gray image is displayed and will remain displayed
+    # until the user moves the cursor in some way, generating cursorPositionChanged.
+    # That's a minor annoyance, to avoid it we will fake that signal now.
     def newFile(self, bookPath):
         if not bookPath.isNull(): # this was successful File>Open
             finf = QFileInfo(bookPath)
@@ -175,6 +177,7 @@ class pngDisplay(QWidget):
             finf = QFileInfo(self.pngPath)
             if finf.exists() and finf.isDir(): # looking good
                 self.ready = True
+                self.newPosition()
             else:
                 # We could inform the user we couldn't find a pngs folder,
                 # but you know -- the user is probably already aware of that.
