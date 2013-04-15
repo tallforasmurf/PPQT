@@ -157,9 +157,8 @@ class notesEditor(QPlainTextEdit):
     # (BUG: if there is no pngs folder, that won't happen)
     def insertPage(self):
         tc = self.textCursor()
-        if IMC.currentPageIndex is not None:
-            qspn = IMC.pageTable[IMC.currentPageIndex][1]
-            tc.insertText("[{0}]".format(unicode(qspn)))
+        if IMC.currentPageNumber is not None:
+            tc.insertText("[{0}]".format(unicode(IMC.currentPageNumber)))
 
     # on ^p, look for [ppp] "near" our cursor in notes, and if found, tell
     # editor to go to that page text. See above for strategy.

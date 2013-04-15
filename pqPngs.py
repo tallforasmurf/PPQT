@@ -34,17 +34,16 @@ Display the pngs to match the page being edited.
 
 The object consists of a vertical box layout containing, above,
 a QLabel widget initialized with a 700x1000 QPixmap with fill(QColor("gray"))
-and enclosed in a QScrollArea, and below, a small label to display the current
-page number initialized with "No page"
+and enclosed in a QScrollArea. Below it, a small label to display the current
+page number and zoom factor initialized with "No page". Below that, a
+spinBox for the current zoom factor and buttons "to Width" and "to Height"
+for zoom factor changes. Zooming is done by changing the size hint of the
+pixmap; it scales, and the parent scrollarea scrolls.
 
-Reimplements keyPressEvent() copied from the editor, trapping ctl-plus/minus
-to zoom the image when an image exists. Zooming is done by just changing
-the size hint of the pixmap; it scales, and the parent scrollarea scrolls.
-
-The method cursorMoved() is connect to the cursorPositionChanged signal emitted
-by the editor. It gets the current position, looks it up in IMC.pageTable,
-and passes the filename and path to the load method of QPixMap. The path
-comes from the pqMain's docHasChanged signal.
+Reimplements keyPressEvent() to respond to certain keys when the focus
+is in this widget:
+   ctl-plus/minus zoom the image when an image exists.
+   Page Up/Down cause display of a different png.
 
 N.B. there is a cryptic comment in the QPixmap doc page that "QPixmaps are
 automatically added to the QPixmapCache when loaded from a file." This seems
@@ -132,34 +131,43 @@ class pngDisplay(QWidget):
         # self.ready, hence the latter has to be assigned-to first.
         self.zlider.setValue(int(self.zoomFactor*100))
         self.clear()
-        
+
     # local subroutine to initialize our contents for an empty edit.
     # called from _init_ and from newPosition when we discover the file
     # has been cleared on us. Don't reset the zoomFactor, leave it as
     # the user last set it.
     def clear(self):
-        # Variables to speed up our position look-up
-        IMC.currentPageNumber = QString() # last page e.g. "002"
+        # Clear the page name, used by pqNotes 
+        IMC.currentPageNumber = None # will be name of last page e.g. "002"
+        # Clear the page filename, used in our caption label
         self.lastPage = QString() # last file name e.g. "002.png"
-        self.pngPath = QString() # path to the pngs folder
-        self.lastIndex = -1 # index of last-used page in pageTable or -1
-        IMC.currentPageIndex = None
+        # Clear the path to the pngs folder, used to fetch image files
+        self.pngPath = QString()
+        # Clear the index of the last-shown page in the page table
+        # -1 means no page is being displayed.
+        self.lastIndex = -1
+        # Clear the index of the next page to display, normally same as last
+        self.nextIndex = -1
+        # Set not-ready to indicate no pngs directory available.
         self.ready = False
+        # Clear out & release storage of our QImage and QPixmaps
         self.pixmap = QPixmap() # null pixmap
+        self.image = QImage()
         self.noImage() # show gray image
-    
-    # local subroutine to show a blank gray frame and "No Image" below.
-    # Called from clear() above.
+
+    # Display a blank gray frame and "No Image" below.
+    # Called from clear() above and from showPage when no valid image.
     def noImage(self) :
         self.imLabel.setPixmap(self.defaultPM)
         self.txLabel.setText(u"No image")
         self.lastIndex = -1 # didn't see a prior page
-    
+        self.nextIndex = -1
+
     # This slot gets the main window's signal shuttingDown.
     # We save our current zoom factor into IMC.settings.
     def shuttingDown(self):
         IMC.settings.setValue("pngs/zoomFactor",QVariant(self.zoomFactor))
-        
+
     # This slot gets pqMain's signal docHasChanged(QString), telling
     # us that a different document has been loaded. This could be for
     # a successful File>Open, or a failed File>Open or File>New.
@@ -167,8 +175,8 @@ class pngDisplay(QWidget):
     # If the latter, we convert that into the path to the pngs folder,
     # and see if bookPath/pngs is a directory. If so, we set self.ready
     # to true, indicating it is worthwhile to try opening image files.
-    # At this point the gray image is displayed and will remain displayed
-    # until the user moves the cursor in some way, generating cursorPositionChanged.
+    # At this point the gray image is displayed and previously would remain displayed
+    # until the user moved the cursor in some way, generating cursorPositionChanged.
     # That's a minor annoyance, to avoid it we will fake that signal now.
     def newFile(self, bookPath):
         if not bookPath.isNull(): # this was successful File>Open
@@ -186,80 +194,87 @@ class pngDisplay(QWidget):
             self.clear()
 
     # This function is the slot that is connected to the editor's 
-    # cursorPositionChanged signal.
+    # cursorPositionChanged signal. Its input is cursor position and
+    # the page table. Its output is to set self.nextIndex to the 
+    # desired next image table row, and to call showPage.
     def newPosition(self):
-        if not self.ready : # no file loaded or no pngs folder found
-            return
-        if 0 == len(IMC.pageTable): # no book open, or no pngs with it
-            # this could happen on the first call at startup, the first
+        if not self.ready :
+                # No file loaded or no pngs folder found.
+            self.nextIndex = -1
+        elif 0 == len(IMC.pageTable):
+                # No book open, or no pngs directory with it.
+            # This could happen on the first call at startup, the first
             # call after a document has been loaded but before the metadata
-            # has been built, or after a File>New. Just bail.
-            return
-        # find our most advanced position in the text
-        pos = IMC.editWidget.textCursor().selectionEnd()
-        # if that position is above the first page, which can happen if the
-        # user has entered some text above the first psep line, show a
-        # blank image.
-        if pos < IMC.pageTable[0][0].position() :
-            self.noImage()
-            return
-        # here we go with bisect_right to find the last page table entry
-        # <= to our present position. We know the table is not empty, but
-        # after pseps are removed, there can be multiple pages with the
-        # same starting offset.
-        hi = len(IMC.pageTable)
-        lo = 0
-        while lo < hi:
-            mid = (lo + hi)//2
-            if pos < IMC.pageTable[mid][0].position(): hi = mid
-            else: lo = mid+1
-        # the page at lo-1 is the greatest <= pos. If it is the same as
-        # we already displayed then bail out.
-        lo -= 1
-        if self.lastIndex == (lo) :
-            return # nothing to do, we are there
-        # On another page, display it.
-        self.lastIndex = lo
+            # has been built. No image to show.
+            self.nextIndex = -1
+        else :
+            # We have a book and some pngs. Find the position of the higher end
+            # of the current selection.
+            pos = IMC.editWidget.textCursor().selectionEnd()
+            # if that position is above the first page, which can happen if the
+            # user has entered some text above the first psep line, show a
+            # blank image.
+            if pos < IMC.pageTable[0][0].position() :
+                self.nextIndex = -1
+            else :
+                # here we go with bisect_right to find the lowest page table entry
+                # <= to our present position. We know the table is not empty, but
+                # after pseps are removed, there can be multiple pages with the
+                # same starting offset. In a 500pp book, this might iterate 8 times.
+                hi = len(IMC.pageTable)
+                lo = 0
+                while lo < hi:
+                    mid = (lo + hi)//2
+                    if pos < IMC.pageTable[mid][0].position(): hi = mid
+                    else: lo = mid+1
+                # the page at lo-1 is the greatest <= pos. Set that as the page to show.
+                lo -= 1
+                self.nextIndex = lo
+            # One way or another we have set self.nextIndex to the desired
+            # page, so display it.
         self.showPage()
 
-    # Display the page indexed by self.lastIndex. This is called when the cursor
+    # Display the page indexed by self.nextIndex. This is called when the cursor
     # moves to a new page (newPosition, above), or when the PageUp/Dn keys are used,
     # (keyPressEvent, below) or when the zoom factor changes in any of several ways.
-
-    # which will be an indexed-color format (one byte per pixel).
-    # Convert that to a QPixmap and install it as the contents of our displayed label,
-    # and scale it to the current zoom factor. The pixmap always has RGB32 format,
-    # 4 bytes per pixel. However PG pngs are always(?) monochrome, so the only pixels
-    # in the Image are 0x00 or 0xff, and in the pixmap are ff000000 or ffffffff.
     def showPage(self):
-        # If self.lastPage is different from IMC.currentPageIndex = lo the page has
+        # If self.lastIndex is different from self.nextIndex, the page has
         # changed, and we need to load a new image.
-        if self.lastPage != IMC.currentPageIndex:
-            IMC.currentPageIndex = self.lastPage # don't come here again until it changes.
-            # Form the image filename as a Qstring, e.g. "025"; then append ".png".
-            # Save as self.lastPage. Form the full path to the image. Load it as a QImage,
-            self.lastPage = QString(IMC.pageTable[self.lastIndex][1]+u".png")
-            pngName = self.pngPath + self.lastPage
-            self.image = QImage(pngName,'PNG')
-            # If that successfully loaded an image, make sure it is one byte/pixel.
-            # Being loaded from an 8-bit monochrome PNG, it should be Format_Indexed8.
-            # But it might be Format_Mono (1 bit/pixel) or even Format_RGB32.
-            if self.image.format() != QImage.Format_Indexed8 :
-                self.image = self.image.convertToFormat(QImage.Format_Indexed8,Qt.ColorOnly)
-            # Convert the image to a pixmap.
-            self.pixmap = QPixmap.fromImage(self.image,Qt.ColorOnly)
+        if self.lastIndex != self.nextIndex :
+            self.lastIndex = self.nextIndex # don't come here again until it changes.
+            if self.lastIndex > -1 :
+                # Form the image filename as a Qstring, e.g. "025" and save that for
+                # use by pqNotes:
+                IMC.currentPageNumber = QString(IMC.pageTable[self.lastIndex][1])
+                # Form the complete filename by appending ".png" and save as
+                # self.lastPage for use in forming our caption label.
+                self.lastPage = QString(IMC.currentPageNumber).append(QString(u".png"))
+                # Form the full path to the image. Try to load it as a QImage.
+                pngName = QString(self.pngPath).append(self.lastPage)
+                self.image = QImage(pngName,'PNG')
+                # If that successfully loaded an image, make sure it is one byte/pixel.
+                if not self.image.isNull() \
+                   and self.image.format() != QImage.Format_Indexed8 :
+                    # It might be Format_Mono (1 bit/pixel) or even Format_RGB32.
+                    self.image = self.image.convertToFormat(QImage.Format_Indexed8,Qt.ColorOnly)
+                # Convert the image to a pixmap. If it's null, so is the pixmap.
+                self.pixmap = QPixmap.fromImage(self.image,Qt.ColorOnly)
+            else :
+                IMC.currentPageNumber = QString(u"n.a.")
+                self.lastPage = QString()
+                self.image = QImage()
+                self.pixmap = QPixmap()
         if not self.pixmap.isNull():
             # We successfully found and loaded an image and converted it to pixmap.
             # Load it in our label for display, set the zoom factor, and the caption.
             self.imLabel.setPixmap(self.pixmap)
             self.imLabel.resize( self.zoomFactor * self.pixmap.size() )
             self.txLabel.setText(
-            u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
-                                )
+                u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
+            )
         else: # no file was loaded. It's ok if pages are missing
-            self.imLabel.setPixmap(self.defaultPM)
-            self.txLabel.setText(u"No image")
-    
+            self.noImage() # display the gray image.
+
     # Catch the signal from the Zoom spinbox with a new value.
     # Store the new value as a float, and if we have a page, repaint it.
     def newZoomFactor(self,new_value):
@@ -285,7 +300,7 @@ class pngDisplay(QWidget):
         # two colors so colortab is [0,255] but there could be more, depending
         # on how the PNG was defined, 16 or 32 or even 255 grayscale.
         colortab = [ int((self.image.color(c) >> 4) & 255)
-                    for c in range(self.image.colorCount()) ]
+                     for c in range(self.image.colorCount()) ]
         ncols = self.image.width() # number of logical pixels across
         stride = (ncols + 3) & (-4) # number of bytes per scanline
         nrows = self.image.height() # number of pixels high
@@ -324,7 +339,7 @@ class pngDisplay(QWidget):
         self.zlider.setValue(int(100*self.zoomFactor)) # this signals newZoomFactor
         # Set the scrollbar to show the page from its left margin.
         self.scarea.horizontalScrollBar().setValue(int( left_side * self.zoomFactor) )
-        
+
 
     def zoomToHeight(self):
         if (not self.ready) or (self.image.isNull()) :
@@ -334,7 +349,7 @@ class pngDisplay(QWidget):
         # two colors so colortab is [0,255] but there could be more, depending
         # on how the PNG was defined, 16 or 32 or even 255 grayscale.
         colortab = [ int((self.image.color(c) >> 4) & 255)
-                    for c in range(self.image.colorCount()) ]
+                     for c in range(self.image.colorCount()) ]
         ncols = self.image.width() # number of logical pixels across
         stride = (ncols + 3) & (-4) # number of bytes per scanline
         nrows = self.image.height() # number of pixels high
@@ -397,7 +412,7 @@ class pngDisplay(QWidget):
         # assume we will not handle this key and clear its accepted flag
         event.ignore()
         # If we are initialized and have displayed some page, look at the key
-        if (self.ready) and (IMC.currentPageIndex is not None):
+        if (self.ready) and (self.lastIndex > -1):
             kkey = int( int(event.modifiers()) & IMC.keypadDeModifier) | int(event.key())
             if kkey in IMC.zoomKeys :
                 # ctl/cmd + or -, do the zoom
@@ -414,8 +429,7 @@ class pngDisplay(QWidget):
                 fac += self.lastIndex
                 if (fac >= 0) and (fac < len(IMC.pageTable)) : 
                     # not off the end of the book, so,
-                    self.lastIndex = fac
-                    IMC.currentPageIndex = fac
+                    self.nextIndex = fac
                     self.showPage()
         if not event.isAccepted() : # we don't do those, pass them on
             super(pngDisplay, self).keyPressEvent(event)
