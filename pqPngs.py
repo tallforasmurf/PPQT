@@ -123,55 +123,59 @@ class pngDisplay(QWidget):
         vbox.addWidget(self.scarea,10)
         vbox.addLayout(zhbox,0)
         self.setLayout(vbox)
-        self.ready = False
+        # Initialize assuming no book is open.
+        self.ready = False # nothing to display
+        # Recover the last-set zoom factor from the settings object, default 1.0
         qv = IMC.settings.value("pngs/zoomFactor",QVariant(1.0))
         self.zoomFactor = qv.toFloat()[0]
+        # The following causes entry into newZoomFactor, below, which tests
+        # self.ready, hence the latter has to be assigned-to first.
         self.zlider.setValue(int(self.zoomFactor*100))
         self.clear()
-    
-    # local subroutine to show a blank gray frame and "No Image" below.
-    # Called from clear() below, and when the cursor is above the first page.
-    def noImage(self) :
-        self.imLabel.setPixmap(self.defaultPM)
-        self.txLabel.setText(u"No image")
         
     # local subroutine to initialize our contents for an empty edit.
     # called from _init_ and from newPosition when we discover the file
     # has been cleared on us. Don't reset the zoomFactor, leave it as
-    # the user las set it.
+    # the user last set it.
     def clear(self):
         # Variables to speed up our position look-up
         IMC.currentPageNumber = QString() # last page e.g. "002"
         self.lastPage = QString() # last file name e.g. "002.png"
-        self.bookName = QString() # name of book we are in
         self.pngPath = QString() # path to the pngs folder
-        self.lastIndex = -1 # index of last page in pageTable or -1
+        self.lastIndex = -1 # index of last-used page in pageTable or -1
         IMC.currentPageIndex = None
         self.ready = False
         self.pixmap = QPixmap() # null pixmap
         self.noImage() # show gray image
     
-    # this slot gets the main window's signal shuttingDown.
-    # we write our current zoom factor into IMC.settings.
+    # local subroutine to show a blank gray frame and "No Image" below.
+    # Called from clear() above.
+    def noImage(self) :
+        self.imLabel.setPixmap(self.defaultPM)
+        self.txLabel.setText(u"No image")
+    
+    # This slot gets the main window's signal shuttingDown.
+    # We save our current zoom factor into IMC.settings.
     def shuttingDown(self):
         IMC.settings.setValue("pngs/zoomFactor",QVariant(self.zoomFactor))
         
-    # This slot gets the main window's signal docHasChanged(QString).
-    # The full bookPath is passed and we convert that into the path to
-    # the pngs folder, and see if that is a directory. When that is all
-    # good we set ready to true. The next thing to happen will be the
-    # cursorPositionChanged signal from the editor.
+    # This slot gets pqMain's signal docHasChanged(QString), telling
+    # us that a different document has been loaded. This could be for
+    # a successful File>Open, or a failed File>Open or File>New.
+    # The bookPath is a null QString for File>New, or the full bookPath.
+    # If the latter, we convert that into the path to the pngs folder,
+    # and see if bookPath/pngs is a directory. If so, we set self.ready
+    # to true, indicating it is worthwhile to try opening image files.
+    # The next thing to happen will be a  cursorPositionChanged signal.
     def newFile(self, bookPath):
-        finf = QFileInfo(bookPath)
-        if not bookPath.isNull(): # this was File>Open
-            self.bookName = finf.fileName() # for cache tags
-            self.pngPath = finf.path()
-            self.pngPath.append(u"/pngs/")
+        if not bookPath.isNull(): # this was successful File>Open
+            finf = QFileInfo(bookPath)
+            self.pngPath = finf.absolutePath().append(u"/pngs/")
             finf = QFileInfo(self.pngPath)
             if finf.exists() and finf.isDir(): # looking good
                 self.ready = True
             else:
-                # we could inform the user we couldn't find the pngs folder,
+                # We could inform the user we couldn't find a pngs folder,
                 # but you know -- the user is probably already aware of that.
                 self.clear() # just put up the gray default image
         else: # It was a File>New
@@ -180,7 +184,7 @@ class pngDisplay(QWidget):
     # This function is the slot that is connected to the editor's 
     # cursorPositionChanged signal.
     def newPosition(self):
-        if not self.ready : # no file loaded or no pngs folder
+        if not self.ready : # no file loaded or no pngs folder found
             return
         if 0 == len(IMC.pageTable): # no book open, or no pngs with it
             # this could happen on the first call at startup, the first
@@ -215,20 +219,24 @@ class pngDisplay(QWidget):
         self.lastIndex = lo
         IMC.currentPageIndex = lo
         self.showPage()
-    # Display the page indexed by self.lastIndex. Form its filename as a
-    # Qstring, e.g. "025", append ".png" and save that as self.lastPage.
-    # Form the full path to the image. Load it as a QImage, which will be
-    # an indexed-color format (one byte per pixel). Convert that to a QPixmap
-    # and install it as the contents of our displayed label, and scale it
-    # to the current zoom factor. The pixmap always has RGB32 format, 4 bytes
-    # per pixel. However PG pngs are (always?) monochrome, so the only pixels
+
+    # Display the page indexed by self.lastIndex. This is called when the cursor
+    # moves to a new page (newPosition, above), or when the PageUp/Dn keys are used,
+    # (keyPressEvent, below) or when the zoom factor changes in any of several ways.
+    #
+    # Form the image filename as a Qstring, e.g. "025"; then append ".png" and save
+    # that as self.lastPage. Form the full path to the image. Load it as a QImage,
+    # which will be an indexed-color format (one byte per pixel).
+    # Convert that to a QPixmap and install it as the contents of our displayed label,
+    # and scale it to the current zoom factor. The pixmap always has RGB32 format,
+    # 4 bytes per pixel. However PG pngs are always(?) monochrome, so the only pixels
     # in the Image are 0x00 or 0xff, and in the pixmap are ff000000 or ffffffff.
     def showPage(self):
         self.lastPage = QString(IMC.pageTable[self.lastIndex][1]+u".png")
         pngName = self.pngPath + self.lastPage
         self.image = QImage(pngName,'PNG')
         self.pixmap = QPixmap.fromImage(self.image,Qt.ColorOnly)
-        if not self.pixmap.isNull(): # we did find and load a file
+        if not self.pixmap.isNull(): # we successfully found and loaded a file
             self.imLabel.setPixmap(self.pixmap)
             self.imLabel.resize( self.zoomFactor * self.pixmap.size() )
             self.txLabel.setText(
@@ -238,8 +246,8 @@ class pngDisplay(QWidget):
             self.imLabel.setPixmap(self.defaultPM)
             self.txLabel.setText(u"No image")
     
-    # Catch the signal from the spinbox with a new value.
-    # Store the new value as a float and if we have a page, repaint it.
+    # Catch the signal from the Zoom spinbox with a new value.
+    # Store the new value as a float, and if we have a page, repaint it.
     def newZoomFactor(self,new_value):
         self.zoomFactor = new_value / 100
         if self.ready :
