@@ -368,13 +368,13 @@ class MainWindow(QMainWindow):
         editPasteAction = self.createAction("&Paste", self.editor,
             self.editor.paste, QKeySequence.Paste,
             "Paste clipboard at selection")
-        editToUpperAction = self.createAction("to&Upper", self.editor,
+        editToUpperAction = self.createAction("to&Upper", None,
             self.editor.toUpperCase, QKeySequence(Qt.Key_U+Qt.CTRL),
             "Make selected text UPPERCASE")
-        editToLowerAction = self.createAction("to&Lower", self.editor,
+        editToLowerAction = self.createAction("to&Lower", None,
             self.editor.toLowerCase, QKeySequence(Qt.Key_L+Qt.CTRL),
             "Make selected text lowercase")
-        editToTitleAction = self.createAction("toT&itle", self.editor,
+        editToTitleAction = self.createAction("toT&itle", None,
             self.editor.toTitleCase, QKeySequence(Qt.Key_I+Qt.CTRL),
             "Make Selected Text Titlecase")
         # There may perhaps be some more edit actions, e.g. ex/indent
