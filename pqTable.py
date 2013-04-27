@@ -978,8 +978,9 @@ def tableHTML(tc,doc,unitList):
                 continue # ignoring the divider line
         # line is not all-hyphens (or hyphens not spec'd), and not all-blank
         # because all-blanks are not included as work units, but if unit['B']
-        # is nonzero it was preceded by a blank line.
-        if tprops.isMultiLine() and (unit['B'] > 0):
+        # is nonzero it was preceded by a blank line. If other than the first,
+        # we are starting a new multiline table row.
+        if tprops.isMultiLine() and (unit['B'] > 0) and u != work[0]:
             r += 1 # start a new multiline row
         # Bust the line into pieces based on spaces and/or stiles, and
         # stow the pieces numbered sequentially as columns. When stiles are
