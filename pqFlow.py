@@ -951,13 +951,13 @@ The reflow work unit produced by parseText below is a dict with these members:
                         bZ = U' -->'
                     elif markupCode == ' ': # or, if len(markStack)==0
                         # This is a paragraph in open text, so check for headers.
-                        # A sub-head is preceded and followed by exactly 2 blank lines.
+                        # A sub-head is preceded by exactly 2 blank lines and followed by 1.
                         # A chapter head is preceded by 4 and followed by 2.
                         # To find out about "and followed" we have to
                         # look at the B-count in the next unit, if there is a next unit.
                         if (unit['B'] == 2) \
                            and (u < final_unit_index) \
-                           and (unitList[u+1]['B'] == 2):
+                           and (unitList[u+1]['B'] == 1):
                             bA = bookendA['3']
                             bZ = bookendZ['3']
                         if unit['B'] == 4 \
