@@ -913,6 +913,61 @@ The reflow work unit produced by parseText below is a dict with these members:
         unitList = self.parseText(topBlock,endBlock)
         if 0 == len(unitList) :
             return # all-blank? or perhaps an error like unbalanced markup
+        # Pre-parse the work unit list from the top down, in order to identify
+        # Chapters and Subheads. Chapter heads are preceded by 4 blank lines,
+        # and followed by zero or more paragraphs preceded by 1 blank line,
+        # until the first paragraph of chapter text is preceded by 2 blank lines:
+        #    (4 blank lines)
+        #    Chapter Title
+        #
+        #    More Chapter Title
+        #
+        #    Yet More Chapter Title
+        #    (2 blank lines)
+        #    Text paragraph
+        # A Subhead is preceded by 2 blank lines and followed by one, and this
+        # creates a big fat ambiguity because that exactly describes the text
+        # paragraph after a chapter head (2 blanks, para, 1 blank)! So it is not
+        # possible in the PGDP system to have a Subhead immediately first in a chapter.
+        #
+        # Anyway, run through the work list and implement the above rules by changing
+        # the 'M' of ' ' to a '2' or a '3' for Chapter and Subhead.
+        final_unit_index = len(unitList)-1 # index of last unit
+        u = 0 # gotta do old-fashioned loop control, bleagh
+        m = 0 # markup depth
+        while u <= final_unit_index :
+            unit = unitList[u]
+            if (m == 0) and (unit['T'] == 'P') :
+                # paragraph in open text (not in markup)
+                if unit['B'] == 4 :
+                    # Starting a chapter
+                    if unitList[u+1]['B'] == 2 :
+                        # simple one-paragraph chapter
+                        unit['M'] = '2'
+                    else :
+                        # chapter followed by continuation paragraph
+                        unit['M'] = '<'
+                        while (unitList[u+1]['B'] < 2) and u < final_unit_index :
+                            u += 1
+                            unitList[u]['M'] = '-' # mark intermediate Chapter unit
+                        unitList[u]['M'] = '>'
+                    # at this point unitList[u+1] is the first text para of a chapter
+                    # but it would look like a subhead so swallow it
+                    u += 1
+                elif (unit['B'] == 2) and (unitList[u+1]['B'] == 1) :
+                    # Subhead
+                    unit['M'] = '3'
+                else :
+                    # unit not properly spaced for chapter or subhead, leave alone.
+                    pass
+            else:
+                # starting, or continuing inside, a markup
+                if unit['T'] == 'M' :
+                    m += 1
+                if unit['T'] == '/' :
+                    m -= 1
+            u += 1
+        
         # In order to have a single undo/redo operation we have to use a
         # single QTextCursor, namely this one:
         tc = QTextCursor(IMC.editWidget.textCursor())
@@ -925,7 +980,6 @@ The reflow work unit produced by parseText below is a dict with these members:
         qdiva = QString(u'<div')
         qdivz = QString(u'</div')
         # process units from last to first
-        final_unit_index = len(unitList)-1 # index of last unit
         for u in reversed(range(len(unitList))):
             unit = unitList[u]
             unitBlockA = doc.findBlockByNumber(unit['A'])
@@ -936,6 +990,7 @@ The reflow work unit produced by parseText below is a dict with these members:
             if unit['T'] == 'P' :
                 # This is a paragraph (or line) of text (i.e. not markup)
                 # Select bookend strings based on the current markup context.
+                # Which for open text is a <p>..</p>.
                 bA = bookendA[markupCode]
                 bZ = bookendZ[markupCode]
                 if bA is not None:
@@ -949,22 +1004,26 @@ The reflow work unit produced by parseText below is a dict with these members:
                         # comment out the <tb> but retain it.
                         bA = u'<hr /> <!-- '
                         bZ = U' -->'
-                    elif markupCode == ' ': # or, if len(markStack)==0
-                        # This is a paragraph in open text, so check for headers.
-                        # A sub-head is preceded by exactly 2 blank lines and followed by 1.
-                        # A chapter head is preceded by 4 and followed by 2.
-                        # To find out about "and followed" we have to
-                        # look at the B-count in the next unit, if there is a next unit.
-                        if (unit['B'] == 2) \
-                           and (u < final_unit_index) \
-                           and (unitList[u+1]['B'] == 1):
-                            bA = bookendA['3']
-                            bZ = bookendZ['3']
-                        if unit['B'] == 4 \
-                           and (u < final_unit_index) \
-                           and (unitList[u+1]['B'] == 2) :
-                            bA = bookendA['2']
-                            bZ = bookendZ['2']
+                    elif unit['M'] == '3' :
+                        # Paragraph marked as subhead in initial scan
+                        bA = bookendA['3']
+                        bZ = bookendZ['3']
+                    elif unit['M'] == '2' :
+                        # Paragraph marked as single-unit chapter head
+                        bA = bookendA['2']
+                        bZ = bookendZ['2']
+                    elif unit['M'] == '<' :
+                        # Paragraph marked as start of multi-unit chapter head
+                        bA = bookendA['2']
+                        bZ = ''
+                    elif unit['M'] == '-' :
+                        # Paragraph marked as intermediate piece of multi-unit chaphead
+                        bA = ''
+                        bZ = ''
+                    elif unit['M'] == '>' :
+                        # Paragraph marked as end of multi-unit chapter head
+                        bA = ''
+                        bZ = bookendZ['2']
                     elif markupCode == 'P':
                         # line of poetry, bA is <span class="i{0:02d}">
                         # we have to, one, modify bA for the indent,
@@ -989,7 +1048,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                     bA = QString(bA)
                     # Minimal check for user error of re-marking, and 
                     # over-marking divs (spans are ok)
-                    if not unitBlockA.text().startsWith(bA) \
+                    if not (bA.size() and unitBlockA.text().startsWith(bA) ) \
                        and not unitBlockA.text().startsWith(qdiva) \
                        and not unitBlockA.text().startsWith(qdivz) :
                         bA.append(IMC.QtLineDelim)
@@ -1032,8 +1091,8 @@ The reflow work unit produced by parseText below is a dict with these members:
                     mza.prepend(IMC.QtLineDelim)
                     tc.setPosition(unitBlockA.position()+unitBlockA.length()) # click
                     tc.setPosition(unitBlockA.position(),QTextCursor.KeepAnchor) # drag
-                    print('tc {0}:{1} gets {2}'.format(
-                        tc.position(), tc.anchor(), markupA[markupCode] ) )
+                    #print('tc {0}:{1} gets {2}'.format(
+                    #    tc.position(), tc.anchor(), markupA[markupCode] ) )
                     tc.insertText(mza)
                 # Exit this markup
                 markupCode = markStack.pop()
@@ -1383,6 +1442,22 @@ if __name__ == "__main__":
     pqMsgs.makeBarIn(MW.statusBar())
     MW.show()
     utqs = QString('''
+
+
+
+Chapter Goddam Head
+
+Chapter goddam well continues
+
+and more
+
+
+First para of chapter
+
+
+Subhead
+
+Text after subhead
 
 /C
 a
