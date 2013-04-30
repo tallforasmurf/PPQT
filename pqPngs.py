@@ -50,7 +50,6 @@ automatically added to the QPixmapCache when loaded from a file." This seems
 to mean that it will avoid a second disk load when we revisit a page, and
 the performance would indicate this is so.
 '''
-
 from PyQt4.QtCore import ( Qt, QFileInfo, QString, QSettings, QVariant, SIGNAL )
 from PyQt4.QtGui import (
     QColor, QImage, QPixmap,
@@ -61,6 +60,8 @@ from PyQt4.QtGui import (
 class pngDisplay(QWidget):
     def __init__(self, parent=None):
         super(pngDisplay, self).__init__(parent)
+        #dbg
+        #self.profiler = cProfile.Profile()
         # create the label that displays the image - cribbing from the Image
         # Viewer example in the Qt docs.
         self.imLabel = QLabel()
@@ -246,11 +247,14 @@ class pngDisplay(QWidget):
                 # Form the image filename as a Qstring, e.g. "025" and save that for
                 # use by pqNotes:
                 IMC.currentPageNumber = QString(IMC.pageTable[self.lastIndex][1])
+                #dbg = unicode(IMC.currentPageNumber)
                 # Form the complete filename by appending ".png" and save as
                 # self.lastPage for use in forming our caption label.
                 self.lastPage = QString(IMC.currentPageNumber).append(QString(u".png"))
+                #dbg = unicode(self.lastPage)
                 # Form the full path to the image. Try to load it as a QImage.
                 pngName = QString(self.pngPath).append(self.lastPage)
+                #dbg = unicode(pngName)
                 self.image = QImage(pngName,'PNG')
                 # If that successfully loaded an image, make sure it is one byte/pixel.
                 if not self.image.isNull() \
@@ -295,6 +299,7 @@ class pngDisplay(QWidget):
     def zoomToWidth(self):
         if (not self.ready) or (self.image.isNull()) :
             return # nothing to do here
+        #self.profiler.enable() #dbg
         # Query the Color look-up table and build a list of the Green values
         # corresponding to each possible pixel value. Probably there are just
         # two colors so colortab is [0,255] but there could be more, depending
@@ -306,39 +311,65 @@ class pngDisplay(QWidget):
         nrows = self.image.height() # number of pixels high
         vptr = self.image.bits() # uchar * bunch-o-pixel-bytes
         vptr.setsize(stride * nrows) # make the pointer indexable
+        
         # Scan in from left and right to find the outermost dark spots.
         # Looking for single pixels yeilds too many false positives, so we
         # look for three adjacent pixels that sum to less than 32.
+        # Most pages start with many lines of white pixels so in hopes of
+        # establishing the outer edge early, we start at the middle, go to 
+        # the end, then do the top half.
         left_side = int(ncols/2) # leftmost dark spot seen so far
-        offset = 0
-        for r in range(nrows) :
+        # scan from the middle down
+        for r in xrange(int(nrows/2)*stride, (nrows-1)*stride, stride) :
             pa, pb = 255, 255 # virtual white outside border
-            for c in range(left_side):
-                pc = colortab[ ord(vptr[offset + c]) ]
+            for c in xrange(left_side):
+                pc = colortab[ ord(vptr[c + r]) ]
                 if (pa + pb + pc) < 32 : # black or dark gray pair
                     left_side = c # new, further-left, left margin
                     break # no need to look further on this line
-                pa, pb = pb, pc
-            offset += stride
-        offset = 0
-        right_side = int(ncols/2) # rightmost dark spot seen so far
-        for r in range(nrows) :
+                pa = pb
+                pb = pc
+        # scan from the top to the middle, hopefully left_side is small now
+        for r in xrange(0, int(nrows/2)*stride, stride) :
             pa, pb = 255, 255 # virtual white outside border
-            for c in range(ncols-1,right_side,-1) :
-                pc = colortab[ ord(vptr[offset + c]) ]
+            for c in xrange(left_side):
+                pc = colortab[ ord(vptr[c + r]) ]
+                if (pa + pb + pc) < 32 : # black or dark gray pair
+                    left_side = c # new, further-left, left margin
+                    break # no need to look further on this line
+                pa = pb
+                pb = pc
+        # Now do the same for the right margin.
+        right_side = int(ncols/2) # rightmost dark spot seen so far
+        for r in xrange(int(nrows/2)*stride, (nrows-1)*stride, stride) :
+            pa, pb = 255, 255 # virtual white outside border
+            for c in xrange(ncols-1,right_side,-1) :
+                pc = colortab[ ord(vptr[c + r]) ]
                 if (pa + pb + pc) < 32 : # black or dark gray pair
                     right_side = c # new, further-right, right margin
                     break
-                pa, pb = pb, pc
-            offset += stride
+                pa = pb
+                pb = pc
+        for r in xrange(0, int(nrows/2)*stride, stride)  :
+            pa, pb = 255, 255 # virtual white outside border
+            for c in xrange(ncols-1,right_side,-1) :
+                pc = colortab[ ord(vptr[c + r]) ]
+                if (pa + pb + pc) < 32 : # black or dark gray pair
+                    right_side = c # new, further-right, right margin
+                    break
+                pa = pb
+                pb = pc
         # The area with color runs from left_side to right_side. How does
         # that compare to the size of our viewport? Scale to that and redraw.
+        #print('ls {0} rs {1} vp {2}'.format(left_side,right_side,self.scarea.viewport().width()))
         text_size = right_side - left_side + 2
         port_width = self.scarea.viewport().width()
         self.zoomFactor = max( self.minZoom, min( self.maxZoom, port_width / text_size ) )
         self.zlider.setValue(int(100*self.zoomFactor)) # this signals newZoomFactor
         # Set the scrollbar to show the page from its left margin.
         self.scarea.horizontalScrollBar().setValue(int( left_side * self.zoomFactor) )
+        #self.profiler.disable() #dbg
+        #pstats.Stats(self.profiler).print_stats() # dbg
 
 
     def zoomToHeight(self):
@@ -412,7 +443,7 @@ class pngDisplay(QWidget):
         # assume we will not handle this key and clear its accepted flag
         event.ignore()
         # If we are initialized and have displayed some page, look at the key
-        if (self.ready) and (self.lastIndex > -1):
+        if self.ready:
             kkey = int( int(event.modifiers()) & IMC.keypadDeModifier) | int(event.key())
             if kkey in IMC.zoomKeys :
                 # ctl/cmd + or -, do the zoom
@@ -436,15 +467,36 @@ class pngDisplay(QWidget):
 
 if __name__ == "__main__":
     pass
-    #import sys
-    #from PyQt4.QtCore import (Qt,QSettings,QFileInfo)
-    #from PyQt4.QtGui import (QApplication,QFileDialog)
-    #import pqIMC
-    #IMC = pqIMC.tricorder() # set up a fake IMC for unit test
-    #IMC.settings = QSettings()
-    #app = QApplication(sys.argv) # create an app
-    #widj = pngDisplay()
-    #widj.pngPath = QFileDialog.getExistingDirectory(widj,"Pick a Folder of Pngs",".")
-    #widj.showPage()
-    #widj.show()
-    #app.exec_()
+    import sys
+    from PyQt4.QtCore import (Qt,QSettings,QFileInfo,QDir,QStringList)
+    from PyQt4.QtGui import (QApplication,QFileDialog,QPlainTextEdit,QTextCursor)
+    app = QApplication(sys.argv) # create an app
+    import pqIMC
+    IMC = pqIMC.tricorder() # set up a fake IMC for unit test
+    IMC.settings = QSettings()
+    IMC.editWidget = QPlainTextEdit()
+    IMC.pageTable=[]
+    widj = pngDisplay()
+    widj.pngPath = QFileDialog.getExistingDirectory(widj,"Pick a Folder of Pngs",".")
+    widj.pngPath.append(u'/')
+    #dbg = unicode(widj.pngPath)
+    png_dir = QDir(widj.pngPath)
+    png_dir.setFilter(QDir.Files | QDir.NoSymLinks)
+    png_dir.setSorting(QDir.Name)
+    png_dir.setNameFilters(QStringList(QString(u'*.png')))
+    for finf in png_dir.entryInfoList():
+        fname = finf.baseName()
+        #print('{0} : {1}'.format(unicode(fname),IMC.editWidget.textCursor().position()))
+        IMC.pageTable.append( [IMC.editWidget.textCursor(),
+                          fname,
+                          QString(), IMC.FolioRuleAdd1, IMC.FolioFormatArabic, 1] )
+        IMC.editWidget.textCursor().insertText(fname)
+    widj.lastIndex = -1
+    widj.nextIndex = 0
+    widj.ready = True
+    widj.showPage()
+    widj.show()
+    #widj.zoomToWidth()
+    #pstats.Stats(pr).print_stats()
+    app.exec_()
+    pass
