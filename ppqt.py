@@ -209,7 +209,7 @@ else:
         IMC.defaultFontFamily = QString(u'Courier New')
 IMC.fontFamily = IMC.defaultFontFamily # pqMain may override
 # Make the application default be that which we just set
-app.setFont(pqMsgs.getMonoFont())
+# app.setFont(pqMsgs.getMonoFont())
 
 # Import each submodule and stick a reference to IMC into it.
 
