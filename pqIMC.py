@@ -99,7 +99,7 @@ class tricorder():
         # Pointers initialized in ppqt, filled in in pqEdit,
         # and referenced everywhere else
         self.settings = None # QSettings for global save/restore app values
-        self.appBasePath = None # path to the modules of the app
+        self.appBasePath = None # path to the our dist folder for extras, dict, fonts
         self.dictPath = None # path to folder where we look for dictionaries
         self.documentHash = b'' # hash of document contents
         self.metaHash = b'' # hash as read from the .meta file
@@ -119,6 +119,7 @@ class tricorder():
         self.bookDirPath = None # absolute path to book directory
         self.bookType = None # book file suffix used to detect .hmt(l)
         self.bookSaveEncoding = None # encoding for saves: UTF-8 or ISO-8859-1
+        self.defaultFontFamily = None # name of preferred font, usually 'Liberation Mono'
         self.fontFamily = None # last-chosen font
         self.fontSize = 12 # last-chosen font size in Edit panel
         self.pngPanel = None # ref to Pngs panel

@@ -42,10 +42,9 @@ Qt is quite consistent in these mappings. However, when you see <b>control-</b>
 <p>PPQT is based on the <a href="http://qt-project.org">Qt platform</a>.
 It is coded in Python using <a href="http://riverbankcomputing.co.uk/software/pyqt/intro">PyQt4</a>.
 It is packaged for distribution using <a href="http://pyinstaller.org">pyinstaller</a>.</p>
-<p>Qt is licensed for noncommercial use under the LGPL.
-PyQt4 is licensed for noncommercial use under the GPL v2 and the GPL v3.
-<b>The source code of PPQT is licensed under the GPL v3</b>.
-See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
+<p><b>The source code of PPQT is licensed under the GPL v3</b>:
+see the file <tt>COPYING.TXT</tt> in the distribution folder. Qt itself is licensed for noncommercial use under the LGPL. PyQt4 is licensed for noncommercial use under the GPL v2 and the GPL v3. The <a href='https://fedorahosted.org/liberation-fonts/'>Liberation font</a> included is licensed under the <a href=http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFLe'>SIL Open Font License</a>. 
+</p>
 <h2>Acknowledgements</h2>
 <p>First, a deep bow of respect to Steve Shulz (Thundergnat) who created Guiguts, the program from which PPQT takes its inspiration (and lots of ideas). Second, a genuflection  to Mark Summerfield for the book <i>Rapid GUI Development with PyQt</i> that showed how to build PPQT.</p>
 <h2>Contents</h2>
@@ -69,30 +68,19 @@ See the file <tt>COPYING.TXT</tt> in the distribution folder.</p>
 </ul>
 <h2 id='New'>What's New in This Version</h2>
 <p>(See also <a href='#OldNew'>What Was New</a> for previous changes.)</p>
-<h3>What's New for 8 April 2013</h3>
-<p>Fix for a rather obscure bug in HTML conversion.
-In the event your document ended with an end-of-markup line
-such as <tt>Q/</tt> or <tt>F/</tt> with no newline after it, HTML conversion
-could thoroughly mess the document up.</p>
-<h3>What's New as of 5 April 2013</h3>
-<p>Multiple minor changes and fixes, again thanks to the
-diligence of <i>bibimbop</i>:</p>
+<h3>What's New as of 30 April 2013</h3>
+<p>Several small but annoying bugs have been fixed:</p>
 <ul>
-<li>The Words panel sort now respects accents ("locale-aware" sorting).</li>
-<li>When you double-click a hyphenated word in the Words panel, the search
-now properly finds the whole phrase.</li>
-<li>Insertion of page numbers from the Pages panel now 
-behaves correctly when the inserted text includes a newline.</li>
-<li>The Footnotes panel, when moving the notes, now recognizes a /F..F/
-section that is at the very end of the document.</li>
-<li>Moving footnotes now moves the blank line preceding a note as well as the note.</li>
-<li>It was possible for the document hash string saved in the .meta file to
-include a curly brace as part of its valid content. File>Open now allows for that.</li>
-<li>Major footnote operations (renumber, move, ASCII- or html-convert)
-now automatically refresh the footnote table if necessary.</li>
-<li>Footnote conversion to ASCII no longer inserts explicit margin and
-indent values.</li>
+<li>The HTML conversion had basic logic errors in the way it detected chapter heads and subheads.</li>
+<li>Another bug could crash HTML conversion in very rare circumstances.</li>
+<li>A bug that caused bad output in HTML conversion of a multi-line table when the table started with a blank line.</li>
+<li>The png image for the current page is displayed as soon as a book is opened, rather than waiting for the cursor to move.</li>
+<li>A bug that kept the first page image from displaying in certain cases was fixed.</li>
+<li>The "zoom to width" feature of the Pngs panel is slightly faster.</li>
 </ul>
+<h3>Liberty Mono Bundled</h3>
+<p> With this update PPQT now includes Liberation Mono. You can select it with the View > Fonts... menu choice, whether it is officially installed in your system or not.</p>
+<p>Note that of the common monospaced fonts, only Courier New and Everson Mono have the Arabic letterforms. Arabic aside, Liberation Mono is a good choice.</p>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
 If you need to open a second document (for example, a commented copy from Smooth Reading), just start a second copy of PPQT.</p>
@@ -100,10 +88,8 @@ If you need to open a second document (for example, a commented copy from Smooth
 <p>PPQT holds the document in memory in Unicode, which supports virtually any alphabet or special characters. This is subject to two limitations:</p>
 <ul>
 <li>PPQT can only display characters that are defined in the font you select
-(see <a href='#Edit'>Edit Panel</a> below). DPCustomMono2, for example,
-lacks Greek and Cyrillic. Courier New, however, has a wide repertoire including
-Hebrew and Arabic.</li>
-<li>Although it can display alphabets such as Arabic, PPQT does not understand right to left editing. The edit cursor only moves left to right during text entry.</li>
+(see <a href='#Edit'>Edit Panel</a> below). The familiar DPCustomMono2, for example, lacks Greek and Cyrillic.</li>
+<li>Although it can display alphabets such as Arabic if they are in the current font, PPQT does not understand right to left editing. The edit cursor only moves left to right during text entry.</li>
 </ul>
 <p>The characters in documents on disk are encoded in some way. The important encodings are:</p>
 <ul>
@@ -157,9 +143,10 @@ is a tabbed set of panels for different functions. All these panels are describe
 <p>You can adjust the size of the main window and its location on the screen. You can drag the vertical "splitter" left and right to give more or less space to each half. These geometry changes are remembered from session to session.</p>
 <h2 id='Edit'>The Edit Panel</h2>
 <p>The left-side panel is a typical modern plain text line-editor.
-It uses a monospaced font, defaulting to Deja Vu Mono when available
+It requires a monospaced font, defaulting to Liberation Mono when available
 or to Courier New.
-Use the View&nbsp;>&nbsp;Font... command to select a font from your system, which will be remembered from session to session. It would be a very bad idea to use anything but a monospaced font.</p>
+Use the View&nbsp;>&nbsp;Font... command to select a font; the choice is remembered from session to session. For PGDP post processing you need a monospaced font that has clear visual separation of similar letters (1/l, O/0, B/8 etc.) and also has a good complement of Unicode characters. PGDP handles books with text in Greek including forms with multiple accents (the Greek Extended set, #1F00), Cyrillic, and Hebrew. Few monospaced fonts have all these but the Liberation Mono font has all the needed features, and has a free license. Courier New, while not as good for proofing, has an even wider repertoire including Arabic forms.
+</p>
 <p>Below the edit panel is a status area where activity messages appear
 from time to time. Bottom center is a line-number field displaying the
 line number of the edit cursor. Type a new number in
@@ -821,6 +808,31 @@ superscripts, subscripts, Side notes, Illustrations, and typo markups to HTML.</
 <li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS style section described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match what PPQT generates).</li>
 </ul>
 <h2 id='OldNew'>What Was New</h2>
+<h3>What's New for 8 April 2013</h3>
+<p>Fix for a rather obscure bug in HTML conversion.
+In the event your document ended with an end-of-markup line
+such as <tt>Q/</tt> or <tt>F/</tt> with no newline after it, HTML conversion
+could thoroughly mess the document up.</p>
+<h3>What's New as of 5 April 2013</h3>
+<p>Multiple minor changes and fixes, again thanks to the
+diligence of <i>bibimbop</i>:</p>
+<ul>
+<li>The Words panel sort now respects accents ("locale-aware" sorting).</li>
+<li>When you double-click a hyphenated word in the Words panel, the search
+now properly finds the whole phrase.</li>
+<li>Insertion of page numbers from the Pages panel now 
+behaves correctly when the inserted text includes a newline.</li>
+<li>The Footnotes panel, when moving the notes, now recognizes a /F..F/
+section that is at the very end of the document.</li>
+<li>Moving footnotes now moves the blank line preceding a note as well as the note.</li>
+<li>It was possible for the document hash string saved in the .meta file to
+include a curly brace as part of its valid content. File>Open now allows for that.</li>
+<li>Major footnote operations (renumber, move, ASCII- or html-convert)
+now automatically refresh the footnote table if necessary.</li>
+<li>Footnote conversion to ASCII no longer inserts explicit margin and
+indent values.</li>
+</ul>
+
 <h3>What's New as of 27 March, 2013</h3>
 <p>The Preview window now zooms both text and images when
 you use the ctl-plus and ctl-minus keys. Previously it only zoomed the text

@@ -122,8 +122,7 @@ class MainWindow(QMainWindow):
         # have no file loaded.
         # -----------------------------------------------------------------
         # Recall a user-selected font if any:
-        IMC.fontFamily = IMC.settings.value("main/fontFamily",
-                                      QString("DejaVu Sans Mono")).toString()
+        IMC.fontFamily = IMC.settings.value("main/fontFamily", IMC.defaultFontFamily).toString()
         (IMC.fontSize,junk) = IMC.settings.value("main/fontSize",12).toInt()
         # -----------------------------------------------------------------
         # Create the editor for the left-hand pane. Put a reference in the
@@ -571,7 +570,7 @@ class MainWindow(QMainWindow):
     def viewFont(self):
         if IMC.fontFamily is None:
             # first time after installation
-            IMC.fontFamily = pqMsgs.getMonoFont()
+            IMC.fontFamily = IMC.defaultFontFamily
         defont = QFont(IMC.fontFamily, IMC.fontSize)
         (refont,ok) = QFontDialog.getFont(defont, self,
                         QString("Choose a monospaced font"))

@@ -88,8 +88,8 @@ import os # for dict path manipulations
 import sys # for argv, passed to QApplication
 import platform # for mac detection
 
-from PyQt4.QtCore import (Qt, QSettings )
-from PyQt4.QtGui import ( QApplication )
+from PyQt4.QtCore import (Qt, QSettings, QString )
+from PyQt4.QtGui import ( QApplication, QFont, QFontDatabase )
 
 # A note on variable names: since we started working from Summerfield's code
 # we adopted his use of camelCase names. Later we found out that Python coders
@@ -141,17 +141,77 @@ from PyQt4.QtGui import ( QApplication )
 print('PPQT Version {0}'.format(__version__))
 print(__copyright__)
 
+# Create the application, which needs to exist for some of the following
+# operations to work, and sign it with our names so that
+# saved settings go in reasonable places
+app = QApplication(sys.argv)
+app.setOrganizationName("PGDP")
+app.setOrganizationDomain("pgdp.net")
+app.setApplicationName("PPQT")
+
 # Create the Inter-Module Communicator
 import pqIMC
 if pqIMC.__version__ != __version__ :
     print('pqIMC.py version {0}'.format(pqIMC.__version__))
 IMC = pqIMC.tricorder()
 
-# Import each submodule and stick a reference to IMC into it.
+# Get the message support for diagnostics
 import pqMsgs # misc message and font routines
 if pqMsgs.__version__ != __version__ :
     print('pqMsgs.py version {0}'.format(pqMsgs.__version__))
 pqMsgs.IMC = IMC
+
+pqMsgs.noteEvent("Getting path to bundled files")
+
+#-- but we get our path different ways depending
+# on whether we are running in development or bundled by pyinstaller.
+if hasattr(sys, 'frozen') : # bundled by pyinstaller?
+    base = os.path.dirname(sys.executable)
+else: # running under normal python e.g. from command line or an IDE
+    base = os.path.dirname(__file__)
+IMC.appBasePath = base
+
+# Establish what should be the path to our spellcheck dictionary folder "dict"
+# It, like our "extras" and "fonts" folders are at the same level as the app.
+
+IMC.dictPath = os.path.join(base,u"dict")
+
+# Initialize the font system. We need a monospaced font with clear visual
+# separation between 0/O, 1/l, etc, and a good complement of Unicode, with
+# at a minimum full support of Greek, Cyrillic and Hebrew. These features are
+# found in Liberation Mono, which is free, and by Courier New, which is less
+# readable but is bundled in most OSs by default, and by Everson Mono.
+# We prefer Liberation Mono, but set that or Courier New as the default font family
+# and as our App's default font. pqMain uses it as a default when
+# reading the font family name from the saved settings.
+
+pqMsgs.noteEvent("Setting up default font name")
+
+lm_name = QString(u'Liberation Mono')
+qfdb = QFontDatabase()
+qf = qfdb.font(lm_name,QString(u'Regular'),12)
+if qf.family() == lm_name :
+    # Lib. Mono is installed in this system, good to go
+    IMC.defaultFontFamily = lm_name
+else:
+    # Let's try to install Lib. Mono. Was it bundled with us?
+    fpath = os.path.join(base,u"fonts")
+    if os.path.exists(fpath) :
+        # It was; add each .ttf in it to the Qt font database
+        # We are *assuming* that what's in fonts is Liberation Mono Regular
+        # for sure, and optionally other variants like bold. 
+        for fname in os.listdir(fpath) :
+            if fname.endswith(u'.ttf') :
+                qfdb.addApplicationFont(QString(os.path.join(fpath,fname)))
+        IMC.defaultFontFamily = lm_name
+    else :
+        # OK, no fonts bundled with us (or they've been removed?)
+        IMC.defaultFontFamily = QString(u'Courier New')
+IMC.fontFamily = IMC.defaultFontFamily # pqMain may override
+# Make the application default be that which we just set
+app.setFont(pqMsgs.getMonoFont())
+
+# Import each submodule and stick a reference to IMC into it.
 
 import pqLists # implements ordered lists of words for quick lookup
 if pqLists.__version__ != __version__ :
@@ -232,14 +292,6 @@ pqMain.IMC = IMC
 
 pqMsgs.noteEvent("Done with most imports, opening settings")
 
-# and awayyyyyy we go:
-# Create the application and sign it with our names so that
-# saved settings go in reasonable places
-app = QApplication(sys.argv)
-app.setOrganizationName("PGDP")
-app.setOrganizationDomain("pgdp.net")
-app.setApplicationName("PPQT")
-
 # Create a default settings object, or access an existing one. Settings
 # are stored using the app and organization names defined just above in:
 # * Mac OS : ~/Library/Preferences/com.pgdp.org
@@ -247,22 +299,7 @@ app.setApplicationName("PPQT")
 # * Windows : in the Registry under /Software/PGDP.
 IMC.settings = QSettings()
 
-pqMsgs.noteEvent("Getting path to dictionaries")
-
-
-# Establish what should be a path to our spellcheck dictionary folder "dict"
-# We expect the folder of dicts to be at the same level as this executable,
-# -- yes, cheesy as heck! -- but we get our path different ways depending
-# on whether we are running in development or bundled by pyinstaller.
-if hasattr(sys, 'frozen') : # bundled by pyinstaller?
-    base = os.path.dirname(sys.executable)
-else: # running under normal python e.g. from command line or an IDE
-    base = os.path.dirname(__file__)
-IMC.appBasePath = base
-IMC.dictPath = os.path.join(base,u"dict")
-
 pqMsgs.noteEvent("Creating spellchecker (which loads a dict)")
-
 
 import pqSpell # Spell-check routines (which use the settings)
 if pqSpell.__version__ != __version__ :
@@ -279,7 +316,6 @@ IMC.mainWindow = pqMain.MainWindow()
 # Display and execute!
 
 pqMsgs.noteEvent("Starting the app (event loop)")
-
 
 IMC.mainWindow.show()
 app.exec_()
