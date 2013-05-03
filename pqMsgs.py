@@ -205,7 +205,10 @@ def startBar(maxval,msg):
 # really advance the bar.
 def rollBar(newval):
     IMC.progressBar.setValue(max(newval,IMC.progressBar.value()))
-    QApplication.processEvents() # force graphic update
+    # Following line removed because its presence causes an error during
+    # refresh of HTML preview of certain large files, "Error in sys.excepthook:
+    # RuntimeError: maximum recursion depth exceeded while calling a Python object"
+    #QApplication.processEvents() # force graphic update
 
 # The big job is finished, clear the bar and its message.
 def endBar():
