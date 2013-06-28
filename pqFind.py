@@ -723,8 +723,8 @@ class findPanel(QWidget):
                         qs.replace(qrex, qrep)
                         findTc.insertText(qs)
                 findTc.endEditBlock()
-                # clear the All! after successful op
-                self.allSwitch.setChecked(False)
+            # clear the All! whether done or cancelled
+            self.allSwitch.setChecked(False)
 
     # Slot for the editKeyPress signal from the edit panel. The key is
     # passed as an int in IMC.findKeys. Do the right thing based on it.
