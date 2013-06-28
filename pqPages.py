@@ -270,6 +270,7 @@ class folioDelegate(QItemDelegate):
     def createEditor(self, parent, style, index):
         if index.column() != 3 : return None
         sb = QSpinBox(parent)
+        sb.setMaximum(2000)
         return sb
     def setEditorData(self,sb,index):
         sb.setValue(IMC.pageTable[index.row()][5])
