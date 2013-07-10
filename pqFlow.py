@@ -913,24 +913,18 @@ The reflow work unit produced by parseText below is a dict with these members:
         unitList = self.parseText(topBlock,endBlock)
         if 0 == len(unitList) :
             return # all-blank? or perhaps an error like unbalanced markup
-        # Pre-parse the work unit list from the top down, in order to identify
-        # Chapters and Subheads. Chapter heads are preceded by 4 blank lines,
-        # and followed by zero or more paragraphs preceded by 1 blank line,
-        # until the first paragraph of chapter text is preceded by 2 blank lines:
-        #    (4 blank lines)
-        #    Chapter Title
+        # Pre-parse the work unit list from the top down in order to identify
+        # Chapters and Subheads. For Chapter heads we adopt the same rule as
+        # Guiguts, which is different from the PGDP Formatting Guidelines:
+        # a Chapter Title is a paragraph of one or more adjacent lines,
+        # preceded by 4 empty lines and followed by at least 1 empty line.
+        # A Subhead is preceded by 2 blank lines and followed by 1, and does not
+        # immediately follow a Chapter head. This avoids the ambiguity implicit
+        # in the Formatting Guidelines definition; however, it also means you 
+        # cannot code a Subhead immediately following a Chapter title. Something
+        # else has to come between them, or fix it by hand later.
         #
-        #    More Chapter Title
-        #
-        #    Yet More Chapter Title
-        #    (2 blank lines)
-        #    Text paragraph
-        # A Subhead is preceded by 2 blank lines and followed by one, and this
-        # creates a big fat ambiguity because that exactly describes the text
-        # paragraph after a chapter head (2 blanks, para, 1 blank)! So it is not
-        # possible in the PGDP system to have a Subhead immediately first in a chapter.
-        #
-        # Anyway, run through the work list and implement the above rules by changing
+        # Run through the work list and implement the above rules by changing
         # the 'M' of ' ' to a '2' or a '3' for Chapter and Subhead.
         final_unit_index = len(unitList)-1 # index of last unit
         u = 0 # gotta do old-fashioned loop control, bleagh
@@ -941,31 +935,19 @@ The reflow work unit produced by parseText below is a dict with these members:
                 # paragraph in open text (not in markup)
                 if unit['B'] == 4 :
                     # Starting a chapter
-                    if unitList[u+1]['B'] == 2 :
-                        # simple one-paragraph chapter
-                        unit['M'] = '2'
-                    else :
-                        # chapter followed by continuation paragraph
-                        unit['M'] = '<'
-                        while (unitList[u+1]['B'] < 2) and u < final_unit_index :
-                            u += 1
-                            unitList[u]['M'] = '-' # mark intermediate Chapter unit
-                        unitList[u]['M'] = '>'
-                    # at this point unitList[u+1] is the first text para of a chapter
-                    # but it would look like a subhead so swallow it
-                    u += 1
-                elif (unit['B'] == 2) and (unitList[u+1]['B'] == 1) :
-                    # Subhead
-                    unit['M'] = '3'
+                    unit['M'] = '2' # poof, you're a chapter title paragraph
+                elif (unit['B'] == 2) and (u > 0) and (unitList[u-1]['M'] != '2') :
+                    # para w/ 2 blank lines before, not following a chapter,
+                    unit['M'] = '3' # is a subhead
                 else :
                     # unit not properly spaced for chapter or subhead, leave alone.
                     pass
             else:
                 # starting, or continuing inside, a markup
                 if unit['T'] == 'M' :
-                    m += 1
+                    m += 1 # entering a markup, skip until out of it
                 if unit['T'] == '/' :
-                    m -= 1
+                    m -= 1 # exiting a markup, maybe start checking again
             u += 1
         
         # In order to have a single undo/redo operation we have to use a
@@ -1011,18 +993,6 @@ The reflow work unit produced by parseText below is a dict with these members:
                     elif unit['M'] == '2' :
                         # Paragraph marked as single-unit chapter head
                         bA = bookendA['2']
-                        bZ = bookendZ['2']
-                    elif unit['M'] == '<' :
-                        # Paragraph marked as start of multi-unit chapter head
-                        bA = bookendA['2']
-                        bZ = ''
-                    elif unit['M'] == '-' :
-                        # Paragraph marked as intermediate piece of multi-unit chaphead
-                        bA = ''
-                        bZ = ''
-                    elif unit['M'] == '>' :
-                        # Paragraph marked as end of multi-unit chapter head
-                        bA = ''
                         bZ = bookendZ['2']
                     elif markupCode == 'P':
                         # line of poetry, bA is <span class="i{0:02d}">
