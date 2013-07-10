@@ -68,19 +68,9 @@ see the file <tt>COPYING.TXT</tt> in the distribution folder. Qt itself is licen
 </ul>
 <h2 id='New'>What's New in This Version</h2>
 <p>(See also <a href='#OldNew'>What Was New</a> for previous changes.)</p>
-<h3>What's New as of 30 April 2013</h3>
-<p>Several small but annoying bugs have been fixed:</p>
-<ul>
-<li>The HTML conversion had basic logic errors in the way it detected chapter heads and subheads.</li>
-<li>Another bug could crash HTML conversion in very rare circumstances.</li>
-<li>A bug that caused bad output in HTML conversion of a multi-line table when the table started with a blank line.</li>
-<li>The png image for the current page is displayed as soon as a book is opened, rather than waiting for the cursor to move.</li>
-<li>A bug that kept the first page image from displaying in certain cases was fixed.</li>
-<li>The "zoom to width" feature of the Pngs panel is slightly faster.</li>
-</ul>
-<h3>Liberty Mono Bundled</h3>
-<p> With this update PPQT now includes Liberation Mono. You can select it with the View > Fonts... menu choice, whether it is officially installed in your system or not.</p>
-<p>Note that of the common monospaced fonts, only Courier New and Everson Mono have the Arabic letterforms. Arabic aside, Liberation Mono is a good choice.</p>
+<h3>What's new as of 10 July 2013</h3>
+<p>When converting to HTML, we now apply a new, simplified rule to detect chapter heads and subheads. The new rule is subtly different from the wording of the PGDP Formatting Guidelines. See <a href='#html'>HTML Conversion</a> for details.</p>
+<p>When converting Footnotes to HTML, we no longer include a <tt>name=</tt> property in the anchor or the footnote <tt>&lt;div></tt>. The <tt>name</tt> property is not supported in XHTML Strict and prevented the document from validating.</p>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
 If you need to open a second document (for example, a commented copy from Smooth Reading), just start a second copy of PPQT.</p>
@@ -654,6 +644,7 @@ is a one-shot deal that wipes out the reflow markup lines and the spacing
 of tables. Select a range of text and click HTML Convert: Selection, or
 click Convert: Document to do the whole thing. HTML conversion is a single
 undo/redo operation: apply it; check the result in the <a href='#View'>Preview panel</a>; key ctl-z to undo and fix the markup.</p>
+<p>Footnotes are converted in a separate step using the <a id='fnhtml'>Footnote Panel</a>.</p>
 <p>During conversion the following changes are made
 for the different markup types.</p>
 <table border='1' style='width:100%;border-collapse:collapse;'>
@@ -691,6 +682,10 @@ td.c {text-align:center}</pre>
 <p>Decimal alignment in a table could be coded in HTML as
 <tt>&lt;td char='<i>x</i>'></tt> on each cell of a decimal column, but
 this element of the HTML 4.0 standard is not supported by any browsers, so Decimal-aligned columns just default to left-alignment. Too bad.</p>
+<h3>Chapter and Subhead Markup</h3>
+<p>PPQT marks a Chapter Title with <tt>&lt;h2></tt>. It detects a Chapter Title as a paragraph of one or more lines, preceded by exactly 4 empty lines.</p>
+<p>PPQT marks a Subhead with <tt>&lt;h3></tt>. It detects a Subhead as a paragraph of one or more lines preceded by exactly 2 empty lines, and not following a Chapter Title.</p>
+<p>These rules are subtly different from those given in the PGDP Formatting Guidelines, which are ambiguous about whether or how a Subhead might follow a Chapter head. With PPQT, the paragraph following a Chapter Title will <i>always</i> be converted to a normal <tt>&lt;p></tt> paragraph. If you must have a Subhead immediately following a Chapter Title you have to edit the HTML manually after conversion. (<i>n.b.</i> Guiguts applies the same rule for Chapter Titles, but Guiguts <i>never</i> marks up Subheads, leaving that entirely to the user.)</p>
 <h2 id='View'>The Preview Panel</h2>
 <p>Click the Pvw tab to display the HTML Preview panel. Whenever
 you click either Refresh button on this panel, the complete contents of the
@@ -788,7 +783,7 @@ or you could replace it with explicit First, Left and Right margins.
 <p>Do this as the very last footnote operation in the plain text fork of the book. Afterward, the Footnote Panel is of no use because the Notes can no
 longer be recognized.</p>
  
-<h3>HTML Conversion</h3>
+<h3 id='fnhtml'>HTML Conversion</h3>
 <p>HTML conversion of footnotes is divided between the Footnote Panel and the Reflow Panel.</p>
 <p>In the Footnote panel click HTML Cvt to convert all Anchors and Notes to HTML. This is a single-undo operation. Do this as the very last footnote operation in the HTML fork of the book. Afterward, the Footnote Panel is of no use, because the Notes can no longer be recognized.</p>
 <p>This does not convert the the markup tags <tt>/F..F/</tt>. Later, when you use HTML Convert in the <a href='#html'>Reflow Panel</a>, it converts those tags to <tt>&lt;div></tt> markup.</p>
@@ -808,6 +803,19 @@ superscripts, subscripts, Side notes, Illustrations, and typo markups to HTML.</
 <li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS style section described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match what PPQT generates).</li>
 </ul>
 <h2 id='OldNew'>What Was New</h2>
+<h3>What's New as of 30 April 2013</h3>
+<p>Several small but annoying bugs have been fixed:</p>
+<ul>
+<li>The HTML conversion had basic logic errors in the way it detected chapter heads and subheads.</li>
+<li>Another bug could crash HTML conversion in very rare circumstances.</li>
+<li>A bug that caused bad output in HTML conversion of a multi-line table when the table started with a blank line.</li>
+<li>The png image for the current page is displayed as soon as a book is opened, rather than waiting for the cursor to move.</li>
+<li>A bug that kept the first page image from displaying in certain cases was fixed.</li>
+<li>The "zoom to width" feature of the Pngs panel is slightly faster.</li>
+</ul>
+<h3>Liberty Mono Bundled</h3>
+<p> With this update PPQT now includes Liberation Mono. You can select it with the View > Fonts... menu choice, whether it is officially installed in your system or not.</p>
+<p>Note that of the common monospaced fonts, only Courier New and Everson Mono have the Arabic letterforms. Arabic aside, Liberation Mono is a good choice.</p>
 <h3>What's New for 8 April 2013</h3>
 <p>Fix for a rather obscure bug in HTML conversion.
 In the event your document ended with an end-of-markup line
