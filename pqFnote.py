@@ -1065,7 +1065,7 @@ class fnotePanel(QWidget):
             return
         # Set up a boilerplate string for the Anchor replacements.
         # Each %n placeholder is replaced by a copy of the key value.
-        anchor_pattern = QString(u"<a id='FA_%1' href='#FN_%2' class='fnanchor'>[%3]</a>")
+        anchor_pattern = QString(u"<a name='FA_%1' id='FA_%2' href='#FN_%3' class='fnanchor'>[%4]</a>")
         # Set up a regex pattern to recognize [Footnote key:, being forgiving
         # about extra spaces and absorbing spaces after the colon.
         # %1 is replaced by the key value.
@@ -1092,7 +1092,7 @@ class fnotePanel(QWidget):
             # note the anchor end position, plus 1 for the ]
             anchor_end = key_tc.position() + 1
             # Copy the anchor boilerplate and install the key in it
-            anchor_qs = anchor_pattern.arg(key_qs,key_qs,key_qs)
+            anchor_qs = anchor_pattern.arg(key_qs,key_qs,key_qs,key_qs)
             # Replace the anchor text, using the work cursor.
             worktc.setPosition(anchor_start)
             worktc.setPosition(anchor_end,QTextCursor.KeepAnchor)
