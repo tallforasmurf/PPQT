@@ -59,7 +59,7 @@ spell-check-twiddly-red-underlines.
 
 from PyQt4.QtCore import (Qt, QChar, QCryptographicHash, QRect, QRegExp, QString, SIGNAL)
 from PyQt4.QtGui import (
-    QBrush, QColor, QFont, QFontInfo, QMessageBox,
+    QApplication, QBrush, QColor, QFont, QFontInfo, QMessageBox,
     QPlainTextEdit, QSyntaxHighlighter, QProgressDialog,
     QTextBlock, QTextCharFormat, QTextCursor,
     QTextDocument, QTextEdit
@@ -889,8 +889,9 @@ class PPTextEditor(QPlainTextEdit):
                     qsWord.append(qsDict)
                     IMC.wordCensus.count(qsWord,uiWordFlags)
             qtb = qtb.next() # next textblock == next line
-            if (0 == (qtb.blockNumber() & 127)) : #every 128th block
+            if (0 == (qtb.blockNumber() & 255)) : #every 256th block
                 pqMsgs.rollBar(qtb.blockNumber()) # roll the bar
+                QApplication.processEvents()
         pqMsgs.endBar()
         # to save time by not calling charCensus.count() for every character
         # we accumulated the char counts in localCharCensus. Now read it out
