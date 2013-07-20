@@ -38,6 +38,7 @@ with five columns:
 * Count, the number times it appears in the document
 * Entity, the HTML named or numeric entity value
 * Category, the QChar.category() in words.
+* Name, official unicode name for that character
 The table is implemented using a Qt AbstractTableView, SortFilterProxyModel,
 and AbstractTableModel. The AbstractTableModel is subclassed to implement
 fetching data from the IMC.charCensus list. The AbstractTableModel is used
@@ -67,6 +68,8 @@ from PyQt4.QtGui import (
     QHeaderView,
     QWidget)
 
+import unicodedata
+
 # Implement a concrete table model by subclassing Abstract Table Model.
 # The data served is derived from the character census prepared as
 # metadata in the editor.
@@ -75,16 +78,19 @@ class myTableModel(QAbstractTableModel):
         super(myTableModel, self).__init__(parent)
         # The header texts for the columns
         self.headerDict = { 0:"Glyph", 1:"Value",
-                            2:"Count", 3:"Entity", 4:"Unicode Category" }
+                            2:"Count", 3:"Entity", 4:"Unicode Category",
+                            5:"Name" }
         # the text alignments for the columns
         self.alignDict = { 0:Qt.AlignHCenter, 1: Qt.AlignRight,
-                           2:Qt.AlignRight, 3: Qt.AlignLeft, 4:Qt.AlignLeft }
+                           2:Qt.AlignRight, 3: Qt.AlignLeft,
+                           4:Qt.AlignLeft, 5:Qt.AlignLeft }
         # The values for tool/status tips for data and headers
         self.tipDict = { 0: "Character glyph",
                          1: "Unicode value in hex",
                          2: "Number of occurrences",
                          3: "HTML/XML Entity code",
-                         4: "Unicode category" }
+                         4: "Unicode category",
+                         5: "Unicode name" }
         # The strings that interpret a QChar.category value
         self.catDict = {  0: "NoCategory",
                           1: "Mark_NonSpacing", 2: "Mark_SpacingCombining",
@@ -106,7 +112,7 @@ class myTableModel(QAbstractTableModel):
 
     def columnCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
-        return 5 # glyph, hex, count, entity, category
+        return 6 # glyph, hex, count, entity, category, name
 
     def flags(self,index):
         return Qt.ItemIsEnabled
@@ -139,8 +145,13 @@ class myTableModel(QAbstractTableModel):
                     return QString("&"+IMC.namedEntityDict[uu]+";")
                 else:
                     return QString("&#{0:d};".format(ui))
-            else:
+            elif 4 == index.column():
                 return QString(self.catDict[int(flag)])
+            else:
+                try:
+                    return QString(unicodedata.name(uu).lower().format(ui))
+                except ValueError:
+                    return QString("")
         elif (role == Qt.TextAlignmentRole) :
             return self.alignDict[index.column()]
         elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
