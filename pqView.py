@@ -32,7 +32,7 @@ __license__ = '''
 '''
 Provide a simple HTML Preview using a QWebView widget. The panel consists
 of a Refresh button and a WebView. On Refresh we get the
-editor's plain text and stuff it into the webview as HTML. We use the 
+editor's plain text and stuff it into the webview as HTML. We use the
 loadstarted, loadprogress, and loadended signals as they are intended, to
 roll the progress bar. (Note: to date, this has always finished so fast
 the progress bar is never really visible. It is quick!)
@@ -53,7 +53,7 @@ from PyQt4.QtGui import (
 )
 from PyQt4.QtWebKit import(
     QWebFrame, QWebPage, QWebView, QWebSettings
-)    
+)
 import pqMsgs
 
 class htmlPreview(QWidget):
@@ -105,11 +105,11 @@ class htmlPreview(QWidget):
         self.findText = QString()
         # here store the base URL for the current book.
         self.baseURL = QUrl()
-        # save a shortcut reference to the browser history object 
+        # save a shortcut reference to the browser history object
         self.history = self.preview.page().history()
         # we do NOT initialize the preview (e.g. by calling self.refresh)
         # at construction time. It may be many hours before the user wants
-        # to preview html. So require an explicit refresh click to do it.	
+        # to preview html. So require an explicit refresh click to do it.
 
     # Plain Refresh clicked.
     def refresh1Click(self) :
@@ -123,8 +123,8 @@ class htmlPreview(QWidget):
     # scrollbar "thumb" in the webview) from the QWebFrame that is associated with
     # the QWebPage that is displayed in our QWebView, and save it for use after
     # the loadEnds() signal is received, to restore the previous scroll position.
-    # 
-    # If Refresh+Clear was clicked, clear the memory cache -- a function that is 
+    #
+    # If Refresh+Clear was clicked, clear the memory cache -- a function that is
     # strangely located in the web settings object, but whatever -- and then reload
     # the HTML contents from the editor document,
     def refresh(self, clearCache=False ):
@@ -143,7 +143,7 @@ class htmlPreview(QWidget):
         self.scrollPosition = self.preview.page().mainFrame().scrollPosition()
         if clearCache :
             self.settings.clearMemoryCaches()
-        self.preview.setHtml(IMC.editWidget.toPlainText(),self.baseURL) 
+        self.preview.setHtml(IMC.editWidget.toPlainText(),self.baseURL)
 
     # handle the load-in-progress signals by running our main window's
     # progress bar
@@ -161,7 +161,7 @@ class htmlPreview(QWidget):
             # to use keys like page-up/dn, so get the focus to our webview
             # widget (not the page in it because the webview has the scroll
             # bars and other mechanism.)
-            self.preview.setFocus(Qt.MouseFocusReason)	    
+            self.preview.setFocus(Qt.MouseFocusReason)
         else:
             pqMsgs.warningMsg("Some problem loading html")
 

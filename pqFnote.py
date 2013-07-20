@@ -58,7 +58,7 @@ so long as the contained brackets do not end a line. This is valid:
   to multiple -- [text in brackets but not at end of line] --
   lines]
   [Footnote i: inner note anchored in first note A.]
-  
+
 The footnote table has these columns:
 
 Key:        The key text from a footnote, e.g. A or iv or 92.
@@ -99,7 +99,7 @@ The table interacts as follows.
 
 * When a Key or a Note is not matched, its row is pink.
 
-* When the Lines value is >10, or Note Line minus Ref Line is >50, the row 
+* When the Lines value is >10, or Note Line minus Ref Line is >50, the row
 is pale green
 
 The actual data behind the table is a Python list of dicts where each dict
@@ -180,11 +180,11 @@ using the stream assigned to their class. This is a single-undo operation.
 A Footnote Section is marked off using /F .. F/ markers (which are ignored by
 the reflow code). The Move Notes button asks permission with a warning message.
 On OK, it scans the document and makes a list of QTextCursors of the body of
-all Footnote Sections. If none are found it shows an error and stops. If the 
+all Footnote Sections. If none are found it shows an error and stops. If the
 last one found is above the last Note in the table, it shows an error and stops.
 Else it scans the Notes in the table from bottom up. For each note, if the note
 is not already inside a Footnote section, its contents are inserted at the
-head of the Footnote section next below it and deleted at the 
+head of the Footnote section next below it and deleted at the
 original location. The QTextCursor in the table is repositioned.
 
 The database of footnotes built by Refresh and shown in the table is cleared
@@ -291,7 +291,7 @@ def noteLineNumber(tc):
 def noteLineLength(tc):
     if tc is not None:
         return 1 + tc.blockNumber() - \
-            tc.document().findBlock(tc.anchor()).blockNumber() 
+            tc.document().findBlock(tc.anchor()).blockNumber()
     return 0
 
 # Given a QString that is a Key, return the class of the Key.
@@ -398,7 +398,7 @@ def theRealRefresh():
     # initialize status message and progress bar
     barCount = doc.characterCount()
     pqMsgs.startBar(barCount * 2,"Scanning for notes and anchors")
-    barBias = 0 
+    barBias = 0
     # scan the document from top to bottom finding Anchors and make a
     # list of them as textcursors. doc.find(re,pos) returns a textcursor
     # that .isNull on no hit.
@@ -492,7 +492,7 @@ class myTableModel(QAbstractTableModel):
             0:"Key", 1:"Class", 2:"Ref line", 3:"Note Line", 4:"Length", 5:"Text"
         }
         # the text alignments for the columns
-        self.alignDict = { 0:Qt.AlignCenter, 1: Qt.AlignCenter, 
+        self.alignDict = { 0:Qt.AlignCenter, 1: Qt.AlignCenter,
                            2: Qt.AlignRight, 3: Qt.AlignRight,
                            4: Qt.AlignRight, 5: Qt.AlignLeft }
         # The values for tool/status tips for data and headers
@@ -501,7 +501,7 @@ class myTableModel(QAbstractTableModel):
                          2: "Line number of the Anchor",
                          3: "First line number of the Note",
                          4: "Number of lines in the Note",
-                         5: "Initial text of the Note" 
+                         5: "Initial text of the Note"
                          }
         # The brushes to painting the background of good and questionable rows
         self.whiteBrush = QBrush(QColor(QString('transparent')))
@@ -521,11 +521,11 @@ class myTableModel(QAbstractTableModel):
         #if index.column() ==1 :
             #f |= Qt.ItemIsEditable # column 1 only editable
         return f
-    
+
     def rowCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
         return len(TheFootnoteList) # initially 0
-    
+
     def headerData(self, col, axis, role):
         if (axis == Qt.Horizontal) and (col >= 0):
             if role == Qt.DisplayRole : # wants actual text
@@ -534,7 +534,7 @@ class myTableModel(QAbstractTableModel):
                 return QString(self.tipDict[col])
         return QVariant() # we don't do that, whatever it is
     # This method is called whenever the table view wants to know practically
-    # anything about the visible aspect of a table cell. The row & column are 
+    # anything about the visible aspect of a table cell. The row & column are
     # in the index, and what it wants to know is expressed by the role.
     def data(self, index, role ):
         # whatever it wants, we need the row data. Get it into self.lastTuple
@@ -572,7 +572,7 @@ class myTableModel(QAbstractTableModel):
             return self.brushForRow
         # don't support other roles
         return QVariant()
- 
+
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # This code creates the Fnote panel and implements the other UI widgets.
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -622,7 +622,7 @@ def toAlpha(n,lc=False):
     if lc : return qs.toLower()
     return qs
 
-    
+
 class fnotePanel(QWidget):
     def __init__(self, parent=None):
         super(fnotePanel, self).__init__(parent)
@@ -646,7 +646,7 @@ class fnotePanel(QWidget):
         self.view.setSortingEnabled(False)
         mainLayout.addWidget(self.view,1) # It gets all stretch for the panel
         # create the table (empty just now) and display it
-        self.table = myTableModel() # 
+        self.table = myTableModel() #
         self.view.setModel(self.table)
         # Connect the table view's clicked to our clicked slot
         self.connect(self.view, SIGNAL("clicked(QModelIndex)"), self.tableClick)
@@ -718,7 +718,7 @@ class fnotePanel(QWidget):
         self.streamMenuList = [
             self.pickIVX,self.pickABC,self.pickivx,
             self.pickabc,self.pick123,self.picksym]
-        # Note a count of items over which it is worthwhile to run a 
+        # Note a count of items over which it is worthwhile to run a
         # progress bar during renumber, move, etc. Reconsider later: 100? 200?
         self.enoughForABar = 50
     # Convenience function to shorten code when instantiating
@@ -749,7 +749,7 @@ class fnotePanel(QWidget):
         theRealRefresh()
         self.table.endResetModel()
         self.view.resizeColumnsToContents()
-    
+
     # These slots are invoked when a choice is made in the stream popup menu
     # for an ambiguous class, to ensure that contradictory choices aren't made.
 
@@ -800,7 +800,7 @@ class fnotePanel(QWidget):
                 targtc = rtc
         if targtc is not None:
             IMC.editWidget.setTextCursor(targtc)
-    
+
     # The slots for the main window's docWill/HasChanged signals.
     # Right now, just clear the footnote database, the user can hit
     # refresh when he wants the info. If the refresh proves to be
@@ -826,7 +826,7 @@ class fnotePanel(QWidget):
                             )
             return False # dinna do it, laddie!
         return True # ok to go ahead
-        
+
     # The slot for the Renumber button. Check to see if any unpaired keys and
     # don't do it if there are any. But if all are matched, go through the
     # database top to bottom (because that is the direction the user expects
@@ -840,7 +840,7 @@ class fnotePanel(QWidget):
         dbcount = len(TheFootnoteList)
         if dbcount < 1 : return
         # OTOH, if there is significant work to do, start the progress bar.
-        if dbcount >= self.enoughForABar : 
+        if dbcount >= self.enoughForABar :
             pqMsgs.startBar(dbcount,"Renumbering footnotes...")
         # clear the number streams
         self.streams = [0,0,0,0,0,0]
@@ -900,7 +900,7 @@ class fnotePanel(QWidget):
                 reftc.setPosition(selstart)
                 reftc.setPosition(selstart+sellen,QTextCursor.KeepAnchor)
                 # Update the database item. The two cursors are already updated.
-                # Note that this is Python; "item" is a reference to 
+                # Note that this is Python; "item" is a reference to
                 # TheFootnoteList[i], ergo we are updating the db in place.
                 item['K'] = newkeyqs
                 item['C'] = newclass
@@ -973,7 +973,7 @@ class fnotePanel(QWidget):
             return
         # Right, we're gonna do stuff. If there is significant work to do,
         # start the progress bar.
-        if dbcount >= self.enoughForABar : 
+        if dbcount >= self.enoughForABar :
             pqMsgs.startBar(dbcount,"Moving Notes to /F..F/ sections")
         # Tell the table model that things are gonna change
         self.docWillChange()
@@ -1050,7 +1050,7 @@ class fnotePanel(QWidget):
     # that unavoidably messes up the reftc pointing to that Anchor.
     # Going bottom-up, we rewrite the nested Anchor before we rewrite the
     # Note that contains it.
-    
+
     def doHTML(self):
         global TheFootnoteList
         if not self.canWeRevise(u"Convert Footnotes to HTML") :
@@ -1078,7 +1078,7 @@ class fnotePanel(QWidget):
         worktc = QTextCursor(IMC.editWidget.textCursor())
         worktc.beginEditBlock()
         self.docWillChange()
-        if dbcount >= self.enoughForABar : 
+        if dbcount >= self.enoughForABar :
             pqMsgs.startBar(dbcount,"Converting notes to HTML...")
         for i in reversed(range(dbcount)):
             item = TheFootnoteList[i]
@@ -1122,7 +1122,7 @@ class fnotePanel(QWidget):
             worktc.setPosition(note_start)
             worktc.setPosition(note_start + j,QTextCursor.KeepAnchor)
             worktc.insertText(note_qs)
-            
+
             if dbcount >= self.enoughForABar and 0 == (i & 7):
                 pqMsgs.rollBar(dbcount - i)
             # end of "for i in range(dbcount)"
@@ -1131,8 +1131,8 @@ class fnotePanel(QWidget):
         self.docHasChanged()   # tell the table the data has stabilized
         if dbcount > self.enoughForABar :
             pqMsgs.endBar()    # clear the progress bar
-        
- 
+
+
     # The slot for the ASCII button. Make sure the db is clean and there is work
     # to do. Then go through all Notes (the Anchors are left alone)
     # and update all Notes as follows:
@@ -1141,7 +1141,7 @@ class fnotePanel(QWidget):
     # Replace the final ] with \nQ/\n
     # The idea is to change a footnote into a block quote tagged with the class
     # which is ignored by reflow, but can be used to do find/replace.
-    
+
     def doASCII(self):
         global TheFootnoteList, KeyClassNames
         if not self.canWeRevise(u"Convert Footnotes to /Q..Q/") :
@@ -1166,7 +1166,7 @@ class fnotePanel(QWidget):
         worktc = QTextCursor(IMC.editWidget.textCursor())
         worktc.beginEditBlock()
         self.docWillChange()
-        if dbcount >= self.enoughForABar : 
+        if dbcount >= self.enoughForABar :
             pqMsgs.startBar(dbcount,"Converting notes to ASCII...")
         for i in range(dbcount):
             item = TheFootnoteList[i]
@@ -1184,7 +1184,7 @@ class fnotePanel(QWidget):
             # Point the work cursor at the note.
             worktc.setPosition(note_start)
             worktc.setPosition(note_end,QTextCursor.KeepAnchor)
-            # get the note as a string, truncate the closing ], add the 
+            # get the note as a string, truncate the closing ], add the
             # newline and Q/, and put it back.
             oldnote = worktc.selectedText()
             oldnote.chop(1)
@@ -1198,7 +1198,7 @@ class fnotePanel(QWidget):
             worktc.setPosition(note_start)
             worktc.setPosition(note_start + j,QTextCursor.KeepAnchor)
             worktc.insertText(note_qs)
-            
+
             if dbcount >= self.enoughForABar and 0 == (i & 7):
                 pqMsgs.rollBar(i)
             # end of "for i in range(dbcount)"
@@ -1207,8 +1207,8 @@ class fnotePanel(QWidget):
         self.docHasChanged()   # tell the table the data has stabilized
         if dbcount > self.enoughForABar :
             pqMsgs.endBar()    # clear the progress bar
-       
-        
+
+
 if __name__ == "__main__":
     def docEdit():
         IMC.editCounter += 1
@@ -1229,14 +1229,14 @@ if __name__ == "__main__":
     MW = QMainWindow()
     MW.setCentralWidget(widj)
     pqMsgs.makeBarIn(MW.statusBar())
-    MW.connect(IMC.editWidget, SIGNAL("textChanged()"), docEdit)    
+    MW.connect(IMC.editWidget, SIGNAL("textChanged()"), docEdit)
     MW.show()
     utqs = QString('''
 
 This is text[A] with two anchors one at end of line.[2]
 
 [Footnote A: footnote A which
-extends onto 
+extends onto
 three lines]
 
 [Footnote 2: footnote 2 which has[A] a nested note]

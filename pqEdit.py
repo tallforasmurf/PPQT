@@ -70,7 +70,7 @@ from pqLists import *
 import pqMsgs
 
 # Global regex used by wordHighLighter and by textTitleCase to find words
-# of one character and longer. 
+# of one character and longer.
 WordMatch = QRegExp(u"\\b\\w+\\b")
 # Define a syntax highlighter object which will be linked into our editor.
 # The edit init below instantiates this object and keeps addressability to it.
@@ -91,7 +91,7 @@ class wordHighLighter(QSyntaxHighlighter):
         self.misspeltFormat = QTextCharFormat()
         self.misspeltFormat.setUnderlineStyle(QTextCharFormat.SpellCheckUnderline)
         self.misspeltFormat.setUnderlineColor(QColor("red"))
-    
+
     # The linked QPlainTextEdit calls this function for every text line in the
     # whole bloody document when highlighting is turned on via the View menu,
     # at least to judge by the hang-time. Later it only calls us to look at a
@@ -116,7 +116,7 @@ class wordHighLighter(QSyntaxHighlighter):
                 i = self.wordMatch.indexIn(text,i+l) # advance to next word
 
 # Define the editor as a subclass of QPlainTextEdit. Only one object of this
-# class is created, in ppqtMain. The fontsize arg is recalled from saved 
+# class is created, in ppqtMain. The fontsize arg is recalled from saved
 # settings and passed in when the object is created.
 
 class PPTextEditor(QPlainTextEdit):
@@ -173,7 +173,7 @@ class PPTextEditor(QPlainTextEdit):
         IMC.needMetadataSave = 0x00
         IMC.staleCensus = 0x00
 
-    # Implement the Edit menu items: 
+    # Implement the Edit menu items:
     # Edit > ToUpper,  Edit > ToTitle,  Edit > ToLower
     # Note that in full Unicode, changing letter case is not so simple as it
     # was in Latin-1! We use the QChar and QString facilities to do it, and
@@ -254,7 +254,7 @@ class PPTextEditor(QPlainTextEdit):
         tc.setPosition(startpos,QTextCursor.MoveAnchor) # click
         tc.setPosition(endpos,QTextCursor.KeepAnchor)   # drag
         self.setTextCursor(tc)
-       
+
     # Re-implement the parent's keyPressEvent in order to provide some
     # special controls. (Note on Mac, "ctrl-" is "cmd-" and "alt-" is "opt-")
     # ctrl-plus increases the edit font size 1 pt
@@ -292,7 +292,7 @@ class PPTextEditor(QPlainTextEdit):
                     self.setTextCursor(self.bookMarkList[bkn]) # jump to it
             elif kkey in IMC.markShiftKeys : # shift-ctl-1/9, select to mark
                 # Make our document cursor's selection go from our current ANCHOR
-                # to the POSITION from the bookmark cursor. 
+                # to the POSITION from the bookmark cursor.
                 mark_tc = self.bookMarkList[kkey - IMC.ctl_shft_1]
                 if mark_tc is not None:
                     tc = QTextCursor(self.textCursor())
@@ -302,21 +302,21 @@ class PPTextEditor(QPlainTextEdit):
                 bkn = kkey - IMC.ctl_alt_1 # make it 0-8
                 self.bookMarkList[bkn] = QTextCursor(self.textCursor())
                 self.bookMarkList[bkn].clearSelection() # don't save the selection
-                IMC.needMetadataSave |= IMC.bookmarksChanged 
+                IMC.needMetadataSave |= IMC.bookmarksChanged
         else: # not in keysOfInterest, so pass it up to parent
             event.ignore()
             super(PPTextEditor, self).keyPressEvent(event)
 
     # Called from pqFind after doing a successful search, this method centers the
     # current selection (which is the result of the find) in the window. If the selection
-    # is large, put the top of the selection higher than center but on no account 
+    # is large, put the top of the selection higher than center but on no account
     # above the top of the viewport. Two problems arise: One, the rectangles returned
     # by .cursorRect() and by .viewport().geometry() are in pixel units, while the
     # vertical scrollbar is sized in logical text lines. So we work out the adjustment
     # as a fraction of the viewport, times the scrollbar's pageStep value to get lines.
     # Two, cursorRect gives only the height of the actual cursor, not of the selected
     # text. To find out the height of the full selection we have to get a cursorRect
-    # for the start of the selection, and another for the end of it. 
+    # for the start of the selection, and another for the end of it.
     def centerCursor(self) :
         tc = QTextCursor(self.textCursor()) # copy the working cursor with its selection
         top_point = tc.position() # one end of selection, in character units
@@ -353,9 +353,9 @@ class PPTextEditor(QPlainTextEdit):
         target = vscroller.value() + adjust_lines
         if (target >= 0) and (target <= vscroller.maximum()) :
             vscroller.setValue(target)
-            
 
-        
+
+
     # Catch the contextMenu event and extend the standard context menu with
     # a separator and the option to add a word to good-words, but only when
     # there is a selection and it encompasses just one word.
@@ -377,11 +377,11 @@ class PPTextEditor(QPlainTextEdit):
         IMC.needMetadataSave |= IMC.goodwordsChanged
         IMC.needSpellCheck = True
         IMC.mainWindow.setWinModStatus()
-  
-    # Implement save: the main window opens the files for output using 
+
+    # Implement save: the main window opens the files for output using
     # QIODevice::WriteOnly, which wipes the contents (contrary to the doc)
     # so we need to write the document and metadata regardless of whether
-    # they've been modified. However we avoid rebuilding metadata if we can.        
+    # they've been modified. However we avoid rebuilding metadata if we can.
     def save(self, dataStream, metaStream):
         # Get the contents of the document as a QString
         doc_text = self.toPlainText()
@@ -466,13 +466,13 @@ class PPTextEditor(QPlainTextEdit):
         p2 = self.textCursor().selectionEnd()
         metaStream << u"{{CURSOR "+unicode(p1)+u' '+unicode(p2)+u"}}\n"
         metaStream.flush()
-    
+
     # Implement load: the main window has the job of finding and opening files
     # then passes QTextStreams ready to read here. If metaStream is None,
     # no metadata file was found and we construct the metadata.
     # n.b. before main calls here, it calls our .clear, hence lists are
     # empty, hiliting is off, etc.
-    
+
     def load(self, dataStream, metaStream, goodStream, badStream):
         # Load the document file into the editor
         self.setPlainText(dataStream.readAll())
@@ -495,10 +495,10 @@ class PPTextEditor(QPlainTextEdit):
         if IMC.metaHash != IMC.documentHash :
             pqMsgs.warningMsg(u"The document file and metadata file do not match!",
                               u"Bookmarks, page breaks and other metadata will be wrong! Strongly recommend you not edit or save this book.")
-        # restore hiliting if the user wanted it. Note this can cause a 
+        # restore hiliting if the user wanted it. Note this can cause a
         # serious delay if the new book is large. However the alternative is
         # to not set it on and then we are out of step with the View menu
-        # toggles, so the user has to set it off before loading, or suffer.        
+        # toggles, so the user has to set it off before loading, or suffer.
         self.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
 
     # load page table & vocab from the .meta file as a stream.
@@ -522,7 +522,7 @@ class PPTextEditor(QPlainTextEdit):
                 endsec = QString(u"{{/" + section + u"}}")
                 if section == u"VERSION":
                     if len(argument) != 0 :
-                        metaVersion = int(argument)  
+                        metaVersion = int(argument)
                     continue # no more data after {{VERSION x }}
                 elif section == u"STALECENSUS" :
                     if argument == u"TRUE" :
@@ -667,11 +667,11 @@ class PPTextEditor(QPlainTextEdit):
     # metadata, the Page argument is True and we build a page table entry.
     # Other times (e.g. from the Refresh button of the Word or Char panel),
     # we skip over page separator lines.
-    
+
     # For any other line we scan by characters, parsing out words and taking
     # the char and word counts. Note that the word and char census lists
     # should be cleared before this method is called.
-    
+
     # In scanning words, we assume that this is a properly proofed document
     # with no broken words at end of line (although there can be broken words
     # at end of a page, proof-* at end of line). We collect internal hyphens as
@@ -682,11 +682,11 @@ class PPTextEditor(QPlainTextEdit):
     # there seems to be no way to distinguish the case of "'Twas brillig"
     # ('Twas as a word) from "'That's Amore' was a song" ('That's is not).
     # Accepting internal hyphens and apostrophes requires a one-char lookahead.
-    
+
     # Harder is (a) recognizing [oe] and [OE] ligatures, and skipping <i>
     # and other html-like markups. For these we use the QString::indexIn
     # and a regex to do lookahead.
-    
+
     # The first version of this code used nested if-logic, but in an attempt to
     # simplify and speed up we now use a modified finite-state system driven by
     # a two-row table. Each column represents one of the 30 Unicode categories
@@ -822,7 +822,7 @@ class PPTextEditor(QPlainTextEdit):
                 nextAction = (COUNT1,)
             else:
                 nextAction = (SYMBOL,)
-            
+
         # List of unicode categories can be seen in pqChars.py
         parseArray = [ [ (COUNT1,), (WORDBEGIN, 0), (WORDBEGIN, 0), (COUNT1,),
             (WORDBEGIN, IMC.WordHasDigit), (WORDBEGIN, IMC.WordHasDigit),
@@ -840,14 +840,14 @@ class PPTextEditor(QPlainTextEdit):
             (WORDCONTINUE, IMC.WordHasUpper), (WORDCONTINUE, IMC.WordHasLower),
             (WORDCONTINUE, IMC.WordHasLower), (WORDCONTINUE, IMC.WordHasLower),
             (WORDCONTINUE, IMC.WordHasLower), (WORDEND, ), (WORDASH, ),
-            (PUNCOPENW, ), (WORDEND, ), (WORDEND, ), (WORDEND, ), 
+            (PUNCOPENW, ), (WORDEND, ), (WORDEND, ), (WORDEND, ),
             (PUNCAPO, ), (WORDENDLT, ),(WORDEND, ),(WORDEND, ),(WORDEND, )] ]
 
         IMC.wordCensus.clear()
         IMC.charCensus.clear()
         localCharCensus = {}
         iFolio = 0 # page number for line separator records
-        pqMsgs.startBar(self.document().blockCount(),"Counting words and chars...")    
+        pqMsgs.startBar(self.document().blockCount(),"Counting words and chars...")
         qtb = self.document().begin() # first text block
         if IMC.bookType.startsWith(QString(u"htm")) \
         and qtb.text().startsWith(QString(u"<!DOCTYPE")) :
@@ -884,7 +884,7 @@ class PPTextEditor(QPlainTextEdit):
                 nextAction = (GET,)
                 while i < qsLine.size():
                     nextAction[0](*nextAction[1:])
-                    
+
                 if inWord : # line ends with a word, not unsurprising
                     qsWord.append(qsDict)
                     IMC.wordCensus.count(qsWord,uiWordFlags)

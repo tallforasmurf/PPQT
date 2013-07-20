@@ -35,7 +35,7 @@ Misc message services factored out of various modules
 
 from PyQt4.QtCore import (
     Qt,
-    QString, 
+    QString,
     QStringList,
     SIGNAL, SLOT
 )
@@ -293,7 +293,7 @@ class lineLabel(QWidget):
         bn = tc.blockNumber()
         self.lnum.setText(QString(repr(bn)))
         cn = tc.positionInBlock()
-        self.cnum.setText(QString(repr(cn)))	
+        self.cnum.setText(QString(repr(cn)))
 
 # debugging function to display a keyevent on the console
 from PyQt4.QtCore import (QEvent)
@@ -318,7 +318,7 @@ import time
 time_now = time.clock() # moment module is imported
 
 # Routine called during initialization (or anytime really) to
-# note something with a timestamp on standard output. 
+# note something with a timestamp on standard output.
 # In theory one could take a command-line argument --log-level or
 # such and control this output at run-time.
 def noteEvent(description) :
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     else: print("cancel")
     (s, b) = getStringMsg("TITLE STRING", "what you should enter", "prepared")
     if b : print( "got "+s)
-    else: print("cancel")    
+    else: print("cancel")
     noteEvent("Whatever...")
     #ew = QTextEdit()
     #(b,qs) = getFindMsg(ew)

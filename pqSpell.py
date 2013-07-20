@@ -35,13 +35,13 @@ __license__ = '''
  dictionary object, and can instantiate other, alternate dictionaries
  when requested. It provides a method to spell-check a single word
  in the active dictionary or a given alternate, returning True for valid.
- 
+
  Actual spellcheck is done by the Hunspell checker, as used in Open Office,
  LibreOffice, Mac OSX and many others. See note below for provenance.
 
  ppqt.py instantiates one makeSpellCheck object as IMC.spellCheck,
  from whence it is referenced by pqEdit and pqMain for these methods:
- 
+
     .isUp() True/False if spelling is working, which is to say, if
         hunspell could be set up using the last-requested main dict.
 
@@ -193,7 +193,7 @@ class makeSpellCheck():
             return None
 
     # Check one word, a python u-string, against the main or an alt dictionary.
-    # If an alt dict is specified, it is likely the same as the last one 
+    # If an alt dict is specified, it is likely the same as the last one
     # requested, but if not, then try to load a dict of the given tag.
     # We used to split up hyphenated phrases, but Hunspell handles them.
     def check(self, aword, dicTag = ''):
@@ -229,7 +229,7 @@ class spellDict():
             aff_path.encode('ISO-8859-1') )
         # Get the encoding Hunspell is using for this dict.
         self.encoding = self.hobj.get_dic_encoding()
-    
+
     def spell(self, aword):
         encword = aword.encode(self.encoding, errors='replace')
         return self.hobj.spell(encword)

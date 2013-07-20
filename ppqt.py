@@ -199,7 +199,7 @@ else:
     if os.path.exists(fpath) :
         # It was; add each .ttf in it to the Qt font database
         # We are *assuming* that what's in fonts is Liberation Mono Regular
-        # for sure, and optionally other variants like bold. 
+        # for sure, and optionally other variants like bold.
         for fname in os.listdir(fpath) :
             if fname.endswith(u'.ttf') :
                 qfdb.addApplicationFont(QString(os.path.join(fpath,fname)))

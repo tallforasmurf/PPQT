@@ -35,7 +35,7 @@ Most of this is based on code from Summerfield's book, without which not.
 
 '''
  # used in detecting encodings of ambiguous files
-import io 
+import io
 from chardet.universaldetector import UniversalDetector
 
 from PyQt4.QtCore import ( pyqtSignal, Qt,
@@ -109,10 +109,10 @@ class MainWindow(QMainWindow):
                                              QString()).toString()
         # If we had a scannoPath, try to load it.
         if not self.scannoPath.isEmpty() :
-            
+
             # +++++++ Temp O'Rary +++++
             pqMsgs.noteEvent("..Loading scanno file")
-            
+
             self.scannoLoad()
         # Recall the setting of the scanno hilite switch and adjust for whether
         # we were able to load the recalled file.
@@ -128,9 +128,9 @@ class MainWindow(QMainWindow):
         # Create the editor for the left-hand pane. Put a reference in the
         # IMC for other modules to use in calling edit members. Hook up the
         # signal for document-modification-state-change to our slot where
-        # we set the document title bar status flag, and the signal for 
+        # we set the document title bar status flag, and the signal for
         # text change for where we note a change of text.
-        
+
         pqMsgs.noteEvent("..creating edit panel")
 
         self.editor = pqEdit.PPTextEditor(self,IMC.fontSize)
@@ -153,7 +153,7 @@ class MainWindow(QMainWindow):
         # 1. Create the pngs display and connect it to the editors
         # cursor-move signal and our doc-has-changed and shut-down signals.
         #
-        
+
         pqMsgs.noteEvent("..creating Pngs panel")
 
         IMC.pngPanel = pqPngs.pngDisplay()
@@ -165,9 +165,9 @@ class MainWindow(QMainWindow):
         #
         # 2. Create the notes panel editor.
         #
-        
+
         pqMsgs.noteEvent("..creating Notes panel")
-        
+
         IMC.notesEditor = pqNotes.notesEditor()
         self.tabSet.addTab(IMC.notesEditor, u"Notes")
         #
@@ -175,48 +175,48 @@ class MainWindow(QMainWindow):
         # signal and our doc-has-changed and shut-down signals.
 
         pqMsgs.noteEvent("..creating Find panel")
-        
+
         IMC.findPanel = pqFind.findPanel()
         self.tabSet.addTab(IMC.findPanel, u"Find")
         self.connect(self.editor, SIGNAL("editKeyPress"),
                      IMC.findPanel.editKeyPress)
         self.connect(self, SIGNAL("shuttingDown"), IMC.findPanel.shuttingDown)
-        self.connect(self, SIGNAL("docHasChanged"), IMC.findPanel.docHasChanged)   
+        self.connect(self, SIGNAL("docHasChanged"), IMC.findPanel.docHasChanged)
         #
         # 4. Create Char Census panel and give it both the doc-has-changed
         # and the preceding doc-will-change signals (but not shutdown).
 
         pqMsgs.noteEvent("..creating Chars panel")
-        
+
         self.charPanel = pqChars.charsPanel()
         self.tabSet.addTab(self.charPanel, u"Char")
         self.connect(self, SIGNAL("docWillChange"), self.charPanel.docWillChange)
-        self.connect(self, SIGNAL("docHasChanged"), self.charPanel.docHasChanged)   
+        self.connect(self, SIGNAL("docHasChanged"), self.charPanel.docHasChanged)
         #
         # 5. Create Word Census Panel and give it signals.
 
         pqMsgs.noteEvent("..creating Words panel")
-        
+
         self.wordPanel = pqWords.wordsPanel()
         self.tabSet.addTab(self.wordPanel, u"Word")
         self.connect(self, SIGNAL("docWillChange"), self.wordPanel.docWillChange)
-        self.connect(self, SIGNAL("docHasChanged"), self.wordPanel.docHasChanged)   
+        self.connect(self, SIGNAL("docHasChanged"), self.wordPanel.docHasChanged)
         #
         # 6. Create Pages Panel and give it signals.
 
         pqMsgs.noteEvent("..creating Pages panel")
-        
+
         self.pagePanel = pqPages.pagesPanel()
         self.tabSet.addTab(self.pagePanel, u"Pages")
         self.connect(self, SIGNAL("docWillChange"), self.pagePanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.pagePanel.docHasChanged)
         #
-        # 7. Create the Flow panel. It only gets the shutdown signal, which it 
+        # 7. Create the Flow panel. It only gets the shutdown signal, which it
         # uses to save all its user settings.
 
         pqMsgs.noteEvent("..creating Flow panel")
-        
-        
+
+
         self.flowPanel = pqFlow.flowPanel()
         self.tabSet.addTab(self.flowPanel, u"Flow")
         self.connect(self, SIGNAL("shuttingDown"), self.flowPanel.shuttingDown)
@@ -225,28 +225,28 @@ class MainWindow(QMainWindow):
         # to clear its table.
 
         pqMsgs.noteEvent("..creating Fnote panel")
-        
+
         self.fnotePanel = pqFnote.fnotePanel()
         self.tabSet.addTab(self.fnotePanel, u"Fnote")
         self.connect(self, SIGNAL("docWillChange"), self.fnotePanel.docWillChange)
-        self.connect(self, SIGNAL("docHasChanged"), self.fnotePanel.docHasChanged)   
+        self.connect(self, SIGNAL("docHasChanged"), self.fnotePanel.docHasChanged)
         #
         # 9. Create the html Preview Panel - it's simple, needs no signals
 
         pqMsgs.noteEvent("..creating View panel")
-        
+
         self.pvwPanel = pqView.htmlPreview()
         self.tabSet.addTab(self.pvwPanel, u"Pvw")
         #
         # 10. Lastly, the Help panel:
 
         pqMsgs.noteEvent("..creating Help panel")
-        
-        
+
+
         self.helpPanel = pqHelp.helpDisplay()
         self.tabSet.addTab(self.helpPanel, u"Help")
         # We could now do either self.tabSet.setCurrentIndex(1) to make the
-        # pngs panel current, but that seems to happen by default. Or, we 
+        # pngs panel current, but that seems to happen by default. Or, we
         # could at shutdown save the last-set tab index and restore it?
         #
         # ------------------------------------------------------------------
@@ -254,7 +254,7 @@ class MainWindow(QMainWindow):
         #
 
         pqMsgs.noteEvent("..completing main window")
-        
+
         status = self.statusBar()
         status.setSizeGripEnabled(False)
         # Create the line number widget. The widget definition is in pqMsgs.
@@ -289,16 +289,16 @@ class MainWindow(QMainWindow):
         status.showMessage("Ready", 5000)
 
         pqMsgs.noteEvent("..setting up menus")
-        
+
         #
         # -----------------------------------------------------------------
         # Set up the menu actions, then create menus to invoke them.
-        # 
+        #
         # Create actions for the File menu. All are parented by the main window.
         # Their shortcuts are always active.
         fileNewAction = self.createAction("&New...", None, self.fileNew,
                 QKeySequence.New, "Clear to an empty state")
-        fileOpenAction = self.createAction("&Open...", None, 
+        fileOpenAction = self.createAction("&Open...", None,
                 lambda : self.fileOpen(None),
                 QKeySequence.Open, "Open a book and its metadata")
         fileOpenWithUTF = self.createAction("Open UTF-8", None,
@@ -410,7 +410,7 @@ class MainWindow(QMainWindow):
         self.viewScannosAction.setChecked(IMC.scannoHiliteSwitch)
 
     # ---------------------------------------------------------------------
-    # This convenience function, lifted from Summerfield's examples, 
+    # This convenience function, lifted from Summerfield's examples,
     # encapsulates the boilerplate of creating a menu action. (We are not
     # using a toolbar nor using icons in the menus, so those arguments
     # from his version are omitted.) Arguments are:
@@ -420,7 +420,7 @@ class MainWindow(QMainWindow):
     #
     # parent = the parent widget or None to indicate "this main window"
     #    When a parent (usually, the editor) is given, the action is also
-    #    given shortCutContext of Qt.WidgetShortcut, which is supposed to 
+    #    given shortCutContext of Qt.WidgetShortcut, which is supposed to
     #    mean other widgets can use the same shortcut for their own actions.
     #
     # slot = target of a signal emitted by this action, see also signal
@@ -429,7 +429,7 @@ class MainWindow(QMainWindow):
     #    app-unique sequence
     #
     # tip = text of a tooltip that flashes in the status bar when the menu
-    #     
+    #
     # checkable = whether the item has an on/off state (like View>Scannos)
     #
     # signal = signature of the signal emitted by this action. The slot and
@@ -457,7 +457,7 @@ class MainWindow(QMainWindow):
         return action
 
     # -----------------------------------------------------------------
-    # Another Summerfield convenience: populate a given menu (target) with 
+    # Another Summerfield convenience: populate a given menu (target) with
     # a list of QActions. In the list None means "separator here".
     def addActions(self, target, actions):
         for action in actions:
@@ -468,7 +468,7 @@ class MainWindow(QMainWindow):
 
     # -----------------------------------------------------------------
     # This slot is entered on the File menu signal aboutToShow. Quick like
-    # a bunny, populate the menu with the prepared actions and with the 
+    # a bunny, populate the menu with the prepared actions and with the
     # current list of previously-opened files. Point the file name menu items
     # at the recentFile() function. Hard to believe, but all this executes
     # every time you click on "File".
@@ -513,7 +513,7 @@ class MainWindow(QMainWindow):
     # the edited doc has been modified or if any metadata has changed.
     # IMC.needMetadataSave is set by pqNotes, pqPages, and pqWords and
     # cleared in pqEdit. Setting windowModified true in Mac OS sets the
-    # modified dot in the red close gumdrop, and on other platforms, 
+    # modified dot in the red close gumdrop, and on other platforms,
     # displays an asterisk after the filename in the titlebar.
     #
     # On the non-mac platforms, we have to avoid caling setWindowModified()
@@ -523,9 +523,9 @@ class MainWindow(QMainWindow):
         if self.windowTitle().contains(u'*') :
             self.setWindowModified(
     self.editor.document().isModified() | (0 != IMC.needMetadataSave)
-                            )        
+                            )
     # Slot to receive the modificationChanged signal from the main editor.
-    # This signal only comes when the document goes from unmodified to 
+    # This signal only comes when the document goes from unmodified to
     # modified, or the reverse (on ^z). It does not come on every text change,
     # only on the first text change.
     def ohModificationChanged(self,newValue):
@@ -555,14 +555,14 @@ class MainWindow(QMainWindow):
         willDoIt = (toggle) and (not self.scannoPath.isEmpty())
         self.viewScannosAction.setChecked(willDoIt)
         IMC.scannoHiliteSwitch = willDoIt
-        self.editor.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)   
-    
+        self.editor.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
+
     def viewSetSpelling(self, toggle):
         willDoIt = (toggle) and (IMC.wordCensus.size()>0)
         self.viewSpellingAction.setChecked(willDoIt)
         IMC.spellingHiliteSwitch = willDoIt
         self.editor.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
-    
+
     # -----------------------------------------------------------------
     # Handle View>Font... by throwing up a QFontDialog initialized with an
     # available monospaced family and the last-chosen font size. Store the
@@ -582,7 +582,7 @@ class MainWindow(QMainWindow):
             IMC.notesEditor.setFont(refont) # tell the notes editor
 
     # -----------------------------------------------------------------
-    # This is the action for View > Dictionary... 
+    # This is the action for View > Dictionary...
     # Get the current dictionary tag from the spell checker (e.g. "en_US")
     # and the list of available languages. Throw up a dialog with a popup
     # menu, and if the user clicks ok, set a new main dictionary.
@@ -656,10 +656,10 @@ class MainWindow(QMainWindow):
             elif reply == QMessageBox.Yes:
                 return self.fileSave()
         return True
-    
+
     # -----------------------------------------------------------------
     # Infer the correct I/O codec for a file based on the filename.suffix
-    # and, for input files and only when necessary, based on file contents. 
+    # and, for input files and only when necessary, based on file contents.
     # Return a name string accepted by QTextStream.setCodec(), or None if
     # the codec cannot be determined.
     #
@@ -688,13 +688,13 @@ class MainWindow(QMainWindow):
     # file is for input, open it in python as a byte stream and feed up to 4k
     # of it to the chardet package. If it comes up >= 90% confidence, return
     # that string. Else return None.
-    
+
     def inferTheCodec(self, fileInfo, metaInfo, forInput):
         # the quickest and easiest test is for a -u or -l flag in the filename.
         fileName = fileInfo.fileName() # const QString name
         utfRE = QRegExp(u'-(u|utf|utf8)\.')
         if utfRE.indexIn(fileName) > -1 :
-            return self.utfEncoding # filename ends in -u[tf[8]]. 
+            return self.utfEncoding # filename ends in -u[tf[8]].
         ltnRE = QRegExp(u'-(l|ltn|ltn1)\.')
         if ltnRE.indexIn(fileName) > -1 :
             return self.ltnEncoding # filename ends in -l[tn[1]]
@@ -743,7 +743,7 @@ class MainWindow(QMainWindow):
             if htmRE.indexIn(htmqs) > -1 :
                     return unicode(htmRE.cap(2))
             # no charset parameter seen. Return the W3 standard encoding for HTML.
-            return self.utfEncoding 
+            return self.utfEncoding
         # OK, look for useful suffixes PG doesn't support but we do.
         if fileSuffix == u'utf' or fileSuffix == u'utx' :
             return self.utfEncoding
@@ -753,7 +753,7 @@ class MainWindow(QMainWindow):
             return QString(u'cp1252')
         if fileSuffix == u'mac' :
             return QString(u'macintosh')
-        # Unhelpful file name and suffix. If this is an output file we can 
+        # Unhelpful file name and suffix. If this is an output file we can
         # infer nothing more so let's default to UTF8.
         if not forInput :
             return self.utfEncoding
@@ -782,7 +782,7 @@ class MainWindow(QMainWindow):
     # the complete file path as a QString,
     # the open mode, either QIODevice.ReadOnly or QIODevice.WriteOnly, and
     # the id string for the codec.
-    # Allow for an input file that doesn't exist (as a convenience to 
+    # Allow for an input file that doesn't exist (as a convenience to
     # loadFile, which uses this code to test for it). Return a tuple:
     #   on success, (handle of the open QTextStream, handle of the file)
     #   on failure, (None, None)
@@ -823,7 +823,7 @@ class MainWindow(QMainWindow):
                 return # dirty doc & user said cancel or save failed
             else:
                 self.loadFile(fname, None)
-    
+
     # -----------------------------------------------------------------
     # This is the action slot for the File>Open and File>Open With Encoding
     # menu commands. (Actually, the slots for the five 'triggered' signals are
@@ -843,7 +843,7 @@ class MainWindow(QMainWindow):
         if not bookname.isEmpty(): # user selected a file, we are "go"
             self.loadFile(bookname, encoding)
             self.addRecentFile(IMC.bookPath)
-    
+
     # -----------------------------------------------------------------
     # Heart of opening a document: called by way of the File menu actions
     # Open, Open With Encoding, and recent-file-name. Each passes the path
@@ -856,11 +856,11 @@ class MainWindow(QMainWindow):
     # The Python io module is pretty nearly as nice, but QFileInfo is a very
     # convenient way to learn about a file, and QDir a great way to get names,
     # without any platform dependency. NB: QFile(None).exist() ==> False
-    
+
     def loadFile(self, path, encoding):
         bookInfo = QFileInfo(path)
         # Note the complete path to the book directory. note the difference:
-        # bookInfo.absoluteFilePath includes the filename, absolutePath 
+        # bookInfo.absoluteFilePath includes the filename, absolutePath
         # is only the path through the directory.
         bookPath = bookInfo.absoluteFilePath()
         bookDirPath = bookInfo.absolutePath()
@@ -971,7 +971,7 @@ class MainWindow(QMainWindow):
         # Get one last confirmation. Result of okCancelMsg is True if "OK" clicked.
         return pqMsgs.okCancelMsg(u"The document and metadata files do not match!",
                                u"Are you sure you want to save this book?")
-        
+
     # -----------------------------------------------------------------
     # File>Save clicked, or this is called from ohWaitAreWeDirty() above.
     # If we don't know a bookFile we must be working on a New, so call Save As
@@ -1023,7 +1023,7 @@ class MainWindow(QMainWindow):
     # File>Save As is basically a wrapper on File>Save. Get a path & name.
     # QFileDialog allows a "filter" string to filter filetypes but we don't
     # apply it.
-    
+
     def fileSaveAs(self):
         # Test for mismatched doc/meta situation
         if not self.doHashesMatch() :
@@ -1041,12 +1041,12 @@ class MainWindow(QMainWindow):
             return self.fileSave()
         # oops, user cancelled out of the dialog
         return False
-    
+
     # -----------------------------------------------------------------
     # File>Scanno clicked. Ask the user for a file to open and if one is given,
     # store it as self.scannoPath, open it, and use it to load IMC.scannoList.
     # If we know a scannoPath, use that as the starting directory.
-        
+
     def scannoOpen(self):
         startdir = (QString(".") if self.scannoPath.isEmpty() else self.scannoPath)
         sfname = QFileDialog.getOpenFileName(self,
@@ -1064,7 +1064,7 @@ class MainWindow(QMainWindow):
     # and new lists (doh!). Turn off the hilites if they are on, so as not
     # to leave residual purple marks (doh!). Load the list.
     # If the hilites were on, turn them back on to show new words.
-    
+
     def scannoLoad(self):
         scanno_sw = IMC.scannoHiliteSwitch
         if scanno_sw : # highlighting is on
@@ -1094,7 +1094,7 @@ class MainWindow(QMainWindow):
     # if one is given, get its codec and open it. Pass the text stream to the
     # Find panel loadUserButtons method. Start the search in the last-used
     # button file folder, defaulting to our /extras (self.buttonDirPath).
-    
+
     def buttonLoad(self):
         startPath = self.buttonDirPath
         bfName = QFileDialog.getOpenFileName(self,
@@ -1131,7 +1131,7 @@ class MainWindow(QMainWindow):
                 IMC.findPanel.saveUserButtons(buttonStream)
                 fh.close()
                 # after successful use, update start path for saving
-                self.buttonDirPath = bfInfo.path()                
+                self.buttonDirPath = bfInfo.path()
 
     # -----------------------------------------------------------------
     # reimplement QWidget::closeEvent() to check for a dirty file and save it.
@@ -1155,4 +1155,3 @@ class MainWindow(QMainWindow):
         IMC.settings.setValue("main/fontSize",IMC.fontSize)
         IMC.spellCheck.terminate() # shut down spellcheck
         event.accept() # pass it up the line
-    

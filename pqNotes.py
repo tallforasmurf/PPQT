@@ -118,7 +118,7 @@ class notesEditor(QPlainTextEdit):
     # on ctl-alt-l (mac: opt-cmd-l), insert the current edit line number in
     # notes as {nnn}
     def insertLine(self):
-        tc = self.textCursor() 
+        tc = self.textCursor()
         bn = IMC.editWidget.textCursor().blockNumber() # line num
         tc.insertText(u"{{{0}}}".format(bn))
 
@@ -131,7 +131,7 @@ class notesEditor(QPlainTextEdit):
             re = QRegExp(QString(u'\{\d+\}'))
             tc.setPosition(tc.selectionStart()) # start looking left of {
             tc = self.document().find(re,tc)
-            if not tc.isNull(): # found that. 
+            if not tc.isNull(): # found that.
                 self.setTextCursor(tc) # highlight the found string
                 qs = tc.selectedText() # "{nnn}"
                 qs.remove(0,1) # "nnn}"
@@ -169,12 +169,12 @@ class notesEditor(QPlainTextEdit):
             re = QRegExp(QString(u'\[\d+\]'))
             tc.setPosition(tc.selectionStart()) # start looking left of [
             tc = self.document().find(re,tc)
-            if not tc.isNull(): # found that. 
+            if not tc.isNull(): # found that.
                 self.setTextCursor(tc) # highlight the found string
                 qs = tc.selectedText() # "[nnn]"
                 qs.remove(0,1) # "nnn]"
                 qs.chop(1) # "nnn"
-                (pn,flg) = qs.toInt() # page number as int 
+                (pn,flg) = qs.toInt() # page number as int
                 pn -= 1 # index to that page in the page table
                 if (pn >= 0) and (pn < len(IMC.pageTable)) :
                     etc = IMC.pageTable[pn][0] # cursor for that page
@@ -190,7 +190,7 @@ class notesEditor(QPlainTextEdit):
 
     # Do a simple find. getFindMsg returns (ok,find-text). This is a VERY
     # simple find from the present cursor position downward, case-insensitive.
-    # If we get no hit we try once more from the top, thus in effect wrapping.    
+    # If we get no hit we try once more from the top, thus in effect wrapping.
     def doFind(self,kkey):
         if (kkey == IMC.ctl_F) or (self.findText.isEmpty()) :
             # ctl+F, or ctl+G but no previous find done, show the find dialog

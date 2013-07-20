@@ -116,13 +116,13 @@ selection with a string.
 
 Implementing Regex Find/Replace
 
-The target user population both understands and depends heavily on regex 
+The target user population both understands and depends heavily on regex
 find/replace. Unfortunately to implement an adequate regex find we have to
 work around a crippling restriction in the QTextDocument.find() method: it will
 not search across a textblock (line) boundary! Hence it can never match to
-a pattern of \n, or match text on either side of \n, and that kills all 
+a pattern of \n, or match text on either side of \n, and that kills all
 kinds of critical uses. The QTextDocument.find() also has the problem that it
-takes the regex as a "const" argument, meaning it will never update the 
+takes the regex as a "const" argument, meaning it will never update the
 regex's captured-text values! The eliminates any chance of doing a Replace with
 substitution of found substrings \1 etc.
 
@@ -252,7 +252,7 @@ class findPanel(QWidget):
         # Per the Qt doc, we need to create a layout and parent it, that is,
         # add it to its parent layout, before we populate it. So here we
         # create the layouts and parent them. They get local names and will
-        # go out of scope when we exit but the chain of parent-child refs 
+        # go out of scope when we exit but the chain of parent-child refs
         # keeps them alive. The organization is:
         # mainLayout holds a vertical stack of:
         #   findCheckHbox (5 checkboxes)
@@ -322,7 +322,7 @@ class findPanel(QWidget):
                                      lambda b=2: self.doSearch(b) )
         self.connect(self.lastButton, SIGNAL("clicked()"),
                                      lambda b=3: self.doSearch(b) )
-        # Connect the returnPressed of find text to the click slot of 
+        # Connect the returnPressed of find text to the click slot of
         # the Next button - so return in the text looks for the next instance
         # of that text -- the natural expectation of the find box.
         self.connect(self.findText, SIGNAL("returnPressed()"),
@@ -362,10 +362,10 @@ class findPanel(QWidget):
         stgs.endArray()
         # put a spacer in the main layout between the replace stuff and user buttons
         mainLayout.addStretch(1)
-        # create the grid of user buttons with values restored from settings. 
+        # create the grid of user buttons with values restored from settings.
         # Connect the left click signal from any button to our userButtonClick.
         # Connect the signal emitted by a user button on the contextMenu event
-        # (left- or ctrl-click) to our userButtonLoad. N.B. to make these 
+        # (left- or ctrl-click) to our userButtonLoad. N.B. to make these
         # lambdas work it is essential to specify an expression, not a variable
         # name alone, as the parameter.
         userButtonGrid = QGridLayout()
@@ -387,7 +387,7 @@ class findPanel(QWidget):
         stgs.endArray()
         # ...and there we are!
         stgs.endGroup() # end group "Find."
-    
+
     # Subroutine to make a replace row. Called with the parent layout and the
     # row number. Create a horizontal layout with a combobox, lineEdit,
     # and Repl button. Connect the button to doReplace with a lambda passing 1/2/3.
@@ -396,7 +396,7 @@ class findPanel(QWidget):
     # popup to use. The lambda for clicked() passes not only the row number but
     # also the then-current state of the and-find and all switches, so that the
     # doReplace method can be called as a subroutine elsewhere.
-    
+
     def makeRepRow(self, parent, repRow, stgs):
         # create the edit and then the combobox with its buddy edit
         stgs.setArrayIndex(repRow)
@@ -474,8 +474,8 @@ class findPanel(QWidget):
     def docHasChanged(self):
         self.setFullRange() # sets rangeTop and rangeBot
         self.inSelSwitch.setChecked(False)
-        
-    # The heart of search, pulled out for use from replace-all (and 
+
+    # The heart of search, pulled out for use from replace-all (and
     # potentially, but not yet, from pqNotes and pqHelp). Takes a
     # textDocument, a starting textcursor based on that document. Returns a
     # find textCursor whose selection is null if no-match, else selects the
@@ -519,7 +519,7 @@ class findPanel(QWidget):
                 # apply the regex to that text as a QString, getting an index
                 # to the left end of a hit, and also priming self.regex.cap(n)
                 # for replacements.
-                if backward : 
+                if backward :
                     fpos = self.regexp.lastIndexIn(workTc.selectedText())
                 else:
                     fpos = self.regexp.indexIn(workTc.selectedText())
@@ -541,7 +541,7 @@ class findPanel(QWidget):
                 return True # match inside range
                 # else - not in rage, fall through and return false
         return False # null selection: no hit
-    
+
     # Called when any of the search buttons is clicked or when the relevant
     # key events are seen. Button number passed is 0 for next, 1 for prior,
     # 2 for first, 3 for last. Hence odd=backward, >1 means limit.
@@ -605,10 +605,10 @@ class findPanel(QWidget):
     # and-next, and-prior, and rep-all switches. When any Replace button is
     # clicked, these values are sampled by the lambda that is the signal slot,
     # so repno is the button number 1/2/3, and the next three args are
-    # the checked status of the interface buttons. 
+    # the checked status of the interface buttons.
     #
     # When called from editKeyPress below, representing an edit keystroke,
-    # the args are always 1, f/t, f/t, false. 
+    # the args are always 1, f/t, f/t, false.
     #
     # This code also depends on self.regexSwitch, self.regexp, and the
     # replace[repno] text field.
@@ -626,7 +626,7 @@ class findPanel(QWidget):
     # after any replace that contained a newline.
     #
     # See also comments in the Prolog about regex replace.
-    
+
     def doReplace(self,repno,andNext=False,andPrior=False, doAll=False):
         tc = IMC.editWidget.textCursor() # reference to the edit cursor
         p = tc.selectionStart()
@@ -662,7 +662,7 @@ class findPanel(QWidget):
             # QTextEdit leaves the cursor at the end of insert;
             # "drag" backward to reselect the inserted text
             tc.setPosition(p,QTextCursor.KeepAnchor)
-            if andNext : 
+            if andNext :
                 self.doSearch(0) # Next button
             if andPrior :
                 self.doSearch(1) # Prior button
@@ -740,7 +740,7 @@ class findPanel(QWidget):
             self.doReplace(1, False, True, False)
         elif kkey == IMC.ctl_F : # ^f means focus to Find panel
             if not self.isVisible() :
-                IMC.mainWindow.makeMyPanelCurrent(self) 
+                IMC.mainWindow.makeMyPanelCurrent(self)
             self.findText.setFocus() # get keyboard focus to find string
             self.findText.selectAll() # and select what's there for EZ input
         elif kkey == IMC.ctl_shft_F : # ^F means focus to find with selection
@@ -755,12 +755,12 @@ class findPanel(QWidget):
             self.findText.setText(qs)
             if not self.isVisible() :
                 IMC.mainWindow.makeMyPanelCurrent(self)
-            self.findText.setFocus() # get keyboard focus to the find string    
+            self.findText.setFocus() # get keyboard focus to the find string
         else:
             pqMsgs.beep() # should not occur
 
     # public method for use by the Char and Word census panels. When a
-    # row is double-clicked, throw the char/word into the find text and 
+    # row is double-clicked, throw the char/word into the find text and
     # bring the find panel to the front. Char panel sometimes passes a
     # replace string, and Words sometimes wants a regex search.
     # Both want Respect Case on, and Word wants Whole Word set.
@@ -777,7 +777,7 @@ class findPanel(QWidget):
         self.findText.userLoad = True # don't save it in the pushdown list
         self.doSearch(2) # do the First search for the word.
 
-    # Slot for the clicked signal of a userButton. The button number is 
+    # Slot for the clicked signal of a userButton. The button number is
     # passed as an argument via the actual slot, which is a lambda.
     # Move the dictionary fields from the button into the find dialog fields,
     # Clear any controls not defined in the button.
@@ -815,7 +815,7 @@ class findPanel(QWidget):
         if 'rep3' in d :
             self.repEdits[3].setText(QString(d['rep3']))
             self.repEdits[3].userLoad = True
-    
+
     # Slot for the userButtonLoad signal coming out of a userButton when
     # it is right-clicked. Query the user for a new label for the button
     # and if Cancel is not chosen, load the label and all find data into
@@ -876,7 +876,7 @@ class findPanel(QWidget):
             stgs.setArrayIndex(i)
             stgs.setValue("dict",
                 QString(quote(self.userButtons[i].udict.__repr__())) )
-        stgs.endArray() 
+        stgs.endArray()
         stgs.endGroup() # end of Find/xxx group
 
     # Method for pqMain to call to cause saving of userbuttons.
@@ -971,7 +971,7 @@ class recentStrings(QComboBox):
         else:
             self.list = QStringList() # clear our list of items
         self.connect(self, SIGNAL("activated(QString)"), self.buddy.setText)
-    
+
     # Called when our associated lineEdit is used, e.g. Next or Repl button.
     # Such use might happen multiple times without changing the string, so
     # bail quick if we've seen this one. When the string is not the same as
@@ -984,15 +984,15 @@ class recentStrings(QComboBox):
             # look for tx in the current list, if we find it, delete it
             # so we can put it at the front again. n.b. range(0) is a null list.
             for i in range(self.list.count()):
-                if 0 == tx.compare(self.list[i]): 
+                if 0 == tx.compare(self.list[i]):
                     self.list.removeAt(i) # get rid of it
                     break
-            # we are sure tx is not now in the list, so prepend it. If that 
+            # we are sure tx is not now in the list, so prepend it. If that
             # pushes the count past max, the oldest is dropped.
             self.list.prepend(tx)
             self.clear() # empty the displayed list
             self.addItems(self.list) # refresh displayed list
-    
+
 # We subclass LineEdit to make our find and replace text widgets.
 # It has some special features compared to the usual LineEdit.
 # One feature is that it has a custom validator whose job is to
@@ -1025,7 +1025,7 @@ class findRepValidator(QValidator) :
         dbg = unicode(qs)
         # return(qs, QValidator.Acceptable, pos+n1+n2) # Python3 API
         return (QValidator.Acceptable, pos+n1+n2)
-    
+
 
 class findRepEdit(QLineEdit):
     def __init__(self, parent=None):
@@ -1034,13 +1034,13 @@ class findRepEdit(QLineEdit):
         self.setAutoFillBackground(True) # allow changing bg color
         self.userLoad = False # not loaded from a userButton
         self.setValidator(findRepValidator())
-    
+
     # Change the background color of this lineEdit
     def setBackground(self,color):
         palette = self.palette()
         palette.setColor(QPalette.Normal,QPalette.Base,QColor(color))
         self.setPalette(palette)
-    
+
     # these lineEdits, same as edit and notes panels, allow changing
     # font size though over a smaller range
     def keyPressEvent(self, event):
@@ -1124,11 +1124,11 @@ class userButton(QPushButton):
         try:
             # validate dictrepr as being strictly a literal dictionary: ast
             # will throw ValueError if it isn't a good literal and only a literal,
-            # thus avoiding possible code injection. The compiler chokes on 
+            # thus avoiding possible code injection. The compiler chokes on
             # literal tabs so replace tabs with spaces.
             okdict = ast.literal_eval(dictrepr.replace(u'\t',u' '))
             # now make sure it was a dict not a list or whatever
-            if not isinstance(okdict,dict) : 
+            if not isinstance(okdict,dict) :
                 raise ValueError
             # and make sure it has a label key
             if not 'label' in okdict :
@@ -1142,7 +1142,7 @@ class userButton(QPushButton):
         except StandardError:
             # some error raised, go to minimum default
             self.udict = { 'label':'(empty)', 'tooltip':'Undefined button' }
-    
+
 if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt,QSettings)
@@ -1157,7 +1157,7 @@ if __name__ == "__main__":
     #ubutt = userButton('{\'x\':\'y\'}') # good dict no label
     #ubutt = userButton("{ 'label':99 }") # label not a string
     #ubutt = userButton("{ 'label':'what', 'word':True }")
-    
+
     import pqMsgs
     pqMsgs.IMC = IMC
     IMC.editWidget = QPlainTextEdit()

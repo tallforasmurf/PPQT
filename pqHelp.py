@@ -93,7 +93,7 @@ class helpDisplay(QWebView):
 	    helpStream.setCodec('ISO8859-1')
 	    self.HTMLstring = helpStream.readAll()
 	self.setHtml(self.HTMLstring)
-	
+
     # Re-implement the parent's keyPressEvent in order to provide a simple
     # find function and font-zoom from ctl-plus/minus. We start the view at
     # 16 points and textSizeMultiplier of 1.0. Each time the user hits ctl-minus
