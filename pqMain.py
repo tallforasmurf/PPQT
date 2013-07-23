@@ -324,6 +324,8 @@ class MainWindow(QMainWindow):
                 self.buttonLoad, None, "Read user-defined buttons in Find Panel")
         fileButtonSaveAction = self.createAction("Save Find buttons...", None,
                 self.buttonSave, None, "Save user-defined buttons in Find Panel")
+        fileExportGuiguts = self.createAction("Export to Guiguts", None,
+                self.exportGuiguts, None, "Create a Guiguts .bin file")
         fileQuitAction = self.createAction("&Quit", None, self.close,
                 QKeySequence.Quit, "Close the application")
         # -----------------------------------------------------------------
@@ -341,7 +343,9 @@ class MainWindow(QMainWindow):
         # actions following the open with encoding submenu
         self.fileMenuActions2 = (fileSaveAction, fileSaveAsAction,
                                  fileScannosAction, fileButtonLoadAction,
-                                 fileButtonSaveAction, None, fileQuitAction)
+                                 fileButtonSaveAction, None,
+                                 fileExportGuiguts,
+                                 None, fileQuitAction)
         # Recall our list of recently-opened files from saved settings.
         self.recentFiles = IMC.settings.value("main/recentFiles",
                             QVariant(QVariant.StringList)).toStringList()
@@ -1132,6 +1136,77 @@ class MainWindow(QMainWindow):
                 fh.close()
                 # after successful use, update start path for saving
                 self.buttonDirPath = bfInfo.path()
+
+    # -----------------------------------------------------------------
+    # File> Export to Guiguts. Create Guiguts's .bin file, so the
+    # project can be loaded by Guiguts.
+    def exportGuiguts(self):
+        doc = IMC.editWidget.document()
+
+        with open(unicode(IMC.bookPath) + u'.bin', "w") as f:
+
+            # Export page numbers -- This is the most important information
+            print("%::pagenumbers = (", file=f)
+
+            for entry in IMC.pageTable:
+
+                cursor = entry[0]
+                line = doc.findBlock(cursor.position())
+
+                # png number
+                string = " 'Pg" + entry[1] + "' => {"
+
+                # line number and offset
+                string += " 'offset' => '{0}.{1}',".format(line.blockNumber()+1, cursor.positionInBlock())
+                string += " 'label' => '',"
+
+                # Style
+                if entry[4] == IMC.FolioFormatArabic:
+                    string += " 'style' => 'Arabic',"
+                elif entry[4] == IMC.FolioFormatUCRom:
+                    string += " 'style' => 'Roman',"
+                elif entry[4] == IMC.FolioFormatLCRom:
+                    string += " 'style' => 'Roman',"
+                else:
+                    # Defaults to Arabic.
+                    string += " 'style' => 'Arabic',"
+
+                # Action
+                if entry[3] == IMC.FolioRuleAdd1:
+                    string += " 'action' => '+1',"
+                elif entry[3] == IMC.FolioRuleSet:
+                    string += " 'action' => 'Start @',"
+                elif entry[3] == IMC.FolioRuleSkip:
+                    string += " 'action' => 'No Count',"
+                else:
+                    # Defaults to skip
+                    string += " 'action' => 'No Count',"
+
+                # Base page number - Set if start number, else keep clear
+                if entry[3] == IMC.FolioRuleSet:
+                    string += " 'base' => '" + str(entry[5]) + "'},"
+                else:
+                    string += " 'base' => ''},"
+
+                print(string.encode('utf8'), file=f)
+
+            print(");", file=f)
+
+            # Export Proofers. There seem to be an issue left if the
+            # proofer has unicode characters in its name (such as
+            # u'some\u2002proofer'), in which case Guiguts will
+            # display as garbage (latin1).
+            for entry in IMC.pageTable:
+                proofers = entry[2].split('\\')
+                # First entry is empty
+                for i, proofer in enumerate(proofers[1:], 1):
+                    string = "$::proofers{{'{0}'}}[{1}] = '{2}';".format(unicode(entry[1]), i, proofer)
+                    print(string.encode('utf8'), file=f)
+
+            # Let guiguts find the rest (such as the pngs path).
+            # Close the perl file
+            print("1;", file=f)
+            f.close()
 
     # -----------------------------------------------------------------
     # reimplement QWidget::closeEvent() to check for a dirty file and save it.
