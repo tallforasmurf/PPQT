@@ -240,11 +240,11 @@ class lineLabel(QWidget):
         # Make a layout frame
         hb = QHBoxLayout()
         lnumlab = QLabel(u"line")
-        lnumlab.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        lnumlab.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         hb.addWidget(lnumlab)
         # Create our line number widget
         self.lnum = QLineEdit()
-        self.lnum.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        self.lnum.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         # allow up to 5 digits. Editing a doc with more than 99K lines? Good luck!
         val = QIntValidator()
         val.setRange(0,99999)
@@ -258,12 +258,12 @@ class lineLabel(QWidget):
         self.connect(self.lnum, SIGNAL("returnPressed()"), self.moveCursor)
         # Create a column-number widget
         self.cnum = QLabel()
-        self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         pxs = int(pxs / 2) # 3 digits wide
         self.cnum.setMaximumWidth(pxs)
         self.cnum.setMinimumWidth(pxs)
         cnumlab = QLabel(u" col ")
-        cnumlab.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        cnumlab.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         hb.addWidget(cnumlab)
         hb.addWidget(self.cnum)
         hb.addStretch()
