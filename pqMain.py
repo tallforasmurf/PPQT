@@ -838,7 +838,7 @@ class MainWindow(QMainWindow):
         startdir = (QString(".") if IMC.bookPath.isEmpty() else IMC.bookPath)
         msg = "PPQT - choose a book file to open"
         if encoding is not None :
-            msg = "PPQT - choose book encoded {0} to open".format(encoding)
+            msg = "PPQT - choose a {0} encoded book to open".format(encoding)
         bookname = QFileDialog.getOpenFileName(self,msg,startdir)
         if not bookname.isEmpty(): # user selected a file, we are "go"
             self.loadFile(bookname, encoding)
