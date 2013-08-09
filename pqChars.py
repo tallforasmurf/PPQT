@@ -74,8 +74,9 @@ import unicodedata
 # The data served is derived from the character census prepared as
 # metadata in the editor.
 class myTableModel(QAbstractTableModel):
-    def __init__(self, parent=None):
+    def __init__(self, view=None, parent=None):
         super(myTableModel, self).__init__(parent)
+        self.view = view # save ref to the tableView
         # The header texts for the columns
         self.headerDict = { 0:"Glyph", 1:"Value",
                             2:"Count", 3:"Entity", 4:"Unicode Category",
@@ -130,10 +131,10 @@ class myTableModel(QAbstractTableModel):
         return QVariant() # we don't do that
 
     def data(self, index, role ):
+        (qs,count,flag) = IMC.charCensus.get(index.row())
+        ui = qs.at(0).unicode() # gets an integer
+        uu = unicode(qs)[0] # gets a uchar        
         if role == Qt.DisplayRole : # wants actual data
-            (qs,count,flag) = IMC.charCensus.get(index.row())
-            ui = qs.at(0).unicode() # gets an integer
-            uu = unicode(qs)[0] # gets a uchar
             if 0 == index.column():
                 return qs
             elif 1 == index.column():
@@ -147,7 +148,7 @@ class myTableModel(QAbstractTableModel):
                     return QString("&#{0:d};".format(ui))
             elif 4 == index.column():
                 return QString(self.catDict[int(flag)])
-            else:
+            else: # assuming column is 5, unicode name
                 try:
                     return QString(unicodedata.name(uu).lower().format(ui))
                 except ValueError:
@@ -155,7 +156,14 @@ class myTableModel(QAbstractTableModel):
         elif (role == Qt.TextAlignmentRole) :
             return self.alignDict[index.column()]
         elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
-            return QString(self.tipDict[index.column()])
+            if index.column() < 5 :
+                return QString(self.tipDict[index.column()])
+            # column 5, tooltip is name string because a narrow column
+            # may not expose the entire name any other way.
+            try:
+                return QString(unicodedata.name(uu).lower().format(ui))
+            except ValueError:
+                return QString("unknown character")
         # don't support other roles
         return QVariant()
 
@@ -197,9 +205,10 @@ class charsPanel(QWidget):
         self.view.setWordWrap(False)
         self.view.setAlternatingRowColors(True)
         mainLayout.addWidget(self.view,1)
-        # Set up the table model/view. Interpose a sort filter proxy
-        # between the view and the model.
-        self.model = myTableModel()
+        # Set up the table model/view. Pass to the model a pointer
+        # to the view so it can query the row under the mouse.
+        self.model = myTableModel(view=self.view)
+        #Interpose a sort filter proxy between the view and the model.
         self.proxy = mySortFilterProxy(self)
         self.proxy.setSourceModel(self.model)
         self.view.setModel(self.proxy)
