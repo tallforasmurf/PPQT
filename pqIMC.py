@@ -49,7 +49,7 @@ class tricorder():
         # Document/file status variables: more than a simple "dirty" flag.
         # Just a brute count of calls to the textChanged signal slot.
         self.editCounter = 0
-        # needSpellCheck when a word census has been done, or when a 
+        # needSpellCheck when a word census has been done, or when a
         # different main dictionary is selected. Cleared when a spellcheck is
         # done, e.g. from the Refresh button in the Word panel.
         self.needSpellCheck = False
@@ -83,7 +83,7 @@ class tricorder():
 
         # These values are used to encode folio controls for the
         # Page/folio table. Initialized in pqEdit when opening a new file,
-        # used in pqWord and (eventually) in html conversion.        
+        # used in pqWord and (eventually) in html conversion.
         self.FolioFormatArabic = 0x00
         self.FolioFormatUCRom = 0x01
         self.FolioFormatLCRom = 0x02
@@ -108,7 +108,7 @@ class tricorder():
         self.badWordList = None # bad words
         self.wordCensus = None # census of words (tokens actually)
         self.charCensus = None # census of characters
-        self.pageTable = None # list of page separators 
+        self.pageTable = None # list of page separators
         self.currentPageNumber = None # qstring e.g. "002" of png file
         self.editWidget = None # main QPlainTextEdit set up in pqMain
         self.spellCheck = None # spellcheck object from pqSpell
@@ -480,7 +480,7 @@ u'\u25CA' : u'loz', # lozenge
 u'\u2660' : u'spades', # black spade suit[f]
 u'\u2663' : u'clubs', # black club suit (= shamrock)[f]
 u'\u2665' : u'hearts', # black heart suit (= valentine)[f]
-u'\u2666' : u'diams' # black diamond suit[f]            
+u'\u2666' : u'diams' # black diamond suit[f]
                         }
         # Identify the platform and operating system, in case we find a reason to care
         self.version_pyqt = PYQT_VERSION_STR # python string eg '4.9.5'

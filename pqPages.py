@@ -44,7 +44,7 @@ each member having:
     IMC.FolioFormatArabic, IMC.FolioFormatUCRom, IMC.FolioFormatLCRom
     Question: do we need UCAlpha/LCAlpha formats?
 5: the current folio value
-As initially created (when a book is first read), every folio 
+As initially created (when a book is first read), every folio
 tuple is Add1, Arabic, and a sequential number.
 
 The table is implemented using a Qt AbstractTableView, and AbstractTableModel.
@@ -56,7 +56,7 @@ Columns are presented as follows:
 1: Folio format: Arabic ROMAN roman
 2: Folio action: Add 1 Skip Set-to
 3: Folio value
-4: proofer string 
+4: proofer string
 
 The AbstractTableModel is subclassed to provide user interactions:
 * Doubleclicking any row causes the editor to reposition to that page
@@ -75,7 +75,7 @@ and used to warn the model of impending changes in metadata.
 
 from PyQt4.QtCore import (Qt,
                           QAbstractTableModel,QModelIndex,
-                          QChar, QString, 
+                          QChar, QString,
                           QVariant,
                           SIGNAL)
 from PyQt4.QtGui import (
@@ -129,7 +129,7 @@ def toRoman(n,lc):
     return qs
 
 # Implement a concrete table model by subclassing Abstract Table Model.
-# The data served is derived from the page separator table prepared as 
+# The data served is derived from the page separator table prepared as
 # metadata in the editor.
 class myTableModel(QAbstractTableModel):
     def __init__(self, parent=None):
@@ -137,7 +137,7 @@ class myTableModel(QAbstractTableModel):
         # The header texts for the columns
         self.headerDict = { 0:"Scan#", 1:"Format", 2:"Action", 3:"Folio", 4:"Proofers" }
         # the text alignments for the columns
-        self.alignDict = { 0:Qt.AlignRight, 1: Qt.AlignLeft, 
+        self.alignDict = { 0:Qt.AlignRight, 1: Qt.AlignLeft,
                            2: Qt.AlignLeft, 3: Qt.AlignRight, 4: Qt.AlignLeft }
         # The values for tool/status tips for data and headers
         self.tipDict = { 0: "Scan image (file) number",
@@ -148,7 +148,7 @@ class myTableModel(QAbstractTableModel):
         # translation of folio actions and formats to text
         self.lastRow = -1
         self.lastTuple = (None,None,None,None,None,None)
-        
+
     def columnCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
         return 5
@@ -158,11 +158,11 @@ class myTableModel(QAbstractTableModel):
         if (index.column() >=1) and (index.column() <= 3) :
             f |= Qt.ItemIsEditable # cols 1-3 editable
         return f
-    
+
     def rowCount(self,index):
         if index.isValid() : return 0 # we don't have a tree here
         return len(IMC.pageTable) # initially 0
-    
+
     def headerData(self, col, axis, role):
         if (axis == Qt.Horizontal) and (col >= 0):
             if role == Qt.DisplayRole : # wants actual text
@@ -170,7 +170,7 @@ class myTableModel(QAbstractTableModel):
             elif (role == Qt.ToolTipRole) or (role == Qt.StatusTipRole) :
                 return QString(self.tipDict[col])
         return QVariant() # we don't do that
-    
+
     def data(self, index, role ):
         if role == Qt.DisplayRole : # wants actual data
             if index.row() != self.lastRow :
@@ -322,13 +322,13 @@ class pagesPanel(QWidget):
     # passing an index. If the click is in column 0, the scan number,
     # get the row; use it to get a text cursor from the page table
     # and make that the editor's cursor, thus moving to the top of that page.
-    # Double-click on cols 1-3 initiates editing and maybe someday a 
+    # Double-click on cols 1-3 initiates editing and maybe someday a
     # doubleclick on column 5 will do something with the proofer info.
     def goToRow(self,index):
         if index.column() == 0:
             tc = IMC.pageTable[index.row()][0]
             IMC.editWidget.setTextCursor(tc)
-    
+
     # This slot receives the main window's docWillChange signal.
     # It comes with a file path but we can ignore that.
     def docWillChange(self):
@@ -350,7 +350,7 @@ class pagesPanel(QWidget):
         hdr.resizeSection(1,pix)
         hdr.resizeSection(2,pix)
         self.view.resizeColumnToContents(4)
-        
+
     # This slot receives the main window's docHasChanged signal.
     # Let the table view populate with all-new metadata (or empty
     # data if the command was File>New).
@@ -362,7 +362,7 @@ class pagesPanel(QWidget):
     # and get user go-ahead then insert the given text at the head of
     # every page.
     def insertMarkers(self):
-        # Copy the text and if it is empty, complain and exit. 
+        # Copy the text and if it is empty, complain and exit.
         qi = QString(self.insertText.text())
         if qi.isEmpty() :
             pqMsgs.warningMsg("No insert text specified")

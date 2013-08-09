@@ -81,7 +81,7 @@ class flowPanel(QWidget):
         # Create all subwidgets and lay them out:
         # Per the Qt doc, we need to create a layout and add it to its parent
         # layout before we populate it. So we create layouts with local names,
-        # to go out of scope when we exit, but the chain of parent-child refs 
+        # to go out of scope when we exit, but the chain of parent-child refs
         # keeps them alive. The organization is (See below for more notes)
         # mainLayout is a VBox with a vertical stack of:
         #   indentsVbox
@@ -140,7 +140,7 @@ class flowPanel(QWidget):
         bqiGBox.setLayout(bqiHBox)
         bqiHBox.addWidget(QLabel("First:"),0)
         self.bqIndent = [None,None,None]
-        self.bqIndent[0] = self.makeSpin(0,35,4,u"bqFirst") 
+        self.bqIndent[0] = self.makeSpin(0,35,4,u"bqFirst")
         bqiHBox.addWidget(self.bqIndent[0],0)
         bqiHBox.addWidget(QLabel("Left:"),0)
         self.bqIndent[1] = self.makeSpin(0,35,4,u"bqLeft")
@@ -287,7 +287,7 @@ class flowPanel(QWidget):
         htmlHBox.addWidget(self.htmlSelSwitch,0)
         self.htmlDocSwitch = QPushButton("Document")
         htmlHBox.addWidget(self.htmlDocSwitch,0)
-        htmlHBox.addStretch(1)   # compress to the left     
+        htmlHBox.addStretch(1)   # compress to the left
         mainLayout.addStretch(1) # make compact to the top
         self.connect(self.reflowSelSwitch, SIGNAL("clicked()"),self.reflowSelection)
         self.connect(self.reflowDocSwitch, SIGNAL("clicked()"),self.reflowDocument)
@@ -322,7 +322,7 @@ class flowPanel(QWidget):
     # This slot gets called on any change to the "count markup as"
     # button groups and refreshes the itbosc list which is used during reflow.
     # self.itbosc is a dict giving the logical widths for i, b and sc markup,
-    # as 0, 1, or as-is (2). 
+    # as 0, 1, or as-is (2).
     def updateItBoSc(self):
         self.itbosc['i'] = 0 if self.itCounts[0].isChecked() else \
             1 if self.itCounts[1].isChecked() else 2
@@ -553,7 +553,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                 flowText = flowText.prepend(QString(u' '*indentAmount))
                 flowText = flowText.append(IMC.QtLineDelim)
                 # Remove any pagebreak marker and note correct pagebreak positions
-                unmarkPageBreaks(tc,flowText,listOfBreaks)		
+                unmarkPageBreaks(tc,flowText,listOfBreaks)
                 # put the text back in the document replacing the existing line,
                 # this horks any pagebreak cursor that fell in that line.
                 tc.insertText(flowText)
@@ -622,7 +622,7 @@ The reflow work unit produced by parseText below is a dict with these members:
     # B, count of blank lines skipped ahead of this line/para
     # K, poem line number when seen
     # Most of these status items get copied into the work units we produce.
-    # 
+    #
     # We permit nesting markups pretty much arbitrarily (nothing can nest
     # inside /X or /T however). In truth only the nest of /P or /R inside
     # /Q block quote is really likely. To keep track of nesting we push the
@@ -632,7 +632,7 @@ The reflow work unit produced by parseText below is a dict with these members:
         PSW = {'S': True, 'Z':None, 'M':' ', 'P':True, 'F':0, 'L':0, 'R':0, 'W':72, 'B':0}
         PSW['W'] = self.maxParaWidth.value()
         stack = []
-        # We recognize the start of markup with this RE    
+        # We recognize the start of markup with this RE
         markupRE = QRegExp(u'^/(P|Q|\\*|C|X|F|U|R|T)')
         # We recognize a poem line number with this RE: at least 2 spaces,
         # then decimal digits followed by the end of the line. Note: because
@@ -663,7 +663,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                 else:
                     # We are looking for work and we found a non-empty line!
                     # But: is it text, or a markup?
-                    if 0 == markupRE.indexIn(qs):		    
+                    if 0 == markupRE.indexIn(qs):
                         # We have found a markup! Save our current state.
                         # Note that PSW['S'] is True and stays that way
                         stack.append(PSW.copy())
@@ -724,7 +724,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                                 if thisBlock.text().startsWith(PSW['Z']) :
                                     PSW = stack.pop()
                                     PSW['B'] = 0
-                                    break  
+                                    break
                     # markupRE did not see a match, so not starting a markup.
                     # Perhaps we are ending one?
                     elif PSW['Z'] is not None and qs.startsWith(PSW['Z']):
@@ -736,7 +736,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                         PSW['B'] = 0
                     else:
                         # Neither open nor close markup, so: a paragraph
-                        if PSW['P'] : 
+                        if PSW['P'] :
                             # collecting by paras, note start of one
                             firstBlockNumber = thisBlockNumber
                             PSW['S'] = False # go to other half of the if-stack
@@ -745,7 +745,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                             # create a work unit to describe this line
                             u = self.makeUnit('P',PSW,thisBlockNumber,thisBlockNumber)
                             lineText = unicode(qs) # get text to python-land
-                            if PSW['M'] == u'C' : 
+                            if PSW['M'] == u'C' :
                                 # calculate indent for centered line, at least 2
                                 # (may be reduced later)
                                 lineIndent = ( self.maxParaWidth.value()-len(lineText.strip()) ) /2
@@ -755,7 +755,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                                 # calculate indent for right-aligned line
                                 lineIndent = max(0, (self.maxParaWidth.value()-len(lineText.strip()))-PSW['R'])
                                 u['F'] = lineIndent
-                            elif PSW['M'] == u'P' or PSW['M'] == u'*': 
+                            elif PSW['M'] == u'P' or PSW['M'] == u'*':
                                 # calculate indent for P or *: existing leading
                                 # spaces plus F (possibly adjusted later)
                                 lineIndent = len(lineText)-len(lineText.lstrip())
@@ -768,7 +768,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                                 lineIndent = 0
                                 u['F'] = 0
                             PSW['W'] = min(lineIndent,PSW['W']) # note shortest indent
-                            unitList.append(u)			    
+                            unitList.append(u)
                             PSW['B'] = 0
             else: # PSW['S'] is false, ergo we are collecting lines of a
                 # paragraph. Is this line empty (ending a para)?
@@ -894,7 +894,7 @@ The reflow work unit produced by parseText below is a dict with these members:
     include the line-delim at the end of the block. We include our own
     line-delim inserting bookendA, so <p>, <li> etc go on a line alone,
     and also on bookendZ, which goes after the existing line-delim and
-    gets one of its own as well, thus <p>\\n ... text \\N</p>\\n where 
+    gets one of its own as well, thus <p>\\n ... text \\N</p>\\n where
     \\N represents the existing line-delim.
     '''
     def theRealHTML(self,topBlock,endBlock):
@@ -920,7 +920,7 @@ The reflow work unit produced by parseText below is a dict with these members:
         # preceded by 4 empty lines and followed by at least 1 empty line.
         # A Subhead is preceded by 2 blank lines and followed by 1, and does not
         # immediately follow a Chapter head. This avoids the ambiguity implicit
-        # in the Formatting Guidelines definition; however, it also means you 
+        # in the Formatting Guidelines definition; however, it also means you
         # cannot code a Subhead immediately following a Chapter title. Something
         # else has to come between them, or fix it by hand later.
         #
@@ -949,7 +949,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                 if unit['T'] == '/' :
                     m -= 1 # exiting a markup, maybe start checking again
             u += 1
-        
+
         # In order to have a single undo/redo operation we have to use a
         # single QTextCursor, namely this one:
         tc = QTextCursor(IMC.editWidget.textCursor())
@@ -1016,7 +1016,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                             )
                             tc.insertText(bookendLA)
                     bA = QString(bA)
-                    # Minimal check for user error of re-marking, and 
+                    # Minimal check for user error of re-marking, and
                     # over-marking divs (spans are ok)
                     if not (bA.size() and unitBlockA.text().startsWith(bA) ) \
                        and not unitBlockA.text().startsWith(qdiva) \
@@ -1030,7 +1030,7 @@ The reflow work unit produced by parseText below is a dict with these members:
                         tc.insertText(bZ)
                         tc.setPosition(unitBlockA.position())
                         tc.insertText(bA)
-                # end of unit type P bookending all paras not in C/*/X markup    
+                # end of unit type P bookending all paras not in C/*/X markup
             elif unit['T'] == '/' :
                 # this is an end-markup line such as Q/, so we are entering a
                 # new markup. Push the current markup code and set the new.
@@ -1043,13 +1043,13 @@ The reflow work unit produced by parseText below is a dict with these members:
                 mzs.append(IMC.QtLineDelim)
                 block_len = unitBlockA.length() - (0 if unitBlockA != doc.lastBlock() else 1)
                 tc.setPosition(unitBlockA.position() + block_len) # click
-                tc.setPosition(unitBlockA.position(),QTextCursor.KeepAnchor) # drag 
+                tc.setPosition(unitBlockA.position(),QTextCursor.KeepAnchor) # drag
                 tc.insertText(mzs)
                 # Note unit at the bottom of a table markup
                 if markupCode == 'T':
                     tableBottom = u
             else : # unit['T'] = 'M' we would assert
-                # this is a start-markup such as /Q or /T. If the latter, 
+                # this is a start-markup such as /Q or /T. If the latter,
                 # process it.
                 if markupCode == 'T':
                     pqTable.tableHTML(tc,doc,unitList[u : tableBottom+1])
@@ -1279,7 +1279,7 @@ def optimalWrap(flowText,unit,optimum,maximum,itbosc):
     # does not use this convention (too bad!) so we can't detect end of a
     # sentence and accordingly the related cost calculations can't be done.
 
-    T = [] 
+    T = []
     W = []
     grossLen = 0
     for (tok,ll) in tokGen(flowText,itbosc) :
@@ -1297,8 +1297,8 @@ def optimalWrap(flowText,unit,optimum,maximum,itbosc):
     # relative to it, and this difference is set up in T[0] and W[0]
     firstIndentDiff = unit['F'] - unit['L']
     if (N == 1) or (LMaximum >= (grossLen + (N - 1) + unit['F'])) :
-        # There is but one token (any length), or the sum of tokens fits in 
-        # the first line, so just put it all together now. 
+        # There is but one token (any length), or the sum of tokens fits in
+        # the first line, so just put it all together now.
         flowText = QString(u' '*unit['F'])
         for tok in T :
             flowText.append(tok)
@@ -1377,7 +1377,7 @@ def optimalWrap(flowText,unit,optimum,maximum,itbosc):
         # size of the number and its preceding one space.
         a = poemLastLineRE.cap(1).size() # length of text preceding number
         z = poemLastLineRE.cap(2).size() # length of space+nnn
-        available = LMaximum - a - z 
+        available = LMaximum - a - z
         if available < 1 :
             # not room to put in space, space, line number
             pqMsgs.warningMsg(

@@ -35,7 +35,7 @@ Misc message services factored out of various modules
 
 from PyQt4.QtCore import (
     Qt,
-    QString, 
+    QString,
     QStringList,
     SIGNAL, SLOT
 )
@@ -240,11 +240,11 @@ class lineLabel(QWidget):
         # Make a layout frame
         hb = QHBoxLayout()
         lnumlab = QLabel(u"line")
-        lnumlab.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        lnumlab.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         hb.addWidget(lnumlab)
         # Create our line number widget
         self.lnum = QLineEdit()
-        self.lnum.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        self.lnum.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         # allow up to 5 digits. Editing a doc with more than 99K lines? Good luck!
         val = QIntValidator()
         val.setRange(0,99999)
@@ -258,12 +258,12 @@ class lineLabel(QWidget):
         self.connect(self.lnum, SIGNAL("returnPressed()"), self.moveCursor)
         # Create a column-number widget
         self.cnum = QLabel()
-        self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         pxs = int(pxs / 2) # 3 digits wide
         self.cnum.setMaximumWidth(pxs)
         self.cnum.setMinimumWidth(pxs)
         cnumlab = QLabel(u" col ")
-        cnumlab.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+        cnumlab.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         hb.addWidget(cnumlab)
         hb.addWidget(self.cnum)
         hb.addStretch()
@@ -293,7 +293,7 @@ class lineLabel(QWidget):
         bn = tc.blockNumber()
         self.lnum.setText(QString(repr(bn)))
         cn = tc.positionInBlock()
-        self.cnum.setText(QString(repr(cn)))	
+        self.cnum.setText(QString(repr(cn)))
 
 # debugging function to display a keyevent on the console
 from PyQt4.QtCore import (QEvent)
@@ -318,7 +318,7 @@ import time
 time_now = time.clock() # moment module is imported
 
 # Routine called during initialization (or anytime really) to
-# note something with a timestamp on standard output. 
+# note something with a timestamp on standard output.
 # In theory one could take a command-line argument --log-level or
 # such and control this output at run-time.
 def noteEvent(description) :
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     else: print("cancel")
     (s, b) = getStringMsg("TITLE STRING", "what you should enter", "prepared")
     if b : print( "got "+s)
-    else: print("cancel")    
+    else: print("cancel")
     noteEvent("Whatever...")
     #ew = QTextEdit()
     #(b,qs) = getFindMsg(ew)

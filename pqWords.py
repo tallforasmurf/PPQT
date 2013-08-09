@@ -33,7 +33,7 @@ __license__ = '''
 Implement the Word Census panel. At the top a row with a Refresh button on
 the left, a case-sensitivity checkbox next, and a filter combobox on the right.
 Below, a table with three columns:
-* Word, the text of the word 
+* Word, the text of the word
 * Count, the number times it appears in the document
 * Features, the various flag values translated to letters:
     - WordHasUpper: A or dash
@@ -47,7 +47,7 @@ The table is implemented using a Qt AbstractTableView, SortFilterProxyModel,
 and AbstractTableModel. The AbstractTableModel is subclassed to implement
 fetching data from the IMC.wordCensus list. The AbstractTableModel is used
 as-is, but the SortFilterProxyModel is subclassed to provide the filtering
-mechanism. Filters for various flag combinations are implemented as 
+mechanism. Filters for various flag combinations are implemented as
 lambda expressions on the flag value of the word. When the user selects a
 row in the popup, we change the filter lambda and reset the model, forcing
 all rows to be re-fetched.
@@ -59,7 +59,7 @@ import pqMsgs
 
 from PyQt4.QtCore import (Qt,
                           QAbstractTableModel,QModelIndex,
-                          QChar, QString, 
+                          QChar, QString,
                           QVariant,
                           SIGNAL)
 from PyQt4.QtGui import (
@@ -182,7 +182,7 @@ class myTableView(QTableView):
     def __init__(self, parent=None):
         super(myTableView, self).__init__(parent)
         # save ref to panel widget
-        self.panelRef = parent 
+        self.panelRef = parent
         self.setFocusPolicy(Qt.ClickFocus)
         # set up stuff used in our context menu
         self.contextIndex = QModelIndex()
@@ -192,7 +192,7 @@ class myTableView(QTableView):
         har1Action = self.contextMenu.addAction("&First harmonic")
         har2Action = self.contextMenu.addAction("&Second harmonic")
         self.connect(addAction, SIGNAL("triggered()"), self.addToGW)
-        self.connect(simAction, SIGNAL("triggered()"), self.similarWords) 
+        self.connect(simAction, SIGNAL("triggered()"), self.similarWords)
         self.connect(har1Action, SIGNAL("triggered()"), self.firstHarmonic)
         self.connect(har2Action, SIGNAL("triggered()"), self.secondHarmonic)
 
@@ -206,7 +206,7 @@ class myTableView(QTableView):
         #pqMsgs.printKeyEvent(event)
         if (key == Qt.Key_C) and (mods & Qt.ControlModifier) :
             event.accept()
-            # PyQt4's implementation of QTableView::selectedIndexes() does 
+            # PyQt4's implementation of QTableView::selectedIndexes() does
             # not return a QList but rather a Python list of indices.
             lix = self.selectedIndexes()
             if len(lix) : # non-zero selection

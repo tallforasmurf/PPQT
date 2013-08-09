@@ -56,7 +56,7 @@ class wordList():
     def clear(self):
         self.wordlist = []
         self.len = 0
-    
+
     def active(self):
         return (self.len > 0)
 
@@ -83,7 +83,7 @@ class wordList():
     # first time a file is opened (no metadata) the stream is e.g. good_words.txt
     # and we read it all. Or, it could be a .meta file where we are supposed to
     # read just the part up to the end of our section.
-    
+
     def load(self,stream,endsec=None):
 	if endsec is not None : # reading our part of a metadata file
 	    while True:
@@ -108,7 +108,7 @@ is an ordered list of QStrings (not Python u'strings'), searched and inserted-to
 using a version of the bisect_left function modified to compare QStrings.
 The second is an integer count; the third, an integer flag value, either the
 unicode property of a character, or a set of flags for a word.
-  
+
 The word lists are built by the editor while loading a document, and again
 by the refresh function of the word- and char- views. It is queried by the
 word- and char views and by the the syntax highligher (for misspelt flags).
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     for i in range(vl.size()):
 	(w,n,f) = vl.get(i)
 	print(unicode(w),n)
-	
+
     #app = QApplication(sys.argv) # create the app
     #fn = QFileDialog.getOpenFileName(None,"Select a Unit Test File")
     #print(fn)
@@ -268,4 +268,3 @@ if __name__ == "__main__":
     #for i in range(vl.size()):
 	#(ww,cc,ff) = vl.get(i)
 	#print(i, ww,cc,ff)
-    

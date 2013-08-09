@@ -62,7 +62,7 @@ In summary it does as follows:
 This scheme works because the .py (and one .html) modules are copied into
 memory when the program starts up. They can be changed freely and not affect
 the current execution instance. It also works because we are bundling the
-app with pyinstaller as a single folder, not a single executable. The 
+app with pyinstaller as a single folder, not a single executable. The
 single executable has all the modules hashed in a zip file and couldn't be
 updated on the fly.
 
@@ -79,7 +79,7 @@ The following additional features have been considered.
 Automating the check, e.g. checking at startup, instead of having the user
 ask for a check. Not done because I absolutely detest programs doing that, or
 making any other kind of internet access I didn't specifically request. Also,
-PPQT should not be internet-dependent at all, should be possible to work a 
+PPQT should not be internet-dependent at all, should be possible to work a
 whole book disconnected. This would add a time-out delay at startup.
 
 Getting commit data from git and offering the user a selection list of bug
@@ -124,7 +124,7 @@ reGetMasterSHA = re.compile('data-clipboard-text=\"([0-9a-f]+)\"')
 
 # RE to find the next blob content line in the github CODE display page.
 # After a match, the groups are:
-# The URL of the blob is 'https:raw.github.com/\1/\2 
+# The URL of the blob is 'https:raw.github.com/\1/\2
 # The hash id of the blob is \3 (should match the hash of the local file)
 # The name of the file is \4, e.g. pqMain.py
 reBlobLine = re.compile('''\<td class=\"content\">\s*\<a href=\"(.+?)/blob/([^"]+)\".+?id="([^"]+)\"\s*\>([^<]+)</a></td>''')
@@ -156,7 +156,7 @@ def slurp(anurl):
 
 # Implement the command File > Check for Updates
 def checkForUpdates():
-    # Step one, read the code display for the master 
+    # Step one, read the code display for the master
     page = slurp('https://github.com/tallforasmurf/PPQT')
     if page is None:
         pqMsgs.warningMsg('Unable to contact Github',
@@ -187,7 +187,7 @@ def checkForUpdates():
         blobName = blob[3]
         blobHash = blob[2]
         blobTab[blobName] =[None,blobHash,blobURL]
-    
+
     # Look for the file modulehash.txt and if it exists, use it to fill
     # in the local hashes it lists. We do not distribute so it doesn't
     # show up in the github listing. We want the local hash to reflect
@@ -240,7 +240,7 @@ def checkForUpdates():
     if not ans:
         pqMsgs.infoMsg('PPQT remains unchanged.')
         return
-    
+
     # User said OK to do it. Read the text of the updated modules from
     # github and save it in the updaTab.
     for modName in updaTab:
@@ -251,7 +251,7 @@ def checkForUpdates():
             return
         updaTab[modName].append(page)
 
-    # All update texts read correctly. Now open each for writing, 
+    # All update texts read correctly. Now open each for writing,
     # appending the file object to the updaTab entry.
     for modName in updaTab:
         try:
@@ -262,7 +262,7 @@ def checkForUpdates():
             pqMsgs.warningMsg('Updated modules are not writable'
                               'PPQT is unchanged.')
             return
-    
+
     # All files open for writing and text is ready. Write them.
     for modName in updaTab:
         try:

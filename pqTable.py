@@ -70,7 +70,7 @@ Properties of any single column:
     decimal-delimiter: when alignment is decimal, a single char that delimits
             the fraction from the integer, e.g. a comma for a german book
             default is .
-            (we don't try to query the Locale because the computer Locale is not 
+            (we don't try to query the Locale because the computer Locale is not
             necessarily the subject book's Locale)
     width: minimum count of characters
             default is None, meaning width is whatever contents require
@@ -118,7 +118,7 @@ columns, but only columns 1-9 can be explicitly configured with this syntax.
 The Width sets the minimum width. When both integer and fraction widths are
 given (W:ww.ff) the minimum width is ww+ff+1.
 
-The /T line is not "parsed", items are just recognized using REs. Only the 
+The /T line is not "parsed", items are just recognized using REs. Only the
 initials are looked for. Unrecognized params are simply ignored!
 
 /T T(T:'-' S:'|') Col(B:'-' S:'|') 1(S:' ') 2(A:C) 3(A:R W:8) 4(ALIGN:DECIMAL)
@@ -150,7 +150,7 @@ the values defined in the /T[M] statement, allowing the code to easily fetch
 information about alignment, widths, and borders. For example,
     tp = tableProperties(QString("/T T(T:'-' S:'|') Col(A:R) 3(W:8)")
     tp.isMultiLine() -> False
-    tp.columnSideString(1) -> '|' 
+    tp.columnSideString(1) -> '|'
     tp.columnWidth(2) -> None
     tp.columnWidth(3) -> 8
 
@@ -182,7 +182,7 @@ import pqMsgs
 CalignLeft = 0
 CalignCenter = 1
 CalignRight = 2
-CalignDecimal = 4 
+CalignDecimal = 4
 
 SingleLineTable = 0
 MultiLineTable = 1
@@ -209,10 +209,10 @@ class tableProperties:
         # note if this is multiline: /TM versus /T
         self.isMulti = tqs.startsWith(QString(u'/TM'))
         self.parseRE = QRegExp()
-        self.parseRE.setCaseSensitivity(Qt.CaseInsensitive) # ignore case 
+        self.parseRE.setCaseSensitivity(Qt.CaseInsensitive) # ignore case
         # set minimal so when looking for ), we stop with the first
         # if any of this code changes parseRE.minimal it must save and restore it.
-        self.parseRE.setMinimal(True) 
+        self.parseRE.setMinimal(True)
         # get the contents of a Table(something) if it exists
         topts = self.getMainOption(tqs,u'T')
         if topts is not None: # there is T(something), and topts has the something
@@ -351,7 +351,7 @@ class tableProperties:
                     propdic[u'S'] = None
                 else:
                     self.badTableParm(u'Only space supported for Side option')
-           
+
     # Error message to user about a problem with the /T line
     def badTableParm(self,msg):
         pqMsgs.warningMsg(
@@ -403,7 +403,7 @@ class tableProperties:
         return w # return width or None
     def columnDecimal(self,c):
         return self.someColumnValue(c,u'D')
-        
+
 
 # Oh sigh, how to store cell data for easy retrieval? We are doing the obvious,
 # a list, of which each member is a list of the cell data for that row across.
@@ -419,7 +419,7 @@ class tableProperties:
 #
 # When alignment is Decimal, cMinWidth has the longest nonblank string seen
 # left of a decimal point, and cDecWidth has the longest string seen right
-# of a decimal point including the point. Thus for all alignments, the 
+# of a decimal point including the point. Thus for all alignments, the
 # required minimum is cMinWidth+cDecWidth.
 # Also stored: the "suggested" width, the longest UNtrimmed string seen for
 # any cell.
@@ -464,7 +464,7 @@ class tableCells:
             if c != (self.columnsSeen+1) :
                 print("minor cock-up storing table columns")
                 c = self.columnsSeen+1
-            # first data stored for this column  
+            # first data stored for this column
             self.columnsSeen = c
             # initialize the suggested and minimum widths for this column
             self.cSugWidths.append(0)
@@ -503,7 +503,7 @@ class tableCells:
                     j = self.tokenRE.indexIn(qs,j+self.tokenRE.matchedLength())
                 self.cMinWidths[c-1] = w # put possibly-updated width back
         else:
-            # Decimal alignment. Not checking if this is the first & only 
+            # Decimal alignment. Not checking if this is the first & only
             # value for the cell; decimal can be used in a multi-line table,
             # with the numeric value preceded or followed by empty "@" lines.
             d = self.tProps.columnDecimal(c) # period or comma or whatever
@@ -544,7 +544,7 @@ class tableCells:
             self.row = self.data[r-1]
         if (c <= self.columnsSeen) and (c > 0) :
             # We have stored this column in at least some row
-            if c <= len(self.row): 
+            if c <= len(self.row):
                 # We stored data for this column in this row
                 return self.row[c-1]
             else:
@@ -663,7 +663,7 @@ def tableReflow(tc,doc,unitList):
         # If this is a single-line table, increment the row number.
         if tprops.isSingleLine():
             r += 1
-    # All text lines of the table have been split and stored in their 
+    # All text lines of the table have been split and stored in their
     # logical row/column slots. Now figure out how wide to make each column.
     # The input to this is targetTableWidth, developed above for the table as a
     # whole, and targetDataWidth which we are just about to calculate:
@@ -700,7 +700,7 @@ def tableReflow(tc,doc,unitList):
                 allMinWidths.append(cmw)
                 totalMinWidth += cmw
             if totalMinWidth > tableDataWidth:
-                # The minimum (longest token) widths exceed the specified 
+                # The minimum (longest token) widths exceed the specified
                 # table. We will use the min widths but warn the user.
                 warnWideTable(unitList[0]['A'],targetTableWidth,
                               totalMinWidth+totalDelimiterWidths)
@@ -752,7 +752,7 @@ def tableReflow(tc,doc,unitList):
     # finally insert it using textCursor tc replacing the table.
     # flowCell returns a QStringList with one string for each text line needed
     # to fit the cell data in the width, just one string for a single line table.
-    tableText = QString() # Accumulates whole table a line at a time    
+    tableText = QString() # Accumulates whole table a line at a time
     # this list holds the cell data for one row at a time as QStringLists
     rowdata = [None]*(tcells.columnCount()+1)
     # set the head of each text line, indent with optional stile
@@ -769,7 +769,7 @@ def tableReflow(tc,doc,unitList):
         cellBottom.append(botChar.repeated(targetTableWidth))
         cellBottom.append(IMC.QtLineDelim)
     else: # even if no botChar, multiline table still needs empty lines
-        if tprops.isMultiLine() :            
+        if tprops.isMultiLine() :
             cellBottom.append(IMC.QtLineDelim)
     # accumulate the table top delimiter if requested
     if topChar is not None:
@@ -779,7 +779,7 @@ def tableReflow(tc,doc,unitList):
     # process all logical rows in sequence top to bottom
     for r in range(1,tcells.rowCount()+1):
         asciiLines = 0 # counts how many ascii lines in this logical row
-        # process all cells in this row, left to right. flowCell() 
+        # process all cells in this row, left to right. flowCell()
         # returns a QStringList of the flowed data for the cell given
         # its width and alignment style.
         for c in range(1,tcells.columnCount()+1):
@@ -826,7 +826,7 @@ def tableReflow(tc,doc,unitList):
     # bye-eeeeee
 
 # Given the data of one cell as a single QString, fold or stretch it into a
-# specified width, aligned as specified. Return a QStringList with one 
+# specified width, aligned as specified. Return a QStringList with one
 # QString per ascii line of folded text: 1 for a single line table, 1 or more
 # for a multiline table. The problem is similar to the paragraph folder in
 # pqFlow but simpler. We are not supporting logical lengths of <i/b/sc> for one
@@ -840,7 +840,7 @@ def flowCell(qs,width,align,decpoint,decwidth):
     if qs.size() <= width :
         # entire cell data fits in the width, return one-string list
         return QStringList(alignCell(qs,width,align,decpoint,decwidth))
-    # string is greater than width -- we assert this cannot occur in a 
+    # string is greater than width -- we assert this cannot occur in a
     # single-line table. So we will fold qs into multiple strings. Now let us
     # chunk qs into whitespace-delimited chunks up to width in size.
     qs.append(u' ') # ensure terminal space: last good char is at size-2
@@ -851,7 +851,7 @@ def flowCell(qs,width,align,decpoint,decwidth):
         qsl.append(alignCell(chunkRE.cap(1),width,align,decpoint,decwidth))
         j += chunkRE.cap(0).size()
         j = chunkRE.indexIn(qs,j)
-    return qsl    
+    return qsl
 
 # The user is told to stick in @ as a place-holder in any row where there
 # is no real data. However the input process (using splitRE above) strips
@@ -874,13 +874,13 @@ def expandAt(qs,width,align):
         qs.remove(0,j+findAtRE.cap(0).size())
         j = findAtRE.indexIn(qs,0)
     #dbg = unicode(q2)
-    return q2        
+    return q2
 # Given a QString that fits in a width, extend it front a/o back to
 # align in that width.
 def alignCell(qs,width,align,decpoint,decwidth):
     qs = qs.simplified() # strip off any spaces expandAt may have added
     spaces = width - qs.size()
-    if spaces > 0 : 
+    if spaces > 0 :
         lspace = QString(u'')
         rspace = QString(u'')
         onespace = QChar(u' ')
@@ -904,7 +904,7 @@ def alignCell(qs,width,align,decpoint,decwidth):
         qs.append(rspace)
     #dbg = unicode(qs)
     return qs
-    
+
 # warn the user a table will be wider than expected/requested
 def warnWideTable(lnumber,twidth,awidth):
     pqMsgs.warningMsg(
@@ -920,7 +920,7 @@ def getLineQs(tc,doc,lineNumber):
     tc.setPosition(textBlock.position()) # click..
     tc.setPosition(textBlock.position()+textBlock.length(),QTextCursor.KeepAnchor)
     return tc.selectedText().trimmed()
-   
+
 # return the unicode text of a line given its line number. as a byproduct
 # sets the text cursor selecting that line's text
 def getLineText(tc,doc,lineNumber):
@@ -1035,7 +1035,7 @@ def tableHTML(tc,doc,unitList):
             cqs.replace(qat,qnb)
             td = tds.format(al,wd) # make <td> with align, width
             tqr.append(QString(td)) # <td...>
-            tqr.append(cqs) # ..stuff .. 
+            tqr.append(cqs) # ..stuff ..
             tqr.append(tdz) # </td>
             tqr.append(IMC.QtLineDelim)
         tqr.append(trz) # </tr>
@@ -1048,10 +1048,10 @@ def tableHTML(tc,doc,unitList):
     tc.setPosition(blockA.position())
     tc.setPosition(blockZ.position()+blockZ.length(),QTextCursor.KeepAnchor)
     tc.insertText(tqs)
-    
-    
-    
-    
+
+
+
+
 if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt)

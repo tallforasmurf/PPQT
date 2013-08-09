@@ -100,7 +100,7 @@ class pngDisplay(QWidget):
         self.connect(zoomWidthButton, SIGNAL("clicked()"), self.zoomToWidth)
         zoomHeightButton = QPushButton(u'to Height')
         self.connect(zoomHeightButton, SIGNAL("clicked()"), self.zoomToHeight)
-        # Make an hbox to contain the spinbox and two pushbuttons, with 
+        # Make an hbox to contain the spinbox and two pushbuttons, with
         # stretch on left and right to center the group.
         zlabel = QLabel(
             u'&Zoom ' + str(self.zlider.minimum())
@@ -112,7 +112,7 @@ class pngDisplay(QWidget):
         zhbox.addWidget(self.zlider,0)
         zhbox.addStretch(1)
         zhbox.addWidget(zoomWidthButton)
-        zhbox.addWidget(zoomHeightButton)   
+        zhbox.addWidget(zoomHeightButton)
         zhbox.addStretch(1)
         # With all the pieces in hand, create our layout basically a
         # vertical stack: scroll area, label, slider box.
@@ -138,7 +138,7 @@ class pngDisplay(QWidget):
     # has been cleared on us. Don't reset the zoomFactor, leave it as
     # the user last set it.
     def clear(self):
-        # Clear the page name, used by pqNotes 
+        # Clear the page name, used by pqNotes
         IMC.currentPageNumber = None # will be name of last page e.g. "002"
         # Clear the page filename, used in our caption label
         self.lastPage = QString() # last file name e.g. "002.png"
@@ -194,9 +194,9 @@ class pngDisplay(QWidget):
         else: # It was a File>New
             self.clear()
 
-    # This function is the slot that is connected to the editor's 
+    # This function is the slot that is connected to the editor's
     # cursorPositionChanged signal. Its input is cursor position and
-    # the page table. Its output is to set self.nextIndex to the 
+    # the page table. Its output is to set self.nextIndex to the
     # desired next image table row, and to call showPage.
     def newPosition(self):
         if not self.ready :
@@ -311,12 +311,12 @@ class pngDisplay(QWidget):
         nrows = self.image.height() # number of pixels high
         vptr = self.image.bits() # uchar * bunch-o-pixel-bytes
         vptr.setsize(stride * nrows) # make the pointer indexable
-        
+
         # Scan in from left and right to find the outermost dark spots.
         # Looking for single pixels yeilds too many false positives, so we
         # look for three adjacent pixels that sum to less than 32.
         # Most pages start with many lines of white pixels so in hopes of
-        # establishing the outer edge early, we start at the middle, go to 
+        # establishing the outer edge early, we start at the middle, go to
         # the end, then do the top half.
         left_side = int(ncols/2) # leftmost dark spot seen so far
         # scan from the middle down
@@ -458,7 +458,7 @@ class pngDisplay(QWidget):
                 event.accept() # real pgUp or pgDn, we do it
                 fac = 1 if (event.key() == Qt.Key_PageDown) else -1
                 fac += self.lastIndex
-                if (fac >= 0) and (fac < len(IMC.pageTable)) : 
+                if (fac >= 0) and (fac < len(IMC.pageTable)) :
                     # not off the end of the book, so,
                     self.nextIndex = fac
                     self.showPage()
