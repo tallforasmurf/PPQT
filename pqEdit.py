@@ -262,7 +262,7 @@ class PPTextEditor(QPlainTextEdit):
     #  ctrl-shift-equals instead of plus)
     # ctrl-minus decreases the edit font size 1 pt
     # ctrl-<n> for n in 1..9 jumps the insertion point to bookmark <n>
-    # ctrl-shift-<n> extends the selection ot bookmark <n>
+    # ctrl-shift-<n> extends the selection to bookmark <n>
     # ctrl-alt-<n> sets bookmark n at the current position
     def keyPressEvent(self, event):
         #pqMsgs.printKeyEvent(event)
@@ -301,7 +301,6 @@ class PPTextEditor(QPlainTextEdit):
             elif kkey in IMC.markSetKeys : # ctl-alt-1-9, set a bookmark
                 bkn = kkey - IMC.ctl_alt_1 # make it 0-8
                 self.bookMarkList[bkn] = QTextCursor(self.textCursor())
-                self.bookMarkList[bkn].clearSelection() # don't save the selection
                 IMC.needMetadataSave |= IMC.bookmarksChanged
         else: # not in keysOfInterest, so pass it up to parent
             event.ignore()
