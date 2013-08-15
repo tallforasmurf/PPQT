@@ -442,7 +442,7 @@ class PPTextEditor(QPlainTextEdit):
         metaStream << u"{{BOOKMARKS}}\n"
         for i in range(9): # 0..8
             if self.bookMarkList[i] is not None :
-                metaStream << "{0} {1}\n".format(i,self.bookMarkList[i].position())
+                metaStream << "{0} {1} {2}\n".format(i,self.bookMarkList[i].position(),self.bookMarkList[i].anchor())
         metaStream << u"{{/BOOKMARKS}}\n"
         metaStream << u"{{NOTES}}\n"
         d = IMC.notesEditor.document()
@@ -572,6 +572,8 @@ class PPTextEditor(QPlainTextEdit):
                         parts = unicode(qline).split(' ')
                         tc = QTextCursor(self.document() )
                         tc.setPosition(int(parts[1]))
+                        if len(parts) == 3 : # early versions didn't save anchor
+                            tc.movePosition(int(parts[2]),QTextCursor.KeepAnchor)
                         self.bookMarkList[int(parts[0])] = tc
                         qline = metaStream.readLine()
                     continue

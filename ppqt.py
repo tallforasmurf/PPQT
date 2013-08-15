@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 # These imports move Python 2.x almost to Python 3.
 # They must precede anything except #comments, including even the docstring
 from __future__ import division
