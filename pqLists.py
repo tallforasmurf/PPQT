@@ -61,21 +61,21 @@ class wordList():
         return (self.len > 0)
 
     def check(self,word):
-    	if self.len :
-	    i = bisect.bisect_left(self.wordlist,word)
-	    if (i != self.len) and (self.wordlist[i] == word):
-		return True
+        if self.len :
+            i = bisect.bisect_left(self.wordlist,word)
+            if (i != self.len) and (self.wordlist[i] == word):
+                return True
         return False
 
     # Provide for inserting a word to the list. Bisect_left returns the
     # index of word or the highest item < word. If word is higher than
     # anything in the list, the return is the length of the list.
     def insert(self,word):
-	i = bisect.bisect_left(self.wordlist,word)
-	if (i != self.len) and (self.wordlist[i] == word):
-	    return
-	self.wordlist.insert(i,word)
-	self.len += 1
+        i = bisect.bisect_left(self.wordlist,word)
+        if (i != self.len) and (self.wordlist[i] == word):
+            return
+        self.wordlist.insert(i,word)
+        self.len += 1
 
     # Load up a file of words, assumed one per line. We store them as
     # Python strings, not QStrings, so as to use the bisect module. We do not
@@ -85,22 +85,22 @@ class wordList():
     # read just the part up to the end of our section.
 
     def load(self,stream,endsec=None):
-	if endsec is not None : # reading our part of a metadata file
-	    while True:
-		word = unicode(stream.readLine().trimmed())
-		if (word == endsec) or stream.atEnd() : break
-		self.wordlist.append(word)
-	else : # reading e.g. a good_words.txt file
-	    while (not stream.atEnd()):
-		word = unicode(stream.readLine().trimmed())
-		self.wordlist.append(word)
+        if endsec is not None : # reading our part of a metadata file
+            while True:
+                word = unicode(stream.readLine().trimmed())
+                if (word == endsec) or stream.atEnd() : break
+                self.wordlist.append(word)
+        else : # reading e.g. a good_words.txt file
+            while (not stream.atEnd()):
+                word = unicode(stream.readLine().trimmed())
+                self.wordlist.append(word)
         self.wordlist.sort()
         self.len = len(self.wordlist)
 
     # Write all our words to an open .meta text stream.
     def save(self,stream):
-	for i in range(self.len):
-	    stream << (self.wordlist[i]+"\n")
+        for i in range(self.len):
+            stream << (self.wordlist[i]+"\n")
 '''
 Second, lists for the character and word censuses of the entire file.
 In each case there is a three-column table held as three lists. The first
@@ -144,7 +144,7 @@ class vocabList():
         self.words = []
         self.counts = []
         self.flags = []
-	self.insertPoint = None
+        self.insertPoint = None
         self._size = 0 # can't be same as name of accessor function?
 
     def size(self):
@@ -161,7 +161,7 @@ class vocabList():
                 lo = mid+1
             else:
                 hi = mid
-	self.insertPoint = lo
+        self.insertPoint = lo
         if (lo < self._size) : # not empty list
             if (self.words[lo].compare(qs,Qt.CaseSensitive) == 0) : # matched at words[lo]
                 return lo
@@ -173,9 +173,9 @@ class vocabList():
         if i is not None :
             self.counts[i] += 1
         else:
-	    # new list key - must make a copy to prevent side-effects if the
-	    # caller is re-using his qstring.
-	    i = self.insertPoint
+            # new list key - must make a copy to prevent side-effects if the
+            # caller is re-using his qstring.
+            i = self.insertPoint
             self.words.insert(i,QString(qs))
             self.counts.insert(i,1)
             self.flags.insert(i,int(flag))
@@ -192,7 +192,7 @@ class vocabList():
 
     # Used by pqWords when scanning the table
     def getWord(self,index):
-	return self.words[index]
+        return self.words[index]
 
     # return the flag value of a word
     def getFlag(self, qs):
@@ -221,10 +221,10 @@ class vocabList():
     # and its flags from the metadata file. We assume this is going to
     # come in sorted order, else we will be in big trouble.
     def append(self, qs, cc, ff):
-	self.words.append(qs)
-	self.counts.append(cc)
-	self.flags.append(ff)
-	self._size += 1
+        self.words.append(qs)
+        self.counts.append(cc)
+        self.flags.append(ff)
+        self._size += 1
 
 if __name__ == "__main__":
     import sys
@@ -234,10 +234,10 @@ if __name__ == "__main__":
     tx = u"could could Could Couldn't couldn't couldn't couldn't couldn't can't Zabriskie"
     wds = tx.split()
     for w in wds:
-	vl.count(QString(w),0)
+        vl.count(QString(w),0)
     for i in range(vl.size()):
-	(w,n,f) = vl.get(i)
-	print(unicode(w),n)
+        (w,n,f) = vl.get(i)
+        print(unicode(w),n)
 
     #app = QApplication(sys.argv) # create the app
     #fn = QFileDialog.getOpenFileName(None,"Select a Unit Test File")
@@ -266,5 +266,5 @@ if __name__ == "__main__":
         #else:
             #print('{0}: not found'.format(w))
     #for i in range(vl.size()):
-	#(ww,cc,ff) = vl.get(i)
-	#print(i, ww,cc,ff)
+        #(ww,cc,ff) = vl.get(i)
+        #print(i, ww,cc,ff)
