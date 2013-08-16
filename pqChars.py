@@ -133,7 +133,7 @@ class myTableModel(QAbstractTableModel):
     def data(self, index, role ):
         (qs,count,flag) = IMC.charCensus.get(index.row())
         ui = qs.at(0).unicode() # gets an integer
-        uu = unicode(qs)[0] # gets a uchar        
+        uu = unicode(qs)[0] # gets a uchar
         if role == Qt.DisplayRole : # wants actual data
             if 0 == index.column():
                 return qs
@@ -261,15 +261,10 @@ class charsPanel(QWidget):
         self.model.beginResetModel()
 
     # Subroutine to reset the visual appearance of the table view,
-    # invoked on table reset because on instantiation we have no table.
-    # Bump up the width of column 0 because when it sets it to its contents
-    # there isn't room for the header plus the sort triangle
+    # invoked on table reset or docHasChanged because on instantiation
+    # we have no data until a file is opened.
     def setUpTableView(self):
-        #self.view.sortByColumn(0,Qt.AscendingOrder)
         self.view.resizeColumnsToContents()
-        self.view.setColumnWidth(0,20+self.view.columnWidth(0))
-        self.view.setColumnWidth(2,8+self.view.columnWidth(2))
-        self.view.setColumnWidth(3,20+self.view.columnWidth(3))
         self.view.horizontalHeader().setStretchLastSection(True)
         self.view.resizeRowsToContents()
         self.view.setSortingEnabled(True)
