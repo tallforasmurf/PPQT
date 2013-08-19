@@ -87,6 +87,7 @@ without which we couldn't have done this.
 import os # for dict path manipulations
 import sys # for argv, passed to QApplication
 import platform # for mac detection
+import argparse # for a command-line filename or --version argument
 
 from PyQt4.QtCore import (Qt, QSettings, QString )
 from PyQt4.QtGui import ( QApplication, QFont, QFontDatabase )
@@ -137,13 +138,23 @@ from PyQt4.QtGui import ( QApplication, QFont, QFontDatabase )
 # Each module imports whatever classes of PyQt.Qtxx it needs. This causes
 # some duplication; we trust Python to not import duplicate code.
 
+# Collect version and copyright info into one string suitable for the
+# argparse version action.
+versionstr = 'PPQT Version {0}\n{1}'.format(__version__, __copyright__)
+
 # Display copyright and version on the console, which may or may not be visible
-print('PPQT Version {0}'.format(__version__))
-print(__copyright__)
+print(versionstr)
+
+# Pre-parse the argv string. If --version, it displays and exits. If a filename
+# is given, it is saved as args.filename. Qt-specific options are ignored.
+parser = argparse.ArgumentParser(description='PPQT.')
+parser.add_argument('filename', nargs='?', help=u"Name of file to open")
+parser.add_argument('--version', action='version', version=versionstr)
+args, _ = parser.parse_known_args()
 
 # Create the application, which needs to exist for some of the following
 # operations to work, and sign it with our names so that
-# saved settings go in reasonable places
+# saved settings go in reasonable places. QApplication picks Qt args from argv.
 app = QApplication(sys.argv)
 app.setOrganizationName("PGDP")
 app.setOrganizationDomain("pgdp.net")
@@ -315,7 +326,24 @@ pqMsgs.noteEvent("Creating main window...")
 IMC.mainWindow = pqMain.MainWindow()
 # Display and execute!
 
+IMC.mainWindow.show()
+
+# If we are invoked from a command line and a filename was given,
+# try to open it. If there is a problem, for example if the file is
+# not found, there will be a popup diagnostic that the user will
+# has to dismiss and then we continue as normal.
+#
+# Useability note: We have considered automatically reopening the
+# last-used file on startup. Here would be the point at which to
+# trigger that action (if args.filename was empty). Decided against
+# that feature because (a) if you want it, it is 2 clicks at the
+# top of the recent-files list, and (b) if you don't want it, it's
+# a needless delay in startup and (c) if it moved or doesn't exist,
+# either it's a gratuitous error message or if you check for existence,
+# how far down the recent-files list should you go?
+if args.filename:
+    IMC.mainWindow.loadFile(args.filename, None)
+
 pqMsgs.noteEvent("Starting the app (event loop)")
 
-IMC.mainWindow.show()
 app.exec_()
