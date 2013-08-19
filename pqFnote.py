@@ -1022,7 +1022,6 @@ class fnotePanel(QWidget):
                 notepos = sectcI.position()-notelen-1
                 notetc.setPosition(notepos)
                 notetc.setPosition(notepos+notelen,QTextCursor.KeepAnchor)
-                pqMsgs.warningMsg("moved one note")
                 break # all done scanning sectList for this note
                 # end of "for s in range(len(sectList))"
             if dbcount >= self.enoughForABar and 0 == (i & 7) :
