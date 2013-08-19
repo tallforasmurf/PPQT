@@ -114,7 +114,12 @@ class makeSpellCheck():
         self.listOfDicts = QStringList()
         # Get a list of all files in that folder. We don't need to sort them,
         # we use the "in" operator to find the X.dic matching an X.aff
-        fnames = os.listdir(IMC.dictPath)
+        # Defensive programming: dict folder should exist but maybe the user
+        # moved stuff.
+        try :
+            fnames = os.listdir(IMC.dictPath)
+        except OSError :
+            fnames = [] # no dict folder?!
         for fn in fnames:
             if u'.aff' == fn[-4:] :
                 # this is a tag.aff file, look for a matching tag.dic
