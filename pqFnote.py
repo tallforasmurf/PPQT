@@ -1030,6 +1030,7 @@ class fnotePanel(QWidget):
             # end of "for i in range(dbcount)"
         # Clean up:
         worktc.endEditBlock()  # End the undo macro
+        theRealRefresh() # fix up the line numbers in the table
         self.docHasChanged()   # tell the table the data has stabilized
         if dbcount > self.enoughForABar :
             pqMsgs.endBar()    # clear the progress bar
