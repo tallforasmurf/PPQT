@@ -1041,7 +1041,7 @@ class fnotePanel(QWidget):
     # Around the anchor put:
     # <a id='FA_key' href='#FN_key' class='fnanchor'>[key]</a>
     # Replace "[Footnote key:" with
-    # <div class='footnote' id='FN_key'>\n\n
+    # <div class='footnote' id='FN_key'>\n
     # <span class="fnlabel"><a href='FA_key'>[key]</a></span> text..
     # Replace the final ] with \n\n</div>
     # The idea is that the HTML conversion in pqFlow will see the  \n\n
@@ -1074,7 +1074,7 @@ class fnotePanel(QWidget):
         fnt_RE = QRegExp()
         # Set up a replacement boilerplate for [Footnote key.
         # Each %n placeholder is replaced by a copy of the key value.
-        fnt_rep = QString(u"<div class='footnote' id='FN_%1'>\u2029\u2029<span class='fnlabel'><a href='#FA_%2'>[%3]</a></span>")
+        fnt_rep = QString(u"<div class='footnote' id='FN_%1'>\u2029<span class='fnlabel'><a href='#FA_%2'>[%3]</a></span> ")
         # Make a working textcursor, start the undo macro, advise the table
         worktc = QTextCursor(IMC.editWidget.textCursor())
         worktc.beginEditBlock()
@@ -1113,7 +1113,7 @@ class fnotePanel(QWidget):
             # append </div> on a separate line, and put it back.
             oldnote = worktc.selectedText()
             oldnote.chop(1)
-            oldnote.append(QString(u"\u2029\u2029</div>"))
+            oldnote.append(QString(u"\u2029</div>"))
             worktc.insertText(oldnote) # worktc now positioned after note
             # use the note string to recognize the length of [Footnote key:sp
             fnt_RE.setPattern(note_pattern)
