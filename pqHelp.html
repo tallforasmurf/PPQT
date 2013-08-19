@@ -28,7 +28,7 @@ __license__ = '''
 </head>
 <body>
 <h1>Introduction</h1>
-<p>PPQT is a unified tool for use by the volunteers who post-process books for Distributed Proofreaders. It provides a text editor that integrates a number of features useful during post-processing, including display of the book's scanned pages, regular expression find/replace, spellcheck, pagination, footnoting, and html preview. This Help is its main documentation. Some additional info can
+<p>PPQT is a unified tool for use by the volunteers who post-process books for <a href='pgdp.net'>Distributed Proofreaders</a> (PGDP). It provides a text editor that integrates a number of features useful during post-processing, including display of the book's scanned pages, regular expression find/replace, spellcheck, pagination, footnoting, and html preview. This Help is its main documentation. Some additional info can
 be found in the <a href='#Extras'>Extras</a> folder in the PPQT folder.</p>
 <p>You can read this help text in the Help panel of the program or simply find the file <tt>pqHelp.html</tt> in the PPQT folder and open it in any browser.</p>
 <p>While reading this text in the Help panel, if you click on a link, you can get back to the text by keying ctl-[ or ctl-b (mac users see next paragraph).</p>
@@ -68,48 +68,45 @@ see the file <tt>COPYING.TXT</tt> in the distribution folder. Qt itself is licen
 </ul>
 <h2 id='New'>What's New in This Version</h2>
 <p>(See also <a href='#OldNew'>What Was New</a> for previous changes.)</p>
-<h3>What's new as of 10 July 2013</h3>
-<p>When converting to HTML, we now apply a new, simplified rule to detect chapter heads and subheads. The new rule is subtly different from the wording of the PGDP Formatting Guidelines. See <a href='#html'>HTML Conversion</a> for details.</p>
-<p>When converting Footnotes to HTML, we no longer include a <tt>name=</tt> property in the anchor or the footnote <tt>&lt;div></tt>. The <tt>name</tt> property is not supported in XHTML Strict and prevented the document from validating.</p>
+<h3>What's New on 19 August 2013</h3>
+<ul>
+<li>The <a href='#Chars'>Characters Panel</a> now displays a new column, Unicode Character Name. This can help you tell the difference between some characters that are hard to distinguish by their shapes.</li>
+<li>You can launch PPQT from the command line (linux or Mac OS) without having to invoke Python, e.g. just enter <tt>ppqt</tt>. If you enter <tt>ppqt --version</tt> it prints the version info and exits.</li>
+<li>If you launch PPQT from the command line you can specify a book to open, for example <tt>ppqt abook-utf.txt</tt>. If the book is not in the current directory you must give an absolute or relative path to it.</li>
+<li>Support for loading Guiguts projects and saving to Guiguts format is added; see <a href='#GGIO'>Guiguts Import and Export</a>.</li>
+<li>Support for setting the file encoding based on  file suffixes <tt>.win</tt> and <tt>.mac</tt> has been removed. You can still open files with these encodings using File > Open With Encoding.</li>
+<li>If the book is opened with Latin-1 encoding, you are warned before saving if the book now has characters that are not valid for Latin-1. The warning might not appear if the count of characters is not up to data (Refresh in the <a href='#Chars'>Characters panel</a>).</li>
+</ul>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
 If you need to open a second document (for example, a commented copy from Smooth Reading), just start a second copy of PPQT.</p>
 <h3 id='Encodings'>File Encodings and Suffixes</h3>
-<p>PPQT holds the document in memory in Unicode, which supports virtually any alphabet or special characters. This is subject to two limitations:</p>
+<p>PPQT holds the document in memory in Unicode, which supports virtually any alphabet or special characters. There are two restrictions:</p>
 <ul>
 <li>PPQT can only display characters that are defined in the font you select
-(see <a href='#Edit'>Edit Panel</a> below). The familiar DPCustomMono2, for example, lacks Greek and Cyrillic.</li>
+(see <a href='#Edit'>Edit Panel</a> below). The DPCustomMono2 font used by PGDP proofers, for example, lacks Greek and Cyrillic.</li>
 <li>Although it can display alphabets such as Arabic if they are in the current font, PPQT does not understand right to left editing. The edit cursor only moves left to right during text entry.</li>
 </ul>
 <p>The characters in documents on disk are encoded in some way. The important encodings are:</p>
 <ul>
-<li>UTF-8, which can represent any Unicode character.</li>
-<li>ISO-8859-1, aka Latin-1, a set of 191 characters.</li>
+<li>ASCII, a set of 95 common characters supported by just about all software and hardware.</li>
+<li>UTF-8, which can represent any Unicode character. ASCII is a proper subset of UTF-8, so an ASCII file can be treated as if it were UTF-8 for input.</li>
+<li>Latin-1, also called ISO-8859-1, is a set of 191 characters. A file encoded as Latin-1 is not compatible with UTF-8. That is, if you open a Latin-1 file assuming it is UTF-8, or vice-versa, some special characters will be displayed incorrectly.</li>
 <li>Windows CP1252 contains the same 191 characters as Latin-1 but adds 27 more
-that are not in Latin-1. CP1252 is not supported by PG, but Windows utilities such as Wordpad may save files in that encoding.</li>
+that are not in Latin-1. CP1252 is not supported by Project Gutenberg (PG), but Windows utilities such as Wordpad may save files in that encoding.</li>
 <li>Mac Roman defines many, but not all, of the characters in CP1252 (but with different numeric values), and also some special characters not in either CP1252 or Latin-1. Mac Roman is not supported by PG, but Mac utilities such as Textedit may save files in that encoding.</li>
 </ul>
-<p>There are many other encodings, but PPQT will
-only open files encoded with the above four, and it will
-only save files in UTF-8 or Latin-1.</p>
-<p>In order to load a document with its special characters intact and un-garbled, PPQT needs to know which encoding the file uses. It has several ways of finding this out.</p>
+<p>PPQT can open files with any of these four encodings or in some cases, other encodings. But in order to load a document without garbling its special characters, PPQT needs to know which encoding the file uses. It has several ways of finding this out.</p>
 <ol>
 <li>When saving a file, PPQT writes the encoding into the metadata file (next topic). Thus once you have saved a book it always reopens with the same encoding.</li>
-<li>Project Gutenberg (PG) requires all etext files to have the suffix <tt>.txt</tt> regardless of their encoding (crazy, but true). However it is conventional to indicate UTF-8 by ending the filename with <tt>-u</tt>, <tt>-utf</tt>, or <tt>-utf8</tt>, for example, <tt>afinebook-utf.txt</tt>. PPQT recognizes this and opens such a file as UTF-8.</li>
+<li>PG requires all etext files to have the file suffix <tt>.txt</tt> regardless of their encoding. However PG permits you to end the filename with <tt>-u</tt>, <tt>-utf</tt>, or <tt>-utf8</tt> to indicate UTF-8 encoding, for example, <tt>afinebook-utf.txt</tt>. PPQT recognizes this and opens such a file as UTF-8.</li>
 <li>You can also end a filename with <tt>-l</tt>, <tt>-ltn</tt> or <tt>-ltn1</tt> to signal that it is encoded Latin-1, for example <tt>myfinebook-ltn.txt</tt>.</li>
-<li>Per the standard, HTML files should either be UTF-8 or else they should have a <tt>charset=</tt><i>encoding</i> parameter in the first 1024 characters of the file. When loading or saving a file of type <tt>.htm</tt> or <tt>.html</tt>, PPQT looks for this parameter and uses the encoding specified. If there is no parameter, it uses UTF-8.</li>
-<li>Although PG does not permit using file suffixes other than <tt>.txt</tt> for an etext, other suffixes are still useful for non-book files such as a good_words or "scannos" word list. Hence PPQT looks for these file suffixes:
-<ul>
-<li><tt>.utf</tt> or <tt>.utx</tt> to signal UTF-8</li>
-<li><tt>.ltn</tt> to signal Latin-1</li>
-<li><tt>.win</tt> to signal Windows CP1252</li>
-<li><tt>.mac</tt> to signal Mac Roman</li>
-</ul>
+<li>Per the HTML and XML standards, HTML, XHTML and XML files must either be UTF-8, or else they must have a <tt>charset=</tt><i>encoding</i> parameter in the first 1024 characters of the file. When PPQT loads or saves a file of type <tt>.htm</tt>, <tt>.html</tt> or <tt>.xml</tt>, PPQT looks for this parameter and uses the encoding specified. If there is no parameter, it uses UTF-8.</li>
 </li>
-<li>When none of methods 1-5 reveal the encoding, PPQT feeds the first 4096 bytes of the file to a package that attempts to infer the encoding from the byte values used. If the package reports an encoding at a high confidence level PPQT uses that encoding. Otherwise it displays an error message.</li>
+<li>When those methods do not reveal the encoding of an input file, PPQT feeds the first 4096 bytes of the file to software that attempts to guess the encoding from the byte values used. If the package reports an encoding at a high confidence level PPQT uses that encoding. Otherwise it displays an error message.</li>
 </ol>
-<p>You can bypass this complexity by using the File menu command Open With Encoding, and selecting one encoding from the sub-menu. The file you select is opened with that encoding.</p>
-<p>When saving a file, PPQT will only use UTF-8 or Latin-1. It applies rules 2-5 above to discover which you want to use. To force one or the other, save the file with an indicator in the filename or file suffix, e.g. to force saving as Latin-1, save to <i>bookname</i><tt>-ltn.txt</tt>.</p>
+<p>You can bypass this complexity by using the File menu command Open With Encoding and selecting one of the four encodings in the sub-menu. The file you select is opened with that encoding.</p>
+<p>When saving a file, PPQT will only use UTF-8 or Latin-1. It applies rules 2-4 above to discover which you want to use. To force one or the other, save the file with an indicator in the filename or file suffix. For example to force saving as Latin-1, save to <i>bookname</i><tt>-ltn.txt</tt>.</p>
 <h3>Metadata</h3>
 When opening  <tt>afinebook.txt</tt>, PPQT looks for a file named  <tt>afinebook.txt.meta</tt> in the same location (i.e. the full book name
 plus <tt>.meta</tt>). If the meta file
@@ -127,6 +124,11 @@ You should quit PPQT and resolve the conflict at once.</p>
 <p>PPQT expects to find a folder named <tt>pngs</tt> in the same location as
 the text file, containing the scan images for the book. These are displayed in 
 the Pngs panel.</p>
+<h3 id='GGIO'>Guiguts Import and Export</h3>
+<p>PPQT can open a project that has been saved by Guiguts. Just use File > Open and select the book file as saved by Guiguts. PPQT will notice that there is no <i>bookname</i><tt>.meta</tt> but there is a <i>bookname</i><tt>.bin</tt>, the Guiguts metadata file. It will ask for permission and then load the book, taking metadata from the <tt>bin</tt> file and also from <tt>good_words</tt> and <tt>bad_words</tt> files if they exist. Not all of the Guiguts meta-information is preserved, but page numbering and bookmark locations should be correct.</p>
+<p>Immediately after loading a Guiguts book, go to the Words or Characters panel and click Refresh. Then go to the Pages panel and click Update. These  steps bring the metadata up to date.</p> 
+<p>Select File > Export to Guiguts to save only the metadata of the current book as a Guiguts <i>bookname</i><tt>.bin</tt> file. Follow this with File > Save to save the actual text <i>bookname</i> (and its <i>bookname</i><tt>.meta</tt>). You can then open the book file in Guiguts and the page numbering should be correct.</p>
+<p>It is not expected that anyone would alternate between PPQT and Guiguts as part of normal work. These features are meant for testing and debugging. The conversion between editing systems is not perfect and will not be improved.</p>
 <h2 id='Main'>The Main Window</h2>
 <p>When launched, PPQT displays a single window divided in two by a vertical bar. The left side is the Edit Panel where you edit the document. The right side
 is a tabbed set of panels for different functions. All these panels are described below.</p>
@@ -152,9 +154,8 @@ or by doubleclick (word) or  tripleclick (line).
 Extend a selection by holding the shift key when using a cursor movement key
 or selecting a bookmark (see below).
 PPQT does not support rectangular selections or discontinuous selections.</p>
-<p>You can move text by dragging the selection, and
-you can copy text by alt-dragging,
-in addition to the usual copy and paste keystrokes and Edit menu commands.</p>
+<p>In addition to the usual copy and paste keystrokes and Edit menu commands, you can move text by dragging the selection, and you can copy text by alt-dragging.
+.</p>
 <h3>Edit Keys</h3>
 <p>The Edit panel supports the following special keystrokes.</p>
 <h4>Cursor Movement Keys</h4>
@@ -346,16 +347,16 @@ the text) are available.</p>
 <h2 id='Chars'>The Characters Panel</h2>
 <p>Click the Char tab to show the Characters panel.
 This panel displays a table of all characters seen in the document,
-in five columns:</p>
+in six columns. Click on the heading of any column to sort the table on that column. The columns are:</p>
 <ul>
-<li><b>Glyph</b>: The character symbol.</li>
+<li><b>Glyph</b>: The character symbol (if it can be displayed in the current font).</li>
 <li><b>Value</b>: The hex value of the Unicode character.</li>
 <li><b>Count</b>: The number of times the character appears in the document.</li>
 <li><b>Entity</b>: The  HTML/XML Entity code for this character.</li>
 <li><b>Unicode category</b>: The Unicode category of the character.</li>
+<li><b>Unicode Character</b>: The official Unicode character name, for example "Masculine Ordinal Indicator". Long names may be truncated, but if you hover the mouse over that cell, the full name appears as a tool-tip.</li>
 </ul>
-<p>Click on the heading of any column to sort the table on that column.
-After you have edited the document, the table is out of date.
+<p>After you have edited the document, the table is out of date.
 Click the Refresh button
 to rebuild all metadata and make the counts accurate.</p>
 <p>In the upper right is a popup menu with three choices:<p>
@@ -803,6 +804,9 @@ superscripts, subscripts, Side notes, Illustrations, and typo markups to HTML.</
 <li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS style section described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match what PPQT generates).</li>
 </ul>
 <h2 id='OldNew'>What Was New</h2>
+<h3>What's new as of 10 July 2013</h3>
+<p>When converting to HTML, we now apply a new, simplified rule to detect chapter heads and subheads. The new rule is subtly different from the wording of the PGDP Formatting Guidelines. See <a href='#html'>HTML Conversion</a> for details.</p>
+<p>When converting Footnotes to HTML, we no longer include a <tt>name=</tt> property in the anchor or the footnote <tt>&lt;div></tt>. The <tt>name</tt> property is not supported in XHTML Strict and prevented the document from validating.</p>
 <h3>What's New as of 30 April 2013</h3>
 <p>Several small but annoying bugs have been fixed:</p>
 <ul>
