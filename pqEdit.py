@@ -458,9 +458,9 @@ class PPTextEditor(QPlainTextEdit):
             IMC.goodWordList.save(metaStream)
             metaStream << u"{{/GOODWORDS}}\n"
         if IMC.badWordList.active() : # have some bad words
-            metaStream << u"{{GOODWORDS}}\n"
+            metaStream << u"{{BADWORDS}}\n"
             IMC.badWordList.save(metaStream)
-            metaStream << u"{{/GOODWORDS}}\n"
+            metaStream << u"{{/BADWORDS}}\n"
         p1 = self.textCursor().selectionStart()
         p2 = self.textCursor().selectionEnd()
         metaStream << u"{{CURSOR "+unicode(p1)+u' '+unicode(p2)+u"}}\n"
