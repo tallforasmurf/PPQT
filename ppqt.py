@@ -138,9 +138,16 @@ from PyQt4.QtGui import ( QApplication, QFont, QFontDatabase )
 # Each module imports whatever classes of PyQt.Qtxx it needs. This causes
 # some duplication; we trust Python to not import duplicate code.
 
+# Create the Inter-Module Communicator
+import pqIMC
+if pqIMC.__version__ != __version__ :
+    print('pqIMC.py version {0}'.format(pqIMC.__version__))
+IMC = pqIMC.tricorder()
+
 # Collect version and copyright info into one string suitable for the
 # argparse version action.
-versionstr = 'PPQT Version {0}\n{1}'.format(__version__, __copyright__)
+versionstr = 'PPQT Version {0}\n(with PyQt {1} and Qt {2})\n{3}'.format(
+    __version__, IMC.version_pyqt, IMC.version_qt, __copyright__)
 
 # Display copyright and version on the console, which may or may not be visible
 print(versionstr)
@@ -159,12 +166,6 @@ app = QApplication(sys.argv)
 app.setOrganizationName("PGDP")
 app.setOrganizationDomain("pgdp.net")
 app.setApplicationName("PPQT")
-
-# Create the Inter-Module Communicator
-import pqIMC
-if pqIMC.__version__ != __version__ :
-    print('pqIMC.py version {0}'.format(pqIMC.__version__))
-IMC = pqIMC.tricorder()
 
 # Get the message support for diagnostics
 import pqMsgs # misc message and font routines
