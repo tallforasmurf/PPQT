@@ -726,7 +726,7 @@ class PPTextEditor(QPlainTextEdit):
                 localCharCensus[u] = 1+localCharCensus.get(u,0)
                 i += 1
                 qcThis = qsLine.at(i)
-                uiCat = qcThis.category()
+                #uiCat = qcThis.category()
             nextAction = (GET, )
         # The following are called when inWord is false
         def WORDBEGIN(flag): # uppercase, lowercase, or digit
