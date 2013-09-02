@@ -124,10 +124,10 @@ document with regexs to find Anchors and Notes, and matching them.
 During Refresh, found Keys are assigned to a number class based on their
 values, with classes expressed as regular expressions:
     Regex               Assumed class
-    [IVXLCDM]{1,15}       IVX
+    [IVXLCDM]{1,19}       IVX
     [A-Z]{1,2}            ABC
     [1-9]{1,3}            123
-    [ivxlcdm]{1,15}       ivx
+    [ivxlcdm]{1,19}       ivx
     [a-z]{1,2}            abc
     [*\u00a4\u00a7\u00b6\u2020\u20221] symbols *, para, currency, dagger, dbl-dagger
 
@@ -141,22 +141,22 @@ Other controls supplied at the bottom of the panel are:
 Renumber Streams: a box with the six Key classes and for each, a popup
 giving the choice of renumber stream:
 
-  1,2,..999
-  A,B,..ZZ
-  I,II,..M
-  a,b,..zz
-  i,ii,..m
+  1,2,..9999
+  A,B,..ZZZ
+  I,II,..MMMM
+  a,b,..zzz
+  i,ii,..mmmm
   no renumber
 
 There are five unique number streams, set to 0 at the start of a renumber
 operation and incremented before use, and formatted in one of five ways.
 The initial assignment of classes to streams is:
 
-  123 : 1,2,..999
-  ABC : A,B,..ZZ
-  IVX : A,B,..ZZ
-  abc : a,b,..zz
-  ivx : a,b,..zz
+  123 : 1,2,..9999
+  ABC : A,B,..ZZZ
+  IVX : A,B,..ZZZ
+  abc : a,b,..zzz
+  ivx : a,b,..zzz
   sym : no renumber
 
 A typical book has only ABC keys, or possibly ABC and also ixv or 123 Keys.
@@ -241,18 +241,18 @@ KeyClassNames = (
 # stream names as a QStringList in KeyClass_* numeric order
 # (used in comboboxes)
 StreamNames = QStringList(QString(u'I,II..M')) << \
-    QString(u'A,B,..ZZ') << \
-    QString(u'i,ii..m') << \
-    QString(u'a,b,..zz') << \
-    QString(u'1,2,..999') << \
+    QString(u'A,B,..ZZZ') << \
+    QString(u'i,ii..mm') << \
+    QString(u'a,b,..zzz') << \
+    QString(u'1,2,..9999') << \
     QString(u'no renumber')
 # class-detecting REs in KeyClass_* numeric order
 ClassREs = (
-    u'[IVXLCD]{1,15}', # ROMAN to DCCCCLXXXXVIII
-    u'[A-Z]{1,2}',     # ALPHA to ZZ (should it be ZZZ?)
-    u'[ivxlcd]{1,15}', # roman to whatever
-    u'[a-z]{1,2}',     # alpha to zz (?)
-    u'\d{1,3}',       # decimal to 999
+    u'[IVXLCDM]{1,19}', # ROMAN to MMMMDCCCCLXXXXVIII (4998)
+    u'[A-Z]{1,3}',     # ALPHA to ZZZ
+    u'[ivxlcdm]{1,19}', # roman to whatever
+    u'[a-z]{1,3}',     # alpha to zzz
+    u'\d{1,4}',       # decimal to 9999
     u'[\*\u00a4\u00a7\u00b6\u2020\u2021]' # star currency section para dagger dbl-dagger
     )
 
@@ -597,7 +597,7 @@ def toRoman(n,lc):
     if not (0 < n < 5000):
         raise ValueError, "number out of range (must be 1..4999)"
     if int(n) <> n:
-        raise TypError, "decimals can not be converted"
+        raise ValueError, "decimals can not be converted"
     result = ""
     for numeral, integer in RomanNumeralMap:
         while n >= integer:
@@ -608,11 +608,11 @@ def toRoman(n,lc):
     return qs
 AlphaMap = u'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 def toAlpha(n,lc=False):
-    '''convert integer to alpha A..ZZ'''
+    '''convert integer to alpha A..ZZZ (nb. 26**3 == 17577'''
     if not (0 < n < 17577):
         raise ValueError, "number out of range (must be 1..17577)"
     if int(n) <> n:
-        raise TypeError, "decimals can not be converted"
+        raise ValueError, "decimals can not be converted"
     result = ''
     while True :
         (n,m) = divmod(n-1,26)
@@ -720,7 +720,7 @@ class fnotePanel(QWidget):
             self.pickabc,self.pick123,self.picksym]
         # Note a count of items over which it is worthwhile to run a
         # progress bar during renumber, move, etc. Reconsider later: 100? 200?
-        self.enoughForABar = 50
+        self.enoughForABar = 100
     # Convenience function to shorten code when instantiating
     def makeStreamMenu(self,choice=5):
         cb = QComboBox()
@@ -859,8 +859,17 @@ class fnotePanel(QWidget):
             # Increment that stream (if no-renumber, increment is harmless)
             self.streams[renchoice] += 1
             # Format the incremented value as a string based on stream choice
-            # This produces None if renchoice is 5, no-renumber.
-            newkeyqs = self.streamLambdas[renchoice](self.streams[renchoice])
+            # This produces None if renchoice is 5, no-renumber. It could produce
+            # a value error on a too-big roman numeral or other unlikely things.
+            try :
+                newkeyqs = self.streamLambdas[renchoice](self.streams[renchoice])
+            except ValueError, errmsg :
+                pqMsgs.warningMsg(
+                    "Error encoding {0} key stream".format(KeyClassNames[renchoice]),
+                    "Numbers will be wrong, recommend Undo when operation ends"
+                    )
+                self.streams[renchoice] = 0 # restart that stream
+                newkeyqs = self.streamLambdas[renchoice](self.streams[renchoice])
             if newkeyqs is not None: # not no-renumber, so we do it
                 # infer the key class of the new key string
                 newclass = classOfKey(newkeyqs)
