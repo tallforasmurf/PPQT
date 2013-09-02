@@ -99,22 +99,21 @@ class wordHighLighter(QSyntaxHighlighter):
     # line as it changes in editing. Anyway it behooves us to be as quick as
     # possible. We don't actually check spelling, we just use the flag that
     # was set when the last spellcheck was done.
+    # Note that either one or both of MC.scannoHiliteSwitch or IMC.spellingHiliteSwitch
+    # are ON, or else we are called against an empty document -- see setHighlight below.
     def highlightBlock(self, text):
-        # quickly bail when nothing to do
-        if text.length() == 0 : return
-        if (IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch) :
-            # find each word in the text and test it against our lists
-            i = self.wordMatch.indexIn(text,0) # first word if any
-            while i >= 0:
-                l = self.wordMatch.matchedLength()
-                w = self.wordMatch.cap(0) # word as qstring
-                if IMC.scannoHiliteSwitch: # we are checking for scannos:
-                    if IMC.scannoList.check(unicode(w)):
-                        self.setFormat(i,l,self.scannoFormat)
-                if IMC.spellingHiliteSwitch: # we are checking spelling:
-                    if (IMC.wordCensus.getFlag(w) & IMC.WordMisspelt):
-                        self.setFormat(i,l,self.misspeltFormat)
-                i = self.wordMatch.indexIn(text,i+l) # advance to next word
+        # find each word in the text and test it against our lists
+        i = self.wordMatch.indexIn(text,0) # first word if any
+        while i >= 0:
+            l = self.wordMatch.matchedLength()
+            w = self.wordMatch.cap(0) # word as qstring
+            if IMC.scannoHiliteSwitch: # we are checking for scannos:
+                if IMC.scannoList.check(unicode(w)):
+                    self.setFormat(i,l,self.scannoFormat)
+            if IMC.spellingHiliteSwitch: # we are checking spelling:
+                if (IMC.wordCensus.getFlag(w) & IMC.WordMisspelt):
+                    self.setFormat(i,l,self.misspeltFormat)
+            i = self.wordMatch.indexIn(text,i+l) # advance to next word
 
 # Define the editor as a subclass of QPlainTextEdit. Only one object of this
 # class is created, in ppqtMain. The fontsize arg is recalled from saved
@@ -152,7 +151,7 @@ class PPTextEditor(QPlainTextEdit):
     def setHighlight(self, onoff):
         self.hiliter.setDocument(self.nulDoc) # turn off hiliting always
         if onoff:
-            pqMsgs.startBar(100,"Setting Spelling Highlights...")
+            pqMsgs.startBar(100,"Setting Scanno/Spelling Highlights...")
             self.hiliter.setDocument(self.document())
             pqMsgs.endBar()
 
