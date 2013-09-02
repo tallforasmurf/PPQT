@@ -1200,6 +1200,12 @@ class MainWindow(QMainWindow):
     # Then save our current geometry, list of recent files, etc.
     # Finally emit the shuttingDown signal so other widgets can do the same.
     def closeEvent(self, event):
+        if not IMC.statusBar.currentMessage().isEmpty() :
+            pqMsgs.warningMsg(
+                'Please wait until the status line is clear',
+                'Some long-running process needs to finish before Quit')
+            event.ignore()
+            return
         if not self.ohWaitAreWeDirty() :
             # user clicked cancel on the save your file? dialog
             event.ignore() # as you were...
