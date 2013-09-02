@@ -177,6 +177,15 @@ def getFindMsg( parentWidget, prepText = None ):
     else:
         return (False, QString() )
 
+# Functions to show and erase status bar messages. These are used for
+# long-running operations such as setting scanno highlights where it
+# is not practical to run a progress bar.
+def showStatusMsg(text):
+    IMC.statusBar.showMessage(text)
+    QApplication.processEvents() # essential: force graphic update
+def clearStatusMsg():
+    IMC.statusBar.clearMessage()
+    QApplication.processEvents() # force graphic update
 
 # Functions to create and manage a progress bar in our status bar
 # makeBar is called from pqMain to initialize the bar, on the right in
