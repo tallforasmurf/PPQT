@@ -68,6 +68,7 @@ from PyQt4.QtGui import (
 # get simple access to methods of the list objects
 from pqLists import *
 import pqMsgs
+from collections import defaultdict
 
 # Global regex used by wordHighLighter and by textTitleCase to find words
 # of one character and longer.
@@ -669,194 +670,59 @@ class PPTextEditor(QPlainTextEdit):
     # Other times (e.g. from the Refresh button of the Word or Char panel),
     # we skip over page separator lines.
 
-    # For any other line we scan by characters, parsing out words and taking
-    # the char and word counts. Note that the word and char census lists
-    # should be cleared before this method is called.
+    # Each non-separator line is first scanned by characters and then for words.
+    # The character scan counts characters for the Chars panel. We do NOT parse
+    # the text for PGDP productions [oe] and [OE] nor other markups for accented
+    # characters such as [=o] for o-with-macron or [^a] for a-with-circumflex.
+    # These are just counted as [, o, e, ]. Reasons: (1) the alternative, to parse
+    # them into their proper unicode values and count those, entails a whole lotta
+    # code that would slow this census badly; (2) having the unicode chars in
+    # the Chars panel would be confusing when they are not actually in the text;
+    # (3) there is some value in having the counts of [ and ]. For similar reasons
+    # we count all the chars in HTML e.g. "<i>" is three characters even though it
+    # is effectively unprinted metadata.
 
-    # In scanning words, we assume that this is a properly proofed document
-    # with no broken words at end of line (although there can be broken words
-    # at end of a page, proof-* at end of line). We collect internal hyphens as
-    # part of the word ("mother-in-law") but not at end of word (lacunae like
-    # "help----" or emdashes) Similarly we collect internal apostrophes
-    # ("it's", "hadn't" are words) but not apostrophes at ends ("'Twas" is
-    # parsed as Twas, "students' work" as "students work"). This is because
-    # there seems to be no way to distinguish the case of "'Twas brillig"
-    # ('Twas as a word) from "'That's Amore' was a song" ('That's is not).
-    # Accepting internal hyphens and apostrophes requires a one-char lookahead.
+    # In scanning words, we collect numbers as words. We collect internal hyphens
+    # as letters ("mother-in-law") but not at end of word ("help----" or emdash).
+    # We collect internal apostrophes ("it's", "hadn't") but not apostrophes at ends,
+    # "'Twas" is counted as "Twas", "students' work" as "students work". This is because
+    # there seems to be no way to distinguish the contractive prefix ('Twas)
+    # and the final possessive (students') from normal single-quote marks!
+    # And we collect leading and internal, but not trailing, square brackets as
+    # letters. Thus [OE]dipus and ma[~n]ana are words (but will fail spellcheck)
+    # while Einstein[A] (a footnote key) is not.
 
-    # Harder is (a) recognizing [oe] and [OE] ligatures, and skipping <i>
-    # and other html-like markups. For these we use the QString::indexIn
-    # and a regex to do lookahead.
+    # We also collect HTML productions ("</i>" and "<table>") as words. They do not
+    # go in the census but we check them for lang= attributes and set the alternate
+    # spellcheck dictionary from them.
 
-    # The first version of this code used nested if-logic, but in an attempt to
-    # simplify and speed up we now use a modified finite-state system driven by
-    # a two-row table. Each column represents one of the 30 Unicode categories
-    # returned by QChar::category(). The two rows represent the inWord
-    # state true/false. Each cell contains a tuple (func,[arg[,arg]]). We call
-    # the next action as tup[0](*tup[1:]) (ooh, very pythonic). The executed
-    # function does something and sets the next action-tuple. The functions are
-    # all local to the main function, which makes for a long piece of code.
-
-    def doCensus(self,page=False):
-        global reLineSep, reMarkup, qcDash, qcApost, qcLess, qcLbr, qslcLig
-        global qsucLig, qsLine, qsDict, i, qcThis, uiCat, inWord
-        global uiWordFlags, qsWord, nextAction, parseArray
-        # actions called from the finite-state table
-        def GET(): # acquire the next char and category, push action
-            global qcThis, uiCat, nextAction, i
-            qcThis = qsLine.at(i)
-            uiCat = qcThis.category()
-            nextAction = parseArray[inWord][uiCat]
-        def COUNT1(): # count the current character, advance index
-            global qcThis, uiCat, nextAction, i
-            #IMC.charCensus.count(QString(qcThis),uiCat)
-            u = qcThis.unicode() # a long integer
-            localCharCensus[u] = 1+localCharCensus.get(u,0)
-            i += 1
-            # since most letters end up here, save one cycle by doing GET now
-            # if i is off the end, it's ok: QString.at(toobig) returns 0.
-            qcThis = qsLine.at(i)
-            uiCat = qcThis.category()
-            nextAction = parseArray[inWord][uiCat]
-        def COUNTN(n): # census chars of a known-length string like [OE], </i>
-            global qcThis, uiCat, qsLine, nextAction, i
-            for j in range(n): # i.e. do this n times
-                #IMC.charCensus.count(QString(qcThis),uiCat)
-                u = qcThis.unicode() # a long integer
-                localCharCensus[u] = 1+localCharCensus.get(u,0)
-                i += 1
-                qcThis = qsLine.at(i)
-                #uiCat = qcThis.category()
-            nextAction = (GET, )
-        # The following are called when inWord is false
-        def WORDBEGIN(flag): # uppercase, lowercase, or digit
-            global qcThis, qsWord, inWord, uiWordFlags, nextAction
-            qsWord.append(qcThis)
-            inWord = True
-            uiWordFlags = flag
-            nextAction = (COUNT1,)
-        def PUNCOPEN(): # could be [, look for oe-ligs
-            global qsLine, qslcLig, i, qsWord, inWord, uiWordFlags, nextAction
-            if i == qsLine.indexOf(qslcLig,i,Qt.CaseSensitive):
-                # [oe] starts a word
-                qsWord.append(qslcLig)
-                inWord = True
-                uiWordFlags = IMC.WordHasLower
-                nextAction = (COUNTN, 4)
-            elif i == qsLine.indexOf(qsucLig,i,Qt.CaseSensitive):
-                # [OE] starts a word
-                qsWord.append(qsucLig)
-                inWord = True
-                uiWordFlags = IMC.WordHasUpper
-                nextAction = (COUNTN, 4)
-            else: # just a random [ or (
-                nextAction = ( COUNT1, )
-        def SYMBOL(): # math symbol can be <, look for markup
-            global i, qsLine, qsDict, reMarkup, nextAction
-            if i == reMarkup.indexIn(qsLine,i) :
-                # </? i/b/sc/xx > markup starts here, suck it up
-                if reMarkup.cap(1) == sdMarkup :
-                    if reMarkup.cap(2).isNull() : # assume </sd>
-                        qsDict = QString() # no alternate dict
-                    else: # assume <sd dict_tag>
-                        # start tagging words with /dictag
-                        qsDict.append(u"/")
-                        qsDict.append(reMarkup.cap(2).trimmed())
-                # regardless, skip the whole markup
-                nextAction = (COUNTN, reMarkup.matchedLength() )
-            else:
-                # it may be < but it isn't markup, continue 1 char at a time
-                nextAction = (COUNT1,)
-        # The following are called when inWord is True
-        def WORDCONTINUE(flag):
-            global qsWord, qcThis, uiWordFlags, nextAction
-            qsWord.append(qcThis)
-            uiWordFlags |= flag
-            nextAction = (COUNT1,)
-        def WORDEND(): # char definitely not a wordchar and not <
-            global qsWord, qsDict, uiWordFlags, inWord, nextAction
-            qsWord.append(qsDict)
-            IMC.wordCensus.count(qsWord,uiWordFlags)
-            qsWord.clear()
-            uiWordFlags = 0
-            inWord = False
-            nextAction = (COUNT1,)
-        def PUNCOPENW(): # could be [oe] inside a word
-            global qsLine, qslcLig, qsucLig, i, qsWord, uiWordFlags, nextAction
-            if i == qsLine.indexOf(qslcLig,i,Qt.CaseSensitive):
-                qsWord.append(qslcLig)
-                uiWordFlags |= IMC.WordHasLower
-                nextAction = (COUNTN, 4)
-            elif i == qsLine.indexOf(qsucLig,i,Qt.CaseSensitive):
-                # [OE] inside a word? oh well...
-                qsWord.append(qsucLig)
-                uiWordFlags |= IMC.WordHasUpper
-                nextAction = (COUNTN, 4)
-            else:
-                nextAction = (WORDEND, )
-        def WORDASH(): # hyphen when inWord, look ahead
-            global qsLine, i, nextAction
-            lacat = qsLine.at(i+1).category()
-            if (lacat == QChar.Letter_Lowercase) \
-            or (lacat == QChar.Letter_Uppercase):
-                nextAction =  ( WORDCONTINUE, IMC.WordHasHyphen)
-            else:
-                nextAction = ( WORDEND, )
-        def PUNCAPO(): # possible apostrophe inside word
-            global qcThis, qcApost, qsLine, nextAction
-            if qcThis == qcApost : # apostrophe, isn't it
-                lacat = qsLine.at(i+1).category()
-                if (lacat == QChar.Letter_Lowercase) \
-                or (lacat == QChar.Letter_Uppercase):
-                    nextAction = ( WORDCONTINUE, IMC.WordHasApostrophe)
-                else:
-                    nextAction = ( WORDEND, )
-            else:
-                nextAction = ( WORDEND, )
-        def WORDENDLT(): # symbol-math ending a word
-            global qsWord, qsDict, uiWordFlags, inWord, qcThis, qcLess, nextAction
-            qsWord.append(qsDict)
-            IMC.wordCensus.count(qsWord,uiWordFlags)
-            qsWord.clear()
-            inWord = False
-            if qcThis != qcLess:
-                nextAction = (COUNT1,)
-            else:
-                nextAction = (SYMBOL,)
-
-        # List of unicode categories can be seen in pqChars.py
-        parseArray = [ [ (COUNT1,), (WORDBEGIN, 0), (WORDBEGIN, 0), (COUNT1,),
-            (WORDBEGIN, IMC.WordHasDigit), (WORDBEGIN, IMC.WordHasDigit),
-            (WORDBEGIN, IMC.WordHasDigit),  (COUNT1,), (COUNT1,), (COUNT1,),
-            (COUNT1,), (COUNT1,), (COUNT1,), (COUNT1,), (COUNT1,),
-            (WORDBEGIN, IMC.WordHasUpper), (WORDBEGIN, IMC.WordHasLower),
-            (WORDBEGIN, IMC.WordHasLower), (WORDBEGIN, IMC.WordHasLower),
-            (WORDBEGIN, IMC.WordHasLower), (COUNT1,), (COUNT1,), (PUNCOPEN,),
-            (COUNT1,), (COUNT1,), (COUNT1,), (COUNT1,), (SYMBOL,), (COUNT1,),
-            (COUNT1,), (COUNT1,) ],
-            [ (WORDEND, ), (WORDCONTINUE, 0), (WORDCONTINUE, 0),(WORDEND, ),
-            (WORDCONTINUE, IMC.WordHasDigit), (WORDCONTINUE, IMC.WordHasDigit),
-            (WORDCONTINUE, IMC.WordHasDigit),(WORDEND, ),(WORDEND, ),(WORDEND, ),
-            (WORDEND, ),(WORDEND, ),(WORDEND, ),(WORDEND, ),(WORDEND, ),
-            (WORDCONTINUE, IMC.WordHasUpper), (WORDCONTINUE, IMC.WordHasLower),
-            (WORDCONTINUE, IMC.WordHasLower), (WORDCONTINUE, IMC.WordHasLower),
-            (WORDCONTINUE, IMC.WordHasLower), (WORDEND, ), (WORDASH, ),
-            (PUNCOPENW, ), (WORDEND, ), (WORDEND, ), (WORDEND, ),
-            (PUNCAPO, ), (WORDENDLT, ),(WORDEND, ),(WORDEND, ),(WORDEND, )] ]
-
+    def doCensus(self, page=False) :
+        global reLineSep, reWords, reLang, qcLess
+        # Clear the current census values
         IMC.wordCensus.clear()
         IMC.charCensus.clear()
-        localCharCensus = {}
-        iFolio = 0 # page number for line separator records
+        # Count chars locally for speed
+        local_char_census = defaultdict(int)
+        # Name of current alternate dictionary
+        alt_dict = QString() # isEmpty when none
+        # Tag from which we set an alternate dict
+        alt_dict_tag = QString()
+        # Initialize png number for line separator records
+        image_number = 0
+        # Start the progress bar based on the number of lines in the document
         pqMsgs.startBar(self.document().blockCount(),"Counting words and chars...")
+        # Find the first text block of interest, skipping an HTML header file
         qtb = self.document().begin() # first text block
         if IMC.bookType.startsWith(QString(u"htm")) \
         and qtb.text().startsWith(QString(u"<!DOCTYPE")) :
             while (qtb != self.document().end()) \
             and (not qtb.text().startsWith(QString(u"<body"))) :
                 qtb = qtb.next()
-        while qtb != self.document().end(): # up to end of document
+        # Scan all lines of the document to the end.
+        while qtb != self.document().end() :
             qsLine = qtb.text() # text of line as qstring
+            dbg = qsLine.size()
+            dbg2 = qtb.length()
             if reLineSep.exactMatch(qsLine): # this is a page separator line
                 if page :
                     # We are doing page seps, it's for Open with no .meta seen,
@@ -871,66 +737,109 @@ class PPTextEditor(QPlainTextEdit):
                     # point it to this text block
                     tcursor.setPosition(qtb.position())
                     # initialize this page's folio
-                    iFolio += 1
+                    image_number += 1
                     # dump all that in the page table
                     IMC.pageTable.append(
-    [tcursor, qsfilenum, qsproofers, IMC.FolioRuleAdd1, IMC.FolioFormatArabic, iFolio]
+    [tcursor, qsfilenum, qsproofers, IMC.FolioRuleAdd1, IMC.FolioFormatArabic, image_number]
                                       )
                 # else not doing pages, just ignore this psep line
             else: # not psep, ordinary text line, count chars and words
-                i = 0
-                inWord = False
-                qsWord = QString()
-                uiWordFlags = 0
-                nextAction = (GET,)
-                while i < qsLine.size():
-                    nextAction[0](*nextAction[1:])
-
-                if inWord : # line ends with a word, not unsurprising
-                    qsWord.append(qsDict)
-                    IMC.wordCensus.count(qsWord,uiWordFlags)
-            qtb = qtb.next() # next textblock == next line
+                pyLine = unicode(qsLine) # move into Python space to count
+                for c in pyLine :
+                    local_char_census[c] += 1
+                j = 0
+                while True:
+                    j = reWords.indexIn(qsLine,j)
+                    if j < 0 : # no more word-like units
+                        break
+                    qsWord = reWords.cap(0)
+                    j += qsWord.size()
+                    if qsWord.startsWith(qcLess) :
+                        # Examine a captured HTML production.
+                        if not reWords.cap(2).isEmpty() :
+                            # HTML open tag, look for lang='dict'
+                            if 0 <= reLang.indexIn(reWords.cap(3)) :
+                                # found it: save tag and dict name
+                                alt_dict = QString(reLang.cap(1))
+                                alt_dict.prepend(u'/') # make "/en_GB"
+                                alt_dict_tag = QString(reWords.cap(2))
+                            # else no lang= attribute
+                        else:
+                            # HTML close tag, see if it closes alt dict use
+                            if reWords.cap(5) == alt_dict_tag :
+                                # yes, matches open-tag for dict, clear it
+                                alt_dict_tag = QString()
+                                alt_dict = QString()
+                            # else no alt dict in use, or didn't match
+                    else : # did not start with "<", process as a word
+                        # Set the property flags, which is harder now we don't
+                        # look at every character. Get into python for speed,
+                        # also because QString doesn't do .isAlnum
+                        pyWord = unicode(qsWord) # make a python string
+                        flag = 0
+                        if pyWord != pyWord.lower() :
+                            flag |= IMC.WordHasUpper
+                        if pyWord != pyWord.upper() :
+                            flag |= IMC.WordHasLower
+                        if pyWord.isalnum() != pyWord.isalpha() :
+                            flag |= IMC.WordHasDigit
+                        if '-' in pyWord :
+                            flag |= IMC.WordHasHyphen
+                        if "'" in pyWord :
+                            flag |= IMC.WordHasApostrophe
+                        IMC.wordCensus.count(qsWord.append(alt_dict),flag)
+                # end "while any more words in this line"
+            # end of not-a-psep-line processing
+            qtb = qtb.next() # move on to next block
             if (0 == (qtb.blockNumber() & 255)) : #every 256th block
                 pqMsgs.rollBar(qtb.blockNumber()) # roll the bar
                 QApplication.processEvents()
+        # end of scanning all text blocks in the doc
         pqMsgs.endBar()
-        # to save time by not calling charCensus.count() for every character
         # we accumulated the char counts in localCharCensus. Now read it out
         # in sorted order and stick it in the IMC.charCensus list.
-        for uc in sorted(localCharCensus.keys()):
-            qc = QChar(uc) # long int to QChar
-            IMC.charCensus.append(QString(qc),localCharCensus[uc],qc.category())
+        for one_char in sorted(local_char_census.keys()):
+            qc = QChar(one_char) # get to QChar for category() method
+            IMC.charCensus.append(QString(qc),local_char_census[one_char],qc.category())
         IMC.needSpellCheck = True # after a census this is true
-        IMC.staleCensus = 0 # but this is not true
+        IMC.staleCensus = 0 # but this is no longer true
         IMC.needMetadataSave |= IMC.wordlistsChanged
 
-# The following are global names referenced from inside the parsing functions
 # Regex to exactly match all of a page separator line. Note that the proofer
 # names can contain almost any junk; proofer names can be null (\name\\name);
 # and the end hyphens just fill the line out to 75 and may be absent.
-# The inner parens, cap(3), (\\[^\\]+) captures one proofer name, e.g. \JulietS
-# and the outer parens, .cap(2) capture all of however many there are.
+# The outer parens, accessed as cap(2), capture all the proofers, while the
+# inner parens, cap(3), (\\[^\\]+) captures one proofer name, e.g. \JulietS.
+
 reLineSep = QRegExp(u'-----File: ([^\\.]+)\\.png---((\\\\[^\\\\]*)+)\\\\-*',Qt.CaseSensitive)
-# Regex to match html markup: < /? spaces? (tag) spaces? whoknowswhat >
-# the cap(1) is the markup verb, and cap(2) is possibly a dict tag
-reMarkup = QRegExp("\\<\\/?\\s*(\\w+)\\s*([^>]*)>",Qt.CaseInsensitive)
-# Global literal for start of alternate spell dict markup <sd tag>
-sdMarkup = QString(u"sd")
-# Regex to match exactly end of a spelling dictionary span, </sd>
-sxMarkup = QRegExp("\\</sd>",Qt.CaseSensitive)
-qcDash = QChar("-")
-qcApost = QChar("'")
+
+# Regexes for parsing a line into word-like units.
+# Most likely: a block of letters a/o digits:
+xp_word = '''([\\w\\d]+)'''
+# Less likely: words with embedded hyphens or apostrophes:
+xp_hyap = '''([\\w\\d]+[\\-\\'][\\w\\d]+)+'''
+# Less likely still: [OE]dipus's ph[oe]be hatches ma[~n]ana
+xp_ligs = '''(\\w*\\[..\\]\\w+)'''
+# Any of the above word forms, marked off with nonword boundaries:
+xp_bdy = '\\b'
+xp_word_forms = xp_bdy + xp_word + '|' + xp_hyap + '|' + xp_ligs + xp_bdy
+# HTML starting tag with possible attributes (or, e.g. <br />)
+xp_start = '''(<(\w+)\s*([^>]*)>)'''
+# HTML end tag, not allowing for any attributes (or spaces)
+xp_end = '''(</(\w+)>)'''
+# Any of the above
+xp_all = xp_start + '|' + xp_end + '|' + xp_word_forms
+reWords = QRegExp(xp_all, Qt.CaseInsensitive)
+
+# When the above hits on an HTML close tag, reWords.cap(5) is the closed tag name.
+# When it hits on an opening tag with attributes, reWords.cap(2) is the tag name
+# ("span" etc) and reWords.cap(3) has the attributes. We scan that for lang='value'.
+# The 'value' is a language designation but we require it to be a dictionary tag
+# such as 'en_US' or 'fr_FR'.
+# According to W3C (http://www.w3.org/TR/html401/struct/dirlang.html) you can
+# put lang= into any tag, esp. span, para, div, td, and so forth.
+# We save the dict tag as an alternate dictionary for all words until the
+# matching close tag is seen.
+reLang = QRegExp(u'''lang=[\\'\\"]*([\\w\\-]+)[\\'\\"]*''')
+
 qcLess = QChar("<")
-qcLbr = QChar("[")
-qslcLig = QString("[oe]")
-qsucLig = QString("[OE]")
-qsLine = QString() # text line we are scanning
-i = 0 # index over qsLine
-qcThis = QChar() # current character from qsLine.at(i)
-uiCat = 0 # holds current category
-inWord = False # state of parser
-uiWordFlags = 0 # see ppqt defs IMC.WordHasUpper etc
-qsWord = QString() # accumulated letters of word
-qsDict = QString() # alt-dictionary suffix
-nextAction = (None,) # holds the tuple of the next parse action
-parseArray = [[],[]] # holds the list of parse actions by category
