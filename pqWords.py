@@ -449,6 +449,8 @@ class wordsPanel(QWidget):
         # Connect state change in case switch to a slot
         self.connect(self.caseSwitch, SIGNAL("stateChanged(int)"),
                      self.setCase)
+        self.connect(self.tableModel, SIGNAL("modelAboutToBeReset()"), self.sigResetStarting)
+        self.connect(self.tableModel, SIGNAL("modelReset()"), self.sigResetOver)
 
     # This slot receives a double-click on the table. Figure out which
     # word it is and get the Find panel set up to search for it. Some words
@@ -533,7 +535,17 @@ class wordsPanel(QWidget):
         #self.view.setSortingEnabled(False)
         self.tableModel.beginResetModel()
         IMC.editWidget.rebuildMetadata()
+        self.sigResetStarting() # replace message overwritten
         self.tableModel.endResetModel()
         self.setUpTableView()
+
+    # Slots to receive the table model's reset-starting and reset-done
+    # signals. Set a status message to entertain the user during a
+    # potentially lengthy operation.
+    def sigResetStarting(self) :
+        pqMsgs.showStatusMsg(QString(u"Rebuilding Words Table..."))
+
+    def sigResetOver(self) :
+        pqMsgs.clearStatusMsg()
 
 # No separate unit test - too dependent on edit metadata creation
