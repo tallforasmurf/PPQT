@@ -67,7 +67,7 @@ from PyQt4.QtGui import (
     QVBoxLayout,
     QHeaderView,
     QWidget)
-
+import pqMsgs
 import unicodedata
 
 # Implement a concrete table model by subclassing Abstract Table Model.
@@ -133,7 +133,7 @@ class myTableModel(QAbstractTableModel):
     def data(self, index, role ):
         (qs,count,flag) = IMC.charCensus.get(index.row())
         ui = qs.at(0).unicode() # gets an integer
-        uu = unicode(qs)[0] # gets a uchar
+        uu = unichr(ui) # gets a uchar
         if role == Qt.DisplayRole : # wants actual data
             if 0 == index.column():
                 return qs
@@ -230,6 +230,11 @@ class charsPanel(QWidget):
         self.connect(self.filterMenu, SIGNAL("activated(int)"),self.filter)
         # Connect doubleclicked from our table view to self.findThis
         self.connect(self.view, SIGNAL("doubleClicked(QModelIndex)"), self.findThis)
+        # Connect the model reset signals to functions to place and clear
+        # a status message.
+        self.connect(self.model, SIGNAL("modelAboutToBeReset()"), self.sigResetStarting)
+        self.connect(self.model, SIGNAL("modelReset()"), self.sigResetOver)
+
 
     # This slot receives a double-click on the table. Figure out which
     # character it is and get the Find panel set up to search for it.
@@ -286,10 +291,19 @@ class charsPanel(QWidget):
         self.model.endResetModel()
         self.setUpTableView()
 
+    # The model emits signals when it is starting to rebuild the table
+    # and when it has finished rebuilding the table. Use these to put up
+    # a status message, as the wait can be significant.
+    def sigResetStarting(self) :
+        pqMsgs.showStatusMsg(QString(u"Rebuilding Character Table..."))
+
+    def sigResetOver(self) :
+        pqMsgs.clearStatusMsg()
+
 if __name__ == "__main__":
     import sys
     from PyQt4.QtCore import (Qt,QFile,QIODevice,QTextStream)
-    from PyQt4.QtGui import (QApplication,QFileDialog)
+    from PyQt4.QtGui import (QApplication,QFileDialog,QMainWindow)
     import pqIMC
     IMC = pqIMC.tricorder() # create inter-module communicator
     app = QApplication(sys.argv) # create an app
@@ -297,15 +311,18 @@ if __name__ == "__main__":
     pqMsgs.IMC = IMC
     import pqLists
     IMC.charCensus = pqLists.vocabList()
-    W = charsPanel() # create the widget with the table view and model
-    W.show()
-    utname = QFileDialog.getOpenFileName(W,
+    CP = charsPanel() # create the widget with the table view and model
+    MW = QMainWindow()
+    MW.setCentralWidget(CP)
+    IMC.statusBar = MW.statusBar()
+    MW.show()
+    utname = QFileDialog.getOpenFileName(MW,
                 "UNIT TEST DATA FOR CHARS", ".")
     utfile = QFile(utname)
     if not utfile.open(QIODevice.ReadOnly):
         raise IOError, unicode(utfile.errorString())
 
-    W.docWillChange()
+    CP.docWillChange()
 
     utstream = QTextStream(utfile)
     utstream.setCodec("UTF-8")
@@ -315,5 +332,5 @@ if __name__ == "__main__":
         cat = qc.category()
         IMC.charCensus.count(QString(qc),cat)
 
-    W.docHasChanged()
+    CP.docHasChanged()
     app.exec_()
