@@ -151,9 +151,9 @@ class PPTextEditor(QPlainTextEdit):
     def setHighlight(self, onoff):
         self.hiliter.setDocument(self.nulDoc) # turn off hiliting always
         if onoff:
-            pqMsgs.startBar(100,"Setting Scanno/Spelling Highlights...")
+            pqMsgs.showStatusMsg("Setting Scanno/Spelling Highlights...")
             self.hiliter.setDocument(self.document())
-            pqMsgs.endBar()
+            pqMsgs.clearStatusMsg()
 
     # Implement clear/new. Just toss everything we keep.
     def clear(self):
