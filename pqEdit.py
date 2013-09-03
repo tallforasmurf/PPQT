@@ -798,7 +798,7 @@ class PPTextEditor(QPlainTextEdit):
         # we accumulated the char counts in localCharCensus. Now read it out
         # in sorted order and stick it in the IMC.charCensus list.
         for one_char in sorted(local_char_census.keys()):
-            qc = QChar(one_char) # get to QChar for category() method
+            qc = QChar(ord(one_char)) # get to QChar for category() method
             IMC.charCensus.append(QString(qc),local_char_census[one_char],qc.category())
         IMC.needSpellCheck = True # after a census this is true
         IMC.staleCensus = 0 # but this is no longer true
