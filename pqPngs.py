@@ -35,7 +35,7 @@ Display the pngs to match the page being edited.
 The object consists of a vertical box layout containing, above,
 a QLabel widget initialized with a 700x1000 QPixmap with fill(QColor("gray"))
 and enclosed in a QScrollArea. Below it, a small label to display the current
-page number and zoom factor initialized with "No page". Below that, a
+page number and folio, initialized with "No page". Below that, a
 spinBox for the current zoom factor and buttons "to Width" and "to Height"
 for zoom factor changes. Zooming is done by changing the size hint of the
 pixmap; it scales, and the parent scrollarea scrolls.
@@ -56,6 +56,7 @@ from PyQt4.QtGui import (
     QFrame, QKeyEvent, QLabel, QPalette, QPushButton,
     QScrollArea, QSizePolicy, QSlider, QSpinBox,
     QHBoxLayout, QVBoxLayout, QWidget)
+import pqPages
 
 class pngDisplay(QWidget):
     def __init__(self, parent=None):
@@ -138,7 +139,7 @@ class pngDisplay(QWidget):
     # the user last set it.
     def clear(self):
         # Clear the page name, used by pqNotes
-        IMC.currentImageNumber = None # will be name of last page e.g. "002"
+        IMC.currentImageNumber = None # will be name of last png file e.g. "002"
         # Clear the page filename, used in our caption label
         self.lastPage = QString() # last file name e.g. "002.png"
         # Clear the path to the pngs folder, used to fetch image files
@@ -202,7 +203,7 @@ class pngDisplay(QWidget):
                 # No file loaded or no pngs folder found.
             self.nextIndex = -1
         elif 0 == len(IMC.pageTable):
-                # No book open, or no pngs directory with it.
+            # No book open, or no pngs directory with it.
             # This could happen on the first call at startup, the first
             # call after a document has been loaded but before the metadata
             # has been built. No image to show.
@@ -267,11 +268,12 @@ class pngDisplay(QWidget):
         if not self.pixmap.isNull():
             # We successfully found and loaded an image and converted it to pixmap.
             # Load it in our label for display, set the zoom factor, and the caption.
+            # We do this every time through (even if lastIndex equalled nextIndex)
+            # because the zoomfactor might have changed.
             self.imLabel.setPixmap(self.pixmap)
             self.imLabel.resize( self.zoomFactor * self.pixmap.size() )
-            self.txLabel.setText(
-                u"{0} - {1}%".format(self.lastPage, int(100*self.zoomFactor))
-            )
+            folio = pqPages.folioString(IMC.pageTable[self.lastIndex][4],IMC.pageTable[self.lastIndex][5])
+            self.txLabel.setText(u"image {0} (folio {1})".format(self.lastPage,folio))
         else: # no file was loaded. It's ok if pages are missing
             self.noImage() # display the gray image.
 
@@ -361,7 +363,8 @@ class pngDisplay(QWidget):
         text_size = right_side - left_side + 2
         port_width = self.scarea.viewport().width()
         self.zoomFactor = max( self.minZoom, min( self.maxZoom, port_width / text_size ) )
-        self.zlider.setValue(int(100*self.zoomFactor)) # this signals newZoomFactor
+        # the next line signals newZoomFactor, which calls showPage.
+        self.zlider.setValue(int(100*self.zoomFactor))
         # Set the scrollbar to show the page from its left margin.
         self.scarea.horizontalScrollBar().setValue(int( left_side * self.zoomFactor) )
         #self.profiler.disable() #dbg
@@ -422,7 +425,7 @@ class pngDisplay(QWidget):
         text_height = bottom_side - top_side + 1
         port_height = self.scarea.viewport().height()
         self.zoomFactor = max( self.minZoom, min( self.maxZoom, port_height / text_height ) )
-        self.zlider.setValue(int(100*self.zoomFactor)) # this signals newZoomFactor
+        self.zlider.setValue(int(100*self.zoomFactor)) # signals newZoomFactor->showPage
         # Set the scrollbar to show the page from its top margin.
         self.scarea.verticalScrollBar().setValue(int( top_side * self.zoomFactor) )
 
@@ -472,6 +475,8 @@ if __name__ == "__main__":
     IMC.settings = QSettings()
     IMC.editWidget = QPlainTextEdit()
     IMC.pageTable=[]
+    import pqPages
+    pqPages.IMC = IMC
     widj = pngDisplay()
     widj.pngPath = QFileDialog.getExistingDirectory(widj,"Pick a Folder of Pngs",".")
     widj.pngPath.append(u'/')
