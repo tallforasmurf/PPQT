@@ -1326,7 +1326,7 @@ class MainWindow(QMainWindow):
                 pg = eval(unicode(perl_dict_line))
                 # convert ppp.ccc offset into a document offset integer
                 (ppp, ccc) = pg['offset'].split('.')
-                pg['offset'] = int( line_offsets[int(ppp)] + int(ccc) )
+                pg['offset'] = int( line_offsets[int(ppp)-1] + int(ccc) )
                 # add png number string to the dict
                 pg['png'] = unicode(rePage.cap(1))
                 # save for later
@@ -1340,7 +1340,7 @@ class MainWindow(QMainWindow):
                 proofers[ unicode(reProof.cap(1)) ] += ("\\" + one_proofer)
                 continue
             if 0 <= reMark.indexIn(line) :
-                offset = int( line_offsets[ int( unicode(reMark.cap(2)) ) ] \
+                offset = int( line_offsets[ int(unicode(reMark.cap(2)))-1 ] \
                                         + int( unicode(reMark.cap(3)) ) )
                 key = int( reMark.cap(1) )
                 marks.append( (key, offset) )
