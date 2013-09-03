@@ -1,0 +1,179 @@
+# Any backslash must be doubled!
+#
+# These find buttons implement the greater part of the "fixup"
+# operations of Guiguts.
+# Find any asterisk
+23: { u'label': u'*',
+	u'tooltip': u'Any asterisk',
+	u'regex': False,
+	u'find': u'*'
+}
+
+# Double punctuation
+22:{ u'label': u'dblpunc',
+	u'tooltip': u'Two or more of . , ; : ? !',
+	u'regex': True,
+	u'case': False,
+	u'greedy': False,
+	u'find': u'[\\.\\,;:?!]{2,}' }
+
+
+# End-quote (single, double, or >>) preceded by non-punctuation
+# (and using lookahead to ensure followed by whitespace or right bracket)
+21: { u'label': u'endqnop',
+	u'tooltip': u'Endquote without preceding punctuation',
+	u'regex': True,
+	u'case': False,
+	u'greedy': False,
+	u'find': u"[^\\.\\,;:?!][\\\'\\\"\\»](?=[\s\)\]])"
+}
+
+# Forward slash - why is this a thing?
+20: { u'label': '/',
+	u'tooltip': 'Any forward slash',
+	u'regex': False,
+	u'case': False,
+	u'find': u'/'
+}
+
+# Look for space at end of line - cannot use \s$ because (a) the way
+# ppqt does find, $ doesn't work, and (b) in Qt, \s includes \n.
+# so we spell out the unicode space chars in a class
+19: { u'label': 'eolsp',
+	u'tooltip': 'Space at end of line',
+	u'regex': True,
+	u'case': False,
+	u'greedy': False,
+	u'find': u'[\\x0020\\x00A0\\x2002-\\x200B\\x202F]+\\n',
+	u'rep1': u'\\n',
+	u'andnext': True
+}
+
+# look for hyphen at end of line, presumably unfixed broken word or dash
+18:{u'label': 'eolhy',
+	u'tooltip': 'Hyphen at end of line',
+	u'regex': True,
+	u'find': u'[\\x002D\\x2010\\x2011]+\\n',
+}
+
+# find any line longer than 75 chars - presumably do this after
+# converting <i/b/sc> markups? Regex selects the whole line but not
+# the preceding or following \ns.
+17:{ u'label': 'line>75',
+	u'tooltip': 'Line longer than 75 characters',
+	u'regex': True,
+	u'greedy': True,
+	u'find': u'[^\\n]{76,}'
+}
+
+# find a paragraph not ending in punctuation. The regex is, 
+# some word-char, then some char that isn't .,?;:!]/ or ),
+# optional '"», two newlines. The requirement for \w keeps it from
+# stopping on markup-open, and exclusion of / means it doesn't stop on
+# markup-close, but it does see all headings (if they don't end in .) 
+
+16: { u'label': 'paranop',
+	u'tooltip': 'No punctuation at paragraph-end',
+	u'regex': True,
+	u'greedy': False,
+	u'find': u'\w[^\\.\\,?;:!\\]\\>\\)\\/][\\x0022\\x0027\\x00BB]?\\n\\n'
+}
+
+# "non-ascii" that is any char between x80 and xff -- note this is
+# better implemented via the Chars panel.
+
+15: { u'label': u'non-7-bit',
+	u'tooltip': u'Characters between x80 and xFF',
+	u'regex': True,
+	u'case': True,
+	u'greedy': False,
+	u'find': u'[\\x0080-\\x00FF]'
+}
+
+# "non-latin-1" -- again, better to use the chars panel
+
+14: { u'label': u'non-8859',
+	u'tooltip': u'Characters not in ISO-8859-1',
+	u'regex': True,
+	u'greedy': False,
+	u'find': u'[\\x00FF-\\x2028\\x202A-\\xFBFF]'
+}
+
+# paragraph, meaning text preceded by 2 newlines, starts with lowercase
+# it would be nice if Qt regex supported searching for unicode properties
+# (maybe in Qt5) but it doesn't so not going to spell out all unicode lowercases
+
+13: { u'label': 'lcpara',
+	u'tooltip': 'Paragraph starts with (ascii) lowercase',
+	u'regex': True,
+	u'case': True,
+	u'greedy': False,
+	u'find': u'\\n\\n[a-z]'
+}
+
+# line consisting of only one char -- why is this a thing?
+
+12: { u'label': 'nXn',
+	u'tooltip': 'Single-character line',
+	u'regex': True,
+	u'greedy': False,
+	u'find': u'\\n[^\\n]\\n'
+}
+
+# Comma, uppercase -- again, uppercase ascii only because we can't
+# search on unicode properties like "Capital"
+
+11: { u'label': u'commaA',
+	u'tooltip': u'Comma followed by uppercase (latin) letter',
+	u'regex': True,
+	u'case': True,
+	u'greedy': False,
+	u'find': u',\\s*[A-Z]'
+}
+
+# Period, lowercase -- ditto
+
+10: { u'label': u'dota',
+	u'tooltip': u'Period followed by lowercase (latin) letter',
+	u'regex': True,
+	u'case': True,
+	u'find': u'\\.\\s*[a-z]'
+}
+
+# attempt to find unbalanced brackets -- this is some RE, huh?
+# group 1: left-paren then any amount of non-right-parens to another left,
+# or, group 2, [ then any amount of non-] to another [, 
+# or, group 3, { then any non-} to another {
+# the failure being, it won't see an open-bracket when there's no more
+# of that open-bracket in the document.
+
+9: { u'label': u'unbalanced',
+	u'tooltip': u'Unbalanced brackets',
+	u'regex': True,
+	u'case': False,
+	u'greedy': False,
+	u'find': u'(\\(([^)]|\\s)+\\()|(\\[([^]]|\\s)+\\[)|(\\{([^}]|\\s)+\\{)'
+}
+
+# standalone 0 or 1
+8: {u'label': '-01-',
+	u'tooltip': 'Standalone 0 or 1',
+	u'regex': True,
+	u'greedy': False,
+	u'find': u'\\W[01]\\W'
+}
+
+7: { u'label': 'spacep',
+	u'tooltip': 'Whitespace preceding punctuation or after hyphen',
+	u'regex': True,
+	u'case': False,
+	u'greedy': False,
+	u'find': u'(\\s[\\.,;:?!\\-])|(-\\s)'
+}
+
+
+
+
+
+
+
