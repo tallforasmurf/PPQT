@@ -138,7 +138,7 @@ class pngDisplay(QWidget):
     # the user last set it.
     def clear(self):
         # Clear the page name, used by pqNotes
-        IMC.currentPageNumber = None # will be name of last page e.g. "002"
+        IMC.currentImageNumber = None # will be name of last page e.g. "002"
         # Clear the page filename, used in our caption label
         self.lastPage = QString() # last file name e.g. "002.png"
         # Clear the path to the pngs folder, used to fetch image files
@@ -245,10 +245,10 @@ class pngDisplay(QWidget):
             if self.lastIndex > -1 :
                 # Form the image filename as a Qstring, e.g. "025" and save that for
                 # use by pqNotes:
-                IMC.currentPageNumber = QString(IMC.pageTable[self.lastIndex][1])
+                IMC.currentImageNumber = QString(IMC.pageTable[self.lastIndex][1])
                 # Form the complete filename by appending ".png" and save as
                 # self.lastPage for use in forming our caption label.
-                self.lastPage = QString(IMC.currentPageNumber).append(QString(u".png"))
+                self.lastPage = QString(IMC.currentImageNumber).append(QString(u".png"))
                 # Form the full path to the image. Try to load it as a QImage.
                 pngName = QString(self.pngPath).append(self.lastPage)
                 self.image = QImage(pngName,'PNG')
@@ -260,7 +260,7 @@ class pngDisplay(QWidget):
                 # Convert the image to a pixmap. If it's null, so is the pixmap.
                 self.pixmap = QPixmap.fromImage(self.image,Qt.ColorOnly)
             else :
-                IMC.currentPageNumber = QString(u"n.a.")
+                IMC.currentImageNumber = QString(u"n.a.")
                 self.lastPage = QString()
                 self.image = QImage()
                 self.pixmap = QPixmap()

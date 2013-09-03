@@ -109,7 +109,7 @@ class tricorder():
         self.wordCensus = None # census of words (tokens actually)
         self.charCensus = None # census of characters
         self.pageTable = None # list of page separators
-        self.currentPageNumber = None # qstring e.g. "002" of png file
+        self.currentImageNumber = None # qstring e.g. "002" of png file
         self.editWidget = None # main QPlainTextEdit set up in pqMain
         self.spellCheck = None # spellcheck object from pqSpell
         self.mainWindow = None # ref to main window
