@@ -93,10 +93,19 @@ from PyQt4.QtGui import (
 import pqMsgs
 
 # These are global items so that both the table model and the custom delegates
-# can access them.
+# can access them. Also folio_string is used from pqPngs.py. TODO: in V2, all of
+# this is incorporated in a page table metadata module.
 
 ActionItems = [QString("Add 1"),QString("Set to n"),QString("Skip folio")]
 FormatItems = [QString("Arabic"),QString("ROMAN"), QString("roman")]
+
+def folioString(format_code, folio_value):
+    if folio_value < 0 : # skipped or unknown
+        return QString(u' ')
+    if format_code == IMC.FolioFormatArabic :
+            return QString("{0}".format(folio_value))
+    else:
+        return toRoman(folio_value, format_code == IMC.FolioFormatLCRom)
 
 # The following is from Mark Pilgrim's "Dive Into Python" slightly
 # modified to return a QString and for upper or lower-case.
@@ -115,15 +124,14 @@ romanNumeralMap = (('M',  1000),
                    ('I',  1))
 def toRoman(n,lc):
     """convert integer to Roman numeral"""
-    if not (0 < n < 5000):
-        raise ValueError, "number out of range (must be 1..4999)"
-    if int(n) <> n:
-        raise TypeError, "decimals can not be converted"
-    result = ""
-    for numeral, integer in romanNumeralMap:
-        while n >= integer:
-            result += numeral
-            n -= integer
+    if (0 < n < 5000) and int(n) == n :
+        result = ""
+        for numeral, integer in romanNumeralMap:
+            while n >= integer:
+                result += numeral
+                n -= integer
+    else : # invalid number, don't raise an exception
+        result = "!!!!"
     qs = QString(result)
     if lc : return qs.toLower()
     return qs
@@ -183,14 +191,7 @@ class myTableModel(QAbstractTableModel):
             elif c == 2:
                 return ActionItems[self.lastTuple[3]] # name for action code
             elif c == 3: # return folio formatted per rule
-                if self.lastTuple[5] >= 0 : # not being skipped
-                    if self.lastTuple[4] == IMC.FolioFormatArabic :
-                        return QString("{0}".format(self.lastTuple[5]))
-                    else:
-                        return toRoman(self.lastTuple[5],
-                                       self.lastTuple[4] == IMC.FolioFormatLCRom)
-                else:
-                    return QString(" ")
+                return folioString(self.lastTuple[4], self.lastTuple[5])
             elif c == 4:
                 return self.lastTuple[2]
             else: return QVariant()
