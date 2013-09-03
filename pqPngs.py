@@ -60,7 +60,6 @@ from PyQt4.QtGui import (
 class pngDisplay(QWidget):
     def __init__(self, parent=None):
         super(pngDisplay, self).__init__(parent)
-        #dbg
         #self.profiler = cProfile.Profile()
         # create the label that displays the image - cribbing from the Image
         # Viewer example in the Qt docs.
@@ -247,14 +246,11 @@ class pngDisplay(QWidget):
                 # Form the image filename as a Qstring, e.g. "025" and save that for
                 # use by pqNotes:
                 IMC.currentPageNumber = QString(IMC.pageTable[self.lastIndex][1])
-                #dbg = unicode(IMC.currentPageNumber)
                 # Form the complete filename by appending ".png" and save as
                 # self.lastPage for use in forming our caption label.
                 self.lastPage = QString(IMC.currentPageNumber).append(QString(u".png"))
-                #dbg = unicode(self.lastPage)
                 # Form the full path to the image. Try to load it as a QImage.
                 pngName = QString(self.pngPath).append(self.lastPage)
-                #dbg = unicode(pngName)
                 self.image = QImage(pngName,'PNG')
                 # If that successfully loaded an image, make sure it is one byte/pixel.
                 if not self.image.isNull() \
@@ -479,7 +475,6 @@ if __name__ == "__main__":
     widj = pngDisplay()
     widj.pngPath = QFileDialog.getExistingDirectory(widj,"Pick a Folder of Pngs",".")
     widj.pngPath.append(u'/')
-    #dbg = unicode(widj.pngPath)
     png_dir = QDir(widj.pngPath)
     png_dir.setFilter(QDir.Files | QDir.NoSymLinks)
     png_dir.setSorting(QDir.Name)
