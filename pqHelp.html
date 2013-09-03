@@ -96,24 +96,24 @@ If you need to open a second document (for example, a commented copy from Smooth
 that are not in Latin-1. CP1252 is not supported by Project Gutenberg (PG), but Windows utilities such as Wordpad may save files in that encoding.</li>
 <li>Mac Roman defines many, but not all, of the characters in CP1252 (but with different numeric values), and also some special characters not in either CP1252 or Latin-1. Mac Roman is not supported by PG, but Mac utilities such as Textedit may save files in that encoding.</li>
 </ul>
-<p>PPQT can open files with any of these four encodings or in some cases, other encodings. But in order to load a document without garbling its special characters, PPQT needs to know which encoding the file uses. It has several ways of finding this out.</p>
+<p>PPQT can open files with any of these four encodings. If your book is in some other encoding (for example the Microsoft Windows Greek or Turkish codepages, or UTF-16), you must convert it to UTF-8 first.</p>
+<p>In order to load a document without garbling its special characters, PPQT must know which encoding the file uses. It has several ways of finding this out.</p>
 <ol>
 <li>When saving a file, PPQT writes the encoding into the metadata file (next topic). Thus once you have saved a book it always reopens with the same encoding.</li>
 <li>PG requires all etext files to have the file suffix <tt>.txt</tt> regardless of their encoding. However PG permits you to end the filename with <tt>-u</tt>, <tt>-utf</tt>, or <tt>-utf8</tt> to indicate UTF-8 encoding, for example, <tt>afinebook-utf.txt</tt>. PPQT recognizes this and opens such a file as UTF-8.</li>
 <li>You can also end a filename with <tt>-l</tt>, <tt>-ltn</tt> or <tt>-ltn1</tt> to signal that it is encoded Latin-1, for example <tt>myfinebook-ltn.txt</tt>.</li>
 <li>Per the HTML and XML standards, HTML, XHTML and XML files must either be UTF-8, or else they must have a <tt>charset=</tt><i>encoding</i> parameter in the first 1024 characters of the file. When PPQT loads or saves a file of type <tt>.htm</tt>, <tt>.html</tt> or <tt>.xml</tt>, PPQT looks for this parameter and uses the encoding specified. If there is no parameter, it uses UTF-8.</li>
 </li>
-<li>When those methods do not reveal the encoding of an input file, PPQT feeds the first 4096 bytes of the file to software that attempts to guess the encoding from the byte values used. If the package reports an encoding at a high confidence level PPQT uses that encoding. Otherwise it displays an error message.</li>
 </ol>
-<p>You can bypass this complexity by using the File menu command Open With Encoding and selecting one of the four encodings in the sub-menu. The file you select is opened with that encoding.</p>
-<p>When saving a file, PPQT will only use UTF-8 or Latin-1. It applies rules 2-4 above to discover which you want to use. To force one or the other, save the file with an indicator in the filename or file suffix. For example to force saving as Latin-1, save to <i>bookname</i><tt>-ltn.txt</tt>.</p>
+<p>If none of the above rules apply, PPQT will refuse to open a file, saying it "cannot guess the encoding." You can either rename the file to show the encoding, or you can use the File menu command Open With Encoding and select one of the four encodings in the sub-menu.</p>
+<p>When saving a file, PPQT will only use UTF-8 or Latin-1. It applies rules 2-4 above to discover which you want to use. To force it to save in a certain encoding, save to a filename with the proper suffix. For example to force saving as Latin-1, save to <i>bookname</i><tt>-ltn.txt</tt>.</p>
+<p>Before saving to a Latin-1 file, PPQT checks the <a href='#Chars'>The Characters Panel</a> and gives you an error message if there are any characters not supported by the Latin-1 encoding.</p>
 <h3>Metadata</h3>
 When opening  <tt>afinebook.txt</tt>, PPQT looks for a file named  <tt>afinebook.txt.meta</tt> in the same location (i.e. the full book name
 plus <tt>.meta</tt>). If the meta file
 is not found, PPQT assumes this is the first time it has opened this book.
 It scans the text gathering information including the location of page separator lines, and counting words and characters.</p>
-<p>These items and other useful things (defined bookmarks, your notes, the file encoding, etc.) are saved in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does
-exist, PPQT loads the metadata items from it.</p>
+<p>These items and other useful things (defined bookmarks, your notes, the file encoding, etc.) are saved in the <tt>.meta</tt> file when the file is saved. When the <tt>.meta</tt> file does exist, PPQT loads the metadata items from it.</p>
 <p>Also saved in the <tt>.meta</tt> file is a unique code that identifies
 the document file. If by evil chance you open a book file that does not
 match its meta file (for example, if you restored the book from backup
