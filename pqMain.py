@@ -37,7 +37,6 @@ Most of this is based on code from Summerfield's book, without which not.
  # used in detecting encodings of ambiguous files
 import io
 from collections import defaultdict
-from chardet.universaldetector import UniversalDetector
 
 from PyQt4.QtCore import ( pyqtSignal, Qt,
     QFile, QFileInfo, QDir,
@@ -696,9 +695,7 @@ class MainWindow(QMainWindow):
     # bytes of the output file in the editor workspace, for this parameter.
     # If it is not there we return UTF-8.
     #
-    # When those clues are not present, and if the file is for input, open it
-    # in python as a byte stream and feed up to 4k of it to the chardet package.
-    # If it comes up >= 85% confidence, return that string. Else return fallBack.
+    # When those clues are not present, return fallBack.
 
     def inferTheCodec(self, fileInfo, metaInfo, forInput, fallBack = None):
         # If the file was saved by us there is a .meta file. Somewhere in the
@@ -756,24 +753,7 @@ class MainWindow(QMainWindow):
         # infer nothing more, but we can default to UTF8.
         if not forInput :
             return self.utfEncoding if fallBack is None else fallBack
-        # The file is supposed to exist, so let us grab some of it as raw
-        # bytes, shove it into the decoder and see if that tells us anything.
-        # This is where we might detect weird stuff like KOI or CP1255 Turkish.
-        if self.charDetector is None : # first time this session
-            self.charDetector = UniversalDetector() # create bulky object
-        self.charDetector.reset() # reset detector
-        try:
-            pyfile = io.open(unicode(fileInfo.absoluteFilePath()),'rb')
-        except:
-            return fallBack # couldn't open, so can't tell encoding
-        # file is open, read some of it and decode it.
-        self.charDetector.feed(pyfile.read(4096))
-        pyfile.close()
-        result = self.charDetector.close()
-        if ('confidence' in result) : # detector is working
-            if result['confidence'] > 0.85 : # detector is confident
-                return QString(result['encoding'])
-        # The detector isn't confident and neither are we.
+        # It's for input and we can't tell, so just return fallBack.
         return fallBack
 
     # -----------------------------------------------------------------
