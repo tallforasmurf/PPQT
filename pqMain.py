@@ -1043,10 +1043,14 @@ class MainWindow(QMainWindow):
                 # the following clears IMC.needMetadataSave and the document
                 # modified flags in edit and notes documents, as well as
                 # triggering setWinModStatus above.
+                pqMsgs.flash(u"Saving {0} as {1}".format(bookInfo.fileName(),IMC.bookSaveEncoding ),
+                             msecs=5000)
                 self.editor.save(bookStream, metaStream)
                 retval = True # success
                 self.addRecentFile(IMC.bookPath)
                 self.setWinModStatus() # notice if metadata changed
+                pqMsgs.flash(u"Saving {0} as {1}".format(bookInfo.fileName(),IMC.bookSaveEncoding ),
+                             msecs=10000)
             except (IOError, OSError), e:
                 QMessageBox.warning(self, "Error on output: {0}".format(e))
                 retval = False
