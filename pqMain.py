@@ -1074,7 +1074,7 @@ class MainWindow(QMainWindow):
                 "Save book text As", startPath)
         if not savename.isEmpty():
             finf = QFileInfo(savename)
-            IMC.bookSaveEncoding = self.inferTheCodec(finf, None, False, IMC.bookSaveEncoding)
+            IMC.bookSaveEncoding = self.inferTheCodec(finf, None, False, fallBack = IMC.bookSaveEncoding)
             IMC.bookPath= finf.absoluteFilePath()
             IMC.bookDirPath = finf.absolutePath()
             IMC.bookType = finf.suffix()
@@ -1114,7 +1114,7 @@ class MainWindow(QMainWindow):
             self.viewSetScannos(False) # turn it off
             IMC.scannoList.clear() # clear out the list
         scannoInfo = QFileInfo(self.scannoPath)
-        scannoCodec = self.inferTheCodec(scannoInfo,QFileInfo(),True)
+        scannoCodec = self.inferTheCodec(scannoInfo,QFileInfo(),True, fallBack=self.utfEncoding)
         if scannoCodec is None :
             # can't get the encoding (v. unlikely), just silently steal away
             IMC.scannoHilitSwitch = False # make sure switch is off
@@ -1144,8 +1144,7 @@ class MainWindow(QMainWindow):
                 startPath)
         if not bfName.isEmpty(): # a file was chosen
             bfInfo = QFileInfo(bfName)
-            bfCodec = self.inferTheCodec(bfInfo,QFileInfo(),True)
-            # if no codec inferred, very unlikely, just silently do nothing
+            bfCodec = self.inferTheCodec(bfInfo,QFileInfo(),True,fallBack=self.utfEncoding)
             (buttonStream, fh) = self.openSomeFile(bfName,
                                         QIODevice.ReadOnly, bfCodec)
             if buttonStream is not None:
@@ -1164,9 +1163,7 @@ class MainWindow(QMainWindow):
                 "Save user-defined buttons as:", startPath)
         if not bfName.isEmpty():
             bfInfo = QFileInfo(bfName)
-            bfCodec = self.inferTheCodec(bfInfo,QFileInfo(),False)
-            if bfCodec is None : # pooh, default to UTF
-                bfCodec = self.utfEncoding
+            bfCodec = self.inferTheCodec(bfInfo,QFileInfo(),False, fallBack=self.utfEncoding)
             (buttonStream, fh) = self.openSomeFile(bfName,
                                         QIODevice.WriteOnly, bfCodec)
             if buttonStream is not None:
