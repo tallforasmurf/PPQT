@@ -329,6 +329,7 @@ class pagesPanel(QWidget):
         if index.column() == 0:
             tc = IMC.pageTable[index.row()][0]
             IMC.editWidget.setTextCursor(tc)
+            IMC.editWidget.setFocus(Qt.TabFocusReason)
 
     # This slot receives the main window's docWillChange signal.
     # It comes with a file path but we can ignore that.
