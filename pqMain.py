@@ -866,7 +866,8 @@ class MainWindow(QMainWindow):
             encoding = self.inferTheCodec(bookInfo,metaInfo,True,fallBack=None)
         if encoding is None: # cannot infer an encoding
             encoding = pqMsgs.utfLtnMsg(
-                u'Tell me the encoding for '+unicode(bookInfo.fileName())
+                u'Tell me the encoding for '+unicode(bookInfo.fileName()),
+                u'If neither UTF nor Latin-1, use File > Open with Encoding'
             )
             if encoding is None :
                 return

@@ -125,13 +125,16 @@ def okCancelMsg ( text, info = None ):
 # n.b. Qt Assistant says (for C++) that the return is the pushButton
 # object itself, but in PyQt, it is the button's index left to right.
 
-def utfLtnMsg ( text ) :
-    mb = makeMsg ( text, QMessageBox.Question )
+def utfLtnMsg ( text, info=None ) :
+    mb = makeMsg ( text, QMessageBox.Question, info)
     utf_button = mb.addButton("Open as UTF-8", QMessageBox.ActionRole)
     ltn_button = mb.addButton("Open as Latin-1", QMessageBox.ActionRole)
     mb.setStandardButtons(QMessageBox.Cancel)
     mb.setDefaultButton(QMessageBox.Cancel)
-    return ['UTF-8', 'ISO-8859-1', None][mb.exec_()]
+    ret = mb.exec_()
+    if ret == QMessageBox.Cancel : return None
+    if ret == 0 : return 'UTF-8'
+    return 'ISO-8859-1'
 
 # Display a modal request for string input, blocking until the user
 # clicks Ok/Cancel. The parameters to QInputDialog.getText are:
