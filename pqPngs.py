@@ -202,9 +202,9 @@ class pngDisplay(QWidget):
         if not self.ready :
                 # No file loaded or no pngs folder found.
             self.nextIndex = -1
-        elif 0 == len(IMC.pageTable):
+        elif 0 == IMC.pageTable.size() :
             # No book open, or no pngs directory with it.
-            # This could happen on the first call at startup, the first
+            # This could happen on the first call at startup, or the first
             # call after a document has been loaded but before the metadata
             # has been built. No image to show.
             self.nextIndex = -1
@@ -215,18 +215,18 @@ class pngDisplay(QWidget):
             # if that position is above the first page, which can happen if the
             # user has entered some text above the first psep line, show a
             # blank image.
-            if pos < IMC.pageTable[0][0].position() :
+            if pos < IMC.pageTable.getCursor(0).position() :
                 self.nextIndex = -1
             else :
                 # here we go with bisect_right to find the lowest page table entry
                 # <= to our present position. We know the table is not empty, but
                 # after pseps are removed, there can be multiple pages with the
                 # same starting offset. In a 500pp book, this might iterate 8 times.
-                hi = len(IMC.pageTable)
+                hi = IMC.pageTable.size()
                 lo = 0
                 while lo < hi:
                     mid = (lo + hi)//2
-                    if pos < IMC.pageTable[mid][0].position(): hi = mid
+                    if pos < IMC.pageTable.getCursor(mid).position(): hi = mid
                     else: lo = mid+1
                 # the page at lo-1 is the greatest <= pos. Set that as the page to show.
                 lo -= 1
@@ -246,13 +246,17 @@ class pngDisplay(QWidget):
             if self.lastIndex > -1 :
                 # Form the image filename as a Qstring, e.g. "025" and save that for
                 # use by pqNotes:
-                IMC.currentImageNumber = QString(IMC.pageTable[self.lastIndex][1])
+                IMC.currentImageNumber = IMC.pageTable.getScan(self.lastIndex)
+                dbg = unicode(IMC.currentImageNumber)
                 # Form the complete filename by appending ".png" and save as
                 # self.lastPage for use in forming our caption label.
                 self.lastPage = QString(IMC.currentImageNumber).append(QString(u".png"))
+                dbg = unicode(self.lastPage)
                 # Form the full path to the image. Try to load it as a QImage.
                 pngName = QString(self.pngPath).append(self.lastPage)
                 self.image = QImage(pngName,'PNG')
+                dbg = unicode(self.image)
+                dbg = self.image.isNull()
                 # If that successfully loaded an image, make sure it is one byte/pixel.
                 if not self.image.isNull() \
                    and self.image.format() != QImage.Format_Indexed8 :
@@ -272,7 +276,7 @@ class pngDisplay(QWidget):
             # because the zoomfactor might have changed.
             self.imLabel.setPixmap(self.pixmap)
             self.imLabel.resize( self.zoomFactor * self.pixmap.size() )
-            folio = pqPages.folioString(IMC.pageTable[self.lastIndex][4],IMC.pageTable[self.lastIndex][5])
+            folio = IMC.pageTable.getDisplay(self.lastIndex)
             self.txLabel.setText(u"image {0} (folio {1})".format(self.lastPage,folio))
         else: # no file was loaded. It's ok if pages are missing
             self.noImage() # display the gray image.
@@ -457,8 +461,8 @@ class pngDisplay(QWidget):
                 event.accept() # real pgUp or pgDn, we do it
                 fac = 1 if (event.key() == Qt.Key_PageDown) else -1
                 fac += self.lastIndex
-                if (fac >= 0) and (fac < len(IMC.pageTable)) :
-                    # not off the end of the book, so,
+                if (fac >= 0) and (fac < IMC.pageTable.size()) :
+                    # not off either end of the book, so,
                     self.nextIndex = fac
                     self.showPage()
         if not event.isAccepted() : # we don't do those, pass them on
@@ -474,9 +478,9 @@ if __name__ == "__main__":
     IMC = pqIMC.tricorder() # set up a fake IMC for unit test
     IMC.settings = QSettings()
     IMC.editWidget = QPlainTextEdit()
-    IMC.pageTable=[]
     import pqPages
     pqPages.IMC = IMC
+    IMC.pageTable=pqPages.pagedb()
     widj = pngDisplay()
     widj.pngPath = QFileDialog.getExistingDirectory(widj,"Pick a Folder of Pngs",".")
     widj.pngPath.append(u'/')
@@ -484,13 +488,18 @@ if __name__ == "__main__":
     png_dir.setFilter(QDir.Files | QDir.NoSymLinks)
     png_dir.setSorting(QDir.Name)
     png_dir.setNameFilters(QStringList(QString(u'*.png')))
+    fnumber = 1
     for finf in png_dir.entryInfoList():
+        # Read all the pngs and for each cobble up a "page" just to get
+        # some data into the page table
         fname = finf.baseName()
-        #print('{0} : {1}'.format(unicode(fname),IMC.editWidget.textCursor().position()))
-        IMC.pageTable.append( [IMC.editWidget.textCursor(),
-                          fname,
-                          QString(), IMC.FolioRuleAdd1, IMC.FolioFormatArabic, 1] )
         IMC.editWidget.textCursor().insertText(fname)
+        fakemd = "{0} {1} {2} {3} {4} {5}\n".format(
+            IMC.editWidget.textCursor().position(),
+            fname, QString(u'\\foo\\foo'),
+            IMC.FolioRuleAdd1, IMC.FolioFormatArabic, fnumber )
+        IMC.pageTable.metaStringIn(fakemd)
+        fnumber +=1
     widj.lastIndex = -1
     widj.nextIndex = 0
     widj.ready = True

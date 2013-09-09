@@ -162,7 +162,7 @@ class PPTextEditor(QPlainTextEdit):
         self.document().setModified(False)
         self.bookMarkList = \
             [None, None, None, None, None, None, None, None, None]
-        IMC.pageTable = []
+        IMC.pageTable.clear()
         IMC.goodWordList.clear()
         IMC.badWordList.clear()
         IMC.wordCensus.clear()
@@ -421,10 +421,10 @@ class PPTextEditor(QPlainTextEdit):
         # it is enclosed in balanced single or double quotes but to be
         # double sure we will fence it in characters we can spot with a regex.
         metaStream << u"{{DOCHASH " + IMC.documentHash + u" }}\n"
-        if len(IMC.pageTable) :
+        if IMC.pageTable.size() :
             metaStream << u"{{PAGETABLE}}\n"
-            for (tc,fn,pr,f1,f2,f3) in IMC.pageTable :
-                metaStream << "{0} {1} {2} {3} {4} {5}\n".format(tc.position(), fn, pr, f1, f2, f3 )
+            for i in range(IMC.pageTable.size()) :
+                metaStream << IMC.pageTable.metaStringOut(i)
             metaStream << u"{{/PAGETABLE}}\n"
         if IMC.charCensus.size() :
             metaStream << u"{{CHARCENSUS}}\n"
@@ -540,12 +540,7 @@ class PPTextEditor(QPlainTextEdit):
                 elif section == u"PAGETABLE":
                     qline = metaStream.readLine()
                     while (not qline.startsWith(endsec)) and (not qline.isEmpty()):
-                        # we eliminate spaces in proofer names in buildMeta()
-                        parts = unicode(qline).split(' ')
-                        tc = QTextCursor(self.document())
-                        tc.setPosition(int(parts[0]))
-                        tup = [tc, parts[1], parts[2], int(parts[3]), int(parts[4]), int(parts[5]) ]
-                        IMC.pageTable.append(tup)
+                        IMC.pageTable.metaStringIn(qline)
                         qline = metaStream.readLine()
                     continue
                 elif section == u"CHARCENSUS":
@@ -706,8 +701,6 @@ class PPTextEditor(QPlainTextEdit):
         alt_dict = QString() # isEmpty when none
         # Tag from which we set an alternate dict
         alt_dict_tag = QString()
-        # Initialize png number for line separator records
-        image_number = 0
         # Start the progress bar based on the number of lines in the document
         pqMsgs.startBar(self.document().blockCount(),"Counting words and chars...")
         # Find the first text block of interest, skipping an HTML header file
@@ -735,12 +728,8 @@ class PPTextEditor(QPlainTextEdit):
                     tcursor = QTextCursor(self.document())
                     # point it to this text block
                     tcursor.setPosition(qtb.position())
-                    # initialize this page's folio
-                    image_number += 1
                     # dump all that in the page table
-                    IMC.pageTable.append(
-    [tcursor, qsfilenum, qsproofers, IMC.FolioRuleAdd1, IMC.FolioFormatArabic, image_number]
-                                      )
+                    IMC.pageTable.loadPsep(tcursor, qsfilenum, qsproofers)
                 # else not doing pages, just ignore this psep line
             else: # not psep, ordinary text line, count chars and words
                 pyLine = unicode(qsLine) # move into Python space to count

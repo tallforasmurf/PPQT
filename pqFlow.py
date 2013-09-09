@@ -1166,11 +1166,11 @@ def markPageBreaks(tc,ft):
     # backward through the document and just do a sequential search back
     # from the last-noted page break, saving the full search for the initial call.)
     # (OTOH in a 500pp book the below loops at most 8 times. So K.I.S.S.)
-    hi = len(IMC.pageTable)
+    hi = IMC.pageTable.size()
     lo = 0
     while lo < hi:
         mid = (lo + hi)//2
-        if Z < IMC.pageTable[mid][0].position(): hi = mid
+        if Z < IMC.pageTable.getCursor(mid).position(): hi = mid
         else: lo = mid+1
     # the pagebreak cursor at lo-1 is the greatest <= Z. If it is also
     # >A then we need to note it and maybe the one(s) preceding it.
@@ -1178,7 +1178,7 @@ def markPageBreaks(tc,ft):
         lo -= 1
         if lo < 0 :
             break # second or later iteration (on first, if pageTable is empty)
-        P = IMC.pageTable[lo][0].position()
+        P = IMC.pageTable.getCursor(lo).position()
         if P < A :
             break # will often happen on first iteration
         pbl.append([lo,P])
@@ -1203,7 +1203,7 @@ def unmarkPageBreaks(tc,ft,pbl):
 
 def fixPageBreaks(pbl):
     for [i,p] in pbl:
-        IMC.pageTable[i][0].setPosition(p)
+        IMC.pageTable.setPosition(i).setPosition(p)
 
 # tokGen is a generator function that returns the successive tokens from the
 # text selected by a text cursor. Each token is returned as a tuple, (tok,tl)
@@ -1398,7 +1398,9 @@ if __name__ == "__main__":
     IMC = pqIMC.tricorder() # set up a fake IMC for unit test
     IMC.fontFamily = QString("Courier")
     IMC.QtLineDelim = QChar(0x2029)
-    IMC.pageTable = []
+    import pqPages
+    pqPages.IMC = IMC
+    IMC.pageTable = pqPages.pagedb()
     import pqMsgs
     pqMsgs.IMC = IMC
     import pqTable

@@ -176,8 +176,8 @@ class notesEditor(QPlainTextEdit):
                 qs.chop(1) # "nnn"
                 (pn,flg) = qs.toInt() # page number as int
                 pn -= 1 # index to that page in the page table
-                if (pn >= 0) and (pn < len(IMC.pageTable)) :
-                    etc = IMC.pageTable[pn][0] # cursor for that page
+                if (pn >= 0) and (pn < IMC.pageTable.size()) :
+                    etc = IMC.pageTable.getCursor(pn) # cursor for that page
                     doc = IMC.editWidget.document() # main document
                     IMC.editWidget.setTextCursor(etc) # make it visible
                     IMC.editWidget.setFocus(Qt.TabFocusReason)
