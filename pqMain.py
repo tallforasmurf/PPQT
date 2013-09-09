@@ -371,13 +371,13 @@ class MainWindow(QMainWindow):
         editPasteAction = self.createAction("&Paste", self.editor,
             self.editor.paste, QKeySequence.Paste,
             "Paste clipboard at selection")
-        editToUpperAction = self.createAction("to&Upper", None,
+        editToUpperAction = self.createAction("to&Upper", self.editor,
             self.editor.toUpperCase, QKeySequence(Qt.Key_U+Qt.CTRL),
             "Make selected text UPPERCASE")
-        editToLowerAction = self.createAction("to&Lower", None,
+        editToLowerAction = self.createAction("to&Lower", self.editor,
             self.editor.toLowerCase, QKeySequence(Qt.Key_L+Qt.CTRL),
             "Make selected text lowercase")
-        editToTitleAction = self.createAction("toT&itle", None,
+        editToTitleAction = self.createAction("toT&itle", self.editor,
             self.editor.toTitleCase, QKeySequence(Qt.Key_I+Qt.CTRL),
             "Make Selected Text Titlecase")
         # There may perhaps be some more edit actions, e.g. ex/indent
@@ -1216,43 +1216,50 @@ class MainWindow(QMainWindow):
             # Export page numbers -- This is the most important information
             print("%::pagenumbers = (", file=f)
 
-            for entry in IMC.pageTable:
+            for i in range(IMC.pageTable.size()):
 
-                cursor = entry[0]
+                cursor = IMC.pageTable.getCursor(i)
                 line = doc.findBlock(cursor.position())
 
                 # png number
-                string = " 'Pg" + entry[1] + "' => {"
+                string = " 'Pg" + unicode(IMC.pageTable.getScan(i)) + "' => {"
 
                 # line number and offset
-                string += " 'offset' => '{0}.{1}',".format(line.blockNumber()+1, cursor.positionInBlock())
-                string += " 'label' => '',"
+                string += "'offset' => '{0}.{1}',".format(line.blockNumber()+1, cursor.positionInBlock())
+                lbl = unicode(IMC.pageTable.getDisplay(i))
+                if len(lbl) : # not a null string
+                    lbl = 'Pg ' + lbl
+                string += " 'label' => '" + lbl + "',"
 
                 # Style
-                if entry[4] == IMC.FolioFormatArabic:
+                fcode = IMC.pageTable.getActualFormat(i)
+                if fcode == IMC.FolioFormatArabic:
                     string += " 'style' => 'Arabic',"
-                elif entry[4] == IMC.FolioFormatUCRom:
+                elif fcode == IMC.FolioFormatUCRom:
                     string += " 'style' => 'Roman',"
-                elif entry[4] == IMC.FolioFormatLCRom:
+                elif fcode == IMC.FolioFormatLCRom:
                     string += " 'style' => 'Roman',"
-                else:
-                    # Defaults to Arabic.
+                elif fcode == IMC.FolioFormatSame:
+                    string += " 'style' => '\"',"
+                else :
+                    # Defensive programming: default to Arabic.
                     string += " 'style' => 'Arabic',"
 
                 # Action
-                if entry[3] == IMC.FolioRuleAdd1:
+                action = IMC.pageTable.getAction(i)
+                if action == IMC.FolioRuleAdd1:
                     string += " 'action' => '+1',"
-                elif entry[3] == IMC.FolioRuleSet:
+                elif action == IMC.FolioRuleSet:
                     string += " 'action' => 'Start @',"
-                elif entry[3] == IMC.FolioRuleSkip:
+                elif action == IMC.FolioRuleSkip:
                     string += " 'action' => 'No Count',"
                 else:
                     # Defaults to skip
                     string += " 'action' => 'No Count',"
 
                 # Base page number - Set if start number, else keep clear
-                if entry[3] == IMC.FolioRuleSet:
-                    string += " 'base' => '" + str(entry[5]) + "'},"
+                if action == IMC.FolioRuleSet:
+                    string += " 'base' => '" + str(IMC.pageTable.getValue(i)) + "'},"
                 else:
                     string += " 'base' => ''},"
 
@@ -1264,12 +1271,17 @@ class MainWindow(QMainWindow):
             # proofer has unicode characters in its name (such as
             # u'some\u2002proofer'), in which case Guiguts will
             # display as garbage (latin1).
-            for entry in IMC.pageTable:
-                proofers = entry[2].split('\\')
-                # First entry is empty
-                for i, proofer in enumerate(proofers[1:], 1):
-                    string = "$::proofers{{'{0}'}}[{1}] = '{2}';".format(unicode(entry[1]), i, proofer)
+            for i in range(IMC.pageTable.size()):
+                proofers = IMC.pageTable.getProoferList(i)
+                page = unicode(IMC.pageTable.getScan(i))
+                # Some entries may be null strings
+                for p, proofer in enumerate(proofers,1):
+                    if len(proofer) : # if not a null string
+                        string = "$::proofers{{'{0}'}}[{1}] = '{2}';".format( page, p, proofer)
                     print(string.encode('utf8'), file=f)
+            # Not going to try to export bookmarks because the bookmarks
+            # list is a private field of the edit object -- which is a
+            # nasty design flaw but too bad.
 
             # Let guiguts find the rest (such as the pngs path).
             # Close the perl file
