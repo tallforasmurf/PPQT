@@ -442,16 +442,16 @@ All from the popup menu above the table to see all words again.</p>
 
 <h2 id='Pages'>The Pages Panel</h2>
 <p>Click the Page tab to display the Pages panel. 
-The body of this panel is a table showing the information extracted from the page separator lines the first time the file was opened. The information is retained in the metadata even after the text of the page separator lines has been deleted. The columns are:</p>
+The body of this panel is a table showing the information extracted from the page separator lines the first time the file was opened. The information is retained in the metadata even after the text of the page separator lines has been deleted. </p>
+<p>The first column, headed Scan#, is the number of the scanned image, usually three or four digits; this
+is the filename of the <tt>.png</tt> image file in the <tt>pngs</tt> folder. The table is always in scan image order. Double-click a cell in the Scan# column to make the Edit panel jump to the top of that page's text.</p>
+<p>The next three columns are:</p>
 <ul>
-<li>Scan#: the number of the scanned image, usually three or four digits; this
-is the filename of the <tt>.png</tt> image file in the <tt>pngs</tt> folder.</li>
 <li>Format: the display format for a visible folio: arabic or roman numerals.</li>
 <li>Action: how to compute and display the folio for this page</li>
 <li>Folio: the folio (book page number) for this scanned page</li>
-<li>Proofers: the PGDP user-ids who proofed this page at its various stages</li>
 </ul>
-<p>The table is always in scan image order. Double-click a cell in the Scan# column to make the Edit panel jump to the top of that page's text.</p>
+<p>The very first time you open a book, the first page of the book is set as Format: Arabic, Action: Set @, and Folio 1. All the other pages are set to Format: (same), Action: Add 1, and consecutive numbers.</p>
 <p>
 Double-click a cell in the Action column to set the folio action to one of:</p>
 <ul>
@@ -459,14 +459,15 @@ Double-click a cell in the Action column to set the folio action to one of:</p>
 <li>Set @: set this page's folio to the number in column 4</li>
 <li>Skip folio: show no visible page number for this image</li>
 </ul>
+<p>Double-click a cell in the Format column to set the format to
+one of Arabic, roman (lowercase) or ROMAN (uppercase). Except for the very first page, you can set the format also to "(same)" meaning, same format as the row above. When a book is first opened all rows except the first are set to "(same)".  This is a convenience. You can change the format of a whole range of pages by setting the format of just the first one.</p>
 <p>Double-click a number in the folio column to set a specific
 numeric value to go with the Set @ action.</p>
-<p>Double-click a cell in the Format column to set the format to
-one of Arabic, roman (lowercase) or ROMAN (uppercase).</p>
 <p>After making one or more of these changes, click the Update
 button to update the table to reflect the changes. Using these
 controls you can get the folios of the file to exactly match
 the folios in the original book.</p>
+<p>The final column of the table is Proofers: a list of the PGDP user-ids who proofed this page at its various stages.</p>
 <h3>Inserting Folio Text</h3>
 <p>At the top of the panel is a text-entry field and an Insert button.
 Use these to insert a text pattern at the start of every page (except
