@@ -235,7 +235,13 @@ IMC.goodWordList = pqLists.wordList()
 IMC.badWordList = pqLists.wordList()
 IMC.wordCensus = pqLists.vocabList()
 IMC.charCensus = pqLists.vocabList()
-IMC.pageTable = []
+
+import pqPages # page and folio table
+if pqPages.__version__ != __version__ :
+    print('pqPages.py version {0}'.format(pqPages.__version__))
+pqPages.IMC = IMC
+
+IMC.pageTable = pqPages.pagedb()
 
 import pqEdit # the main edit widget plus save and load metadata
 if pqEdit.__version__ != __version__ :
@@ -266,11 +272,6 @@ import pqWords # word census table
 if pqWords.__version__ != __version__ :
     print('pqWords.py version {0}'.format(pqWords.__version__))
 pqWords.IMC = IMC
-
-import pqPages # page and folio table
-if pqPages.__version__ != __version__ :
-    print('pqPages.py version {0}'.format(pqPages.__version__))
-pqPages.IMC = IMC
 
 import pqFlow # text reflow
 if pqFlow.__version__ != __version__ :

@@ -87,6 +87,7 @@ class tricorder():
         self.FolioFormatArabic = 0x00
         self.FolioFormatUCRom = 0x01
         self.FolioFormatLCRom = 0x02
+        self.FolioFormatSame = 0x03 # the "ditto" format
         self.FolioRuleAdd1 = 0x00
         self.FolioRuleSet = 0x01
         self.FolioRuleSkip = 0x02
