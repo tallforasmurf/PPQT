@@ -865,10 +865,11 @@ class MainWindow(QMainWindow):
         if encoding is None:
             encoding = self.inferTheCodec(bookInfo,metaInfo,True,fallBack=None)
         if encoding is None: # cannot infer an encoding
-            pqMsgs.warningMsg(
-                u'Cannot guess the encoding of '+unicode(bookInfo.fileName()),
-                u'Please change the name or use File>Open With Encoding')
-            return
+            encoding = pqMsgs.utfLtnMsg(
+                u'Tell me the encoding for '+unicode(bookInfo.fileName())
+            )
+            if encoding is None :
+                return
         # If we don't have a .meta file, find the good_words and bad_words files.
         # If we do have a proper .meta file, we don't need those and won't open them.
         goodStream = None

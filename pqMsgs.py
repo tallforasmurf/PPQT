@@ -48,6 +48,7 @@ from PyQt4.QtGui import (QApplication,
                          QLabel,
                          QLineEdit,
                          QProgressBar,
+                         QPushButton,
                          QSizePolicy,
                          QStatusBar,
                          QMessageBox,
@@ -118,6 +119,19 @@ def okCancelMsg ( text, info = None ):
     mb = makeMsg ( text, QMessageBox.Question, info)
     mb.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
     return QMessageBox.Ok == mb.exec_()
+
+# Display a desperate query for how to open a file when the codec
+# cannot be inferred. Offer choices of UTF-8, Latin-1, and Cancel
+# n.b. Qt Assistant says (for C++) that the return is the pushButton
+# object itself, but in PyQt, it is the button's index left to right.
+
+def utfLtnMsg ( text ) :
+    mb = makeMsg ( text, QMessageBox.Question )
+    utf_button = mb.addButton("Open as UTF-8", QMessageBox.ActionRole)
+    ltn_button = mb.addButton("Open as Latin-1", QMessageBox.ActionRole)
+    mb.setStandardButtons(QMessageBox.Cancel)
+    mb.setDefaultButton(QMessageBox.Cancel)
+    return ['UTF-8', 'ISO-8859-1', None][mb.exec_()]
 
 # Display a modal request for string input, blocking until the user
 # clicks Ok/Cancel. The parameters to QInputDialog.getText are:
