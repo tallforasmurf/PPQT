@@ -300,10 +300,13 @@ class lineLabel(QWidget):
     # the user has finished editing the number. Move the editor's cursor
     # to the start of that line, or to the end of the document. Then put the
     # keyboard focus back in the editor so the cursor can be seen.
+    # Notes: the qstring toInt method returns a valid flag but we know this
+    # field can only contain valid digits so no need to test the flag.
+    # Also: text blocks have 0-origin numbers but we show 1-origin to the user.
     def moveCursor(self):
         doc = IMC.editWidget.document()
         (bn, flag) = self.lnum.text().toInt()
-        tb = doc.findBlockByLineNumber(bn)
+        tb = doc.findBlockByLineNumber(bn-1)
         if not tb.isValid():
             tb = doc.end()
         tc = IMC.editWidget.textCursor()
@@ -317,7 +320,7 @@ class lineLabel(QWidget):
     def cursorMoved(self):
         tc = IMC.editWidget.textCursor()
         bn = tc.blockNumber()
-        self.lnum.setText(QString(repr(bn)))
+        self.lnum.setText(QString(repr(bn+1)))
         cn = tc.positionInBlock()
         self.cnum.setText(QString(repr(cn)))
 
