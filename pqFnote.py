@@ -1007,11 +1007,12 @@ class fnotePanel(QWidget):
                 # so do the move. Start saving the length of the note as
                 # currently known.
                 notelen = notetc.position() - notetc.anchor()
-                # Modify the note selection to include the \2029 that follows
-                # the right bracket. This assumes that a note is not at the exact
-                # end of the document, after all, the /F follows it.
-                new_position = min(notetc.anchor(), notetc.position()) # left end
-                new_anchor = 1 + max(notetc.anchor(), notetc.position() )
+                # Modify the note selection to include both the \2029 that
+                # precedes the note and the \2029 that follows the right bracket.
+                # This assumes that a note is not at the exact beginning of a document
+                # (seems safe enough) and not at the end either (the /F follows it).
+                new_anchor = notetc.anchor() - 1
+                new_position = notetc.position() + 1
                 notetc.setPosition(new_anchor)
                 notetc.setPosition(new_position,QTextCursor.KeepAnchor)
                 # point our worktc at the insertion point in this section
