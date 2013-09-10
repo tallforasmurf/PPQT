@@ -1022,11 +1022,22 @@ class MainWindow(QMainWindow):
         # Test for mismatched doc/meta situation
         if not self.doHashesMatch() :
             return False # mismatch, and user thought better of save
-        if (IMC.bookSaveEncoding == self.ltnEncoding) and IMC.charCensus.size() :
-            # Latin-1 encoding requested and we have some char census data.
-            # The census is sorted so just sample the last QChar in it.
-            ultqs = IMC.charCensus.getWord(IMC.charCensus.size()-1)
-            ultint = ultqs.at(0).unicode() # make an int of first char of QString
+        if IMC.bookSaveEncoding != self.utfEncoding :
+            # Saving to an 8-bit encoding: does the document have any chars >255?
+            if 0 == IMC.staleCensus :
+                # Fresh census data, just sample the highest QChar
+                ultqs = IMC.charCensus.getWord(IMC.charCensus.size()-1)
+                ultqc = ultqs.at(0) # QChar from QString
+            else :
+                # alas the census is out of date so we have to scan the
+                # whole document. Do this Qt's C++ code using a regex.
+                big_char_set = QRegExp('[\\x00ff-\\xffef]')
+                doc = IMC.editWidget.document()
+                result_tc = doc.find(big_char_set, 0)
+                ultqc = QChar(u'a') # assume we pass the test
+                if not result_tc.isNull() : # oops, a big char was found
+                    ultqc = result_tc.selectedText().at(0) # first bad char
+            ultint = ultqc.unicode() # long integer from QChar
             if ultint > 254 :
                 if pqMsgs.okCancelMsg(
                     u'Text has non-Latin-1 character(s)! Click OK to save as UTF-8.',
