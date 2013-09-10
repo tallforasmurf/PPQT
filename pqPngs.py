@@ -199,41 +199,17 @@ class pngDisplay(QWidget):
     # the page table. Its output is to set self.nextIndex to the
     # desired next image table row, and to call showPage.
     def newPosition(self):
-        if not self.ready :
-                # No file loaded or no pngs folder found.
-            self.nextIndex = -1
-        elif 0 == IMC.pageTable.size() :
-            # No book open, or no pngs directory with it.
-            # This could happen on the first call at startup, or the first
-            # call after a document has been loaded but before the metadata
-            # has been built. No image to show.
-            self.nextIndex = -1
-        else :
+        if self.ready :
             # We have a book and some pngs. Find the position of the higher end
             # of the current selection.
             pos = IMC.editWidget.textCursor().selectionEnd()
-            # if that position is above the first page, which can happen if the
-            # user has entered some text above the first psep line, show a
-            # blank image.
-            if pos < IMC.pageTable.getCursor(0).position() :
-                self.nextIndex = -1
-            else :
-                # here we go with bisect_right to find the lowest page table entry
-                # <= to our present position. We know the table is not empty, but
-                # after pseps are removed, there can be multiple pages with the
-                # same starting offset. In a 500pp book, this might iterate 8 times.
-                hi = IMC.pageTable.size()
-                lo = 0
-                while lo < hi:
-                    mid = (lo + hi)//2
-                    if pos < IMC.pageTable.getCursor(mid).position(): hi = mid
-                    else: lo = mid+1
-                # the page at lo-1 is the greatest <= pos. Set that as the page to show.
-                lo -= 1
-                self.nextIndex = lo
-            # One way or another we have set self.nextIndex to the desired
-            # page, so display it.
-        self.showPage()
+            # Get the page table index that matches this position, or -1
+            # if that is above the first psep, or there is no page data
+            self.nextIndex = IMC.pageTable.getIndex(pos)
+        else :# No file loaded or no pngs folder found.
+            self.nextIndex = -1
+        if self.nextIndex != self.lastIndex :
+            self.showPage()
 
     # Display the page indexed by self.nextIndex. This is called when the cursor
     # moves to a new page (newPosition, above), or when the PageUp/Dn keys are used,

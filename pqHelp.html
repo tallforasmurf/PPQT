@@ -133,20 +133,18 @@ the Pngs panel.</p>
 <p>When launched, PPQT displays a single window divided in two by a vertical bar. The left side is the Edit Panel where you edit the document. The right side
 is a tabbed set of panels for different functions. All these panels are described below.</p>
 <p>You can adjust the size of the main window and its location on the screen. You can drag the vertical "splitter" left and right to give more or less space to each half. These geometry changes are remembered from session to session.</p>
+<p>At the bottom is a status area. On the left side, activity messages appear
+from time to time to say what PPQT is doing. Further to the right is a progress bar that shows the status of some long-running operations.</p>
+<p>In the center of the status area you see four information fields. On the left is "Image" with the filename of the scan image for the page where the cursor is, when a scan image is known. Next  is a line-number field displaying the line number of the edit cursor. Type a new number in that field and press Return to jump to a different line.</p>
+<p>Next to the line number field is a field showing the cursor column
+position. When no text is selected, this is the column number of the character to the right of the insertion point. When there is a selection, the position number is either the left or the right end of the selected text, depending on how the selection was made (e.g. by dragging left to right, or right to left).</p>
+<p>RIghtmost is the "Folio" field. It displays the logical page number you have assigned to the current page. Page numbers are set in the <a href='#Pages'>Pages panel</a> described later.</p>
 <h2 id='Edit'>The Edit Panel</h2>
 <p>The left-side panel is a typical modern plain text line-editor.
 It requires a monospaced font, defaulting to Liberation Mono when available
 or to Courier New.
 Use the View&nbsp;>&nbsp;Font... command to select a font; the choice is remembered from session to session. For PGDP post processing you need a monospaced font that has clear visual separation of similar letters (1/l, O/0, B/8 etc.) and also has a good complement of Unicode characters. PGDP handles books with text in Greek including forms with multiple accents (the Greek Extended set, #1F00), Cyrillic, and Hebrew. Few monospaced fonts have all these but the Liberation Mono font has all the needed features, and has a free license. Courier New, while not as good for proofing, has an even wider repertoire including Arabic forms.
 </p>
-<p>Below the edit panel is a status area where activity messages appear
-from time to time. Bottom center is a line-number field displaying the
-line number of the edit cursor. Type a new number in
-that field and press Return to jump to a different line.</p>
-<p>Next to the line number field is a field showing the cursor column
-position. When no text is selected, this is the column number of the character to the right of the insertion point. When there is a selection, the position number is either the left or the right end of the selected text, depending on how the selection was made (e.g. by dragging left to right, or right to left).</p>
-<p>Further to the
-right is a progress bar that shows the status of some long-running operations.</p>
 <h3>Selecting Text</h3>
 <p>Select text as usual by dragging,
 or by click then shift-click,

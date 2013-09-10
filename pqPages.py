@@ -155,10 +155,55 @@ class pagedb(object):
         self._TheDB = []
         self._last_format = None
         self._last_value = 0
+        self._last_index = -1 # index of last page looked up
+        self._last_position = -1 # position from that page's cursor
+        self._next_position = -1 # position of next page's cursor
         self._explict_formats = set()
 
     def size(self):
         return len(self._TheDB)
+
+    # Called very frequently from both pqPngs and pqMsgs, return the
+    # index of the page that spans a given document position. Return -1
+    # if the position is ahead of the first page, or we have no page info.
+    # As this happens every time the edit cursor moves, and the cursor almost
+    # always moves forward by a small amount within one page, we get a big payoff
+    # by checking for the latest page.
+
+    def getIndex(self, position) :
+        if position == self._last_position : # bingo, 2nd call for same move
+            return self._last_index
+        if 0 == len(self._TheDB) :
+            return -1 # no page data
+        if position > self._last_position : # might still be same page
+            if position < self._next_position :
+                # yes, the same page
+                self._last_position = position
+                return self._last_index
+        # OK the cursor really moved, find it by a binary search.
+        if position < self._TheDB[0][self._Cursor].position() :
+            # ahead of the first page separator line
+            return -1
+        # here we go with bisect_right to find the lowest page table entry
+        # <= to the given position. We know the table is not empty, but
+        # after pseps are removed, there can be multiple pages with the
+        # same starting offset. In a 500pp book, this might iterate 8 times.
+        hi = len(self._TheDB)
+        lo = 0
+        while lo < hi:
+            mid = (lo + hi)//2
+            if position < self._TheDB[mid][self._Cursor].position(): hi = mid
+            else: lo = mid+1
+        # the page at lo-1 is the greatest <= position.
+        self._last_index = lo - 1
+        self._last_position = position
+        if lo < len(self._TheDB) : # there exists a next page
+            self._next_position = self._TheDB[lo][self._Cursor].position()
+        else : # now on last page
+            # the "last page" is all text following the last psep line,
+            # so just set an arbitrary limit to avoid multiple lookups.
+            self._next_position = position+128
+        return self._last_index
 
     # Return the various values. Using "getter" methods rather than
     # permitting callers to put grubby fingers into the database.

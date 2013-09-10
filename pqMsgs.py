@@ -252,12 +252,14 @@ def flash(message, dobeep=False, msecs=1000):
 def beep():
     QApplication.beep()
 
-# Subclass of QLineEdit to make our line-number widget for the status bar.
-# Actually not a single widget but a widget containing an HBox layout with
-# TWO widgets (maybe someday three): a line number and a column number.
-# Combined in one because that lets us update both from a single
-# cursorPositionChanged signal, saving some overhead.
-# The object is instantiated from, and hooked to signal in, pqMain.
+# Formerly a single line-number widget, this is now a little info
+# panel containing four widgets in an HBox layout, left to right:
+#  Image [ nnnn].png  Line [ nnnnn] Col [ nnn] folio [ rrrrrrrrrr]
+# Image and Line are QLineEdits, and the user can enter new values
+# causing the edit cursor to move. Col and folio are labels displaying
+# the current column and the folio number for the current page.
+
+# The object is instantiated from, and hooked to its signal in, pqMain.
 #
 
 class lineLabel(QWidget):
@@ -265,52 +267,86 @@ class lineLabel(QWidget):
         super(QWidget, self).__init__(parent)
         # Make a layout frame
         hb = QHBoxLayout()
-        lnumlab = QLabel(u"line")
-        lnumlab.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        hb.addWidget(lnumlab)
-        # Create our line number widget
-        self.lnum = QLineEdit()
-        self.lnum.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        # allow up to 5 digits. Editing a doc with more than 99K lines? Good luck!
-        val = QIntValidator()
-        val.setRange(0,99999)
-        self.lnum.setValidator(val)
-        # Set a fixed width of 6+ digits.
-        pxs =  int( 6 * self.fontInfo().pixelSize() )
-        self.lnum.setMaximumWidth(pxs)
-        self.lnum.setMinimumWidth(pxs)
-        hb.addWidget(self.lnum)
-        # connect our lnum widget's ReturnPressed signal to our slot for that
-        self.connect(self.lnum, SIGNAL("returnPressed()"), self.moveCursor)
-        # Create a column-number widget
-        self.cnum = QLabel()
-        self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        pxs = int(pxs / 2) # 3 digits wide
-        self.cnum.setMaximumWidth(pxs)
-        self.cnum.setMinimumWidth(pxs)
-        cnumlab = QLabel(u" col ")
-        cnumlab.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        hb.addWidget(cnumlab)
-        hb.addWidget(self.cnum)
-        hb.addStretch()
-        # Set the hbox as our layout
+
+	# Create the png display. Assuming scan filenames are always numeric.
+	hb.addWidget(self.makeCaption(u"Image"))
+	self.image = QLineEdit()
+	self.image.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+	self.setWidth(self.image, 5)
+	val = QIntValidator()
+	val.setRange(1,2999) # png numbers start at 1
+	self.image.setValidator(val)
+	hb.addWidget(self.image)
+	# Connect the image ReturnPressed signal to our slot for that
+	self.connect(self.image, SIGNAL("returnPressed()"), self.movePng)
+
+	# Create our line number widget
+	hb.addWidget(self.makeCaption(u"Line"))
+	self.lnum = QLineEdit()
+	self.lnum.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+	# allow up to 5 digits, and ensure only digits can be entered.
+	val = QIntValidator()
+	val.setRange(1,99999) # Line numbers start at 1
+	self.lnum.setValidator(val)
+	self.setWidth(self.lnum, 6)
+	hb.addWidget(self.lnum)
+	# connect the lnum ReturnPressed signal to our slot for that
+	self.connect(self.lnum, SIGNAL("returnPressed()"), self.moveLine)
+
+	# Create a column-number display label
+	hb.addWidget(self.makeCaption(u"Column"))
+	self.cnum = QLabel()
+	self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+	self.setWidth(self.cnum, 3)
+	hb.addWidget(self.cnum)
+
+	# Create a folio display label which needs to be quite wide
+	# because a roman-numeral can be long
+	hb.addWidget(self.makeCaption(u"Folio"))
+        self.folio = QLabel()
+        self.folio.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.setWidth(self.folio, 12)
+        hb.addWidget(self.folio)
+
+	# Add stretch to the right to keep the other things compact left
+	hb.addStretch()
         self.setLayout(hb)
 
-    # This slot receives the ReturnPressed signal from our lnum widget, meaning
-    # the user has finished editing the number. Move the editor's cursor
-    # to the start of that line, or to the end of the document. Then put the
-    # keyboard focus back in the editor so the cursor can be seen.
-    # Notes: the qstring toInt method returns a valid flag but we know this
-    # field can only contain valid digits so no need to test the flag.
-    # Also: text blocks have 0-origin numbers but we show 1-origin to the user.
-    def moveCursor(self):
+    # Convenience function to create a right-aligned caption label
+    def makeCaption(self,text):
+	    lbl = QLabel(text)
+	    lbl.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+	    return lbl
+    # Convenience to set a width in digits on an object
+    def setWidth(self,object, digits):
+	    w = self.fontInfo().pixelSize() * digits
+	    object.setMaximumWidth(w)
+	    object.setMinimumWidth(w)
+
+    # This slot receives the ReturnPressed signal from the image widget.
+    # Check that the image is a valid index to the page table (beep if not)
+    # and get the textCursor for that page. Pass its position to moveCursor.
+    def movePng(self):
+	(pn, flag) = self.image.text().toInt()
+	if pn <= IMC.pageTable.size() :
+	    tc = IMC.pageTable.getCursor(pn-1)
+	    self.moveCursor(tc.position())
+	else: beep()
+    # This slot receives the ReturnPressed signal from the lnum widget.
+    # Get the specified textblock by number, or if it doesn't exist, the
+    # end textblock, and use that to position the document.
+    def moveLine(self):
+	(bn, flag) = self.lnum.text().toInt()
+	tb = doc.findBlockByLineNumber(bn-1) # text block is origin-0
+	if not tb.isValid():
+	    tb = doc.end()
+	self.moveCursor(tb.position())
+    # Given a document position, set the cursor to that spot, and put
+    # the focus back in the editor so the cursor will be visible.
+    def moveCursor(self, position):
         doc = IMC.editWidget.document()
-        (bn, flag) = self.lnum.text().toInt()
-        tb = doc.findBlockByLineNumber(bn-1)
-        if not tb.isValid():
-            tb = doc.end()
         tc = IMC.editWidget.textCursor()
-        tc.setPosition(tb.position())
+        tc.setPosition(position)
         IMC.editWidget.setTextCursor(tc)
         IMC.editWidget.setFocus(Qt.TabFocusReason)
 
@@ -320,9 +356,16 @@ class lineLabel(QWidget):
     def cursorMoved(self):
         tc = IMC.editWidget.textCursor()
         bn = tc.blockNumber()
-        self.lnum.setText(QString(repr(bn+1)))
+        self.lnum.setText(QString(str(bn+1)))
         cn = tc.positionInBlock()
-        self.cnum.setText(QString(repr(cn)))
+        self.cnum.setText(QString(str(cn)))
+	pn = IMC.pageTable.getIndex(tc.position())
+	if pn >= 0 : # valid position, index is known
+	    self.image.setText(IMC.pageTable.getScan(pn))
+	    self.folio.setText(IMC.pageTable.getDisplay(pn))
+	else : # no page data or cursor is ahead of first psep
+	    self.image.setText(QString())
+	    self.folio.setText(QString())
 
 # debugging function to display a keyevent on the console
 from PyQt4.QtCore import (QEvent)
