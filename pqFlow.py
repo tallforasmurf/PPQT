@@ -1203,7 +1203,7 @@ def unmarkPageBreaks(tc,ft,pbl):
 
 def fixPageBreaks(pbl):
     for [i,p] in pbl:
-        IMC.pageTable.setPosition(i).setPosition(p)
+        IMC.pageTable.setPosition(i,p)
 
 # tokGen is a generator function that returns the successive tokens from the
 # text selected by a text cursor. Each token is returned as a tuple, (tok,tl)
