@@ -265,23 +265,9 @@ def beep():
 class lineLabel(QWidget):
     def __init__(self, parent=None):
         super(QWidget, self).__init__(parent)
-        # Make a layout frame
-        hb = QHBoxLayout()
+	# Create the four widgets:
 
-	# Create the png display. Assuming scan filenames are always numeric.
-	hb.addWidget(self.makeCaption(u"Image"))
-	self.image = QLineEdit()
-	self.image.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-	self.setWidth(self.image, 5)
-	val = QIntValidator()
-	val.setRange(1,9999) # png numbers start at 1
-	self.image.setValidator(val)
-	hb.addWidget(self.image)
-	# Connect the image ReturnPressed signal to our slot for that
-	self.connect(self.image, SIGNAL("returnPressed()"), self.movePng)
-
-	# Create our line number widget
-	hb.addWidget(self.makeCaption(u"Line"))
+	# 1, the line number widget
 	self.lnum = QLineEdit()
 	self.lnum.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 	# allow up to 5 digits, and ensure only digits can be entered.
@@ -289,28 +275,47 @@ class lineLabel(QWidget):
 	val.setRange(1,99999) # Line numbers start at 1
 	self.lnum.setValidator(val)
 	self.setWidth(self.lnum, 6)
-	hb.addWidget(self.lnum)
 	# connect the lnum ReturnPressed signal to our slot for that
 	self.connect(self.lnum, SIGNAL("returnPressed()"), self.moveLine)
 
-	# Create a column-number display label
-	hb.addWidget(self.makeCaption(u"Column"))
+	# 2, the column number display
 	self.cnum = QLabel()
 	self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 	self.setWidth(self.cnum, 3)
+
+	# 3, the png field. Assuming scan filenames are always numeric.
+	self.image = QLineEdit()
+	self.image.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+	self.setWidth(self.image, 5)
+	val = QIntValidator()
+	val.setRange(1,9999) # png numbers start at 1
+	self.image.setValidator(val)
+	# Connect the image ReturnPressed signal to our slot for that
+	self.connect(self.image, SIGNAL("returnPressed()"), self.movePng)
+
+	# 4, the folio display
+	self.folio = QLabel()
+	self.folio.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+	self.setWidth(self.folio, 12)
+
+	# Make a layout frame and lay the four things out in it with captions
+	# Line [      ] Column (  )    Image [      ] Folio (   )
+
+        hb = QHBoxLayout()
+	hb.addWidget(self.makeCaption(u"Line"))
+	hb.addWidget(self.lnum)
+	hb.addWidget(self.makeCaption(u"Column"))
 	hb.addWidget(self.cnum)
 
-	# Create a folio display label which needs to be quite wide
-	# because a roman-numeral can be long
-	hb.addWidget(self.makeCaption(u"Folio"))
-        self.folio = QLabel()
-        self.folio.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.setWidth(self.folio, 12)
-        hb.addWidget(self.folio)
+	hb.addSpacing(5) # Qt doc doesn't say what the units are!
 
-	# Add stretch to the right to keep the other things compact left
-	hb.addStretch()
-        self.setLayout(hb)
+	hb.addWidget(self.makeCaption(u"Image"))
+	hb.addWidget(self.image)
+	hb.addWidget(self.makeCaption(u"Folio"))
+	hb.addWidget(self.folio)
+
+	hb.addStretch() # add stretch on the right to make things compact left
+        self.setLayout(hb) # make it our layout
 
     # Convenience function to create a right-aligned caption label
     def makeCaption(self,text):
