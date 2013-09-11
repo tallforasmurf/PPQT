@@ -337,6 +337,7 @@ class lineLabel(QWidget):
     # end textblock, and use that to position the document.
     def moveLine(self):
 	(bn, flag) = self.lnum.text().toInt()
+	doc = IMC.editWidget.document()
 	tb = doc.findBlockByLineNumber(bn-1) # text block is origin-0
 	if not tb.isValid():
 	    tb = doc.end()
