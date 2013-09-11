@@ -274,7 +274,7 @@ class lineLabel(QWidget):
 	self.image.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 	self.setWidth(self.image, 5)
 	val = QIntValidator()
-	val.setRange(1,2999) # png numbers start at 1
+	val.setRange(1,9999) # png numbers start at 1
 	self.image.setValidator(val)
 	hb.addWidget(self.image)
 	# Connect the image ReturnPressed signal to our slot for that
@@ -324,14 +324,22 @@ class lineLabel(QWidget):
 	    object.setMinimumWidth(w)
 
     # This slot receives the ReturnPressed signal from the image widget.
-    # Check that the image is a valid index to the page table (beep if not)
-    # and get the textCursor for that page. Pass its position to moveCursor.
+    # Check that the image is a valid index to the page table; if not
+    # treat it as the very last page.  Get the textCursor for that page.
+    # Pass its position to moveCursor.
     def movePng(self):
 	(pn, flag) = self.image.text().toInt()
-	if pn <= IMC.pageTable.size() :
+	pn -= 1 # page indices are origin-0
+	mx = IMC.pageTable.size()
+	if mx : # there is some page table data
+	    if pn >= mx : # requested page doesn't exist
+		pn = mx - 1 # go to last existing one
+		self.image.setText(QString(str(pn)))
 	    tc = IMC.pageTable.getCursor(pn-1)
 	    self.moveCursor(tc.position())
-	else: beep()
+	else : # this is not a paginated book document
+	    self.image.setText(QString())
+	    beep()
     # This slot receives the ReturnPressed signal from the lnum widget.
     # Get the specified textblock by number, or if it doesn't exist, the
     # end textblock, and use that to position the document.
