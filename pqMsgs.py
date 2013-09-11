@@ -334,11 +334,10 @@ class lineLabel(QWidget):
     # Pass its position to moveCursor.
     def movePng(self):
 	(pn, flag) = self.image.text().toInt()
-	pn -= 1 # page indices are origin-0
 	mx = IMC.pageTable.size()
 	if mx : # there is some page table data
-	    if pn >= mx : # requested page doesn't exist
-		pn = mx - 1 # go to last existing one
+	    if pn > mx : # requested page doesn't exist
+		pn = mx # go to last existing one
 		self.image.setText(QString(str(pn)))
 	    tc = IMC.pageTable.getCursor(pn-1)
 	    self.moveCursor(tc.position())
