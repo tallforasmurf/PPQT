@@ -265,95 +265,95 @@ def beep():
 class lineLabel(QWidget):
     def __init__(self, parent=None):
         super(QWidget, self).__init__(parent)
-	# Create the four widgets:
+        # Create the four widgets:
 
-	# 1, the line number widget
-	self.lnum = QLineEdit()
-	self.lnum.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-	# allow up to 5 digits, and ensure only digits can be entered.
-	val = QIntValidator()
-	val.setRange(1,99999) # Line numbers start at 1
-	self.lnum.setValidator(val)
-	self.setWidth(self.lnum, 6)
-	# connect the lnum ReturnPressed signal to our slot for that
-	self.connect(self.lnum, SIGNAL("returnPressed()"), self.moveLine)
+        # 1, the line number widget
+        self.lnum = QLineEdit()
+        self.lnum.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        # allow up to 5 digits, and ensure only digits can be entered.
+        val = QIntValidator()
+        val.setRange(1,99999) # Line numbers start at 1
+        self.lnum.setValidator(val)
+        self.setWidth(self.lnum, 6)
+        # connect the lnum ReturnPressed signal to our slot for that
+        self.connect(self.lnum, SIGNAL("returnPressed()"), self.moveLine)
 
-	# 2, the column number display
-	self.cnum = QLabel()
-	self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-	self.setWidth(self.cnum, 3)
+        # 2, the column number display
+        self.cnum = QLabel()
+        self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.setWidth(self.cnum, 3)
 
-	# 3, the png field. Assuming scan filenames are always numeric.
-	self.image = QLineEdit()
-	self.image.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-	self.setWidth(self.image, 5)
-	val = QIntValidator()
-	val.setRange(1,9999) # png numbers start at 1
-	self.image.setValidator(val)
-	# Connect the image ReturnPressed signal to our slot for that
-	self.connect(self.image, SIGNAL("returnPressed()"), self.movePng)
+        # 3, the png field. Assuming scan filenames are always numeric.
+        self.image = QLineEdit()
+        self.image.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.setWidth(self.image, 5)
+        val = QIntValidator()
+        val.setRange(1,9999) # png numbers start at 1
+        self.image.setValidator(val)
+        # Connect the image ReturnPressed signal to our slot for that
+        self.connect(self.image, SIGNAL("returnPressed()"), self.movePng)
 
-	# 4, the folio display
-	self.folio = QLabel()
-	self.folio.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-	self.setWidth(self.folio, 12)
+        # 4, the folio display
+        self.folio = QLabel()
+        self.folio.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.setWidth(self.folio, 12)
 
-	# Make a layout frame and lay the four things out in it with captions
-	# Line [      ] Column (  )    Image [      ] Folio (   )
+        # Make a layout frame and lay the four things out in it with captions
+        # Line [      ] Column (  )    Image [      ] Folio (   )
 
         hb = QHBoxLayout()
-	hb.addWidget(self.makeCaption(u"Line"))
-	hb.addWidget(self.lnum)
-	hb.addWidget(self.makeCaption(u"Column"))
-	hb.addWidget(self.cnum)
+        hb.addWidget(self.makeCaption(u"Line"))
+        hb.addWidget(self.lnum)
+        hb.addWidget(self.makeCaption(u"Column"))
+        hb.addWidget(self.cnum)
 
-	hb.addSpacing(5) # Qt doc doesn't say what the units are!
+        hb.addSpacing(5) # Qt doc doesn't say what the units are!
 
-	hb.addWidget(self.makeCaption(u"Image"))
-	hb.addWidget(self.image)
-	hb.addWidget(self.makeCaption(u"Folio"))
-	hb.addWidget(self.folio)
+        hb.addWidget(self.makeCaption(u"Image"))
+        hb.addWidget(self.image)
+        hb.addWidget(self.makeCaption(u"Folio"))
+        hb.addWidget(self.folio)
 
-	hb.addStretch() # add stretch on the right to make things compact left
+        hb.addStretch() # add stretch on the right to make things compact left
         self.setLayout(hb) # make it our layout
 
     # Convenience function to create a right-aligned caption label
     def makeCaption(self,text):
-	    lbl = QLabel(text)
-	    lbl.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-	    return lbl
+        lbl = QLabel(text)
+        lbl.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        return lbl
     # Convenience to set a width in digits on an object
     def setWidth(self,object, digits):
-	    w = self.fontInfo().pixelSize() * digits
-	    object.setMaximumWidth(w)
-	    object.setMinimumWidth(w)
+        w = self.fontInfo().pixelSize() * digits
+        object.setMaximumWidth(w)
+        object.setMinimumWidth(w)
 
     # This slot receives the ReturnPressed signal from the image widget.
     # Check that the image is a valid index to the page table; if not
     # treat it as the very last page.  Get the textCursor for that page.
     # Pass its position to moveCursor.
     def movePng(self):
-	(pn, flag) = self.image.text().toInt()
-	mx = IMC.pageTable.size()
-	if mx : # there is some page table data
-	    if pn > mx : # requested page doesn't exist
-		pn = mx # go to last existing one
-		self.image.setText(QString(str(pn)))
-	    tc = IMC.pageTable.getCursor(pn-1)
-	    self.moveCursor(tc.position())
-	else : # this is not a paginated book document
-	    self.image.setText(QString())
-	    beep()
+        (pn, flag) = self.image.text().toInt()
+        mx = IMC.pageTable.size()
+        if mx : # there is some page table data
+            if pn > mx : # requested page doesn't exist
+                pn = mx # go to last existing one
+                self.image.setText(QString(str(pn)))
+            tc = IMC.pageTable.getCursor(pn-1)
+            self.moveCursor(tc.position())
+        else : # this is not a paginated book document
+            self.image.setText(QString())
+            beep()
     # This slot receives the ReturnPressed signal from the lnum widget.
     # Get the specified textblock by number, or if it doesn't exist, the
     # end textblock, and use that to position the document.
     def moveLine(self):
-	(bn, flag) = self.lnum.text().toInt()
-	doc = IMC.editWidget.document()
-	tb = doc.findBlockByLineNumber(bn-1) # text block is origin-0
-	if not tb.isValid():
-	    tb = doc.end()
-	self.moveCursor(tb.position())
+        (bn, flag) = self.lnum.text().toInt()
+        doc = IMC.editWidget.document()
+        tb = doc.findBlockByLineNumber(bn-1) # text block is origin-0
+        if not tb.isValid():
+            tb = doc.end()
+        self.moveCursor(tb.position())
     # Given a document position, set the cursor to that spot, and put
     # the focus back in the editor so the cursor will be visible.
     def moveCursor(self, position):
@@ -372,13 +372,13 @@ class lineLabel(QWidget):
         self.lnum.setText(QString(str(bn+1)))
         cn = tc.positionInBlock()
         self.cnum.setText(QString(str(cn)))
-	pn = IMC.pageTable.getIndex(tc.position())
-	if pn >= 0 : # valid position, index is known
-	    self.image.setText(IMC.pageTable.getScan(pn))
-	    self.folio.setText(IMC.pageTable.getDisplay(pn))
-	else : # no page data or cursor is ahead of first psep
-	    self.image.setText(QString())
-	    self.folio.setText(QString())
+        pn = IMC.pageTable.getIndex(tc.position())
+        if pn >= 0 : # valid position, index is known
+            self.image.setText(IMC.pageTable.getScan(pn))
+            self.folio.setText(IMC.pageTable.getDisplay(pn))
+        else : # no page data or cursor is ahead of first psep
+            self.image.setText(QString())
+            self.folio.setText(QString())
 
 # debugging function to display a keyevent on the console
 from PyQt4.QtCore import (QEvent)
