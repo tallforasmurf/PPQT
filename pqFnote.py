@@ -256,14 +256,11 @@ ClassREs = (
     u'[\*\u00a4\u00a7\u00b6\u2020\u2021]' # star currency section para dagger dbl-dagger
     )
 
+# In order to not find [oe] as an anchor assiduously skip such keys
+TheDreadedOE = QString(u'OE')
 # The regex for finding a Ref to any possible Key class.
 RefClassMatch = u'\[(' + u'|'.join(ClassREs) + u')\]'
-# In order to not find [oe] as an anchor we accept anchors only when followed
-# by a non-word character (are there any words that end in oe lig?)
-RefExp1 = RefClassMatch + u'(?=\W)'
-# however that excludes anchors at the ends of lines!
-RefExp2 = RefClassMatch + u'$'
-RefFinderRE = QRegExp( u'(' + RefExp1 + u'|' + RefExp2 + u')' )
+RefFinderRE = QRegExp(RefClassMatch)
 # The similar regex for finding the head of a Note of any Key class.
 NoteFinderRE = QRegExp( u'\[Footnote\s+(' + u'|'.join(ClassREs) + u')\s*\:' )
 
@@ -413,7 +410,9 @@ def theRealRefresh():
         p = findtc.position()-1
         findtc.setPosition(a,QTextCursor.MoveAnchor) #click..
         findtc.setPosition(p,QTextCursor.KeepAnchor) #..and drag
-        listOrefs.append(QTextCursor(findtc))
+        # The anchor could have been an [oe] character, don't save if so.
+        if findtc.selectedText().compare(TheDreadedOE, Qt.CaseInsensitive):
+            listOrefs.append(QTextCursor(findtc))
         pqMsgs.rollBar(findtc.position())
         findtc = doc.find(RefFinderRE,findtc) # look for the next
     barBias = barCount
@@ -863,6 +862,10 @@ class fnotePanel(QWidget):
             # a value error on a too-big roman numeral or other unlikely things.
             try :
                 newkeyqs = self.streamLambdas[renchoice](self.streams[renchoice])
+                # If that produced an alpha oe or OE, skip that value
+                if 0 == newkeyqs.compare(TheDreadedOE, Qt.CaseInsensitive) :
+                    self.streams[renchoice] += 1
+                    newkeyqs = self.streamLambdas[renchoice](self.streams[renchoice])
             except ValueError, errmsg :
                 pqMsgs.warningMsg(
                     "Error encoding {0} key stream".format(KeyClassNames[renchoice]),

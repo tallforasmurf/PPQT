@@ -712,12 +712,11 @@ Use this button if you make changes in the images.</p>
 <pre>[Footnote <b>z</b>: ... some text possibly mutiple lines,
 ending with -- ]</pre>
 <p>A Note is only recognized when  <tt>[Footnote</tt> begins in column zero  and the final right-bracket is the last character on its line. (Additional square brackets within a Note are not a problem so long as they don't come at the end of a line.) A Note may contain other types of markup, for example quotes, poems or tables.</p>
-<p>An <i>Anchor</i> is a reference to a Note enclosed in brackets thus<tt>[<b>z</b>]</tt>. An Anchor is never found in column zero, although
-it may come at the end of a line. Anchors may appear in tables, quotes, and poetry as well as normal text.
+<p>An <i>Anchor</i> is a reference to a Note enclosed in brackets thus<tt>[<b>z</b>]</tt>. Anchors may appear in tables, quotes, and poetry as well as normal text.
 <p>A Note should not be coded inside /Q or /T or any other markup section that gets indented, because after reflow the <tt>[Footnote</tt> will no longer be at the left margin, and the note won't be recognized. When an Anchor appears in some markup section, place the matching Note after the end of the markup.</p>
-
-A Note may  contain an Anchor to another Note (that is, a footnote to the footnote&mdash;yes, it really happens), but the Note bodies cannot be nested. The referenced Note to the Note must be outside the referring Note, perhaps immediately after it.</p>
-<p>A <i>Key</i> is the bit of text that relates an Anchor to its Note, <tt><b>z</b></tt> in these examples. A key falls into one of several <i>Classes</i>:</p>
+A Note may  contain an Anchor to another Note (that is, a footnote to the footnote&mdash;yes, it really happens). However, Notes cannot be nested. The referenced Note to the Note must be outside the referring Note, perhaps immediately after it.</p>
+<p>A <i>Key</i> is the bit of text that relates an Anchor to its Note, <tt><b>z</b></tt> in these examples. We connect an Anchor to its Note by matching the Keys.</p>
+<p>A key falls into one of several <i>Classes</i>:</p>
 <ul>
 <li>The letters <tt>IVXLCD</tt> are in the Upper Roman class</li>
 <li>The letters <tt>ABCDEFGHIJKLMNOPQRSTUVWXYZ</tt> are Upper Alpha Class</li>
@@ -730,6 +729,7 @@ A Note may  contain an Anchor to another Note (that is, a footnote to the footno
 <p>The alphabetic classes are ambiguous; that is, a letter Key might be either
 an alpha or a roman, depending on how you want your book to work. This is
 resolved when renumbering, see below.</p>
+<p>PG texts sometimes contain <tt>[oe]</tt> or <tt>[OE]</tt> to stand for the &OElig; ligature. This is ambiguous; <tt>[OE]</tt> might be an Anchor to the 395th note in an alphabetic series. (26*15+5&mdash;It could happen in a large book!). PPQT ignores <tt>[oe]</tt> or <tt>[OE]</tt> and will not recognize them as Anchors.</p>
 <h3>The Footnote Table</h3>
 <p>When you click the Refresh button at the top of the panel, PPQT scans the document for Anchors and Notes. It matches the anchors and notes and displays the result in the table. The columns of the table are:</p>
 <ul>
@@ -744,7 +744,7 @@ resolved when renumbering, see below.</p>
 <p>When a Note has more than 10 text lines, or an Anchor is more than 50 lines from its Note, the table row is pale green to suggest a possible problem. You should check these cases to make sure PPQT has recognized the Note properly and matched it to the correct Anchor.</p>
 <p>When you click on a Ref Line cell, the document jumps to the line with that Anchor, with the Key selected. Click on a Note Line cell; the document jumps to that Note with the Note selected. Click repeatedly on a Key cell and the document jumps back and forth between the Anchor and the Note.</p>
 <h3>Renumbering</h3>
-<p>When you click the Renumber button, provided there are no pink lines in the table, PPQT sweeps through all the Keys in the document and renumbers them sequentially according to their Class. PPQT has five counters that are set to zero when you click Renumber, and that are increased by 1 each time they are used. The number streams are:</p>
+<p>When you click the Renumber button, provided there are no pink lines in the table, PPQT sweeps through all the Keys in the document and renumbers them sequentially according to their Class. PPQT has five counters that are set to 1 when you click Renumber. Each time a counter is used it is increased by 1. The number streams are:</p>
 <ul>
 <li><b>1,2,..999</b> produces a series of decimal numbers.</li>
 <li><b>A,B,..ZZ</b> produces a series of uppercase letters.</li>
@@ -752,9 +752,11 @@ resolved when renumbering, see below.</p>
 <li><b>I,II,..M</b> produces a series of uppercase Roman numerals.</li>
 <li><b>i,ii,..m</b> produces a series of lowercase Roman numerals.</li>
 </ul>
-<p>Below the table are six popup menus that let you specify how the Keys of each Class are to be renumbered. If the book has only uppercase alpha keys (the usual situation) then set Classes ABC and IVX both to use the A,B..ZZ stream.
-However, if the book has a separate set of lowercase Roman keys, set that Class
-to use the i,ii,..m stream. You could also use renumbering to change the Class of keys in use. If the book has only uppercase alpha, you could set that Class to use the 1,2,..999 stream; after renumbering, those keys will be Decimal class.</p>
+<p>Below the table are six popup menus that let you specify how the Keys of each Class are to be renumbered. During the renumbering sweep, PPQT looks at each Key in sequence and decides its Class. Then it replaces that key with the next value from the number stream you have assigned to that Class.</p>
+<p>If the book has only uppercase alpha keys (the usual situation) then set Classes ABC and IVX both to use the A,B..ZZ stream. Each Key will be replaced with the next alphabetic value in sequence, from <tt>A</tt> through <tt>ZZZ</tt>. However, if the book has a separate set of lowercase Roman keys, set that Class to use the i,ii,..m stream.</p>
+<p>If the uppercase or lowercase alphabetic stream generates an <tt>[oe]</tt> or <tt>[OE]</tt> key, PPQT skips over it, so the sequence of renumbered alphabetic Keys runs from <tt>[od]</tt> to <tt>[of]</tt>.
+
+<p>You can use renumbering to change the Class of keys in use. If the book has only uppercase alpha, you could set that Class to use the 1,2,..999 stream. After renumbering, those keys will all be Decimals.</p>
 <p>Renumbering is a single-undo operation. After renumbering, examine the results; if they are not satisfactory, click in the text and key ctl-z.</p>
 <h3>Footnote Sections and Moving Footnotes</h3>
 <p>Proofers leave Notes on the page where they appear. You move them to follow the paragraph that references them. However for some books you want to move all Notes to a special section at the end of each chapter, or at the end of the book.</p>
