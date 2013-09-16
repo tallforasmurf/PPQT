@@ -172,6 +172,8 @@ class PPTextEditor(QPlainTextEdit):
         IMC.needSpellCheck = False
         IMC.needMetadataSave = 0x00
         IMC.staleCensus = 0x00
+        IMC.bookSaveEncoding = QString(u'UTF-8')
+        IMC.bookMainDict = IMC.spellCheck.mainTag
 
     # Implement the Edit menu items:
     # Edit > ToUpper,  Edit > ToTitle,  Edit > ToLower
@@ -417,6 +419,9 @@ class PPTextEditor(QPlainTextEdit):
         else:
             metaStream << u"TRUE"
         metaStream << u"}}\n"
+        metaStream << u"{{MAINDICT "
+        metaStream << unicode(IMC.bookMainDict)
+        metaStream << u"}}\n"
         # The hash could contain any character. Using __repr__ ensured
         # it is enclosed in balanced single or double quotes but to be
         # double sure we will fence it in characters we can spot with a regex.
@@ -499,6 +504,9 @@ class PPTextEditor(QPlainTextEdit):
         # to not set it on and then we are out of step with the View menu
         # toggles, so the user has to set it off before loading, or suffer.
         self.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
+        # set a different main dict if there was one in the metadata
+        if IMC.bookMainDict is not None:
+            IMC.spellCheck.setMainDict(IMC.bookMainDict)
 
     # load page table & vocab from the .meta file as a stream.
     # n.b. QString has a split method we could use but instead
@@ -508,7 +516,7 @@ class PPTextEditor(QPlainTextEdit):
         sectionRE = QRegExp( u"\{\{(" + '|'.join (
             ['PAGETABLE','CHARCENSUS','WORDCENSUS','BOOKMARKS',
              'NOTES','GOODWORDS','BADWORDS','CURSOR','VERSION',
-             'STALECENSUS','NEEDSPELLCHECK','ENCODING', 'DOCHASH'] ) \
+             'STALECENSUS','NEEDSPELLCHECK','ENCODING', 'DOCHASH', 'MAINDICT'] ) \
                              + u")(.*)\}\}",
             Qt.CaseSensitive)
         metaVersion = 0 # base version
@@ -532,7 +540,10 @@ class PPTextEditor(QPlainTextEdit):
                         IMC.needSpellCheck = True
                     continue # no more data after {{NEEDSPELLCHECK x}}
                 elif section == u"ENCODING" :
-                    IMC.bookSaveEncoding = argument
+                    IMC.bookSaveEncoding = QString(argument)
+                    continue
+                elif section == u"MAINDICT" :
+                    IMC.bookMainDict = QString(argument)
                     continue
                 elif section == u"DOCHASH" :
                     IMC.metaHash = argument
