@@ -68,14 +68,16 @@ see the file <tt>COPYING.TXT</tt> in the distribution folder. Qt itself is licen
 </ul>
 <h2 id='New'>What's New in This Version</h2>
 <p>(See also <a href='#OldNew'>What Was New</a> for previous changes.)</p>
-<h3>What's New on 19 August 2013</h3>
+<h3>What's New as of 18 September 2013</h3>
 <ul>
-<li>The <a href='#Chars'>Characters Panel</a> now displays a new column, Unicode Character Name. This can help you tell the difference between some characters that are hard to distinguish by their shapes.</li>
-<li>You can launch PPQT from the command line (linux or Mac OS) without having to invoke Python, e.g. just enter <tt>ppqt</tt>. If you enter <tt>ppqt --version</tt> it prints the version info and exits.</li>
-<li>If you launch PPQT from the command line you can specify a book to open, for example <tt>ppqt abook-utf.txt</tt>. If the book is not in the current directory you must give an absolute or relative path to it.</li>
-<li>Support for loading Guiguts projects and saving to Guiguts format is added; see <a href='#GGIO'>Guiguts Import and Export</a>.</li>
-<li>Support for setting the file encoding based on  file suffixes <tt>.win</tt> and <tt>.mac</tt> has been removed. You can still open files with these encodings using File > Open With Encoding.</li>
-<li>If the book is opened with Latin-1 encoding, you are warned before saving if the book now has characters that are not valid for Latin-1. The warning might not appear if the count of characters is not up to data (Refresh in the <a href='#Chars'>Characters panel</a>).</li>
+<li>There is now a File > Properties dialog that gives access to a few important facts about the current document. This may be expanded in the future.</li>
+<li>The status bar now shows Image (scan file) number and Folio (logical page number). You can jump to a page by entering its number in the Image field.</li>
+<li>The <a href='#Pages'>Pages panel</a> now initializes any sequence of pages that have the same folio format with "(same)". This makes it easier to change formats; you only have to set an explicit format on the pages where the format changes.</li>
+<li>When you save a file that should be encoded Latin-1, PPQT checks the file contents, and if it contains a non-Latin-1 character, it warns you and you must either save in UTF, or cancel the save.</li>
+<li>When you select a file to open, and PPQT can't determine its character encoding, you get a warning dialog. You can specify Latin-1 or UTF encoding, or cancel.</li>
+<li>You now specify an alternate spelling dictionary with syntax that is valid HTML, replacing the nonstandard syntax previously used. See <a href='#Spellcheck'>Spellcheck</a>.</li>
+<li>The keystrokes for inserting and jumping to line numbers in the Notes tab have been changed from alt-ctl-L and ctl-L to alt-ctl-n and ctl-n, to avoid conflict with the Edit menu where ctl-L means change selection to lowercase.</li>
+<li>Annnnnddd... it's version 1.2. The accumulated tweaks and fixes add up to enough to call this a new version. Also this is likely the last version before version 2.0.</li>
 </ul>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
@@ -105,9 +107,9 @@ that are not in Latin-1. CP1252 is not supported by Project Gutenberg (PG), but 
 <li>Per the HTML and XML standards, HTML, XHTML and XML files must either be UTF-8, or else they must have a <tt>charset=</tt><i>encoding</i> parameter in the first 1024 characters of the file. When PPQT loads or saves a file of type <tt>.htm</tt>, <tt>.html</tt> or <tt>.xml</tt>, PPQT looks for this parameter and uses the encoding specified. If there is no parameter, it uses UTF-8.</li>
 </li>
 </ol>
-<p>If none of the above rules apply, PPQT will refuse to open a file, saying it "cannot guess the encoding." You can either rename the file to show the encoding, or you can use the File menu command Open With Encoding and select one of the four encodings in the sub-menu.</p>
-<p>When saving a file, PPQT will only use UTF-8 or Latin-1. It applies rules 2-4 above to discover which you want to use. To force it to save in a certain encoding, save to a filename with the proper suffix. For example to force saving as Latin-1, save to <i>bookname</i><tt>-ltn.txt</tt>.</p>
-<p>Before saving to a Latin-1 file, PPQT checks the <a href='#Chars'>The Characters Panel</a> and gives you an error message if there are any characters not supported by the Latin-1 encoding.</p>
+<p>If none of the above rules applies, PPQT shows a warning dialog giving you the option to open the file in Latin-1, UTF-8, or to cancel.</p>
+<p>When saving a file, PPQT will only use UTF-8 or Latin-1. It applies rules 2-4 above to discover which you want to use. To force it to save in a certain encoding, save to a filename with the proper suffix or use the File&nbsp;>&nbsp;Properties dialog.</p>
+<p>Before saving to a Latin-1 file, PPQT checks the actual file contents and gives you an error message if there are any characters not supported by the Latin-1 encoding.</p>
 <h3>Metadata</h3>
 When opening  <tt>afinebook.txt</tt>, PPQT looks for a file named  <tt>afinebook.txt.meta</tt> in the same location (i.e. the full book name
 plus <tt>.meta</tt>). If the meta file
@@ -123,7 +125,7 @@ You should quit PPQT and resolve the conflict at once.</p>
 <h3>Page Images</h3>
 <p>PPQT expects to find a folder named <tt>pngs</tt> in the same location as
 the text file, containing the scan images for the book. These are displayed in 
-the Pngs panel.</p>
+the <a href='#Pngs'>Pngs panel</a>.</p>
 <h3 id='GGIO'>Guiguts Import and Export</h3>
 <p>PPQT can open a project that has been saved by Guiguts. Just use File > Open and select the book file as saved by Guiguts. PPQT will notice that there is no <i>bookname</i><tt>.meta</tt> but there is a <i>bookname</i><tt>.bin</tt>, the Guiguts metadata file. It will ask for permission and then load the book, taking metadata from the <tt>bin</tt> file and also from <tt>good_words</tt> and <tt>bad_words</tt> files if they exist. Not all of the Guiguts meta-information is preserved, but page numbering and bookmark locations should be correct.</p>
 <p>Immediately after loading a Guiguts book, go to the Words or Characters panel and click Refresh. Then go to the Pages panel and click Update. These  steps bring the metadata up to date.</p> 
@@ -138,7 +140,7 @@ from time to time to say what PPQT is doing. Further to the right is a progress 
 <p>In the center of the status area you see four information fields. On the left is "Image" with the filename of the scan image for the page where the cursor is, when a scan image is known. Next  is a line-number field displaying the line number of the edit cursor. Type a new number in that field and press Return to jump to a different line.</p>
 <p>Next to the line number field is a field showing the cursor column
 position. When no text is selected, this is the column number of the character to the right of the insertion point. When there is a selection, the position number is either the left or the right end of the selected text, depending on how the selection was made (e.g. by dragging left to right, or right to left).</p>
-<p>RIghtmost is the "Folio" field. It displays the logical page number you have assigned to the current page. Page numbers are set in the <a href='#Pages'>Pages panel</a> described later.</p>
+<p>Rightmost is the "Folio" field. It displays the logical page number you have assigned to the current page. Page numbers are set in the <a href='#Pages'>Pages panel</a> described later.</p>
 <h2 id='Edit'>The Edit Panel</h2>
 <p>The left-side panel is a typical modern plain text line-editor.
 It requires a monospaced font, defaulting to Liberation Mono when available
@@ -206,10 +208,12 @@ of the filename or suffix rules listed <a href='#Encodings'>above</a> to indicat
 and loads its contents. It looks for a file whose name begins with <tt>bad_words</tt> also. You can use any
 of the filename or suffix rules listed <a href='#Encodings'>above</a> to indicate the encoding of these files.</p>
 <p>These lists of "good" and "bad" words are saved in the metadata file thereafter. More "good" words can be added from the <a href='#Words'>Words panel</a> or with the <a href='#ContextMenu'>context menu</a>.</p>
-<p>Use View&nbsp;>&nbsp;Dictionary to select a dictionary for the main language of the book. This choice of main dictionary is remembered from session to session. Dictionaries for several languages are included; more can be added by a procedure documented elsewhere. After changing the main dictionary, click Refresh in the <a href='#Words'>Words panel</a> to re-check all spelling.</p>
+<p>Use View&nbsp;>&nbsp;Dictionary (or File&nbsp;>&nbsp;Properties) to select a dictionary for the main language of the book. This choice of main dictionary is saved with the metadata. Dictionaries for several languages are included with PPQT and more can be added by a procedure documented elsewhere. After changing the main dictionary, click Refresh in the <a href='#Words'>Words panel</a> to re-check all spelling.</p>
 <p>When building or refreshing its metadata, PPQT checks all words for spelling. A "bad" word is assumed to be misspelt. A "good" word is assumed to be correct. Any word that is not in those lists is presented to the spell-checker for testing against the current dictionary.</p>
 <p>Use the View&nbsp;>&nbsp;Spelling command to turn on red-underlining of misspelt words. Be patient, this may lock up PPQT for several seconds in a large book.</p>
-<p>You can mark any word, phrase or section to be checked against an alternate dictionary with the nonstandard tag <b><tt>&lt;sd</tt></b>&nbsp;<i>dictag</i><b>&gt;</b>...<b><tt>&lt;/sd></tt></b>, for example<blockquote><tt>He whispered &lt;sd fr_FR>&lt;i>Je t'aime&lt;/i>&lt;/sd></tt></blockquote>Obviously these nonstandard tags must be removed before the book is finalized. The use of a single alternate dictionary does not slow spellcheck much. However, the use of two or more alternate languages may slow spellcheck a lot.
+<p>You can mark any word, phrase or section to be checked against an alternate dictionary. Just enclose that word, phrase or section in some kind of HTML markup, <tt>span</tt> or <tt>div</tt> for example, and include the <tt>lang="</tt><i>dict_tag</i><tt>"</tt> property. For example,
+<blockquote><tt>He whispered &lt;span lang="fr_FR">&lt;i>Je t'aime&lt;/i>&lt;/span></tt></blockquote>
+The <i>dict_tag</i> must be one of the dictionary tags (filenames) displayed by the View&nbsp;>&nbsp;Dictionary dialog. You must remove these HTML tags from the plain text version of the book, but they can remain in the HTML version because <tt>lang=</tt> is a valid HTML and XML attribute.</p>
 <h2 id='Pngs'>The Pngs Panel</h2>
 <p>Click the Pngs tab to display the Pngs panel, which displays scan images loaded from the <tt>pngs</tt> folder. It normally displays the image that corresponds to the present edit cursor position. The heading line displays the image filename and the corresponding folio, or logical page number. Use the <a href='#Pages'>Pages panel</a> to set the folio values for each page.</p>
 <p>When the focus is in the Pngs panel (click in it), ctl-hyphen zooms out and ctl-plus zooms in. The current zoom setting is remembered from session to session. If the image is larger than the panel, scroll bars appear. Use them to center the text. The scroll position is kept as pages change.</p>
@@ -218,12 +222,12 @@ of the filename or suffix rules listed <a href='#Encodings'>above</a> to indicat
 <h2 id='Notes'>The Notes Panel</h2>
 <p>Click the Notes tab. This panel is a simple plain-text editor to hold notes on the book in progress. Whatever contents you type here are saved
 in the <tt>.meta</tt> file and reloaded with the book.</p>
-<p>When the focus is in the Notes panel, the alt-ctl-L key causes the
-current line number of the Edit panel cursor position to be entered, in curly braces: <tt>{1475}</tt>. (Note: under Ubuntu, alt-ctl-L may be the keyboard shortcut for Lock Screen. Use Ubuntu's Preferences &gt; Keyboard Shortcuts to change this to, e.g., shift-alt-ctl-L.)</p><p>The alt-ctl-P key causes the current scan image number to be entered in square brackets: <tt>[214]</tt>. Use these keys to relate your notes to locations in the book, for example <blockquote>
+<p>When the focus is in the Notes panel, the alt-ctl-n key causes the
+current line number of the Edit panel cursor position to be entered, in curly braces: <tt>{1475}</tt>. The alt-ctl-p key causes the current scan image number to be entered in square brackets: <tt>[214]</tt>. Use these keys to relate your notes to locations in the book, for example <blockquote>
 <tt>oe lig near {1475} <br />
 big table on [214]</tt>.</blockquote>
 </p><p>
-Place the cursor in or to the right of a {nnn} line number in the notes and key ctl-L. The Edit panel cursor jumps to that line. Place the cursor in or to the right of a [ppp] page number and key ctl-p. The Edit panel cursor jumps to the top of that page's text.</p>
+Place the cursor in or to the right of a {nnn} line number in the notes and key ctl-n. The Edit panel cursor jumps to that line. Place the cursor in or to the right of a [ppp] page number and key ctl-p. The Edit panel cursor jumps to the top of that page's text.</p>
 <p>Key ctl-f for a simple Find dialog for searching in the notes.
 If text is selected, it is pre-loaded in the find-text field. The search
 starts at the cursor and wraps around at the end of the notes.</p>
@@ -711,11 +715,11 @@ Use this button if you make changes in the images.</p>
 <p>The following terms are important. A <i>Note</i> is a section of text that begins with <tt>[Footnote</tt> and ends with a right-bracket, for example,</p>
 <pre>[Footnote <b>z</b>: ... some text possibly mutiple lines,
 ending with -- ]</pre>
-<p>A Note is only recognized when  <tt>[Footnote</tt> begins in column zero  and the final right-bracket is the last character on its line. (Additional square brackets within a Note are not a problem so long as they don't come at the end of a line.) A Note may contain other types of markup, for example quotes, poems or tables.</p>
+<p>A Note is only recognized when  <tt>[Footnote</tt> begins in column zero,  and the final right-bracket is the last character on its line. (Additional square brackets within a Note are not a problem so long as they don't come at the end of a line.) A Note may contain other types of markup, for example quotes, poems or tables.</p>
 <p>An <i>Anchor</i> is a reference to a Note enclosed in brackets thus<tt>[<b>z</b>]</tt>. Anchors may appear in tables, quotes, and poetry as well as normal text.
-<p>A Note should not be coded inside /Q or /T or any other markup section that gets indented, because after reflow the <tt>[Footnote</tt> will no longer be at the left margin, and the note won't be recognized. When an Anchor appears in some markup section, place the matching Note after the end of the markup.</p>
-A Note may  contain an Anchor to another Note (that is, a footnote to the footnote&mdash;yes, it really happens). However, Notes cannot be nested. The referenced Note to the Note must be outside the referring Note, perhaps immediately after it.</p>
-<p>A <i>Key</i> is the bit of text that relates an Anchor to its Note, <tt><b>z</b></tt> in these examples. We connect an Anchor to its Note by matching the Keys.</p>
+<p>A Note should not be coded inside /Q or /T or any other markup section that gets indented, because after reflow the <tt>[Footnote</tt> will no longer be at the left margin, and the note will not be recognized. If an Anchor appears in some markup section, place its matching Note after the end of the markup.</p>
+A Note may  contain an Anchor to another Note (that is, a footnote has a footnote&mdash;yes, it really happens). However, Notes cannot be nested. The referenced Note to the Note must be outside the referring Note, perhaps immediately after it.</p>
+<p>A <i>Key</i> is that letter or number or symbol that links an Anchor to its Note, <tt><b>z</b></tt> in these examples. We connect an Anchor to its Note by matching the Keys.</p>
 <p>A key falls into one of several <i>Classes</i>:</p>
 <ul>
 <li>The letters <tt>IVXLCD</tt> are in the Upper Roman class</li>
@@ -726,10 +730,8 @@ A Note may  contain an Anchor to another Note (that is, a footnote to the footno
 <li>The six symbols <tt>*&curren;&sect;&para;&dagger;&Dagger;</tt> (asterisk, currency, section, paragraph, dagger and double-dagger) are Symbol Class</li>
 </ul>
 <p>Only the Latin alphabet, digits, and the symbols shown are recognized as Key values. (Most PGDP books are proofed using only the letters A, B and occasionally C; some scholarly books might have lowercase roman keys or decimal keys as well.)</p>
-<p>The alphabetic classes are ambiguous; that is, a letter Key might be either
-an alpha or a roman, depending on how you want your book to work. This is
-resolved when renumbering, see below.</p>
-<p>PG texts sometimes contain <tt>[oe]</tt> or <tt>[OE]</tt> to stand for the &OElig; ligature. This is ambiguous; <tt>[OE]</tt> might be an Anchor to the 395th note in an alphabetic series. (26*15+5&mdash;It could happen in a large book!). PPQT ignores <tt>[oe]</tt> or <tt>[OE]</tt> and will not recognize them as Anchors.</p>
+<p>The alphabetic classes are ambiguous; that is, a Key that is a letter might be either an alpha or a roman, depending on how you want your book to work. This is resolved when renumbering, see below.</p>
+<p>PG texts sometimes contain <tt>[oe]</tt> or <tt>[OE]</tt> to stand for the &OElig; ligature. This is ambiguous; <tt>[OE]</tt> might be an Anchor to the 395th note in an alphabetic series. (26*15+5&mdash;it could happen in a large book!). PPQT does not recognize <tt>[oe]</tt> or <tt>[OE]</tt> as Anchors. When renumbering, it will not generate either one as a renumbered key.</p>
 <h3>The Footnote Table</h3>
 <p>When you click the Refresh button at the top of the panel, PPQT scans the document for Anchors and Notes. It matches the anchors and notes and displays the result in the table. The columns of the table are:</p>
 <ul>
@@ -805,6 +807,15 @@ superscripts, subscripts, Side notes, Illustrations, and typo markups to HTML.</
 <li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS style section described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match what PPQT generates).</li>
 </ul>
 <h2 id='OldNew'>What Was New</h2>
+<h3>What's New on 19 August 2013</h3>
+<ul>
+<li>The <a href='#Chars'>Characters Panel</a> now displays a new column, Unicode Character Name. This can help you tell the difference between some characters that are hard to distinguish by their shapes.</li>
+<li>You can launch PPQT from the command line (linux or Mac OS) without having to invoke Python, e.g. just enter <tt>ppqt</tt>. If you enter <tt>ppqt --version</tt> it prints the version info and exits.</li>
+<li>If you launch PPQT from the command line you can specify a book to open, for example <tt>ppqt abook-utf.txt</tt>. If the book is not in the current directory you must give an absolute or relative path to it.</li>
+<li>Support for loading Guiguts projects and saving to Guiguts format is added; see <a href='#GGIO'>Guiguts Import and Export</a>.</li>
+<li>Support for setting the file encoding based on  file suffixes <tt>.win</tt> and <tt>.mac</tt> has been removed. You can still open files with these encodings using File > Open With Encoding.</li>
+<li>If the book is opened with Latin-1 encoding, you are warned before saving if the book now has characters that are not valid for Latin-1. The warning might not appear if the count of characters is not up to data (Refresh in the <a href='#Chars'>Characters panel</a>).</li>
+</ul>
 <h3>What's new as of 10 July 2013</h3>
 <p>When converting to HTML, we now apply a new, simplified rule to detect chapter heads and subheads. The new rule is subtly different from the wording of the PGDP Formatting Guidelines. See <a href='#html'>HTML Conversion</a> for details.</p>
 <p>When converting Footnotes to HTML, we no longer include a <tt>name=</tt> property in the anchor or the footnote <tt>&lt;div></tt>. The <tt>name</tt> property is not supported in XHTML Strict and prevented the document from validating.</p>
