@@ -143,6 +143,7 @@ class Properties(QDialog) :
             self.IMC.bookMainDict = self.maintag
             self.IMC.needSpellCheck = True
             self.IMC.spellCheck.setMainDict(self.maintag)
+        self.IMC.needMetadataSave |= self.IMC.propertyChanged
         self.accept()
     # Slot entered from Cancel button: just quit
     def cancelButtonHit(self) :

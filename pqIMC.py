@@ -69,6 +69,7 @@ class tricorder():
         self.pagePanelChanged = 0x04
         self.bookmarksChanged = 0x08
         self.wordlistsChanged = 0x10
+        self.propertyChanged = 0x20
         # a word is added to goodwords, or we do a spellcheck or a word census.
         # Cleared on Save, Save-As or New.
         self.needMetadataSave = 0x00
