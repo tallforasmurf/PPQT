@@ -61,18 +61,19 @@ from PyQt4.QtGui import (
     QTabWidget,
     QTextCursor)
 
-import pqEdit
-import pqPngs
-import pqMsgs
-import pqNotes
-import pqFind
 import pqChars
-import pqWords
-import pqPages
+import pqEdit
+import pqFind
 import pqFlow
 import pqFnote
-import pqView
 import pqHelp
+import pqMsgs
+import pqNotes
+import pqPages
+import pqPngs
+import pqProps
+import pqView
+import pqWords
 # -------------------------------------------------------------------------#
 #
 # The parent module begins execution by instantiating one of these.
@@ -318,6 +319,8 @@ class MainWindow(QMainWindow):
         fileSaveAsAction = self.createAction("Save &As...", None,
                 self.fileSaveAs, QKeySequence.SaveAs,
                 "Save the book under a new name")
+        filePropsAction = self.createAction("Properties...", None,
+                self.fileProps, None, "Some facts about the document")
         fileScannosAction = self.createAction("Scannos...", None,
                 self.scannoOpen, None, "Read list of likely scannos")
         fileButtonLoadAction = self.createAction("Load Find Buttons...", None,
@@ -342,8 +345,9 @@ class MainWindow(QMainWindow):
         self.openWithMenu.addAction(fileOpenWithMAC)
         # actions following the open with encoding submenu
         self.fileMenuActions2 = (fileSaveAction, fileSaveAsAction,
+                                 filePropsAction, None,
                                  fileScannosAction, fileButtonLoadAction,
-                                 fileButtonSaveAction, None,
+                                 fileButtonSaveAction,
                                  fileExportGuiguts,
                                  None, fileQuitAction)
         # Recall our list of recently-opened files from saved settings.
@@ -594,7 +598,7 @@ class MainWindow(QMainWindow):
         qsl = IMC.spellCheck.dictList()
         if qsl.count() : # then we know about some dicts
             qsl.sort() # put the list in order
-            qsmt = IMC.spellCheck.mainTag if IMC.spellCheck.isUp() else u'(none)'
+            qsmt = IMC.spellCheck.mainTag if IMC.spellCheck.isUp() else QString(u'(none)')
             # get the index of the current main dict tag, if any
             current = qsl.indexOf(qsmt)
             if current < 0 : # appears there isn't a current main dict
@@ -1114,6 +1118,14 @@ class MainWindow(QMainWindow):
         if not sfname.isEmpty(): # user selected a file, we are "go"
             self.scannoPath = sfname
             self.scannoLoad()
+
+    # -----------------------------------------------------------------
+    # File>Properties clicked. Instantiate a file properties dialog
+    # and let it run. It may or may not modify the IMC.
+
+    def fileProps(self) :
+        dialog = pqProps.Properties(IMC,IMC.mainWindow)
+        dialog.exec_()
 
     # -----------------------------------------------------------------
     # Called during initialization to load a scanno file from the settings,

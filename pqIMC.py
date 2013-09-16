@@ -46,6 +46,12 @@ from PyQt4.QtCore import (Qt,QChar,QSysInfo,PYQT_VERSION_STR,QT_VERSION_STR)
 #
 class tricorder():
     def __init__(self):
+
+        # Controls on the edit syntax hiliter, queried in the editor and
+        # set by the Main window View menu actions:
+        self.scannoHiliteSwitch = False
+        self.spellingHiliteSwitch = False
+
         # Document/file status variables: more than a simple "dirty" flag.
         # Just a brute count of calls to the textChanged signal slot.
         self.editCounter = 0
@@ -71,6 +77,12 @@ class tricorder():
         # that because it tracks the undo/redo actions and knows if the user
         # has backed out all changes or not.
 
+        # Other document properties read/written in metadata
+        self.bookSaveEncoding = None # encoding for saves: UTF-8 or ISO-8859-1
+        self.documentHash = b'' # hash of document contents
+        self.metaHash = b'' # hash as read from the .meta file
+        self.bookMainDict = None # QString of preferred main dict for this book
+
         # These values are used in forming the word classification
         # flag for words in the word census. Prepared in the census
         # in pqEdit, referenced in pqWord.
@@ -92,18 +104,11 @@ class tricorder():
         self.FolioRuleSet = 0x01
         self.FolioRuleSkip = 0x02
 
-        # Controls on the edit syntax hiliter, queried in the editor and
-        # set by the Main window View menu actions:
-        self.scannoHiliteSwitch = False
-        self.spellingHiliteSwitch = False
-
         # Pointers initialized in ppqt, filled in in pqEdit,
         # and referenced everywhere else
         self.settings = None # QSettings for global save/restore app values
         self.appBasePath = None # path to the our dist folder for extras, dict, fonts
         self.dictPath = None # path to folder where we look for dictionaries
-        self.documentHash = b'' # hash of document contents
-        self.metaHash = b'' # hash as read from the .meta file
         self.scannoList = None # list loaded from a scannos file for hiliting
         self.goodWordList = None # good words
         self.badWordList = None # bad words
@@ -119,7 +124,6 @@ class tricorder():
         self.bookPath = None # absolute path to book file
         self.bookDirPath = None # absolute path to book directory
         self.bookType = None # book file suffix used to detect .hmt(l)
-        self.bookSaveEncoding = None # encoding for saves: UTF-8 or ISO-8859-1
         self.defaultFontFamily = None # name of preferred font, usually 'Liberation Mono'
         self.fontFamily = None # last-chosen font
         self.fontSize = 12 # last-chosen font size in Edit panel

@@ -101,12 +101,12 @@ import hunspell
 class makeSpellCheck():
     def __init__(self):
         # Nothing loaded yet
-        self.altTag = u''
+        self.altTag = QString()
         self.altDict = None
-        self.mainTag = u''
+        self.mainTag = QString()
         self.mainDict = None
         # Tag of a not-found dict so we don't keep repeating a message
-        self.errTag = u''
+        self.errTag = QString()
         # Populate our list of available dictionaries by finding
         # all the file-pairs of the form <tag>.dic and <tag>.aff in the
         # folder whose path is saved by ppqt in IMC.dictPath.
