@@ -192,6 +192,8 @@ class tricorder():
         self.ctl_plus = Qt.ControlModifier | Qt.Key_Plus
         self.ctl_shft_equal = Qt.ShiftModifier | self.ctl_equal
         self.ctl_shft_plus = Qt.ShiftModifier | self.ctl_plus
+        self.ctl_N = Qt.ControlModifier | Qt.Key_N
+        self.ctl_alt_N = Qt.AltModifier | self.ctl_N
         self.ctl_L = Qt.ControlModifier | Qt.Key_L
         self.ctl_alt_L = Qt.AltModifier | self.ctl_L
         self.ctl_P = Qt.ControlModifier | Qt.Key_P
@@ -213,7 +215,7 @@ class tricorder():
                 self.ctl_alt_7, self.ctl_alt_8,  self.ctl_alt_9,
                 self.ctl_minus, self.ctl_plus, self.ctl_shft_equal,
                 self.ctl_shft_plus,
-                self.ctl_L,self.ctl_alt_L,self.ctl_P,self.ctl_alt_P]
+                self.ctl_N,self.ctl_alt_N,self.ctl_P,self.ctl_alt_P]
         self.backKeys = [self.ctl_B, self.ctl_Left, self.ctl_LBracket, self.ctl_left_pad]
         self.zoomKeys = [self.ctl_minus, self.ctl_plus,
                          self.ctl_shft_equal, self.ctl_shft_plus]
