@@ -85,6 +85,7 @@ from PyQt4.QtGui import ( QApplication, QFont, QFontDatabase )
 
 # Create the Inter-Module Communicator
 import pqIMC
+IMC = pqIMC.tricorder()
 
 # Collect version and copyright info into one string suitable for the
 # argparse version action.
