@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.02.0" # refer to PEP-0008
+__version__ = "1.2.0" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012, 2013 David Cortesi"
 __maintainer__ = "?"
@@ -52,47 +52,47 @@ import os
 class helpDisplay(QWebView):
     def __init__(self, parent=None ):
         super(helpDisplay, self).__init__(parent)
-	# make page unmodifiable
-	self.page().setContentEditable(False)
-	# initialize settings
-	# Find out the nearest font to Palatino
-	qf = QFont()
-	qf.setStyleStrategy(QFont.PreferAntialias+QFont.PreferMatch)
-	qf.setStyleHint(QFont.Serif)
-	qf.setFamily(QString(u'Palatino'))
-	qfi = QFontInfo(qf)
-	# set the default font to that serif font
-	self.settings().setFontFamily(QWebSettings.StandardFont, qfi.family())
-	self.settings().setFontSize(QWebSettings.DefaultFontSize, 16)
-	self.settings().setFontSize(QWebSettings.MinimumFontSize, 6)
-	self.settings().setFontSize(QWebSettings.MinimumLogicalFontSize, 6)
-	self.textZoomFactor = 1.0
-	self.setTextSizeMultiplier(self.textZoomFactor)
-	self.settings().setAttribute(QWebSettings.JavascriptEnabled, False)
-	self.settings().setAttribute(QWebSettings.JavaEnabled, False)
-	self.settings().setAttribute(QWebSettings.PluginsEnabled, False)
-	self.settings().setAttribute(QWebSettings.ZoomTextOnly, True)
-	#self.settings().setAttribute(QWebSettings.SiteSpecificQuirksEnabled, False)
-	self.userFindText = QString()
-	# Look for pqHelp.html in the app folder and copy its text into
-	# a local buffer. If it isn't found, put a message there instead.
-	# We need to keep it in order to implement the "back" function.
-	helpPath = os.path.join(IMC.appBasePath,u'pqHelp.html')
-	helpFile = QFile(helpPath)
-	if not helpFile.exists():
-	    self.HTMLstring = QString('''<p>Unable to locate pqHelp.html.</p>
+        # make page unmodifiable
+        self.page().setContentEditable(False)
+        # initialize settings
+        # Find out the nearest font to Palatino
+        qf = QFont()
+        qf.setStyleStrategy(QFont.PreferAntialias+QFont.PreferMatch)
+        qf.setStyleHint(QFont.Serif)
+        qf.setFamily(QString(u'Palatino'))
+        qfi = QFontInfo(qf)
+        # set the default font to that serif font
+        self.settings().setFontFamily(QWebSettings.StandardFont, qfi.family())
+        self.settings().setFontSize(QWebSettings.DefaultFontSize, 16)
+        self.settings().setFontSize(QWebSettings.MinimumFontSize, 6)
+        self.settings().setFontSize(QWebSettings.MinimumLogicalFontSize, 6)
+        self.textZoomFactor = 1.0
+        self.setTextSizeMultiplier(self.textZoomFactor)
+        self.settings().setAttribute(QWebSettings.JavascriptEnabled, False)
+        self.settings().setAttribute(QWebSettings.JavaEnabled, False)
+        self.settings().setAttribute(QWebSettings.PluginsEnabled, False)
+        self.settings().setAttribute(QWebSettings.ZoomTextOnly, True)
+        #self.settings().setAttribute(QWebSettings.SiteSpecificQuirksEnabled, False)
+        self.userFindText = QString()
+        # Look for pqHelp.html in the app folder and copy its text into
+        # a local buffer. If it isn't found, put a message there instead.
+        # We need to keep it in order to implement the "back" function.
+        helpPath = os.path.join(IMC.appBasePath,u'pqHelp.html')
+        helpFile = QFile(helpPath)
+        if not helpFile.exists():
+            self.HTMLstring = QString('''<p>Unable to locate pqHelp.html.</p>
 	    <p>Looking in {0}'''.format(helpPath)
-                            )
-	elif not helpFile.open(QIODevice.ReadOnly) :
-	    self.HTMLstring = QString('''<p>Unable to open pqHelp.html.</p>
+                                )
+        elif not helpFile.open(QIODevice.ReadOnly) :
+            self.HTMLstring = QString('''<p>Unable to open pqHelp.html.</p>
 	    <p>Looking in {0}</p><p>Error code {1}</p>'''.format(helpPath,
-	                                                helpFile.error())
-	                                                 )
-	else:
-	    helpStream = QTextStream(helpFile)
-	    helpStream.setCodec('ISO8859-1')
-	    self.HTMLstring = helpStream.readAll()
-	self.setHtml(self.HTMLstring)
+                                                                 helpFile.error())
+                                                         )
+        else:
+            helpStream = QTextStream(helpFile)
+            helpStream.setCodec('ISO8859-1')
+            self.HTMLstring = helpStream.readAll()
+        self.setHtml(self.HTMLstring)
 
     # Re-implement the parent's keyPressEvent in order to provide a simple
     # find function and font-zoom from ctl-plus/minus. We start the view at
@@ -102,45 +102,45 @@ class helpDisplay(QWebView):
     # down by one point. We set a limit of 0.375 (6 points) at the low
     # end and 4.0 (64 points) at the top.
     def keyPressEvent(self, event):
-	#pqMsgs.printKeyEvent(event)
-	kkey = int( int(event.modifiers()) & IMC.keypadDeModifier) | int(event.key())
-	if (kkey == IMC.ctl_F) or (kkey == IMC.ctl_G) : # ctl/cmd f/g
-	    event.accept()
-	    self.doFind(kkey)
-	elif (kkey in IMC.zoomKeys) : # ctl-plus/minus
-	    zfactor = 0.0625 # zoom in
-	    if (kkey == IMC.ctl_minus) :
-		zfactor = -zfactor # zoom out
-	    zfactor += self.textZoomFactor
-	    if (zfactor > 0.374) and (zfactor < 4.0) :
-		self.textZoomFactor = zfactor
-		self.setTextSizeMultiplier(self.textZoomFactor)
-	elif (kkey in IMC.backKeys) : # ctl-B/[/left
-	    if self.page().history().canGoBack() :
-		self.page().history().back()
-	    else :
-		self.setHtml(self.HTMLstring)
-		self.page().history().clear()
-	else: # not ctl/cmd f or ctl/cmd-plus/minus, so,
-	    event.ignore()
-	    super(helpDisplay, self).keyPressEvent(event)
+        #pqMsgs.printKeyEvent(event)
+        kkey = int( int(event.modifiers()) & IMC.keypadDeModifier) | int(event.key())
+        if (kkey == IMC.ctl_F) or (kkey == IMC.ctl_G) : # ctl/cmd f/g
+            event.accept()
+            self.doFind(kkey)
+        elif (kkey in IMC.zoomKeys) : # ctl-plus/minus
+            zfactor = 0.0625 # zoom in
+            if (kkey == IMC.ctl_minus) :
+                zfactor = -zfactor # zoom out
+            zfactor += self.textZoomFactor
+            if (zfactor > 0.374) and (zfactor < 4.0) :
+                self.textZoomFactor = zfactor
+                self.setTextSizeMultiplier(self.textZoomFactor)
+        elif (kkey in IMC.backKeys) : # ctl-B/[/left
+            if self.page().history().canGoBack() :
+                self.page().history().back()
+            else :
+                self.setHtml(self.HTMLstring)
+                self.page().history().clear()
+        else: # not ctl/cmd f or ctl/cmd-plus/minus, so,
+            event.ignore()
+            super(helpDisplay, self).keyPressEvent(event)
 
     # Implement a simple Find/Find-Next, same logic as in pqNotes,
     # but adjusted for our widget being a webview, and it does the
     # wraparound for us.
     def doFind(self,kkey):
-	if (kkey == IMC.ctl_F) or (self.userFindText.isEmpty()) :
-	    # ctl+F, or ctl+G but no previous find done, show the find dialog
-	    # with a COPY of current selection as pqMsgs might truncate it
-	    prepText = QString(self.page().selectedText())
-	    (ok, self.userFindText) = pqMsgs.getFindMsg(self,prepText)
-	# We should have some findText now, either left from previous find
-	# on a ctl-G, or entered by user. If none, then user cleared dialog.
-	if not self.userFindText.isEmpty() :
-	    if not self.page().findText(
-	        self.userFindText, QWebPage.FindWrapsAroundDocument
-	        ) :
-		pqMsgs.beep()
+        if (kkey == IMC.ctl_F) or (self.userFindText.isEmpty()) :
+            # ctl+F, or ctl+G but no previous find done, show the find dialog
+            # with a COPY of current selection as pqMsgs might truncate it
+            prepText = QString(self.page().selectedText())
+            (ok, self.userFindText) = pqMsgs.getFindMsg(self,prepText)
+        # We should have some findText now, either left from previous find
+        # on a ctl-G, or entered by user. If none, then user cleared dialog.
+        if not self.userFindText.isEmpty() :
+            if not self.page().findText(
+                self.userFindText, QWebPage.FindWrapsAroundDocument
+                ) :
+                pqMsgs.beep()
 
 if __name__ == "__main__":
     import sys
@@ -149,13 +149,12 @@ if __name__ == "__main__":
     import pqIMC
     IMC = pqIMC.tricorder()
     if hasattr(sys, 'frozen') : # bundled by pyinstaller?
-	base = os.path.dirname(sys.executable)
+        base = os.path.dirname(sys.executable)
     else: # running under normal python e.g. from command line or an IDE
-	base = os.path.dirname(__file__)
+        base = os.path.dirname(__file__)
     IMC.appBasePath = base
 
     app = QApplication(sys.argv) # create an app
     W = helpDisplay()
     W.show()
     app.exec_()
-
