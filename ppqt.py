@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.02.0" # refer to PEP-0008
+__version__ = "1.2.0" # refer to PEP-0008
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012, 2013 David Cortesi"
 __maintainer__ = "?"
@@ -27,61 +27,6 @@ __license__ = '''
     You can find a copy of the GNU General Public License in the file
     extras/COPYING.TXT included in the distribution of this program, or see:
     <http://www.gnu.org/licenses/>.
-'''
-
-'''
- A single document file, bookname.suffix, is edited. A variety of metadata
- is collected the first time a file is opened and is saved in a metadata file,
- bookname.suffipqLists.metadata. Also expected to exist at the same file path
- as bookname.suffix:
-     bookname.suffipqLists.meta (created on first save)
-     good_words.txt (optional)
-     bad_words.txt (optional)
-     pngs, a folder containing scan images named nnn.png
-
- The main window has two panes divided by a splitter. The left pane has
- the text for editing (QPlainTextEdit). The right pane is tabbed and offers a
- variety of panels, each with a specific function:
-
-    Pngs :   Shows the scan image (nnn.png) for the text at the insertion point
-	     from the pngs folder.
-
-    Find :   A variety of search/replace controls including predefined regex
-             searches in a user-programmable button array.
-
-    Notes :  A QPlainTextEdit where the user can keep notes that are saved as
-	     part of the metadata.
-
-    Pages :  A table of all pages with their scan (.png) numbers, folio
-             (pagination) controls, and proofer ids. Page boundaries are kept
-	     in the metadata after page delimiters are purged.
-
-    Chars :  A table of the character census, showing for each its glyph,
-             hex value, count, and Unicode class, sortable on any column.
-
-    Words :  A table of the word census, showing for each its text, count,
-             and class info (all-cap, fails spellcheck, etc), sortable
-             by text and count, and filterable on class.
-
-    Flow :   Various controls for text reflow, ascii table processing,
-             and HTML conversion.
-
-    View :   Live preview of the (html) document (QWebView)
-
-    FNote(TBS) :  Controls related to footnote processing and a table of the
-             footnotes found, with errors indicated.
-
-    Help :   Terse documentation of all features
-'''
-
-'''
-Acknowledgements and Credits
-
-First to Steve Shulz (Thundergnat) who created and maintained Guiguts,
-the program from which we have taken inspiration and lots of methods.
-
-Second to Mark Summerfield for the book "Rapid GUI Development with PyQt"
-without which we couldn't have done this.
 '''
 
 import os # for dict path manipulations
@@ -140,9 +85,6 @@ from PyQt4.QtGui import ( QApplication, QFont, QFontDatabase )
 
 # Create the Inter-Module Communicator
 import pqIMC
-if pqIMC.__version__ != __version__ :
-    print('pqIMC.py version {0}'.format(pqIMC.__version__))
-IMC = pqIMC.tricorder()
 
 # Collect version and copyright info into one string suitable for the
 # argparse version action.
@@ -169,12 +111,9 @@ app.setApplicationName("PPQT")
 
 # Get the message support for diagnostics
 import pqMsgs # misc message and font routines
-if pqMsgs.__version__ != __version__ :
-    print('pqMsgs.py version {0}'.format(pqMsgs.__version__))
 pqMsgs.IMC = IMC
 
 pqMsgs.noteEvent("Getting path to bundled files")
-
 #-- but we get our path different ways depending
 # on whether we are running in development or bundled by pyinstaller.
 if hasattr(sys, 'frozen') : # bundled by pyinstaller?
@@ -221,13 +160,12 @@ else:
         IMC.defaultFontFamily = QString(u'Courier New')
 IMC.fontFamily = IMC.defaultFontFamily # pqMain may override
 # Make the application default be that which we just set
-# app.setFont(pqMsgs.getMonoFont())
+# app.setFont(pqMsgs.getMonoFont()) -- do NOT as it is a bad
+# idea to have monospaced menus, titles, etc!
 
 # Import each submodule and stick a reference to IMC into it.
 
 import pqLists # implements ordered lists of words for quick lookup
-if pqLists.__version__ != __version__ :
-    print('pqLists.py version {0}'.format(pqLists.__version__))
 pqLists.IMC = IMC
 # instantiate all our lists empty
 IMC.scannoList = pqLists.wordList()
@@ -237,70 +175,43 @@ IMC.wordCensus = pqLists.vocabList()
 IMC.charCensus = pqLists.vocabList()
 
 import pqPages # page and folio table
-if pqPages.__version__ != __version__ :
-    print('pqPages.py version {0}'.format(pqPages.__version__))
 pqPages.IMC = IMC
-
 IMC.pageTable = pqPages.pagedb()
 
 import pqEdit # the main edit widget plus save and load metadata
-if pqEdit.__version__ != __version__ :
-    print('pqEdit.py version {0}'.format(pqEdit.__version__))
 pqEdit.IMC = IMC
 
 import pqPngs # scan image display
-if pqPngs.__version__ != __version__ :
-    print('pqPngs.py version {0}'.format(pqPngs.__version__))
 pqPngs.IMC = IMC
 
 import pqNotes # notes
-if pqNotes.__version__ != __version__ :
-    print('pqNotes.py version {0}'.format(pqNotes.__version__))
 pqNotes.IMC = IMC
 
 import pqFind # find/replace
-if pqFind.__version__ != __version__ :
-    print('pqFind.py version {0}'.format(pqFind.__version__))
 pqFind.IMC = IMC
 
 import pqChars # character census table
-if pqChars.__version__ != __version__ :
-    print('pqChars.py version {0}'.format(pqChars.__version__))
 pqChars.IMC = IMC
 
 import pqWords # word census table
-if pqWords.__version__ != __version__ :
-    print('pqWords.py version {0}'.format(pqWords.__version__))
 pqWords.IMC = IMC
 
 import pqFlow # text reflow
-if pqFlow.__version__ != __version__ :
-    print('pqFlow.py version {0}'.format(pqFlow.__version__))
 pqFlow.IMC = IMC
 
 import pqTable # flow's partner in crime, table reflow
-if pqTable.__version__ != __version__ :
-    print('pqTable.py version {0}'.format(pqTable.__version__))
 pqTable.IMC = IMC
 
 import pqFnote # footnote management
-if pqFnote.__version__ != __version__ :
-    print('pqFnote.py version {0}'.format(pqFnote.__version__))
 pqFnote.IMC = IMC
 
 import pqView # html preview
-if pqView.__version__ != __version__ :
-    print('pqView.py version {0}'.format(pqView.__version__))
 pqView.IMC = IMC
 
 import pqHelp # help panel
-if pqHelp.__version__ != __version__ :
-    print('pqHelp.py version {0}'.format(pqHelp.__version__))
 pqHelp.IMC = IMC
 
 import pqMain # code to create the main window and all menus
-if pqMain.__version__ != __version__ :
-    print('pqMain.py version {0}'.format(pqMain.__version__))
 pqMain.IMC = IMC
 
 pqMsgs.noteEvent("Done with most imports, opening settings")
@@ -315,8 +226,6 @@ IMC.settings = QSettings()
 pqMsgs.noteEvent("Creating spellchecker (which loads a dict)")
 
 import pqSpell # Spell-check routines (which use the settings)
-if pqSpell.__version__ != __version__ :
-    print('pqSpell.py version {0}'.format(pqSpell.__version__))
 pqSpell.IMC = IMC
 
 # create the spellcheck, loading the last-set dictionary
@@ -333,7 +242,7 @@ IMC.mainWindow.show()
 # If we are invoked from a command line and a filename was given,
 # try to open it. If there is a problem, for example if the file is
 # not found, there will be a popup diagnostic that the user will
-# has to dismiss and then we continue as normal.
+# have to dismiss and then we continue as normal.
 #
 # Useability note: We have considered automatically reopening the
 # last-used file on startup. Here would be the point at which to
