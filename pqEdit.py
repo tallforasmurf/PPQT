@@ -772,20 +772,20 @@ class PPTextEditor(QPlainTextEdit):
                             # else no alt dict in use, or didn't match
                     else : # did not start with "<", process as a word
                         # Set the property flags, which is harder now we don't
-                        # look at every character. Get into python for speed,
-                        # also because QString doesn't do .isAlnum
-                        pyWord = unicode(qsWord) # make a python string
+                        # look at every character. Use the QString facilities
+                        # rather than python because python .isalnum fails
+                        # for a hyphenated number "1850-1910".
                         flag = 0
-                        if pyWord != pyWord.lower() :
+                        if 0 != qsWord.compare(qsWord.toLower()) :
                             flag |= IMC.WordHasUpper
-                        if pyWord != pyWord.upper() :
+                        if 0 != qsWord.compare(qsWord.toUpper()) :
                             flag |= IMC.WordHasLower
-                        if pyWord.isalnum() != pyWord.isalpha() :
-                            flag |= IMC.WordHasDigit
-                        if '-' in pyWord :
+                        if qsWord.contains(qcHyphen) :
                             flag |= IMC.WordHasHyphen
-                        if "'" in pyWord :
+                        if qsWord.contains(qcApostrophe) :
                             flag |= IMC.WordHasApostrophe
+                        if qsWord.contains(reDigit) :
+                            flag |= IMC.WordHasDigit
                         IMC.wordCensus.count(qsWord.append(alt_dict),flag)
                 # end "while any more words in this line"
             # end of not-a-psep-line processing
@@ -841,4 +841,7 @@ reWords = QRegExp(xp_all, Qt.CaseInsensitive)
 # matching close tag is seen.
 reLang = QRegExp(u'''lang=[\\'\\"]*([\\w\\-]+)[\\'\\"]*''')
 
-qcLess = QChar("<")
+reDigit = QRegExp(u'\\d')
+qcLess = QChar(u"<")
+qcHyphen = QChar(u"-")
+qcApostrophe = QChar(u"'")
