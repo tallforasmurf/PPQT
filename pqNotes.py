@@ -98,9 +98,9 @@ class notesEditor(QPlainTextEdit):
                     f = self.font() # so get our font,
                     f.setPointSize(p) # change its point size +/-
                     self.setFont(f) # and put the font back
-            elif (kkey == IMC.ctl_alt_N): # ctrl/cmd-n with shift
+            elif (kkey == IMC.ctl_alt_M): # ctrl/cmd-m with shift
                 self.insertLine()
-            elif (kkey == IMC.ctl_N): # ctrl/cmd-n (no shift)
+            elif (kkey == IMC.ctl_M): # ctrl/cmd-m (no shift)
                 self.goToLine()
             elif (kkey == IMC.ctl_alt_P): # ctl/cmd-p
                 self.insertPage()
