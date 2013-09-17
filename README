@@ -1,10 +1,12 @@
-This is the README that is visible on github. See also the readme-xxx files
-specific to the platform distributions.
+Introducing PPQT
+================
 
-PPQT is an integrated application for post-processing etexts by the
-volunteers who contribute to Distributed Proofreaders (PGDP.net)
+PPQT (Post-processing in Python and Qt) is an integrated application meant to assist the volunteers who post-process etexts prepared at Distributed Proofreaders (PGDP.net). It provides a text editor that integrates a number of features useful during post-processing, including display of the book's scanned pages, regular expression find/replace, spellcheck, pagination, footnoting, and html preview.
 
-PPQT is Copyright(C) 2011, 2012 David Cortesi (email: tallforasmurf@yahoo.com)
+License
+-------
+
+PPQT is Copyright(C) 2011, 2012, 2013 David Cortesi (tallforasmurf@yahoo.com)
  
 License (GPL-3.0) :
     PPQT is free software: you can redistribute it and/or modify
@@ -21,57 +23,40 @@ License (GPL-3.0) :
     COPYING.TXT included in the distribution of this program, or see:
     <http://www.gnu.org/licenses/>.
 
-Features:
+PPQT makes use of PyQt4, Qt, Hunspell, and PyInstaller, all available for nonprofit use under one form of the GPL or another.
 
- A single document file, bookname.suffix, is edited. A variety of metadata
- is collected the first time a file is opened and is saved in a metadata file,
- bookname.suffix.meta. Also expected to exist at the same file path
- as bookname.suffix:
-     bookname.suffix.meta (created on first save)
-     good_words.txt (optional)
-     bad_words.txt (optional)
-     pngs, a folder containing page scan images named (typically) nnn.png
+Features
+---------
 
- The main window has two panes divided by a splitter. The left pane has
- the text for editing. Besides the usual editing functions PPQT supports
- highlighting words from a file of common "scannos," and also
- underlining of words that have failed the built-in spellcheck.
+A single document file, _bookname_._suffix_, is edited. A variety of metadata is collected the first time a file is opened, and thereafter is saved in a metadata file, _bookname_._suffix_.meta. Also expected to exist at the same file path as bookname.suffix:
  
- The right pane is a Qt Tabset with several panels for specific functions:
+-    bookname.suffix.meta (created on first save)
+-    good_words.txt (optional)
+-    bad_words.txt (optional)
+-    pngs, a folder containing page scan images named (typically) nnn.png
 
-    Pngs :  Shows the scan image (nnn.png) for the text at the insertion point
-	    from the pngs folder.
+The main window has two panes divided by a splitter. The left pane is a plain-text editor where the file is edited. Besides the usual editing functions PPQT supports highlighting words from a file of common "scannos," and also underlining of words that have failed the built-in spellcheck.
+ 
+The right pane is a tabset with tabs for panels for specific functions:
 
-    Notes : A QPlainTextEdit where the user can keep notes that are saved as
-	    part of the metadata.
+    Pngs :  Shows the scan image (nnn.png) from the pngs folder matching the text at the insertion point.
 
-    Find :  A variety of search/replace controls including predefined regex
-            searches in a user-programmable button array.
+    Notes : A simple editor where the user can keep notes that are saved as part of the metadata.
 
-    Chars : A table of the character census, showing for each its glyph,
-	    hex value, count of occurrences, HTML Entity code,
-	    and Unicode class, sortable on any column. Filterable to show
-	    non-Ascii and non-Latin-1.
+    Find :  A variety of search/replace controls including predefined regex searches in a user-programmable button array.
 
-    Words : A table of the word census, showing for each its text, count
-            of occurrences, and properties (all-cap, fails spellcheck, etc),
-	    sortable by text and count, and filterable on properties.
+    Chars : A table with a row for each character in the document, showing the glyph, hex value, count of occurrences, HTML Entity code, Unicode class and Unicode name, sortable on any column. Filterable to show only non-Ascii and non-Latin-1 characters.
 
-    Flow :  Controls for Ascii text reflow, Ascii table processing, and
-	    and HTML auto-conversion.
+    Words : A table with a row for each unique word in the document, showing for each its text, count of occurrences, and properties (all-cap, fails spellcheck, etc), sortable by text and count, and filterable on properties.
 
-    Pages : A table of all pages with their scan (.png) numbers, folio
-            (pagination) controls, and proofer ids. Page boundaries are kept
-	    in the metadata after page delimiter lines are purged.
+    Flow :  Controls for Ascii text reflow, Ascii table processing, and for HTML auto-conversion.
+
+    Pages : A table of all pages with their scan (.png) numbers, folio (pagination) controls, and proofer ids. Page boundaries are kept in the metadata after page delimiter lines are purged.
+
+    FNote : A table of all footnotes in the document, with controls for renumbering and moving footnotes and HTML conversion.
 
     Pvw :  Displays the document as rendered by a browser (webkit).
-
-    FNote : Controls related to footnote processing and a table of the
-	    footnotes found, with errors indicated.
     
     Help :   Terse documentation of all features
 
-PPQT incorporates a spellcheck system based on Myspell/OpenOffice dictionaries
-but implemented in Python code. Besides one default dictionary for the document,
-it allows phrases or sections to be marked off to be spellchecked using a
-different language.
+PPQT incorporates a spellcheck using Hunspell and Myspell/OpenOffice dictionaries. Besides one default dictionary for the document, it allows phrases or sections to be marked off to be spellchecked using a different language.
