@@ -174,6 +174,11 @@ class PPTextEditor(QPlainTextEdit):
         IMC.staleCensus = 0x00
         IMC.bookSaveEncoding = QString(u'UTF-8')
         IMC.bookMainDict = IMC.spellCheck.mainTag
+        # force a cursor "move" in order to create a cursorMoved signal that will
+        # clear the status line - then undo it so the document isn't modified.
+        self.textCursor().insertText(QString(' '))
+        self.document().undo()
+
 
     # Implement the Edit menu items:
     # Edit > ToUpper,  Edit > ToTitle,  Edit > ToLower
