@@ -165,6 +165,14 @@ class htmlPreview(QWidget):
         else:
             pqMsgs.warningMsg("Some problem loading html")
 
+    # Handle the docWillChange signal: tell ourselves to stop whatever we is doing.
+    # If we are actually loading something, presumably that provokes a call to
+    # loadEnds above.
+    def docWillChange(self) :
+        self.preview.stop()
+    # And on the ensuing docHasChanged signal, clear our document.
+    def docHasChanged(self) :
+        self.preview.setHtml(QString())
 
     # Re-implement the parent's keyPressEvent in order to provide a simple
     # find function, font-zoom from ctl-plus/minus, and browser "back".
@@ -247,6 +255,8 @@ if __name__ == "__main__":
     W = htmlPreview()
     M.setCentralWidget(W)
     M.show()
+    W.docWillChange()
+    W.docHasChanged()
     #t = unicode(W.getSimpleText())
     #print(t)
     #W.doneWithText()

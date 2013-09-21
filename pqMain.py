@@ -238,6 +238,8 @@ class MainWindow(QMainWindow):
 
         self.pvwPanel = pqView.htmlPreview()
         self.tabSet.addTab(self.pvwPanel, u"Pvw")
+        self.connect(self, SIGNAL("docWillChange"), self.pvwPanel.docWillChange)
+        self.connect(self, SIGNAL("docHasChanged"), self.pvwPanel.docHasChanged)
         #
         # 10. Lastly, the Help panel:
 
