@@ -809,6 +809,7 @@ class fnotePanel(QWidget):
     def docWillChange(self):
         self.table.beginResetModel()
     def docHasChanged(self):
+        global TheFootnoteList
         TheFootnoteList = []
         self.table.endResetModel()
 
