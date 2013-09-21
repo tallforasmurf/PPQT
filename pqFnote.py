@@ -799,6 +799,7 @@ class fnotePanel(QWidget):
                 targtc = rtc
         if targtc is not None:
             IMC.editWidget.setTextCursor(targtc)
+            IMC.editWidget.centerCursor()
 
     # The slots for the main window's docWill/HasChanged signals.
     # Right now, just clear the footnote database, the user can hit
