@@ -143,6 +143,8 @@ class htmlPreview(QWidget):
         self.scrollPosition = self.preview.page().mainFrame().scrollPosition()
         if clearCache :
             self.settings.clearMemoryCaches()
+        # We are reloading our base page, so clear any history of prior links
+        self.preview.page().history().clear()
         self.preview.setHtml(IMC.editWidget.toPlainText(),self.baseURL)
 
     # handle the load-in-progress signals by running our main window's
