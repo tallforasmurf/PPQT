@@ -395,7 +395,7 @@ class wordsPanel(QWidget):
         self.rowCountLabel = QLabel("0")
         topLayout.addWidget(self.rowCountLabel)
         rowCountLabelLabel = QLabel("rows")
-        rowCountLabelLabel.setAlignment(Qt.AlignLeft)
+        rowCountLabelLabel.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         topLayout.addWidget(rowCountLabelLabel)
         self.view = myTableView(self)
         self.view.setCornerButtonEnabled(False)
