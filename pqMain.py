@@ -142,9 +142,10 @@ class MainWindow(QMainWindow):
                      self.ohTextChanged)
         # -----------------------------------------------------------------
         # Format the window as a split between an editor and a tab array
-        # to hold all the other panels.
+        # to hold all the other panels. Give the edit widget a left margin.
         self.tabSet = QTabWidget()
         self.hSplitter = QSplitter(Qt.Horizontal)
+        self.hSplitter.setContentsMargins(8,0,0,0)
         self.hSplitter.addWidget(self.editor)
         self.hSplitter.addWidget(self.tabSet)
         self.setCentralWidget(self.hSplitter)
