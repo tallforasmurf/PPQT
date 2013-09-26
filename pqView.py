@@ -49,10 +49,10 @@ from PyQt4.QtGui import (
     QPushButton,
     QHBoxLayout,
     QVBoxLayout,
-    QWidget
+    QWidget,
 )
 from PyQt4.QtWebKit import(
-    QWebFrame, QWebPage, QWebView, QWebSettings
+    QWebFrame, QWebPage, QWebView, QWebSettings, QWebHistory, QWebHistoryItem
 )
 import pqMsgs
 
@@ -68,10 +68,13 @@ class htmlPreview(QWidget):
         vbox = QVBoxLayout()
         vbox.addLayout(hbox,0)
         self.preview = QWebView(self)
+        # save a shortcut reference to web page and its history
+        self.webPage = self.preview.page()
+        self.history = self.preview.page().history()
         vbox.addWidget(self.preview,1)
         self.setLayout(vbox)
         # make the web preview uneditable
-        self.preview.page().setContentEditable(False)
+        self.webPage.setContentEditable(False)
         self.settings = self.preview.settings()
         # Find out the nearest font to Palatino
         qf = QFont()
@@ -105,8 +108,6 @@ class htmlPreview(QWidget):
         self.findText = QString()
         # here store the base URL for the current book.
         self.baseURL = QUrl()
-        # save a shortcut reference to the browser history object
-        self.history = self.preview.page().history()
         # we do NOT initialize the preview (e.g. by calling self.refresh)
         # at construction time. It may be many hours before the user wants
         # to preview html. So require an explicit refresh click to do it.
@@ -140,11 +141,11 @@ class htmlPreview(QWidget):
         # means that when you make a little edit at the end of a book, and
         # refresh the preview, you won't have to scroll down to the end
         # for the 500th time to see your changes.
-        self.scrollPosition = self.preview.page().mainFrame().scrollPosition()
+        self.scrollPosition = self.webPage.mainFrame().scrollPosition()
         if clearCache :
             self.settings.clearMemoryCaches()
         # We are reloading our base page, so clear any history of prior links
-        self.preview.page().history().clear()
+        self.history.clear()
         self.preview.setHtml(IMC.editWidget.toPlainText(),self.baseURL)
 
     # handle the load-in-progress signals by running our main window's
@@ -157,7 +158,7 @@ class htmlPreview(QWidget):
         pqMsgs.endBar()
         if bool:
             # load was ok, reset scroll position now the rendering is finished.
-            self.preview.page().mainFrame().setScrollPosition(self.scrollPosition)
+            self.webPage.mainFrame().setScrollPosition(self.scrollPosition)
             # our panel is visible (else how was Refresh clicked?) but it may
             # not have the keyboard focus. Right after refresh one usually wants
             # to use keys like page-up/dn, so get the focus to our webview
@@ -198,8 +199,8 @@ class htmlPreview(QWidget):
                 self.zoomFactor = zfactor
                 self.preview.setZoomFactor(self.zoomFactor)
         elif (kkey in IMC.backKeys) :
-            if self.history.canGoBack() :
-                self.history.back()
+            if self.history.currentItemIndex() > 1 :
+                self.webPage.triggerAction(QWebPage.Back)
             else :
                 # reload the html of the book text, but don't call refresh
                 # because it would capture the scroll position as of now,
@@ -208,7 +209,6 @@ class htmlPreview(QWidget):
                 # will be instantiated in the loadEnds slot.
                 self.history.clear()
                 self.preview.setHtml(IMC.editWidget.toPlainText(),self.baseURL)
-
         else: # not a key we support, so,
             event.ignore()
             super(htmlPreview, self).keyPressEvent(event)
@@ -220,11 +220,11 @@ class htmlPreview(QWidget):
         if (kkey == IMC.ctl_F) or (self.findText.isEmpty()) :
             # ctl+F, or ctl+G but no previous find done, show the find dialog
             # with a COPY of current selection as pqMsgs might truncate it
-            prepText = QString(self.preview.page().selectedText())
+            prepText = QString(self.webPage.selectedText())
             (ok, self.findText) = pqMsgs.getFindMsg(self,prepText)
         # dialog or no dialog, we should have some findText now
         if not self.findText.isEmpty() :
-            if not self.preview.page().findText(
+            if not self.webPage.findText(
                 self.findText, QWebPage.FindWrapsAroundDocument
                 ) :
                 pqMsgs.beep()

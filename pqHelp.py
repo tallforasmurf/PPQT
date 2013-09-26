@@ -116,7 +116,7 @@ class helpDisplay(QWebView):
                 self.textZoomFactor = zfactor
                 self.setTextSizeMultiplier(self.textZoomFactor)
         elif (kkey in IMC.backKeys) : # ctl-B/[/left
-            if self.page().history().canGoBack() :
+            if self.page().history().currentItemIndex() > 1 :
                 self.page().history().back()
             else :
                 self.setHtml(self.HTMLstring)
