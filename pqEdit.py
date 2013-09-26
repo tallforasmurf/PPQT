@@ -821,7 +821,7 @@ reLineSep = QRegExp(u'-----File: ([^\\.]+)\\.png---((\\\\[^\\\\]*)+)\\\\-*',Qt.C
 # Most likely: a block of letters a/o digits:
 xp_word = '''([\\w\\d]+)'''
 # Less likely: words with embedded hyphens or apostrophes:
-xp_hyap = '''([\\w\\d]+[\\-\\'][\\w\\d]+)+'''
+xp_hyap = '''([\\w\\d]+[\\-\\'\u2019][\\w\\d]+)+'''
 # Less likely still: [OE]dipus's ph[oe]be hatches ma[~n]ana
 xp_ligs = '''(\\w*\\[..\\]\\w+)'''
 # Any of the above word forms, marked off with nonword boundaries:
