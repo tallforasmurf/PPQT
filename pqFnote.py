@@ -846,7 +846,7 @@ class fnotePanel(QWidget):
         # clear the number streams
         self.streams = [0,0,0,0,0,0]
         # Tell the table model that things are gonna change
-        self.docWillChange()
+        self.table.beginResetModel()
         # create a working cursor and start an undo macro on it.
         worktc = QTextCursor(IMC.editWidget.textCursor())
         worktc.beginEditBlock()
@@ -924,7 +924,7 @@ class fnotePanel(QWidget):
             # end of "for i in range(dbcount)"
         # Clean up:
         worktc.endEditBlock()  # End the undo macro
-        self.docHasChanged()   # tell the table the data has stabilized
+        self.table.endResetModel()   # tell the table the data have stabilized
         if dbcount > self.enoughForABar :
             pqMsgs.endBar()    # clear the progress bar
 
