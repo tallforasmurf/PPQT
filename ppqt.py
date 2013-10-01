@@ -33,6 +33,7 @@ import os # for dict path manipulations
 import sys # for argv, passed to QApplication
 import platform # for mac detection
 import argparse # for a command-line filename or --version argument
+import atexit # temp workaround for pyinstaller
 
 from PyQt4.QtCore import (Qt, QSettings, QString )
 from PyQt4.QtGui import ( QApplication, QFont, QFontDatabase )
