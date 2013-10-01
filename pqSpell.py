@@ -236,8 +236,11 @@ class spellDict():
         self.encoding = self.hobj.get_dic_encoding()
 
     def spell(self, aword):
-        encword = aword.encode(self.encoding, errors='replace')
-        return self.hobj.spell(encword)
+        try :
+            encword = aword.encode(self.encoding,'replace')
+            return self.hobj.spell(encword)
+        except : # presumably UnicodeError but whatever, misspelled
+            return False
 
 if __name__ == "__main__":
     from PyQt4.QtCore import (QSettings)
