@@ -84,7 +84,7 @@ class wordHighLighter(QSyntaxHighlighter):
         # Initialize text formats to apply to words from various lists.
         #  - Scanno candidates get a light lilac background.
         self.scannoFormat = QTextCharFormat()
-        self.scannoFormat.setBackground(QBrush(QColor("plum")))
+        self.scannoFormat.setBackground(QBrush(QColor("#EBD7E6")))
         # Set the style for misspelt words. We underline in red using the
         # platform's spellcheck underline style. An option would be to
         # specify QTextCharFormat.WaveUnderline style so it would be the
