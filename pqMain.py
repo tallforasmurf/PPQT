@@ -119,8 +119,11 @@ class MainWindow(QMainWindow):
         # we were able to load the recalled file.
         IMC.scannoHiliteSwitch = IMC.settings.value("main/scannoSwitch",
                         False).toBool() and (not self.scannoPath.isEmpty())
-        # n.b. we leave the spellcheck switch initialized False because we
-        # have no file loaded.
+        # Recall the setting of the spelling hilite switch. There is no
+        # file loaded just now, but no harm is done setting hilites on an
+        # empty document.
+        IMC.spellingHiliteSwitch = IMC.settings.value("main/spellingSwitch",
+                                                      False).toBool()
         # -----------------------------------------------------------------
         # Recall a user-selected font if any:
         IMC.fontFamily = IMC.settings.value("main/fontFamily", IMC.defaultFontFamily).toString()
@@ -404,9 +407,11 @@ class MainWindow(QMainWindow):
         self.viewScannosAction = self.createAction("Sca&nnos", None,
                 self.viewSetScannos, None, "Toggle scanno hilight",
                 True, "toggled(bool)")
+        self.viewScannosAction.setChecked(IMC.scannoHiliteSwitch)
         self.viewSpellingAction = self.createAction("S&pelling", None,
                 self.viewSetSpelling, None, "Toggle spellcheck hilight",
                 True, "toggled(bool)")
+        self.viewSpellingAction.setChecked(IMC.spellingHiliteSwitch)
         self.viewFontAction = self.createAction("&Font...", None,
                 self.viewFont, None, "Open font selection dialog")
         self.viewDictAction = self.createAction("&Dictionary...", None,
@@ -418,7 +423,6 @@ class MainWindow(QMainWindow):
                                    self.viewSpellingAction,
                                    self.viewFontAction,
                                    self.viewDictAction))
-        self.viewScannosAction.setChecked(IMC.scannoHiliteSwitch)
 
     # ---------------------------------------------------------------------
     # This convenience function, lifted from Summerfield's examples,
@@ -569,9 +573,8 @@ class MainWindow(QMainWindow):
         self.editor.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
 
     def viewSetSpelling(self, toggle):
-        willDoIt = (toggle) and (IMC.wordCensus.size()>0)
-        self.viewSpellingAction.setChecked(willDoIt)
-        IMC.spellingHiliteSwitch = willDoIt
+        self.viewSpellingAction.setChecked(toggle)
+        IMC.spellingHiliteSwitch = toggle
         self.editor.setHighlight(IMC.scannoHiliteSwitch or IMC.spellingHiliteSwitch)
 
     # -----------------------------------------------------------------
@@ -1228,6 +1231,7 @@ class MainWindow(QMainWindow):
         IMC.settings.setValue("main/recentFiles", self.recentFiles)
         IMC.settings.setValue("main/scannoPath", self.scannoPath)
         IMC.settings.setValue("main/scannoSwitch",IMC.scannoHiliteSwitch)
+        IMC.settings.setValue("main/spellingSwitch",IMC.spellingHiliteSwitch)
         IMC.settings.setValue("main/fontFamily",IMC.fontFamily)
         IMC.settings.setValue("main/fontSize",IMC.fontSize)
         IMC.spellCheck.terminate() # shut down spellcheck
