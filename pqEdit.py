@@ -70,27 +70,22 @@ from pqLists import *
 import pqMsgs
 from collections import defaultdict
 
-# Global regex used by wordHighLighter and by textTitleCase to find words
-# of one character and longer.
-WordMatch = QRegExp(u"\\b\\w+\\b")
 # Define a syntax highlighter object which will be linked into our editor.
 # The edit init below instantiates this object and keeps addressability to it.
 class wordHighLighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
-        global WordMatch
+        global reWord
         super(wordHighLighter, self).__init__(parent)
         # store a local reference to the global regex
-        self.wordMatch = WordMatch
+        self.wordMatch = reWord
         # Initialize text formats to apply to words from various lists.
         #  - Scanno candidates get a light lilac background.
         self.scannoFormat = QTextCharFormat()
         self.scannoFormat.setBackground(QBrush(QColor("#EBD7E6")))
         # Set the style for misspelt words. We underline in red using the
-        # platform's spellcheck underline style. An option would be to
-        # specify QTextCharFormat.WaveUnderline style so it would be the
-        # same on all platforms.
+        # well-known wavy red underline, the same on all platforms.
         self.misspeltFormat = QTextCharFormat()
-        self.misspeltFormat.setUnderlineStyle(QTextCharFormat.SpellCheckUnderline)
+        self.misspeltFormat.setUnderlineStyle(QTextCharFormat.WaveUnderline)
         self.misspeltFormat.setUnderlineColor(QColor("red"))
 
     # The linked QPlainTextEdit calls this function for every text line in the
@@ -98,7 +93,8 @@ class wordHighLighter(QSyntaxHighlighter):
     # at least to judge by the hang-time. Later it only calls us to look at a
     # line as it changes in editing. Anyway it behooves us to be as quick as
     # possible. We don't actually check spelling, we just use the flag that
-    # was set when the last spellcheck was done.
+    # was set when the last spellcheck was done. In a new document there may
+    # be no word census yet.
     # Note that either one or both of MC.scannoHiliteSwitch or IMC.spellingHiliteSwitch
     # are ON, or else we are called against an empty document -- see setHighlight below.
     def highlightBlock(self, text):
@@ -190,20 +186,20 @@ class PPTextEditor(QPlainTextEdit):
     # that self.textCursor() is "const". One has to create a new cursor,
     # position it, and install it on the document with self.setTextCursor().
     def toUpperCase(self):
-        global WordMatch # the regex \b\w+\b
+        global reWord
         tc = QTextCursor(self.textCursor())
         if not tc.hasSelection() :
             return # no selection, nothing to do
         startpos = tc.selectionStart()
         endpos = tc.selectionEnd()
         qs = QString(tc.selectedText()) # copy of selected text
-        i = WordMatch.indexIn(qs,0) # index of first word if any
+        i = reWord.indexIn(qs,0) # index of first word if any
         if i < 0 : return # no words in selection, exit
         while i >= 0:
-            w = WordMatch.cap(0) # found word as QString
+            w = reWord.cap(0) # found word as QString
             n = w.size() # its length
             qs.replace(i,n,w.toUpper()) # replace it with UC version
-            i = WordMatch.indexIn(qs,i+n) # find next word if any
+            i = reWord.indexIn(qs,i+n) # find next word if any
         # we have changed at least one word, replace selection with altered text
         tc.insertText(qs)
         # that wiped the selection, so restore it by "dragging" left to right
@@ -213,20 +209,20 @@ class PPTextEditor(QPlainTextEdit):
 
     # to-lower is identical except for the method call.
     def toLowerCase(self):
-        global WordMatch # the regex \b\w+\b
+        global reWord # the regex \b\w+\b
         tc = QTextCursor(self.textCursor())
         if not tc.hasSelection() :
             return # no selection, nothing to do
         startpos = tc.selectionStart()
         endpos = tc.selectionEnd()
         qs = QString(tc.selectedText()) # copy of selected text
-        i = WordMatch.indexIn(qs,0) # index of first word if any
+        i = reWord.indexIn(qs,0) # index of first word if any
         if i < 0 : return # no words in selection, exit
         while i >= 0:
-            w = WordMatch.cap(0) # found word as QString
+            w = reWord.cap(0) # found word as QString
             n = w.size() # its length
             qs.replace(i,n,w.toLower()) # replace it with UC version
-            i = WordMatch.indexIn(qs,i+n) # find next word if any
+            i = reWord.indexIn(qs,i+n) # find next word if any
         # we have changed at least one word, replace selection with altered text
         tc.insertText(qs)
         # that wiped the selection, so restore it by "dragging" left to right
@@ -240,7 +236,7 @@ class PPTextEditor(QPlainTextEdit):
     # word in a list of common adjectives, connectives, and adverbs and avoided
     # capitalizing a, and, of, by and so forth. Not gonna happen.
     def toTitleCase(self):
-        global WordMatch # the regex \b\w+\b
+        global reWord # the regex \b\w+\b
         self.toLowerCase()
         tc = QTextCursor(self.textCursor())
         if not tc.hasSelection() :
@@ -248,13 +244,13 @@ class PPTextEditor(QPlainTextEdit):
         startpos = tc.selectionStart()
         endpos = tc.selectionEnd()
         qs = QString(tc.selectedText()) # copy of selected text
-        i = WordMatch.indexIn(qs,0) # index of first word if any
+        i = reWord.indexIn(qs,0) # index of first word if any
         if i < 0 : return # no words in selection, exit
         while i >= 0:
-            w = WordMatch.cap(0) # found word as QString
+            w = reWord.cap(0) # found word as QString
             n = w.size()
             qs.replace(i,1,qs.at(i).toUpper()) # replace initial with UC
-            i = WordMatch.indexIn(qs,i+n) # find next word if any
+            i = reWord.indexIn(qs,i+n) # find next word if any
         # we have changed at least one word, replace selection with altered text
         tc.insertText(qs)
         # that wiped the selection, so restore it by "dragging" left to right
@@ -707,7 +703,7 @@ class PPTextEditor(QPlainTextEdit):
     # spellcheck dictionary from them.
 
     def doCensus(self, page=False) :
-        global reLineSep, reWords, reLang, qcLess
+        global reLineSep, reTokens, reLang, qcLess
         # Clear the current census values
         IMC.wordCensus.clear()
         IMC.charCensus.clear()
@@ -753,24 +749,24 @@ class PPTextEditor(QPlainTextEdit):
                     local_char_census[c] += 1
                 j = 0
                 while True:
-                    j = reWords.indexIn(qsLine,j)
+                    j = reTokens.indexIn(qsLine,j)
                     if j < 0 : # no more word-like units
                         break
-                    qsWord = reWords.cap(0)
+                    qsWord = reTokens.cap(0)
                     j += qsWord.size()
                     if qsWord.startsWith(qcLess) :
                         # Examine a captured HTML production.
-                        if not reWords.cap(2).isEmpty() :
+                        if not reTokens.cap(2).isEmpty() :
                             # HTML open tag, look for lang='dict'
-                            if 0 <= reLang.indexIn(reWords.cap(3)) :
+                            if 0 <= reLang.indexIn(reTokens.cap(3)) :
                                 # found it: save tag and dict name
+                                alt_dict_tag = QString(reTokens.cap(2))
                                 alt_dict = QString(reLang.cap(1))
                                 alt_dict.prepend(u'/') # make "/en_GB"
-                                alt_dict_tag = QString(reWords.cap(2))
                             # else no lang= attribute
                         else:
                             # HTML close tag, see if it closes alt dict use
-                            if reWords.cap(5) == alt_dict_tag :
+                            if reTokens.cap(5) == alt_dict_tag :
                                 # yes, matches open-tag for dict, clear it
                                 alt_dict_tag = QString()
                                 alt_dict = QString()
@@ -787,7 +783,7 @@ class PPTextEditor(QPlainTextEdit):
                             flag |= IMC.WordHasLower
                         if qsWord.contains(qcHyphen) :
                             flag |= IMC.WordHasHyphen
-                        if qsWord.contains(qcApostrophe) :
+                        if qsWord.contains(qcApostrophe) or qsWord.contains(qcCurlyApostrophe) :
                             flag |= IMC.WordHasApostrophe
                         if qsWord.contains(reDigit) :
                             flag |= IMC.WordHasDigit
@@ -817,36 +813,58 @@ class PPTextEditor(QPlainTextEdit):
 
 reLineSep = QRegExp(u'-----File: ([^\\.]+)\\.png---((\\\\[^\\\\]*)+)\\\\-*',Qt.CaseSensitive)
 
-# Regexes for parsing a line into word-like units.
-# Most likely: a block of letters a/o digits:
-xp_word = '''([\\w\\d]+)'''
-# Less likely: words with embedded hyphens or apostrophes:
-xp_hyap = '''([\\w\\d]+[\\-\\'\u2019][\\w\\d]+)+'''
-# Less likely still: [OE]dipus's ph[oe]be hatches ma[~n]ana
-xp_ligs = '''(\\w*\\[..\\]\\w+)'''
-# Any of the above word forms, marked off with nonword boundaries:
-xp_bdy = '\\b'
-xp_word_forms = xp_bdy + xp_word + '|' + xp_hyap + '|' + xp_ligs + xp_bdy
-# HTML starting tag with possible attributes (or, e.g. <br />)
-xp_start = '''(<(\w+)\s*([^>]*)>)'''
-# HTML end tag, not allowing for any attributes (or spaces)
-xp_end = '''(</(\w+)>)'''
-# Any of the above
-xp_all = xp_start + '|' + xp_end + '|' + xp_word_forms
-reWords = QRegExp(xp_all, Qt.CaseInsensitive)
+# Regexes for parsing a line into word-like tokens:
+# First, a word composed of digits and/or letters, where
+# the letters may include PGDP ligature notation: [OE]dipus ma[~n]ana
 
-# When the above hits on an HTML close tag, reWords.cap(5) is the closed tag name.
-# When it hits on an opening tag with attributes, reWords.cap(2) is the tag name
-# ("span" etc) and reWords.cap(3) has the attributes. We scan that for lang='value'.
-# The 'value' is a language designation but we require it to be a dictionary tag
-# such as 'en_US' or 'fr_FR'.
+xp_word = "(\\w*(\\[..\\])?\\w+)+"
+
+# Note that xp_word does NOT recognize adjacent ligatures (problem?)
+# and does NOT recognize terminal ligatures on the grounds that a
+# terminal [12] or [ac] is likely a two-digit footnote anchor.
+
+# Next: the above with embedded hyphens or apostrophes (incl. u2019's):
+# she's my mother-in-law's 100-year-old bric-a-brac ph[oe]nix
+
+xp_hyap = "(" + xp_word + "[\\'\\-\u2019])*" + xp_word
+
+# reWord is used by the syntax highlighter above.
+
+reWord = QRegExp(xp_hyap, Qt.CaseInsensitive)
+
+# HTML starting tag with possible attributes:
+# <div lang=en_GB>, <hr class='major'>, or <br />
+
+xp_start = '''(<(\w+)([^>]*)>)'''
+
+# HTML end tag, not allowing for any attributes (or spaces)
+
+xp_end = '''(</(\w+)>)'''
+
+# Put it all together: a token is any of those three things:
+
+xp_any = xp_start + '|' + xp_end + '|' + xp_hyap
+
+reTokens = QRegExp(xp_any, Qt.CaseInsensitive)
+
+# When reTokens matches an HTML close tag, reTokens.cap(5) is the closed tag name.
+# When reTokens matches an HTML open tag, reTokens.cap(2) is the tag name
+# ("i" or "span" or "div"), reTokens.cap(3) has whatever attributes it had
+# (class='x', lang='en_GB'). We scan that for lang='value' (optional quotes).
+
+reLang = QRegExp(u'''lang=[\\'\\"]*([\\w\\-]+)[\\'\\"]*''')
+
+# The 'value' matched by reLang.cap(0) is a language designation but we require
+# it to be a dictionary tag such as 'en_US' or 'fr_FR'. It is not clear from
+# the W3C docs whether all (or any) of our dic tags are language designations.
+
 # According to W3C (http://www.w3.org/TR/html401/struct/dirlang.html) you can
 # put lang= into any tag, esp. span, para, div, td, and so forth.
 # We save the dict tag as an alternate dictionary for all words until the
 # matching close tag is seen.
-reLang = QRegExp(u'''lang=[\\'\\"]*([\\w\\-]+)[\\'\\"]*''')
 
 reDigit = QRegExp(u'\\d')
 qcLess = QChar(u"<")
 qcHyphen = QChar(u"-")
 qcApostrophe = QChar(u"'")
+qcCurlyApostrophe = QChar(8217) # aka \u2019
