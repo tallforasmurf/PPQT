@@ -36,7 +36,7 @@
 	u'label' : u'Illo:file.typ',
 	u'tooltip' : u'[Illustration:filename.typ caption] to centered image with caption',
 	u'regex' : True,
-	u'rep1' : u"<div class='center'>\\n  <img src='images/\\1'\\n    title='\\2...' alt='\\2...'\\n  />\\n<p class='caption'>\\2\\3</p>\\n</div>",
+	u'rep1' : u"<div class='center'>\\n  <img src='images/\\1'\\n    alt='\\2...'\\n  />\\n<p class='caption'>\\2\\3</p>\\n</div>",
 	u'rep2' : u'',
 	u'rep3' : u'',
 	u'word' : False
@@ -46,15 +46,15 @@
 # Replace [Illustration: stuff] with 
 # <div class='center'>
 #   <img src='#'
-#      title='stuff...' alt='stuff...'
+#      alt='stuff...'
 #   />
 # <p class='caption'>stuff</p>
 # </div>
 # The heart of the regex is: (.{1,30})(.*) which picks up the "stuff"
 # as two parts, with \1 having at most the first 30 characters and
 # \2 having the remainder of "stuff".  Then we put only \1 into the
-# title= and alt= strings, but \1\2 for the full caption.
-# YOU MUST STILL INSPECT TITLE AND ALT because often the "stuff" contains
+# alt= strings but \1\2 for the full caption.
+# YOU MUST STILL INSPECT ALT because often the "stuff" contains
 # special characters (like newlines or quotes) that bork the syntax.
 # This version leaves src='#' so fill in images/filename.typ later.
 #
@@ -68,7 +68,7 @@
 	u'label' : u'Illo-no file',
 	u'tooltip' : u'[Illustration: caption] to centered image with caption',
 	u'regex' : True,
-	u'rep1' : u"<div class='center'>\\n  <img src='#'\\n    title='\\1...' alt='\\1...'\\n  />\\n<p class='caption'>\\1\\2</p>\\n</div>",
+	u'rep1' : u"<div class='center'>\\n  <img src='#'\\n    alt='\\1...'\\n  />\\n<p class='caption'>\\1\\2</p>\\n</div>",
 	u'rep2' : u'\\2',
 	u'rep3' : u'',
 	u'word' : False
