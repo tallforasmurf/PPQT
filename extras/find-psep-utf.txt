@@ -5,7 +5,7 @@
 	u'andnext' : True,
 	u'andprior' : False,
 	u'case' : False,
-	u'find' : u'-----File:\\s*\\d+\\..*-*\\n',
+	u'find' : u'-----File:\\s*[^\\.]+\\..*-*\\n',
 	u'greedy' : False,
 	u'insel' : False,
 	u'label' : u'pseps',
