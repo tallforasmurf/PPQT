@@ -105,8 +105,8 @@ class makeSpellCheck():
         self.altDict = None
         self.mainTag = QString()
         self.mainDict = None
-        # Tag of a not-found dict so we don't keep repeating a message
-        self.errTag = QString()
+        # Tags of any not-found dicts so we only give one diagnostic per dict
+        self.errTags = set()
         # Populate our list of available dictionaries by finding
         # all the file-pairs of the form <tag>.dic and <tag>.aff in the
         # folder whose path is saved by ppqt in IMC.dictPath.
@@ -189,9 +189,9 @@ class makeSpellCheck():
             else:
                 raise LookupError('dictionary tag {0} not found'.format(tag))
         except (LookupError, IOError, OSError) as err:
-            if tag != self.errTag :
+            if unicode(tag) not in self.errTags :
                 pqMsgs.warningMsg(u'Could not open dictionary',str(err))
-                self.errTag = tag
+                self.errTags.add(unicode(tag))
             return None
         except : # some other error?
             print("unexpected error opening a spell dict")
