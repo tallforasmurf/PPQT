@@ -1412,6 +1412,7 @@ class MainWindow(QMainWindow):
             elif pg['action'] == 'Start @':
                 folio_rule = IMC.FolioRuleSet
             # Translate the GG folio styles
+            folio_format = IMC.FolioFormatArabic # in case nothing matches
             if pg['style'] == '"' :
                 folio_format = prior_format
             elif pg['style'] == 'Roman':
