@@ -1208,43 +1208,67 @@ def fixPageBreaks(pbl):
 # tokGen is a generator function that returns the successive tokens from the
 # text selected by a text cursor. Each token is returned as a tuple, (tok,tl)
 # where tok is a QString and tl is its logical length, which may be less than
-# tok.size() when tok contains <i/b/sc> markups. The lengths to use for these are
-# passed as a dictionary (from flowpanel.itbosc, which isn't accessible as this
-# is a global function, not a method). Note that a multiline selection has
-# \u2029 instead of \n, but the regexes treat it as \s anyway so we don't care.
+# tok.size() when tok contains <i/b/sc> markups.
 
-# The Zero Width Non-Joiner, \u200C, may appear in a token to mark the position
-# of a page-break. \u200C is a nonspace so is part of a token matched by (\S+).
-# However its logical width is zero. We cannot assume there is only one such
-# in a token; it is possible to have 2 page breaks with nothing between,
-# falling inside one paragraph. Unlikely but...
+# Unlike the tokenization in pqEdit, which is focussed on isolating
+# "words" that can be spell-checked, a "token" for reflow purposes is a
+# unit that should not be broken at end of line, nor should it have spaces
+# gratuitously inserted. The following line has just one token!
+#    <span class='foo'><sc><b><i lang='de_DE'>sprechen</i></b></sc></span>
+# The obvious problems are: we want to give </?(i|b|sc)> their logical
+# lengths (0, 1, or as-is from the Flow panel controls), and two, the
+# spaces in "<span class" and "<i lang" mustn't break the token.
 
-# This is the second version of tokGen; the first parsed the input character by
-# character much as a C prog would. This finds tokens using an RE, then looks
-# within the token for markups using another RE. The overhead of multiple RE
-# lookups turns out to be much less than the overhead of fingering every char
-# so this takes less than half the time.
-ibsRE = QRegExp("</?(i|b|sc)>",Qt.CaseInsensitive)
-tokRE = QRegExp(u"\s*(\S+)") # default is greedy
+# The flowText input is almost always a multiline selection; it has
+# \u2029 instead of \n, but the regexes treat that as \s, so we don't care.
+# The Zero Width Non-Joiner, \u200C, may appear in a token to mark the
+# position of a page-break. \u200C is a nonspace; however its logical width
+# should be recorded as zero. Note it is possible to have 2 page breaks
+# with nothing between, falling inside one paragraph.
+
+# A token or part thereof consists of:
+# * some contiguous non-space things that don't include '<'
+#   -- which is a word, the overwhelmingly most common thing we see
+re_word = '''([^<\s]+)'''
+# * an HTML start tag
+re_start_tag = '''(<(\w+)([^>]*)>)'''
+# * an HTML end tag OR
+re_end_tag = '''(</(\w+)>)'''
+# * or a stupid "<" as part of the text.
+re_less = '''(<)'''
+
+reParts = QRegExp('|'.join([re_word,re_start_tag,re_end_tag,re_less]))
+# When reParts hits on a start-tag, cap(3) is the tag.
+# When it hits on an end-tag, cap(6) is the tag. Other matches,
+# those captures are null.
+
 def tokGen(flowText, itbosc):
-    global ibsRE, tokRE
-    j = 0 # index of last-found token
-    while True : # once around per token returned
-        j = tokRE.indexIn(flowText,j)
-        if j < 0 : break # no more tokens, end of generation
-        qs = QString(tokRE.cap(1)) # make a copy of the token text
-        ll = qs.size() # assume its gross length is logical length
-        j += tokRE.matchedLength() # advance to next token
-        m = ibsRE.indexIn(qs) # start looking for markup in the token
-        while m >= 0 :
-            # Token might be "<i><b><sc>Foo</sc></b></i>"
-            x = itbosc[unicode(ibsRE.cap(1))] # 0, 1, or 2==as-is
-            ml = ibsRE.matchedLength() # length of found markup
-            if x < 2 :
-                ll -= (ml-x) # treat the markup as size 0 or 1
-            m = ibsRE.indexIn(qs,m+ml) # another markup in this token?
-        ll -= qs.count(IMC.ZWNJ)
-        yield (qs, ll)
+    global reParts
+    j = 0 # index of where to scan for next token-part
+    j = reParts.indexIn(flowText,j) # find the first part
+    while j >= 0 : # once around per token returned
+        token = QString()
+        tok_len = 0
+        k = j # prime the inner loop for once around at least
+        while k == j : # while finding adjacent parts
+            part = QString(reParts.cap(0)) # copy the entire part
+            part_len = part.size() # physical length of part
+            k = j + part_len # index of next part, if adjacent
+            tag = reParts.cap(3) # tag value of HTML start-tag
+            if tag.isEmpty() : # not a start-tag
+                tag = reParts.cap(6) # perhaps a close-tag?
+            if not tag.isEmpty() : # an HTML tag, but is it i, b, or sc?
+                adjust = 2 # assume as-is length
+                if unicode(tag) in itbosc :
+                    adjust = itbosc[unicode(tag)] # 0, 1, or 2==as-is
+                if adjust < 2 :
+                    part_len = adjust # treat the markup as size 0 or 1
+            else: # not an <i/b/sc> element, so
+                part_len -= part.count(IMC.ZWNJ) # deduct Zero-width-non-joiners
+            token.append(part)
+            tok_len += part_len
+            j = reParts.indexIn(flowText, k)
+        yield (token, tok_len)
 
 # Optimal paragraph wrap. After considerable research, including reading
 # the original Knuth&Plass paper (Software: Practice and Experience, 1981)
