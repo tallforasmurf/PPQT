@@ -153,7 +153,7 @@ class htmlPreview(QWidget):
     def loadStarts(self):
         pqMsgs.startBar(100,"Loading HTML")
     def loadProgresses(self,amt):
-        pqMsgs.rollBar(amt)
+        pqMsgs.rollBar(amt, refresh=False)
     def loadEnds(self,bool):
         pqMsgs.endBar()
         if bool:
