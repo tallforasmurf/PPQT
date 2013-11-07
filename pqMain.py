@@ -72,6 +72,7 @@ import pqNotes
 import pqPages
 import pqPngs
 import pqProps
+import pqPalette
 import pqView
 import pqWords
 # -------------------------------------------------------------------------#
@@ -95,11 +96,10 @@ class MainWindow(QMainWindow):
         IMC.bookDirPath = QString()
         #  * IMC.bookType is the file suffix, for those who care.
         IMC.bookType = QString()
-        #  * self.buttonDirPath is the default directory start for opening
-        #    or saving user Find buttons. Initialize to our extras directory.
-        self.buttonDirPath = QString(IMC.appBasePath + u"/extras/" )
-        #  * character detector object used when opening an ambiguous file
-        self.charDetector = None # instantiated when first needed
+        #  * self.extrasDirPath is the path to our "extras" folder.
+        #    It is the default directory start for opening or saving
+        #    user Find buttons, and where we look for character palettes.
+        self.extrasDirPath = QString(IMC.appBasePath + u"/extras/" )
         self.utfEncoding = QString(u'UTF-8') # handy consts
         self.ltnEncoding = QString(u'ISO-8859-1')
         #  * IMC.saveEncoding is the encoding ID as a python string
@@ -110,13 +110,9 @@ class MainWindow(QMainWindow):
                                              QString()).toString()
         # If we had a scannoPath, try to load it.
         if not self.scannoPath.isEmpty() :
-
-            # +++++++ Temp O'Rary +++++
-            pqMsgs.noteEvent("..Loading scanno file")
-
             self.scannoLoad()
-        # Recall the setting of the scanno hilite switch and adjust for whether
-        # we were able to load the recalled file.
+        # Recall the setting of the scanno hilite switch and adjust for
+        # whether we were able to load the recalled file.
         IMC.scannoHiliteSwitch = IMC.settings.value("main/scannoSwitch",
                         False).toBool() and (not self.scannoPath.isEmpty())
         # Recall the setting of the spelling hilite switch. There is no
@@ -126,23 +122,23 @@ class MainWindow(QMainWindow):
                                                       False).toBool()
         # -----------------------------------------------------------------
         # Recall a user-selected font if any:
-        IMC.fontFamily = IMC.settings.value("main/fontFamily", IMC.defaultFontFamily).toString()
+        IMC.fontFamily = IMC.settings.value("main/fontFamily",
+                                            IMC.defaultFontFamily).toString()
         (IMC.fontSize,junk) = IMC.settings.value("main/fontSize",12).toInt()
         # -----------------------------------------------------------------
         # Create the editor for the left-hand pane. Put a reference in the
-        # IMC for other modules to use in calling edit members. Hook up the
+        # IMC for other modules to use in calling edit methods. Hook up the
         # signal for document-modification-state-change to our slot where
         # we set the document title bar status flag, and the signal for
         # text change for where we note a change of text.
-
-        pqMsgs.noteEvent("..creating edit panel")
-
+        #
         self.editor = pqEdit.PPTextEditor(self,IMC.fontSize)
         IMC.editWidget = self.editor # let other modules access edit methods
         self.connect(self.editor, SIGNAL("modificationChanged(bool)"),
                      self.ohModificationChanged)
         self.connect(self.editor, SIGNAL("textChanged()"),
                      self.ohTextChanged)
+        #
         # -----------------------------------------------------------------
         # Format the window as a split between an editor and a tab array
         # to hold all the other panels. Give the edit widget a left margin.
@@ -152,15 +148,13 @@ class MainWindow(QMainWindow):
         self.hSplitter.addWidget(self.editor)
         self.hSplitter.addWidget(self.tabSet)
         self.setCentralWidget(self.hSplitter)
+        #
         # -----------------------------------------------------------------
         # Populate the tab set with the different panel objects:
         #
         # 1. Create the pngs display and connect it to the editors
         # cursor-move signal and our doc-has-changed and shut-down signals.
         #
-
-        pqMsgs.noteEvent("..creating Pngs panel")
-
         IMC.pngPanel = pqPngs.pngDisplay()
         self.tabSet.addTab(IMC.pngPanel, u"Pngs")
         self.connect(self.editor, SIGNAL("cursorPositionChanged()"),
@@ -170,17 +164,12 @@ class MainWindow(QMainWindow):
         #
         # 2. Create the notes panel editor.
         #
-
-        pqMsgs.noteEvent("..creating Notes panel")
-
         IMC.notesEditor = pqNotes.notesEditor()
         self.tabSet.addTab(IMC.notesEditor, u"Notes")
         #
         # 3. Create the find panel and connect it to the editor's ^f keypress
         # signal and our doc-has-changed and shut-down signals.
-
-        pqMsgs.noteEvent("..creating Find panel")
-
+        #
         IMC.findPanel = pqFind.findPanel()
         self.tabSet.addTab(IMC.findPanel, u"Find")
         self.connect(self.editor, SIGNAL("editKeyPress"),
@@ -190,27 +179,21 @@ class MainWindow(QMainWindow):
         #
         # 4. Create Char Census panel and give it both the doc-has-changed
         # and the preceding doc-will-change signals (but not shutdown).
-
-        pqMsgs.noteEvent("..creating Chars panel")
-
+        #
         self.charPanel = pqChars.charsPanel()
         self.tabSet.addTab(self.charPanel, u"Char")
         self.connect(self, SIGNAL("docWillChange"), self.charPanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.charPanel.docHasChanged)
         #
         # 5. Create Word Census Panel and give it signals.
-
-        pqMsgs.noteEvent("..creating Words panel")
-
+        #
         self.wordPanel = pqWords.wordsPanel()
         self.tabSet.addTab(self.wordPanel, u"Word")
         self.connect(self, SIGNAL("docWillChange"), self.wordPanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.wordPanel.docHasChanged)
         #
         # 6. Create Pages Panel and give it signals.
-
-        pqMsgs.noteEvent("..creating Pages panel")
-
+        #
         self.pagePanel = pqPages.pagesPanel()
         self.tabSet.addTab(self.pagePanel, u"Pages")
         self.connect(self, SIGNAL("docWillChange"), self.pagePanel.docWillChange)
@@ -218,40 +201,32 @@ class MainWindow(QMainWindow):
         #
         # 7. Create the Flow panel. It only gets the shutdown signal, which it
         # uses to save all its user settings.
-
-        pqMsgs.noteEvent("..creating Flow panel")
-
-
+        #
         self.flowPanel = pqFlow.flowPanel()
         self.tabSet.addTab(self.flowPanel, u"Flow")
         self.connect(self, SIGNAL("shuttingDown"), self.flowPanel.shuttingDown)
         #
         # 8. Create the Footnote Panel which gets both sides of doc-changed
         # to clear its table.
-
-        pqMsgs.noteEvent("..creating Fnote panel")
-
+        #
         self.fnotePanel = pqFnote.fnotePanel()
         self.tabSet.addTab(self.fnotePanel, u"Fnote")
         self.connect(self, SIGNAL("docWillChange"), self.fnotePanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.fnotePanel.docHasChanged)
         #
-        # 9. Create the html Preview Panel - it's simple, needs no signals
-
-        pqMsgs.noteEvent("..creating View panel")
-
+        # 9. Create the html Preview Panel. It gets both sides of the doc-change
+        # signal so it can refresh.
+        #
         self.pvwPanel = pqView.htmlPreview()
         self.tabSet.addTab(self.pvwPanel, u"Pvw")
         self.connect(self, SIGNAL("docWillChange"), self.pvwPanel.docWillChange)
         self.connect(self, SIGNAL("docHasChanged"), self.pvwPanel.docHasChanged)
         #
         # 10. Lastly, the Help panel:
-
-        pqMsgs.noteEvent("..creating Help panel")
-
-
+        #
         self.helpPanel = pqHelp.helpDisplay()
         self.tabSet.addTab(self.helpPanel, u"Help")
+        #
         # We could now do either self.tabSet.setCurrentIndex(1) to make the
         # pngs panel current, but that seems to happen by default. Or, we
         # could at shutdown save the last-set tab index and restore it?
@@ -259,21 +234,22 @@ class MainWindow(QMainWindow):
         # ------------------------------------------------------------------
         # Now set up the bottom of the window: status, line#, and progress bar.
         #
-
-        pqMsgs.noteEvent("..completing main window")
-
         status = self.statusBar()
         status.setSizeGripEnabled(False)
+        #
         # Create the line number widget. The widget definition is in pqMsgs.
         # It gets the cursor movement signal from the editor, obviously.
         # status.addWidget puts it at the extreme left, effectively "under"
         # the permanent status message area, which may sometimes overlay it.
+        #
         self.lnum = pqMsgs.lineLabel()
         self.connect(self.editor, SIGNAL("cursorPositionChanged()"),
                         self.lnum.cursorMoved)
         status.addPermanentWidget(self.lnum)
+        #
         # Create the progress bar in our status bar, in pqMsgs because that
         # is where are all the routines to run it. It adds at  the extreme right.
+        #
         pqMsgs.makeBarIn(status)
         #
         # -----------------------------------------------------------------
@@ -294,9 +270,6 @@ class MainWindow(QMainWindow):
         # -----------------------------------------------------------------
         # Put a message in our status bar for 5 seconds.
         status.showMessage("Ready", 5000)
-
-        pqMsgs.noteEvent("..setting up menus")
-
         #
         # -----------------------------------------------------------------
         # Set up the menu actions, then create menus to invoke them.
@@ -337,41 +310,55 @@ class MainWindow(QMainWindow):
                 self.exportGuiguts, None, "Create a Guiguts .bin file")
         fileQuitAction = self.createAction("&Quit", None, self.close,
                 QKeySequence.Quit, "Close the application")
+        #
         # -----------------------------------------------------------------
         # Create the File menu but don't populate it yet. We do that on the
         # fly, adding recent files to it. Save the prepared actions as tuples
         # for convenient use when it is time to populate the menu.
+        #
         self.fileMenu = self.menuBar().addMenu("&File")
+        #
         # actions preceding the open with encoding submenu
+        #
         self.fileMenuActions1 = (fileNewAction, fileOpenAction)
         self.openWithMenu = QMenu("Open With Encoding")
         self.openWithMenu.addAction(fileOpenWithUTF)
         self.openWithMenu.addAction(fileOpenWithLTN)
         self.openWithMenu.addAction(fileOpenWithWIN)
         self.openWithMenu.addAction(fileOpenWithMAC)
+        #
         # actions following the open with encoding submenu
+        #
         self.fileMenuActions2 = (fileSaveAction, fileSaveAsAction,
                                  filePropsAction, None,
                                  fileScannosAction, fileButtonLoadAction,
                                  fileButtonSaveAction,
                                  fileExportGuiguts,
                                  None, fileQuitAction)
+        #
         # Recall our list of recently-opened files from saved settings.
+        #
         self.recentFiles = IMC.settings.value("main/recentFiles",
                             QVariant(QVariant.StringList)).toStringList()
+        #
         # When the File menu is about to be opened, update its contents
         # with the actions and files above.
+        #
         self.connect(self.fileMenu, SIGNAL("aboutToShow()"),
                      self.updateFileMenu)
+        #
         # Update the file menu one time explicitly so that the accelerator
         # keys will work the first time before the menu has been displayed.
+        #
         self.updateFileMenu()
+        #
         # -----------------------------------------------------------------
         # Create actions for the Edit menu. Direct cut/copy/paste to the
         # inherited methods of the QPlainTextEdit object. Direct the ones
         # we implement (ToUpper etc) to methods provided by our edit class.
         # All these menu actions are parented to the editor, so their shortcuts
         # can supposedly be preempted by other widgets e.g. Notes, Words.
+        #
         editCopyAction = self.createAction("&Copy", self.editor,
             self.editor.copy, QKeySequence.Copy,
             "Copy selection to clipboard")
@@ -390,13 +377,16 @@ class MainWindow(QMainWindow):
         editToTitleAction = self.createAction("toT&itle", None,
             self.editor.toTitleCase, QKeySequence(Qt.Key_I+Qt.CTRL),
             "Make Selected Text Titlecase")
+        #
         # There may perhaps be some more edit actions, e.g. ex/indent
         # -----------------------------------------------------------------
         # Create and populate the Edit menu.
+        #
         editMenu = self.menuBar().addMenu("&Edit")
         self.addActions(editMenu,
             (editCopyAction, editCutAction, editPasteAction,
              None, editToUpperAction, editToLowerAction, editToTitleAction))
+        #
         # -----------------------------------------------------------------
         # Create actions for the View menu: toggle choices for spell and
         # scanno hilighting. We keep references to these because we
@@ -404,6 +394,7 @@ class MainWindow(QMainWindow):
         # Also in View, the dict and font choices, mainly because
         # there was no other place to put them. Make a Tools menu?
         # These are parented by the main window so always the same.
+        #
         self.viewScannosAction = self.createAction("Sca&nnos", None,
                 self.viewSetScannos, None, "Toggle scanno hilight",
                 True, "toggled(bool)")
@@ -416,8 +407,10 @@ class MainWindow(QMainWindow):
                 self.viewFont, None, "Open font selection dialog")
         self.viewDictAction = self.createAction("&Dictionary...", None,
                 self.viewDict, None, "Open dictionary selection dialog")
+        #
         # -----------------------------------------------------------------
         # Create and populate the View menu
+        #
         viewMenu = self.menuBar().addMenu("&View")
         self.addActions(viewMenu, (self.viewScannosAction,
                                    self.viewSpellingAction,
@@ -493,7 +486,6 @@ class MainWindow(QMainWindow):
         self.addActions(self.fileMenu, self.fileMenuActions1)
         self.fileMenu.addMenu(self.openWithMenu)
         self.addActions(self.fileMenu, self.fileMenuActions2[:-1])
-        current = None if IMC.bookPath.isEmpty() else IMC.bookPath
         # make a list of recent files, excluding the current one and
         # any that might have been deleted meantime.
         current = None if IMC.bookPath.isEmpty() else IMC.bookPath
@@ -534,34 +526,43 @@ class MainWindow(QMainWindow):
     # On the non-mac platforms, we have to avoid caling setWindowModified()
     # when there is no asterisk in the window title, because it produces
     # an annoying message on the console.
+    #
     def setWinModStatus(self):
         if self.windowTitle().contains(u'*') :
             self.setWindowModified(
     self.editor.document().isModified() | (0 != IMC.needMetadataSave)
                             )
+    #
     # Slot to receive the modificationChanged signal from the main editor.
     # This signal only comes when the document goes from unmodified to
     # modified, or the reverse (on ^z). It does not come on every text change,
     # only on the first text change.
+    #
     def ohModificationChanged(self,newValue):
         if not newValue : # doc is, has become, unchanged
             IMC.staleCensus &= (0xff ^ IMC.staleCensusAcquired)
         self.setWinModStatus()
+    #
     # Slot to receive the textChanged signal from the editor. This comes
-    # very frequently, like every edit keystroke. So be quick.
+    # very frequently, like every edit keystroke. So be quick. IMC.editCounter
+    # is used only by pqFnote to tell if it needs to refresh its lists before
+    # moving or renumbering footnotes.
+    #
     def ohTextChanged(self):
         IMC.staleCensus |= IMC.staleCensusAcquired
         IMC.editCounter += 1
-
+    #
     # -----------------------------------------------------------------
     # Called by a tab that wants to be visible (currently only the Find panel
     # responding to ^f in the editor), make the calling widget visible
+    #
     def makeMyPanelCurrent(self,widg):
         self.tabSet.setCurrentWidget(widg)
-
+    #
     # -----------------------------------------------------------------
     # Called from the View menu, these functions set the hilighting switches
     # The state of the menu toggle is passed as a parameter.
+    #
     def viewSetScannos(self, toggle):
         if toggle : # switch is going on,
             # Do we have a scanno file? If not, remind the user to give one.
@@ -581,6 +582,7 @@ class MainWindow(QMainWindow):
     # Handle View>Font... by throwing up a QFontDialog initialized with an
     # available monospaced family and the last-chosen font size. Store the
     # user's choice of family and size in the IMC and install it in the Editors.
+    #
     def viewFont(self):
         if IMC.fontFamily is None:
             # first time after installation
@@ -600,6 +602,7 @@ class MainWindow(QMainWindow):
     # Get the current dictionary tag from the spell checker (e.g. "en_US")
     # and the list of available languages. Throw up a dialog with a popup
     # menu, and if the user clicks ok, set a new main dictionary.
+    #
     def viewDict(self):
         qsl = IMC.spellCheck.dictList()
         if qsl.count() : # then we know about some dicts
@@ -1170,10 +1173,10 @@ class MainWindow(QMainWindow):
     # File> Load Find Buttons clicked. Ask the user for a file to open and
     # if one is given, get its codec and open it. Pass the text stream to the
     # Find panel loadUserButtons method. Start the search in the last-used
-    # button file folder, defaulting to our /extras (self.buttonDirPath).
+    # button file folder, defaulting to our /extras (self.extrasDirPath).
 
     def buttonLoad(self):
-        startPath = self.buttonDirPath
+        startPath = self.extrasDirPath
         bfName = QFileDialog.getOpenFileName(self,
                 "PPQT - choose a file of saved user button definitions",
                 startPath)
@@ -1186,14 +1189,14 @@ class MainWindow(QMainWindow):
                 IMC.findPanel.loadUserButtons(buttonStream)
                 fh.close()
                 # after successful use, update start path for saving
-                self.buttonDirPath = bfInfo.path()
+                self.extrasDirPath = bfInfo.path()
 
     # -----------------------------------------------------------------
     # File> Save Find Buttons clicked. Ask the user for a file to open.
     # If one is given, determine its coded, and open it for output and
     # pass the stream to the Find panel saveUserButtons method.
     def buttonSave(self):
-        startPath = self.buttonDirPath
+        startPath = self.extrasDirPath
         bfName = QFileDialog.getSaveFileName(self,
                 "Save user-defined buttons as:", startPath)
         if not bfName.isEmpty():
@@ -1205,7 +1208,7 @@ class MainWindow(QMainWindow):
                 IMC.findPanel.saveUserButtons(buttonStream)
                 fh.close()
                 # after successful use, update start path for saving
-                self.buttonDirPath = bfInfo.path()
+                self.extrasDirPath = bfInfo.path()
 
     # -----------------------------------------------------------------
     # reimplement QWidget::closeEvent() to check for a dirty file and save it.
