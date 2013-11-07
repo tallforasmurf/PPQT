@@ -77,6 +77,8 @@ from PyQt4.QtGui import ( QApplication, QFont, QFontDatabase )
 #
 #  pqHtml.py  defines the html conversion manager
 #
+#  pqPalette.py defines the modeless dialog for character palettes
+#
 #  pqView.py  defines the live html preview widget
 #
 #  pgHelp.py  displays the program manual (whose text is in pqHelp.html).
@@ -206,6 +208,9 @@ pqTable.IMC = IMC
 
 import pqFnote # footnote management
 pqFnote.IMC = IMC
+
+import pqPalette # character palette dialogs
+pqPalette.IMC = IMC
 
 import pqView # html preview
 pqView.IMC = IMC
