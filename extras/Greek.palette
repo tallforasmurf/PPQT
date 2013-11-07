@@ -1,0 +1,180 @@
+              FORMAT OF A PALETTE FILE
+A palette file specifies the values of each of 36 keys in the palette.
+The file suffix is .palette. Any file with the suffix .palette found
+in the "extras" folder of the PPQT folder is opened, made into a palette,
+and added to the Edit > Palettes submenu.
+
+The file NAME becomes the name of the palette in the Edit > Palettes
+submenu. The palette window title is "NAME Text Entry".
+This file is Greek.palette, so it appears as Edit > Palettes > Greek
+and its window title is "Greek Text Entry".
+
+A palette file is always opened as UTF-8.
+
+The real data in a palette file are in 3-item comma-separated variable (CSV)
+lines. Any line that does not appear to be a 3-item CSV line (i.e. all this
+blah-blah commentary) is just ignored.
+
+The three items are as follows:
+1. A single-letter key, A-Z or 0-9. This specifies which of the 36
+   keytop buttons is being set.
+2. A combination of the letters ACLU (or UCLA if you are a Trojan).
+   These specify the shift-state for this value.
+   L = lower case or unshifted
+   U = uppercase or upshifted
+   C = control (or command) key is down
+   A = alt (or option) key is down
+   There are 8 possible shift states, so each key can potentially
+   have up to 8 values.
+3. A sequence of one or more Unicode characters, which is the value
+   to be entered by this key in this shift state.
+
+The Unicode sequence can take any of three forms.
+a. One to five decimal digits, specifying the numeric value of on
+   character, for example 928 for a Greek Capital Pi.
+b. One to five Unicode characters, the literal value for the key.
+   Allowing more than one lets you include a letter and up to four
+   combining diacriticals.
+c. The character string name of a Unicode character.
+
+Avoid assigning any value to control-Q, because that combination is
+trapped by the system and means "Quit". Control-W may cause a problem
+if it means "close window" in this platform.
+
+It is possible to assign values to other standard keys like ^C (Copy).
+The value is entered before the key is acted on for its standard meaning.
+
+                     ------------------
+
+Here is the Greek palette. The letter keys provide "Modern Greek" letters:
+* the shift key controls lowercase and uppercase
+* the control key adds the Tonos where appropriate
+* the alt key adds the Dialytika (diaresis) where appropriate
+* control + alt add Tonos + Dialytika where appropriate
+"Where appropriate" means, there exists a Unicode character for that combo.
+
+All diacritics are on the digit keys. Any combination can be created
+by typing first the upper- or lower-case letter then some combination
+of diacritics, followed by the Tab key to do NFC normalization.
+
+A, L, "GREEK SMALL LETTER ALPHA"
+A, U, "GREEK CAPITAL LETTER ALPHA"
+A, LC, "GREEK SMALL LETTER ALPHA WITH TONOS"
+A, UC, "GREEK CAPITAL LETTER ALPHA WITH TONOS"
+B, L, "GREEK SMALL LETTER BETA"
+B, U, "GREEK CAPITAL LETTER BETA"
+C, L, "GREEK SMALL LETTER PSI"
+C, U, "GREEK CAPITAL LETTER PSI"
+D, L, "GREEK SMALL LETTER DELTA"
+D, U, "GREEK CAPITAL LETTER DELTA"
+E, L, "GREEK SMALL LETTER EPSILON"
+E, U, "GREEK CAPITAL LETTER EPSILON"
+E, LC, "GREEK SMALL LETTER EPSILON WITH TONOS"
+E, UC, "GREEK CAPITAL LETTER EPSILON WITH TONOS"
+F, L, "GREEK SMALL LETTER PHI"
+F, U, "GREEK CAPITAL LETTER PHI"
+G, L, "GREEK SMALL LETTER GAMMA"
+G, U, "GREEK CAPITAL LETTER GAMMA"
+H, L, "GREEK SMALL LETTER ETA"
+H, U, "GREEK CAPITAL LETTER ETA"
+H, LC, "GREEK SMALL LETTER ETA WITH TONOS"
+H, UC, "GREEK CAPITAL LETTER ETA WITH TONOS"
+I, L, "GREEK SMALL LETTER IOTA"
+I, U, "GREEK CAPITAL LETTER IOTA"
+I, LC, "GREEK SMALL LETTER IOTA WITH TONOS"
+I, UC, "GREEK CAPITAL LETTER ALPHA WITH TONOS"
+I, LA, "GREEK SMALL LETTER IOTA WITH DIALYTIKA"
+I, UA, "GREEK CAPITAL LETTER IOTA WITH DIALYTIKA"
+I, LCA, "GREEK SMALL LETTER IOTA WITH DIALYTIKA AND TONOS"
+J, L, "GREEK SMALL LETTER XI"
+J, U, "GREEK CAPITAL LETTER XI"
+K, L, "GREEK SMALL LETTER KAPPA"
+K, U, "GREEK CAPITAL LETTER KAPPA"
+L, L, "GREEK SMALL LETTER LAMDA"
+L, U, "GREEK CAPITAL LETTER LAMDA"
+M, L, "GREEK SMALL LETTER MU"
+M, U, "GREEK CAPITAL LETTER MU"
+N, L, "GREEK SMALL LETTER NU"
+N, U, "GREEK CAPITAL LETTER NU"
+O, L, "GREEK SMALL LETTER OMICRON"
+O, U, "GREEK CAPITAL LETTER OMICRON"
+O, LC, "GREEK SMALL LETTER OMICRON WITH TONOS"
+O, UC, "GREEK CAPITAL LETTER OMICRON WITH TONOS"
+P, L, π
+P, U, 928
+
+# Putting the numeral signs on Q
+Tempting to put "lower numeral sign" on lower-case, upper on upper,
+but I think the upper is used more often.
+Q, L, "GREEK NUMERAL SIGN"
+Q, U, "GREEK LOWER NUMERAL SIGN"
+
+R, L, "GREEK SMALL LETTER RHO"
+R, U, "GREEK CAPITAL LETTER RHO"
+S, L, "GREEK SMALL LETTER SIGMA"
+# Putting final-sigma on control-s for explicit use,
+# but you can just hit tab and normalization will fix it.
+S, LC, "GREEK SMALL LETTER FINAL SIGMA"
+S, U, "GREEK CAPITAL LETTER SIGMA"
+T, L, "GREEK SMALL LETTER TAU"
+T, U, "GREEK CAPITAL LETTER TAU"
+U, L, "GREEK SMALL LETTER THETA"
+U, U, "GREEK CAPITAL LETTER THETA"
+V, L, "GREEK SMALL LETTER OMEGA"
+V, U, "GREEK CAPITAL LETTER OMEGA"
+V, LC, "GREEK SMALL LETTER OMEGA WITH TONOS"
+V, UC, "GREEK CAPITAL LETTER OMEGA WITH TONOS"
+X, L, "GREEK SMALL LETTER XI"
+X, U, "GREEK CAPITAL LETTER XI"
+Y, L, "GREEK SMALL LETTER UPSILON"
+Y, U, "GREEK CAPITAL LETTER UPSILON"
+Y, LC, "GREEK SMALL LETTER UPSILON WITH TONOS"
+Y, UC, "GREEK CAPITAL LETTER UPSILON WITH TONOS"
+Y, LA, "GREEK SMALL LETTER UPSILON WITH DIALYTIKA"
+Y, UA, "GREEK CAPITAL LETTER UPSILON WITH DIALYTIKA"
+Y, LAC, "GREEK SMALL LETTER UPSILON WITH DIALYTIKA AND TONOS"
+Z, L, "GREEK SMALL LETTER ZETA"
+Z, U, "GREEK CAPITAL LETTER ZETA"
+
+# Putting the oddball "numeric" letters on W --
+W, L, "GREEK SMALL LETTER DIGAMMA"
+W, U, "GREEK LETTER DIGAMMA"
+W, LC, "GREEK SMALL LETTER KOPPA"
+W, UC, "GREEK LETTER KOPPA"
+W, LA, "GREEK SMALL LETTER SAMPI"
+W, UA, "GREEK LETTER SAMPI"
+W, LCA, "GREEK SMALL LETTER STIGMA"
+W, UCA, "GREEK LETTER STIGMA"
+
+All diacritics on the numerics. No idea what a good sequence would be.
+Most common should be mode L, others U, but have no info on frequency.
+NOTE: the unicode "normalization" routines will only compress from, and
+decompress into, "combining" forms. Thus Greek Tonos won't "normalize" with
+any other letter, but "combining acute accent" will. There is no unicode
+"greek combining dialytika" but "combining diaresis" is the same.
+
+The following are the equivalents produced when you de-normalize
+a Greek letter: if it contains this it decomposes to -> that
+  VARIA -> COMBINING GRAVE ACCENT (300)
+  OXIA OR TONOS!  -> COMBINING ACUTE ACCENT (301)
+  MACRON -> COMBINING MACRON (304)
+  VRACHI -> COMBINING BREVE (306)
+  DIALYTIKA -> COMBINING DIAERESIS (308)
+  PSILI -> COMBINING COMMA ABOVE (313)
+  DASIA -> COMBINING REVERSED COMMA ABOVE (314)
+  PERISPOMENI -> COMBINING GREEK PERISPOMENI (342)
+  KORONIS -> COMBINING GREEK KORONIS (343)
+  -GEGRAMMENI -> COMBINING GREEK YPOGEGRAMMENI (345) (both ypo- and pro-)
+plus one combo, COMBINING GREEK DIALYTIKA TONOS
+
+1, L, "COMBINING GRAVE ACCENT"
+2, L, "COMBINING ACUTE ACCENT"
+3, L, "COMBINING MACRON"
+4, L, "COMBINING BREVE"
+5, L, "COMBINING DIAERESIS"
+5, U, "COMBINING GREEK DIALYTIKA TONOS"
+6, L, "COMBINING COMMA ABOVE"
+7, L, "COMBINING REVERSED COMMA ABOVE"
+8, L, "COMBINING GREEK PERISPOMENI"
+9, L, "COMBINING GREEK KORONIS"
+0, L, "COMBINING GREEK YPOGEGRAMMENI"
