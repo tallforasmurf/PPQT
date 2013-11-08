@@ -277,10 +277,13 @@ class myTableView(QTableView):
         else :
             mtxt = u'Add {0} words to the good-words list?'.format(len(lix))
         b = pqMsgs.okCancelMsg(mtxt,"This action cannot be undone.")
-        if b : # user says do it
+        if b : # user says do it, so let's do it.
             for ix in lix :
                 qs = self.model().data(ix, Qt.DisplayRole).toString()
-                word = unicode(qs)
+                # If the word has an alt spellcheck dictionary it has the
+                # form "word/xx_XX" but we get rid of that with a split.
+                # 'word'.split('/')[0] ==> 'word'
+                word = unicode(qs).split('/')[0]
                 IMC.goodWordList.insert(word)
                 # fabricate an index to the flags field of the indexed row
                 findex = self.model().index(ix.row(), 2)
