@@ -55,6 +55,7 @@ from PyQt4.QtGui import (
     QKeySequence,
     QMainWindow, QMenu, QMenuBar,
     QMessageBox,
+    QScrollArea,
     QSizePolicy,
     QSplitter,
     QStatusBar,
@@ -142,12 +143,18 @@ class MainWindow(QMainWindow):
         # -----------------------------------------------------------------
         # Format the window as a split between an editor and a tab array
         # to hold all the other panels. Give the edit widget a left margin.
+        # The tab array lives inside a scroll area so that users on smaller
+        # screens can shove it partway aside.
+        #
         self.tabSet = QTabWidget()
         self.tabSet.setMovable(True) # let user move tabs around
+        self.scArea = QScrollArea()
+        self.scArea.setWidgetResizable(True)
+        self.scArea.setWidget(self.tabSet)
         self.hSplitter = QSplitter(Qt.Horizontal)
         self.hSplitter.setContentsMargins(8,0,0,0)
         self.hSplitter.addWidget(self.editor)
-        self.hSplitter.addWidget(self.tabSet)
+        self.hSplitter.addWidget(self.scArea)
         self.setCentralWidget(self.hSplitter)
         #
         # -----------------------------------------------------------------
