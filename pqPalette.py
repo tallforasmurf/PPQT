@@ -324,27 +324,25 @@ class KeyPalette(QDialog):
         btn_clear = QPushButton('Clear')
         btn_copy = QPushButton('Copy')
         # A two-button radio set, [x]Unicode [ ]HTML
-        #radio_frame = QFrame()
-        #radio_frame.setFrameStyle(QFrame.StyledPanel)
-        #radio_frame.setFrameShadow(QFrame.Sunken)
-        #radio_frame.setLineWidth(3)
-        #btn_unicode = QRadioButton('Unicode',radio_frame)
+        radio_frame = QFrame()
+        radio_frame.setFrameStyle(QFrame.StyledPanel)
+        radio_frame.setFrameShadow(QFrame.Sunken)
+        radio_frame.setLineWidth(3)
         btn_unicode = QRadioButton('Unicode')
         btn_unicode.setChecked(True) #start with unicode selected
-        #btn_html = QRadioButton('HTML',radio_frame)
         btn_html = QRadioButton('HTML')
         radio_hb = QHBoxLayout()
         radio_hb.addWidget(btn_unicode)
         radio_hb.addWidget(btn_html)
+        radio_frame.setLayout(radio_hb)
         # Lay out the bottom section
         hbox = QHBoxLayout()
         hbox.addWidget(btn_insert,stretch=0)
         hbox.addWidget(self.the_magic,stretch=1)
         hbox.addWidget(btn_copy,stretch=0)
         hbox.addWidget(btn_clear,stretch=0)
-        hbox.addLayout(radio_hb,stretch=0)
-        #hbox.addWidget(radio_frame,stretch=0)
-        layout.addLayout(hbox,stretch=0)
+        hbox.addWidget(radio_frame,stretch=0)
+        layout.addLayout(hbox)
         self.setLayout(layout)
         # Save a reference to the HTML radio button so we can query it
         # when doing Insert.
@@ -568,7 +566,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     base = os.path.dirname(__file__)
-    kfile = open(base+'/Greek.utf','rb')
+    kfile = open(base+'/extras/Greek.palette','rb')
     IMC = pqIMC.tricorder()
     IMC.editWidget = QPlainTextEdit()
     IMC.fontFamily = QString("Liberation Mono")
