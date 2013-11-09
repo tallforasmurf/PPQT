@@ -1,61 +1,12 @@
-              FORMAT OF A PALETTE FILE
-A palette file specifies the values of each of 36 keys in the palette.
-The file suffix is .palette. Any file with the suffix .palette found
-in the "extras" folder of the PPQT folder is opened, made into a palette,
-and added to the Edit > Palettes submenu.
-
-The file NAME becomes the name of the palette in the Edit > Palettes
-submenu. The palette window title is "NAME Text Entry".
-This file is Greek.palette, so it appears as Edit > Palettes > Greek
-and its window title is "Greek Text Entry".
-
-A palette file is always opened as UTF-8.
-
-The real data in a palette file are in 3-item comma-separated variable (CSV)
-lines. Any line that does not appear to be a 3-item CSV line (i.e. all this
-blah-blah commentary) is just ignored.
-
-The three items are as follows:
-1. A single-letter key, A-Z or 0-9. This specifies which of the 36
-   keytop buttons is being set.
-2. A combination of the letters ACLU (or UCLA if you are a Trojan).
-   These specify the shift-state for this value.
-   L = lower case or unshifted
-   U = uppercase or upshifted
-   C = control (or command) key is down
-   A = alt (or option) key is down
-   There are 8 possible shift states, so each key can potentially
-   have up to 8 values.
-3. A sequence of one or more Unicode characters, which is the value
-   to be entered by this key in this shift state.
-
-The Unicode sequence can take any of three forms.
-a. One to five decimal digits, specifying the numeric value of on
-   character, for example 928 for a Greek Capital Pi.
-b. One to five Unicode characters, the literal value for the key.
-   Allowing more than one lets you include a letter and up to four
-   combining diacriticals.
-c. The character string name of a Unicode character.
-
-Avoid assigning any value to control-Q, because that combination is
-trapped by the system and means "Quit". Control-W may cause a problem
-if it means "close window" in this platform.
-
-It is possible to assign values to other standard keys like ^C (Copy).
-The value is entered before the key is acted on for its standard meaning.
-
-                     ------------------
+See "Symbols.palette" for documentation on the format of a palette file.
 
 Here is the Greek palette. The letter keys provide "Modern Greek" letters:
 * the shift key controls lowercase and uppercase
 * the control key adds the Tonos where appropriate
 * the alt key adds the Dialytika (diaresis) where appropriate
 * control + alt add Tonos + Dialytika where appropriate
-"Where appropriate" means, there exists a Unicode character for that combo.
-
-All diacritics are on the digit keys. Any combination can be created
-by typing first the upper- or lower-case letter then some combination
-of diacritics, followed by the Tab key to do NFC normalization.
+By "where appropriate" I mean only that there exists a Unicode character
+for that combination! See below for individual diacritic signs.
 
 A, L, "GREEK SMALL LETTER ALPHA"
 A, U, "GREEK CAPITAL LETTER ALPHA"
@@ -154,7 +105,7 @@ any other letter, but "combining acute accent" will. There is no unicode
 "greek combining dialytika" but "combining diaresis" is the same.
 
 The following are the equivalents produced when you de-normalize
-a Greek letter: if it contains this it decomposes to -> that
+a Greek letter: if it contains this, it decomposes to -> that
   VARIA -> COMBINING GRAVE ACCENT (300)
   OXIA OR TONOS!  -> COMBINING ACUTE ACCENT (301)
   MACRON -> COMBINING MACRON (304)
