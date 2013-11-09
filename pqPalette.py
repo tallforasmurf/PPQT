@@ -465,7 +465,21 @@ class MagicLineEdit(QLineEdit):
         # Save a reference to our parent, KeyPalette above, so we can
         # access its key_objects, mod_state, and doInsert.
         self.mamma = parent
-        self.setCursorMoveStyle(Qt.VisualMoveStyle)
+        # Set some space above the text so accents show better
+        self.setTextMargins(0,8,0,0)
+        # Initialize the text font to 16, bigger than default
+        f = self.font() # get our font,
+        f.setPointSize(16) # start at 16pts
+        self.setFont(f) # put the font back
+        # The following is a kludge. The lineEdit does not show a cursor
+        # line until a selection has been made. Presumably a bug? Recheck
+        # if Qt is updated. But now a hairline insertion-cursor does not
+        # appear until a selection is made. This puts one space in and selects
+        # it, so when the dialog first appears there is one selected blank.
+        # The first character typed replaces it, but now a cursor appears.
+        self.setText(QString(' '))
+        self.home(True)
+
 
 
     # Test a new modifier state and if it differs, emit the signal to
