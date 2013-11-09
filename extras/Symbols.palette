@@ -23,7 +23,7 @@ The three items in a data row are:
 1. A single-letter key, A-Z or 0-9. This specifies which of the 36
    keytop buttons is being set.
 
-2. A combination of the letters ACLU (or UCLA if you are a Trojan).
+2. A combination of the letters ACLU (or UCLA if you are a Bruin).
    These specify the shift-state for this value.
 
    L = lower case or unshifted
