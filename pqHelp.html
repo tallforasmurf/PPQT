@@ -53,6 +53,7 @@ see the file <tt>COPYING.TXT</tt> in the distribution folder. Qt itself is licen
 <li><a href='#Files'>Files and Folders</a> says where PPQT looks for the book text, images, and related files.</li>
 <li><a href='#Main'>The Main Window</a> describes that.</li>
 <li><a href='#Edit'>The Edit Panel</a> tells about selecting text and the use of many special keys.</li>
+<li><a href='#Palettes'>Character Palettes</a> tells how to use these modeless dialogs to enter special characters, and how to make new palettes of your own.</li>
 <li><a href='#Scannos'>Scanno Highlighting</a> tells how to make "scannos" visible.</li>
 <li><a href='#Spellcheck'>Spellcheck</a> explains the use of good and bad words files and spelling dictionaries.</li>
 <li><a href='#Pngs'>The Pngs Panel</a> tells how to display scan images.</li>
@@ -68,17 +69,17 @@ see the file <tt>COPYING.TXT</tt> in the distribution folder. Qt itself is licen
 </ul>
 <h2 id='New'>What's New in This Version</h2>
 <p>(See also <a href='#OldNew'>What Was New</a> for previous changes.)</p>
-<h3>What's New as of 18 September 2013</h3>
-<ul>
-<li>There is now a File > Properties dialog that gives access to a few important facts about the current document. This may be expanded in the future.</li>
-<li>The status bar now shows Image (scan file) number and Folio (logical page number). You can jump to a page by entering its number in the Image field.</li>
-<li>The <a href='#Pages'>Pages panel</a> now initializes any sequence of pages that have the same folio format with "(same)". This makes it easier to change formats; you only have to set an explicit format on the pages where the format changes.</li>
-<li>When you save a file that should be encoded Latin-1, PPQT checks the file contents, and if it contains a non-Latin-1 character, it warns you and you must either save in UTF, or cancel the save.</li>
-<li>When you select a file to open, and PPQT can't determine its character encoding, you get a warning dialog. You can specify Latin-1 or UTF encoding, or cancel.</li>
-<li>You now specify an alternate spelling dictionary with syntax that is valid HTML, replacing the nonstandard syntax previously used. See <a href='#Spellcheck'>Spellcheck</a>.</li>
-<li>The keystrokes for inserting and jumping to line numbers in the Notes tab have been changed from alt-ctl-L and ctl-L to alt-ctl-m and ctl-m, to avoid conflict with the Edit menu where ctl-L means change selection to lowercase.</li>
-<li>Annnnnddd... it's version 1.2. The accumulated tweaks and fixes add up to enough to call this a new version. Also this is likely the last version before version 2.0.</li>
-</ul>
+<h3>What's New as of 11 November 2013</h3>
+<p>This version (1.3) includes a bug fix, two minor interface tweaks,
+and one major new feature!</p>
+<p>Bug fix: From the Words panel you can now add to the good-words list,
+words with an alternate dictionary tag, for example "spumoni/it_IT".
+Previously this would seem to work, but actually didn't.</p>
+<p>Interface tweaks: You can now slide the central "splitter" bar as far to the
+right as you like to get more edit space. If you shrink the right half of the window below about 500 pixels, a scroll bar appears, because the Flow and Find panels are that wide and can't shrink.</p>
+<p>And to break further ground in the field of human-computer interfaces, you can now drag the tabs for the different panels around in the tab bar, to put them in a different order. Amazing, huh?</p>
+<p>New feature: Character entry palettes! At the bottom of the Edit menu is a submenu "Palettes" with, at the moment, two members, "Greek" and "Symbol".
+Choosing one of these opens a "virtual keyboard" with a selection of characters. These modeless dialogs have many features, of which perhaps the best is that you can reconfigure them and create new ones! Read about <a href='#Palettes'>Character Palettes</a> below.</p>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
 If you need to open a second document (for example, a commented copy from Smooth Reading), just start a second copy of PPQT.</p>
@@ -198,6 +199,27 @@ and disable these two keys.</li>
 bring up a context menu with some edit commands. If the current
 selection is a single word, this context menu has an item that will
 enter that word in the good-words list; see <a href='#Spellcheck'>Spellcheck</a>. This cannot be undone (except by editing the meta file).
+<h2 id='Palettes'>Character Palettes</h2>
+<p>At the bottom of the Edit menu is a sub-menu named "Palettes" that contains at least one member, "Greek". Choose this to open a modeless dialog (that is, an independent window) that contains a simulated keyboard with Greek characters. Hover the mouse over each key to see the name of its character as a "tool tip". Click on a simulated key to put that character into the text-entry field at the bottom of the dialog.</p>
+<p>The Insert button inserts the contents of the text field into the book at its present cursor position. You can choose to enter either the Unicode characters or the corresponding HTML entities such as <tt>&amp;rho;</tt>. The Clear button clears the field and the Copy button copies its contents to the system clipboard so you can paste it elsewhere.</p>
+<h3>Palette and the Real Keyboard</h3>
+<p>While a palette dialog is frontmost, it responds to the real keyboard. Press any key A-Z0-9 and the value of the corresponding key button is entered, as if you had clicked it.</p>
+<p>If you press the Shift key on the keyboard, the simulated keys in the dialog window show their uppercase values. If you press control (Mac: command) they show different values; if you press Alt (Mac: option) they may show others. Each key can display up to eight different symbols, one for each possible combination of Shift, Control and Alt. For example on the Greek palette, pressing Control brings up characters with the Tonos accent. Pressing Alt brings up characters with the Dialytika, and pressing both displays a few characters that have Tonos and Dialytika.</p>
+<p>Pressing the real Return or Enter key inserts the present contents of the palette into the book <i>and</i> clears the entry field. (To insert without clearing the field, click the Insert button.)</p>
+<h3>Unicode Normalization</h3>
+<p>Unicode has the concept of character equivalents. For example, the single character <tt>ñ</tt> can also be seen as a letter <tt>n</tt> and a combining tilde <tt>~</tt>, Unicode 303. Although both forms look the same, they don't compare equal in a program. (For details, see the <a href='https://en.wikipedia.org/wiki/Unicode_normalization'>Wikipedia article</a>.)</p>
+<p>In a <i>normalization</i> process, characters are either compressed from multi-character form to single-character form, or the opposite, de-compressed from combined forms to a basic letter followed by "combining diacritical" characters. The character palette dialogs support normalization as follows:</p>
+<ul>
+<li>When you click Insert (or press Return), the dialog performs Normalization (NFKC) to compress the input string to its most condensed form, before inserting it in the book.</li>
+<li>When you press the Tab key, the dialog also performs compressing normalization.</li>
+<li>When you press Shift-Tab, the dialog performs de-compressing normalization, making all characters into their expanded forms.</li>
+</ul>
+<p>Also when a palette does compression, it makes a special check for a Greek lowercase sigma at the end of a word, and converts it to a Greek final sigma. It does this regardless of whether the palette is meant for Greek or not. Hopefully this will not be a problem with palettes for other character sets.</p>
+<p>Whether you compress or decompress makes no visual difference to the text in the input field. If you want to examine the decompressed version of a string, key Shift-Tab to decompress and then click the Copy button. Copy does not do the automatic compressing normalization that Insert does.</p>
+<h3>Defining and Modifying Palettes</h3>
+<p>The contents of a character palette are completely defined by a simple text file in the "extras" folder. When PPQT starts up, it looks in "extras" for all files that have the suffix <tt>.palette</tt>. It uses each one to make a character palette dialog, and adds it to the Edit > Palettes menu. The name of the file is the name of the palette in the menu.</p>
+<p>A palette file is a UTF-8 text file with a simple format. As of November 2013 there are only two palette files, <tt>Greek.palette</tt> and <tt>Symbol.palette</tt>. The Symbol palette is intended as a model. It contains text describing the file format. You are invited to use it as the basis for defining other character palettes, for example Cyrillic, Turkish, or any other character set that can be fitted into 36 key-tops.</p>
+<p>The <tt>Greek.palette</tt> file contains some text documenting the decisions on how it is laid out. If you don't like its design, feel free to modify it. You can put any Unicode character on any of the 36 key-buttons in any of the eight shift states. Then restart PPQT and try it out.</p>
 <h2 id='Scannos'>Scanno Highlighting</h2>
 <p>Use the File > Scannos menu command to load a file of scannos: a text file with one word per line (e.g. <tt>extras/en-common</tt>). (You can use any
 of the filename or suffix rules listed <a href='#Encodings'>above</a> to indicate the encoding of the scannos file.)</p>
@@ -807,6 +829,17 @@ superscripts, subscripts, Side notes, Illustrations, and typo markups to HTML.</
 <li><tt>header.html</tt> contains the opening of an HTML etext including the <tt>&lt;!DOCTYPE></tt> and<tt>&lt;head></tt> statements and the full CSS style section described in the PGDP Wiki under "CSS Cookbook" (but with some classnames modified to match what PPQT generates).</li>
 </ul>
 <h2 id='OldNew'>What Was New</h2>
+<h3>What's New as of 18 September 2013</h3>
+<ul>
+<li>There is now a File > Properties dialog that gives access to a few important facts about the current document. This may be expanded in the future.</li>
+<li>The status bar now shows Image (scan file) number and Folio (logical page number). You can jump to a page by entering its number in the Image field.</li>
+<li>The <a href='#Pages'>Pages panel</a> now initializes any sequence of pages that have the same folio format with "(same)". This makes it easier to change formats; you only have to set an explicit format on the pages where the format changes.</li>
+<li>When you save a file that should be encoded Latin-1, PPQT checks the file contents, and if it contains a non-Latin-1 character, it warns you and you must either save in UTF, or cancel the save.</li>
+<li>When you select a file to open, and PPQT can't determine its character encoding, you get a warning dialog. You can specify Latin-1 or UTF encoding, or cancel.</li>
+<li>You now specify an alternate spelling dictionary with syntax that is valid HTML, replacing the nonstandard syntax previously used. See <a href='#Spellcheck'>Spellcheck</a>.</li>
+<li>The keystrokes for inserting and jumping to line numbers in the Notes tab have been changed from alt-ctl-L and ctl-L to alt-ctl-m and ctl-m, to avoid conflict with the Edit menu where ctl-L means change selection to lowercase.</li>
+<li>Annnnnddd... it's version 1.2. The accumulated tweaks and fixes add up to enough to call this a new version. Also this is likely the last version before version 2.0.</li>
+</ul>
 <h3>What's New on 19 August 2013</h3>
 <ul>
 <li>The <a href='#Chars'>Characters Panel</a> now displays a new column, Unicode Character Name. This can help you tell the difference between some characters that are hard to distinguish by their shapes.</li>
