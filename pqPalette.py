@@ -583,7 +583,8 @@ class MagicLineEdit(QLineEdit):
                 self.normNFD()
             elif (key == Qt.Key_Enter) or (key == Qt.Key_Return) :
                 self.mamma.doInsert()
-                self.mamma.doClear()
+                if self.mamma.mod_state != MOD_SHIFT :
+                    self.clear()
             event.accept() # in all these cases, key is finished.
         elif (key in KEYZOOM) and (self.mamma.mod_state == MOD_CTL) :
             change = (-1) if (key == Qt.Key_Minus) else 1
