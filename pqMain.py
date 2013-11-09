@@ -34,8 +34,9 @@ editor on the left, tabs on the right. Create menus and menu actions.
 Most of this is based on code from Summerfield's book, without which not.
 
 '''
- # used in detecting encodings of ambiguous files
-import io
+
+import io # used in detecting encodings of ambiguous files
+import os, fnmatch # used to find palette files
 from collections import defaultdict
 
 from PyQt4.QtCore import ( pyqtSignal, Qt,
@@ -386,7 +387,26 @@ class MainWindow(QMainWindow):
             self.editor.toTitleCase, QKeySequence(Qt.Key_I+Qt.CTRL),
             "Make Selected Text Titlecase")
         #
-        # There may perhaps be some more edit actions, e.g. ex/indent
+        # There may perhaps be some more edit menu actions, e.g. ex/indent
+        #
+        # Look for extras/*.palette files. Create a KeyPalette dialog object
+        # from each one. If there are any, build a Palettes submenu for the
+        # Edit menu, with its actions coupled to the show() method of each
+        # palette. That's all it takes to display a dialog once the object
+        # exists.
+        #
+        self.palettes = []
+        pal_path = unicode(self.extrasDirPath) + '/'
+        pal_list = fnmatch.filter(os.listdir(pal_path),'*.palette')
+        for pal_name in sorted(pal_list) :
+            try :
+                f_pal = open(pal_path + pal_name, 'Urb')
+                self.palettes.append(
+                    pqPalette.KeyPalette(QString(pal_name.split('.')[0]), f_pal )
+                    )
+            except :
+                pass
+
         # -----------------------------------------------------------------
         # Create and populate the Edit menu.
         #
@@ -394,6 +414,13 @@ class MainWindow(QMainWindow):
         self.addActions(editMenu,
             (editCopyAction, editCutAction, editPasteAction,
              None, editToUpperAction, editToLowerAction, editToTitleAction))
+        if self.palettes :
+            pal_menu = QMenu('Palettes',editMenu)
+            for pal_obj in self.palettes :
+                pal_menu.addAction(
+                    self.createAction( pal_obj.name, None, pal_obj.show )
+                    )
+            editMenu.addMenu(pal_menu)
         #
         # -----------------------------------------------------------------
         # Create actions for the View menu: toggle choices for spell and
@@ -1233,7 +1260,12 @@ class MainWindow(QMainWindow):
             # user clicked cancel on the save your file? dialog
             event.ignore() # as you were...
             return
-        # file wasn't dirty, or is now saved
+        # OK, the file wasn't dirty, or is now saved.
+        # If we created any KeyPalettes, tell them to close, otherwise
+        # they hang around indefinitely!
+        for pal_obj in self.palettes :
+            pal_obj.close()
+
         # Let any modules that care, write to settings.
         self.emit(SIGNAL("shuttingDown"))
         IMC.settings.setValue("main/size",self.size())
