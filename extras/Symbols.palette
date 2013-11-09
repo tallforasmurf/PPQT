@@ -1,0 +1,74 @@
+This is the Symbols palette. It is not of much use for anything, but you can
+use it as a model for making other palettes.
+
+
+              FORMAT OF A PALETTE FILE
+
+When PPQT starts up, any file with the suffix .palette found in the "extras"
+folder of the PPQT folder is opened, made into a KeyPalette dialog, and added
+to the Edit > Palettes submenu. The palette file specifies the values of each
+of 36 virtual keys in the palette.
+
+The file name becomes the name of the palette in the Edit > Palettes submenu.
+The palette window title is "NAME Text Entry". This file is Symbols.palette,
+so it appears as Edit > Palettes > Symbols and its window title is "Symbols
+Text Entry". A palette file is always opened as UTF-8.
+
+The real data in a palette file are in 3-item comma-separated variable (CSV)
+lines. Any line that does not appear to be a 3-item CSV line (i.e. all this
+blah-blah commentary) is just ignored.
+
+The three items in a data row are:
+
+1. A single-letter key, A-Z or 0-9. This specifies which of the 36
+   keytop buttons is being set.
+
+2. A combination of the letters ACLU (or UCLA if you are a Trojan).
+   These specify the shift-state for this value.
+
+   L = lower case or unshifted
+   U = uppercase or upshifted
+   C = control (or command) key is down
+   A = alt (or option) key is down
+
+   There are 8 possible shift states, so each key can potentially
+   have up to 8 different values.
+
+3. A sequence of one or more Unicode characters, which is the value
+   to be entered by this key, in this shift state. The Unicode sequence
+   can take any of three forms:
+
+   a. One to five decimal digits, specifying the numeric value of on
+      character, for example 928 for a Greek Capital Pi.
+
+   b. One to five Unicode characters, the literal value for the key.
+      Allowing more than one lets you include a letter and up to four
+      combining diacriticals.
+
+   c. The character string name of a Unicode character, for example
+      "GREEK RHO" or "FEMALE SIGN". These do not have to be uppercase,
+      it just looks more official that way.
+
+Avoid assigning any value to control-Q, because that combination is
+trapped by the system and means "Quit!" Control-W may cause a problem
+if it means "close window" in this platform.
+
+It is ok to assign values to standard keys like ^C (Copy). The assigned
+value is entered before the key is acted on for its standard meaning.
+
+A, L, "WHITE SMILING FACE"
+A, U, "BLACK SMILING FACE"
+C, L, "CARE OF"
+E, L, €
+E, U, $
+E, LC, ₤
+E, UC, 165
+F, L, "MALE SIGN"
+F, U, "FEMALE SIGN"
+J, L, "BLACK SPADE SUIT"
+J, U, "BLACK CLUB SUIT"
+J, LC, "BLACK DIAMOND SUIT"
+J, UC, "BLACK HEART SUIT"
+M, LA, "BEAMED EIGHTH NOTES"
+M, L, "EIGHTH NOTE"
+T, L, "TRADE MARK SIGN"
