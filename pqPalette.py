@@ -350,7 +350,7 @@ class KeyPalette(QDialog):
         # Set up signals from the buttons to our methods below
         self.connect(btn_insert, SIGNAL("clicked()"), self.doInsert)
         self.connect(btn_copy, SIGNAL("clicked()"), self.doCopy)
-        self.connect(btn_clear, SIGNAL("clicked()"), self.doClear)
+        self.connect(btn_clear, SIGNAL("clicked()"), self.the_magic.clear)
 
     # Convenience function to put a row of KeyButtons into a horizontal grid,
     # and that into an Hbox with optional spacing on left or right. Where
@@ -375,11 +375,6 @@ class KeyPalette(QDialog):
         if rspace : # if stagger-left, stick in space on the right
             hbox.addSpacing(rspace)
         return hbox
-
-    # Slot to receive the clicked of the Clear button. Oddly, QLineEdit
-    # has no clear method, one has to set the text to the null string.
-    def doClear(self):
-        self.the_magic.setText(QString())
 
     # Slot to receive the clicked of the Copy button. Although QLineEdit
     # does have a copy method, it only copies the selected text, not the
@@ -470,6 +465,8 @@ class MagicLineEdit(QLineEdit):
         # Save a reference to our parent, KeyPalette above, so we can
         # access its key_objects, mod_state, and doInsert.
         self.mamma = parent
+        self.setCursorMoveStyle(Qt.VisualMoveStyle)
+
 
     # Test a new modifier state and if it differs, emit the signal to
     # tell all 36 key buttons to change their looks. mod_state is the
