@@ -457,6 +457,12 @@ KEYSAZ09 = set([
     ])
 KEYTABRET = set([Qt.Key_Tab, Qt.Key_Backtab, Qt.Key_Return, Qt.Key_Enter])
 KEYZOOM = set([Qt.Key_Minus, Qt.Key_Plus, Qt.Key_Equal])
+# A set containing all defined COMBINING DIACRITICS. Only a subset of
+# these will ever be used in a palette -- but which subset?
+DIACRITICS = set([unichr(n) for n in range(768,880)]) # base diacritics
+DIACRITICS |= set([unichr(n) for n in range(1155,1162)]) # Cyrillic
+DIACRITICS |= set([unichr(n) for n in range(7616,7680)]) # Supplement
+FINALSIGMA = QRegExp(u'\u03c3\\b')
 
 class MagicLineEdit(QLineEdit):
 
@@ -480,8 +486,6 @@ class MagicLineEdit(QLineEdit):
         self.setText(QString(' '))
         self.home(True)
 
-
-
     # Test a new modifier state and if it differs, emit the signal to
     # tell all 36 key buttons to change their looks. mod_state is the
     # modifiers word from either a key event or the application.
@@ -493,17 +497,42 @@ class MagicLineEdit(QLineEdit):
             self.emit(SIGNAL("ModStateChange"),mods)
 
     # Normalize our text with the NFKC, compressing normalization.
-    # This is called for the Insert button, Tab key and Enter key.
-    # Also use a regex to find greek lowercase sigma before a word
-    # boundary and convert it to the word-ending form. This is something
-    # applicable only to Greek but we do it regardless. If it turns out
-    # to be a problem (who knows, Coptic doesn't want it?) we will have
-    # to work out some kind of switch command in the input file format.
+    # This is called from the Insert button, the Tab key and Enter key.
+    # Also do two other silent fix-ups.
+    #
+    #
+
     def normNFC(self):
-        qre = QRegExp(u'\u03c3\\b')
-        qs_normal = self.text().normalized(QString.NormalizationForm_KC)
-        qs_normal.replace(qre,QString(u'\u03c2'))
-        self.setText(qs_normal)
+        global DIACRITICS
+
+        # 1, Scan the line and look for repeated combining diacritics. It is easy
+        # to accidentally type two consecutive diacritics, which can only be an
+        # error, yet there is no visual indication. Se we just compress them out.
+        # Working with QStrings because they are mutable, have .remove(), while the
+        # equivalent python is ps = ps[:j] + ps[j+1:]
+
+        qs = self.text()
+        lim = qs.size() # can't use range as we may delete one or more chars
+        j = 1 # old-fashioned loop control, invariant: qs[j] is the next char to examine.
+        while j < lim :
+            uc = unicode(qs.at(j))
+            if uc in DIACRITICS and uc == unicode(qs.at(j-1)) :
+                qs.remove(j,1)
+                lim = qs.size()
+            else :
+                j += 1
+
+        # 2, Use a regex to find greek lowercase sigma before a word
+        # boundary, and convert it to the word-ending form. This is something
+        # applicable only to Greek but we do it regardless. If it turns out
+        # to be a problem (who knows, Coptic doesn't want it?) we could
+        # condition this action on e.g. KeyButton S has GREEK SIGMA or something.
+
+        qs.replace(FINALSIGMA, QString(u'\u03c2'))
+
+        # Finally, normalize and put back in the dialog
+
+        self.setText(qs.normalized(QString.NormalizationForm_KC))
 
     # Normalize with NFD, de-compressing combined characters into their parts.
     # This is called only from the back-tab key processing.
