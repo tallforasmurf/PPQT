@@ -3,12 +3,11 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-__version__ = "1.2.0" # refer to PEP-0008
+__version__ = "1.3.0"
 __author__  = "David Cortesi"
 __copyright__ = "Copyright 2011, 2012, 2013 David Cortesi"
-__maintainer__ = "?"
+__maintainer__ = "David Cortesi"
 __email__ = "tallforasmurf@yahoo.com"
-__status__ = "first-draft"
 __license__ = '''
  License (GPL-3.0) :
     This file is part of PPQT.
