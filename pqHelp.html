@@ -70,16 +70,13 @@ see the file <tt>COPYING.TXT</tt> in the distribution folder. Qt itself is licen
 <h2 id='New'>What's New in This Version</h2>
 <p>(See also <a href='#OldNew'>What Was New</a> for previous changes.)</p>
 <h3>What's New as of 11 November 2013</h3>
-<p>This version (1.3) includes a bug fix, two minor interface tweaks,
+<p>This version (1.3) includes a bug fix, an interface tweak,
 and one major new feature!</p>
-<p>Bug fix: From the Words panel you can now add to the good-words list,
-words with an alternate dictionary tag, for example "spumoni/it_IT".
-Previously this would seem to work, but actually didn't.</p>
+<p>Bug fix: From the Words panel you can now add a word with an alternate dictionary tag to the good-words list, for example "spumoni/it_IT".</p>
 <p>Interface tweaks: You can now slide the central "splitter" bar as far to the
-right as you like to get more edit space. If you shrink the right half of the window below about 500 pixels, a scroll bar appears, because the Flow and Find panels are that wide and can't shrink.</p>
-<p>And to break further ground in the field of human-computer interfaces, you can now drag the tabs for the different panels around in the tab bar, to put them in a different order. Amazing, huh?</p>
+right as you like to get more edit space. If you shrink the right half of the window below about 550 pixels, a scroll bar appears, because the Flow and Find panels are that wide and can't shrink.</p>
 <p>New feature: Character entry palettes! At the bottom of the Edit menu is a submenu "Palettes" with, at the moment, two members, "Greek" and "Symbol".
-Choosing one of these opens a "virtual keyboard" with a selection of characters. These modeless dialogs have many features, of which perhaps the best is that you can reconfigure them and create new ones! Read about <a href='#Palettes'>Character Palettes</a> below.</p>
+Choosing one of these opens a "virtual keyboard" with a selection of characters. These modeless dialogs have many features, of which perhaps the best is that you can reconfigure them and create new ones. Read about <a href='#Palettes'>Character Palettes</a> below.</p>
 <h2 id='Files'>Files and Folders</h2>
 <p>PPQT edits one book text at a time, for example <tt>afinebook.txt</tt>. 
 If you need to open a second document (for example, a commented copy from Smooth Reading), just start a second copy of PPQT.</p>
@@ -204,14 +201,14 @@ enter that word in the good-words list; see <a href='#Spellcheck'>Spellcheck</a>
 <p>The Insert button inserts the contents of the text field into the book at its present cursor position. You can choose to enter either the Unicode characters or the corresponding HTML entities such as <tt>&amp;rho;</tt>. The Clear button clears the field and the Copy button copies its contents to the system clipboard so you can paste it elsewhere.</p>
 <p>As with other PPQT widgets, you can use control-plus and control-minus to change the size of the font in the entry field.</p>
 <h3>Palette and the Real Keyboard</h3>
-<p>While a palette dialog is frontmost, it responds to the real keyboard. Press any key A-Z0-9 and the value of the corresponding key button is entered, as if you had clicked it. You can also press non-alphameric keys to enter spaces or punctuation into the dialog.</p>
+<p>A palette dialog responds to the real keyboard. Press any key A-Z0-9 and the value of the corresponding key button is entered, as if you had clicked it. You can also press non-alphameric keys to enter spaces or punctuation into the dialog.</p>
 <p>If you press the Shift key on the keyboard, the simulated keys in the dialog window show their uppercase values. If you press control (Mac: command) they show different values; if you press Alt (Mac: option) they may show others. Each key can display up to eight different symbols, one for each possible combination of Shift, Control and Alt. For example on the Greek palette, pressing Control brings up characters with the Tonos accent. Pressing Alt brings up characters with the Dialytika, and pressing both displays a few characters that have Tonos and Dialytika.</p>
-<p>Pressing the real Return or Enter key inserts the present contents of the palette into the book <i>and</i> clears the entry field. To insert without clearing the field, key Shift-Return or click the Insert button.</p>
+<p>Pressing Return or Enter inserts the present contents of the palette into the book and clears the entry field. Pressing ctl-Return does the insert and appends a newline, and clears the field. (With ctl-Return you can enter a poem without lifting your hands from the keyboard.)  To insert without clearing the field use shift-Return, or click the Insert button.</p>
 <h3>Unicode Normalization</h3>
-<p>Unicode has the concept of character equivalents. For example, the single character <tt>ñ</tt> can also be represented as a letter <tt>n</tt> and a combining tilde <tt>~</tt>, Unicode 303. Although both forms look the same on screen or printed, they don't compare equal in a program. (For details, see the <a href='https://en.wikipedia.org/wiki/Unicode_normalization'>Wikipedia article</a>.)</p>
-<p>In <i>normalization</i>, characters are either compressed from multi-character form to single-character form, or the opposite, de-compressed from combined forms to a basic letter followed by "combining diacritical" characters. The character palette dialogs support normalization as follows:</p>
+<p>Unicode has the concept of character equivalents. For example, the single character <tt>ñ</tt> could be represented as a letter <tt>n</tt> and a combining tilde <tt>~</tt>, Unicode 303. Although both forms look the same on screen or printed, they don't compare equal in a program. (For details, see the <a href='https://en.wikipedia.org/wiki/Unicode_normalization'>Wikipedia article</a>.)</p>
+<p>In <i>normalization</i>, characters are either compressed from multi-character form to single-character form, or the opposite, de-compressed from combined forms to a basic letter followed by "combining diacritical" characters. A character palette supports normalization as follows:</p>
 <ul>
-<li>When you click Insert (or press Return), the dialog performs Normalization (NFKC) to compress the input string to its most condensed form, before inserting it in the book.</li>
+<li>When you click Insert or press Return, the dialog performs Normalization (NFKC) to compress the input string to its most condensed form, before inserting it in the book.</li>
 <li>When you press the Tab key, the dialog also performs compressing normalization.</li>
 <li>When you press Shift-Tab, the dialog performs de-compressing normalization, making all characters into their expanded forms.</li>
 </ul>
