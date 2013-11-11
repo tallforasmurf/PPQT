@@ -582,8 +582,14 @@ class MagicLineEdit(QLineEdit):
             elif key == Qt.Key_Backtab :
                 self.normNFD()
             elif (key == Qt.Key_Enter) or (key == Qt.Key_Return) :
+                if 0 == self.mamma.mod_state:
+                    # Return with no shifts, appends line delimiter
+                    self.end(False) # cursor to end of line
+                    self.insert(QString(IMC.QtLineDelim))
+                # Return in all cases, does the Insert
                 self.mamma.doInsert()
-                if self.mamma.mod_state != MOD_SHIFT :
+                if 0 == self.mamma.mod_state & MOD_SHIFT :
+                    # If the shift key isn't down, clear the input field
                     self.clear()
             event.accept() # in all these cases, key is finished.
         elif (key in KEYZOOM) and (self.mamma.mod_state == MOD_CTL) :
