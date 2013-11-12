@@ -383,11 +383,11 @@ class lineLabel(QWidget):
 # debugging function to display a keyevent on the console
 from PyQt4.QtCore import (QEvent)
 from PyQt4.QtGui import (QKeyEvent)
-def printKeyEvent(event):
+def printKeyEvent(event,comment=None):
     key = int(event.key())
     mods = int(event.modifiers())
     if key & 0x01000000 : # special/standard key
-        print('logical key: mods {0:08X} key {1:08X}'.format(mods,key))
+        print(comment,'logical key: mods {0:08X} key {1:08X}'.format(mods,key))
     else:
         cmods = u''
         if mods & Qt.ControlModifier : cmods += u'Ctl '
@@ -396,7 +396,7 @@ def printKeyEvent(event):
         if mods & Qt.KeypadModifier : cmods += u'Kpd '
         if mods & Qt.MetaModifier : cmods += u'Meta '
         cmods += "'{0:c}'".format(key)
-        print(u'data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
+        print(comment, u'data key: mods {0:08X} key {1:08X} {2}'.format(mods,key,cmods))
 
 # debugging function to note an event and its time on the console.
 import time
