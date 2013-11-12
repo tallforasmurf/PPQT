@@ -389,13 +389,15 @@ class KeyPalette(QDialog):
     def doCopy(self):
         QApplication.clipboard().setText(self.the_magic.text())
 
-    # Slot to receive the clicked of the Insert button:
+    # Slot to receive the clicked of the Insert button, also called from
+    # the_magic to respond to the Return key, which may request a newline.
+    #
     # Normalize (NFC, combine) the string, then insert it in the edit document.
     # This does not clear the text. The user has clicked the Insert button
     # and can easily click Clear if she wants to, but might well want to keep
     # the present text and modify it for insertion again, or insert it again
     # but as entities. However see the Enter key handling in MagicLineEdit.
-    def doInsert(self):
+    def doInsert(self, newline = False):
         self.the_magic.normNFC()
         if self.html_button.isChecked() :
             # user wants Entities, oh yawn.
@@ -410,6 +412,8 @@ class KeyPalette(QDialog):
             IMC.editWidget.insertPlainText(QString(e_string))
         else:
             IMC.editWidget.insertPlainText(self.the_magic.text())
+        if newline :
+            IMC.editWidget.insertPlainText(QString(IMC.QtLineDelim))
 
     # Slot to handle the close event: the user has dismissed this dialog.
     # Save our position and size so when we are recalled we come up the same.
@@ -578,12 +582,8 @@ class MagicLineEdit(QLineEdit):
             elif key == Qt.Key_Backtab :
                 self.normNFD()
             elif (key == Qt.Key_Enter) or (key == Qt.Key_Return) :
-                if self.mamma.mod_state & MOD_CTL:
-                    # [Shift-]Return with Control, appends line delimiter
-                    self.end(False) # cursor to end of line
-                    self.insert(QString(IMC.QtLineDelim))
-                # Return in all cases, does the Insert
-                self.mamma.doInsert()
+                want_newline = MOD_CTL == (self.mamma.mod_state & MOD_CTL)
+                self.mamma.doInsert(newline = want_newline)
                 if 0 == self.mamma.mod_state & MOD_SHIFT :
                     # If the shift key isn't down, clear the input field
                     self.clear()
