@@ -299,7 +299,7 @@ class KeyPalette(QDialog):
         for key in KEYS_ALL:
             key_object = KeyButton(key_values[key], self.the_magic)
             self.key_objects[key] = key_object
-            self.connect(self.the_magic, SIGNAL("ModStateChange"), key_object.shift)
+            self.connect(self, SIGNAL("ModStateChange"), key_object.shift)
         # Style the key-objects. It doesn't work to have each KeyButton set
         # its own style sheet (why??) but this does.
         self.setStyleSheet(KEY_STYLE)
@@ -368,6 +368,17 @@ class KeyPalette(QDialog):
         if rspace : # if stagger-left, stick in space on the right
             hbox.addSpacing(rspace)
         return hbox
+
+    # Test a new modifier state and if it differs, emit the signal to
+    # tell all 36 key buttons to change their looks. mod_state is the
+    # modifiers word from either event.modifiers() or QApplication.keyboardModifiers
+
+    def testMod(self, mod_state) :
+        global MOD_MASK
+        mods = int(mod_state) & MOD_MASK
+        if mods != self.mod_state :
+            self.mod_state = mods
+            self.emit(SIGNAL("ModStateChange"),mods)
 
     # Slot to receive the clicked of the Copy button. Although QLineEdit
     # does have a copy method, it only copies the selected text, not the
@@ -470,29 +481,21 @@ class MagicLineEdit(QLineEdit):
         f = self.font() # get our font,
         f.setPointSize(16) # start at 16pts
         self.setFont(f) # put the font back
-        # The following is a kludge. The lineEdit does not show a cursor
-        # line until a selection has been made. Presumably a bug? Recheck
-        # if Qt is updated. But now a hairline insertion-cursor does not
-        # appear until a selection is made. This puts one space in and selects
-        # it, so when the dialog first appears there is one selected blank.
-        # The first character typed replaces it, but now a cursor appears.
+        self.clear() # make cursor visible
+
+    # The following is a kludge. The lineEdit does not show a cursor
+    # line until a selection has been made, when created or (on windows
+    # at least) after QLineEdit.clear(). Presumably a bug? Recheck
+    # if Qt is updated. This loads one space in and selects
+    # it, so in the empty dialog there is one selected blank.
+    # The first character typed replaces it, and then a cursor appears.
+    def clear(self):
         self.setText(QString(' '))
         self.home(True)
-
-    # Test a new modifier state and if it differs, emit the signal to
-    # tell all 36 key buttons to change their looks. mod_state is the
-    # modifiers word from either a key event or the application.
-    def testMod(self, mod_state) :
-        global MOD_MASK
-        mods = int(mod_state) & MOD_MASK
-        if mods != self.mamma.mod_state :
-            self.mamma.mod_state = mods
-            self.emit(SIGNAL("ModStateChange"),mods)
 
     # Normalize our text with the NFKC, compressing normalization.
     # This is called from the Insert button, the Tab key and Enter key.
     # Also do two other silent fix-ups.
-    #
     #
 
     def normNFC(self):
@@ -537,7 +540,7 @@ class MagicLineEdit(QLineEdit):
     # of the modifier keys from the app and if it differs from what
     # we had before, emit the shift signal.
     def focusInEvent(self, event):
-        self.testMod(QApplication.keyboardModifiers())
+        self.mamma.testMod(QApplication.keyboardModifiers())
 
     # Catch each key event and do something with it.
 
@@ -548,7 +551,7 @@ class MagicLineEdit(QLineEdit):
     # mod-state, and pass the event on.
     def keyReleaseEvent(self, event):
         # probably no change from last key press, but check it
-        self.testMod(event.modifiers())
+        self.mamma.testMod(event.modifiers())
         event.ignore()
         super(MagicLineEdit, self).keyReleaseEvent(event)
 
@@ -557,7 +560,7 @@ class MagicLineEdit(QLineEdit):
     # keytops change to match. Then take action on certain keys.
 
     def keyPressEvent(self, event):
-        self.testMod(event.modifiers())
+        self.mamma.testMod(event.modifiers())
         key = event.key()
         if key in KEYSAZ09 :
             py_string = self.mamma.key_objects[unichr(int(key))].fetch()
