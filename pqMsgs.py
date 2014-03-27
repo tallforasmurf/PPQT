@@ -69,8 +69,7 @@ def getMonoFont(fontsize=12, msg=False):
     monofont.setFamily(IMC.fontFamily)
     monofont.setFixedPitch(True) # probably unnecessary
     monofont.setPointSize(fontsize)
-    monoinf = QFontInfo(monofont)
-    if msg and (monoinf.family() != IMC.fontFamily):
+    if msg and (monofont.family() != IMC.fontFamily):
         infoMsg("Font {0} not available, using {1}".format(
             IMC.fontFamily, monoinf.family()) )
     return monofont
@@ -283,13 +282,13 @@ class lineLabel(QWidget):
         self.cnum.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.setWidth(self.cnum, 3)
 
-        # 3, the png field. Assuming scan filenames are always numeric.
+        # 3, the png field. Scan image filenames are not always numeric!
         self.image = QLineEdit()
         self.image.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.setWidth(self.image, 5)
-        val = QIntValidator()
-        val.setRange(1,9999) # png numbers start at 1
-        self.image.setValidator(val)
+        self.setWidth(self.image, 6)
+        #val = QIntValidator()
+        #val.setRange(1,9999) # png numbers start at 1
+        #self.image.setValidator(val)
         # Connect the image ReturnPressed signal to our slot for that
         self.connect(self.image, SIGNAL("returnPressed()"), self.movePng)
 
@@ -331,15 +330,19 @@ class lineLabel(QWidget):
     # This slot receives the ReturnPressed signal from the image widget.
     # Check that the image is a valid index to the page table; if not
     # treat it as the very last page.  Get the textCursor for that page.
-    # Pass its position to moveCursor.
+    # Pass its position to moveCursor. Because image names are not always
+    # numeric, e.g. "100a" or "index5" -- and because the page table is
+    # in file-sequence order which need not be lexical order of image
+    # names, there is nothing to do but a sequential search of the table.
     def movePng(self):
-        (pn, flag) = self.image.text().toInt()
+        iname= self.image.text()
         mx = IMC.pageTable.size()
         if mx : # there is some page table data
-            if pn > mx : # requested page doesn't exist
-                pn = mx # go to last existing one
-                self.image.setText(QString(str(pn)))
-            tc = IMC.pageTable.getCursor(pn-1)
+			for ix in range(mx):
+				if 0 == iname.compare(IMC.pageTable.getScan(ix)) :
+					break;
+			# ix is either the wanted row or it is mx
+            tc = IMC.pageTable.getCursor(ix)
             self.moveCursor(tc.position())
         else : # this is not a paginated book document
             self.image.setText(QString())
