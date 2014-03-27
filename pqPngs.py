@@ -222,16 +222,16 @@ class pngDisplay(QWidget):
                 # Form the image filename as a Qstring, e.g. "025" and save that for
                 # use by pqNotes:
                 IMC.currentImageNumber = IMC.pageTable.getScan(self.lastIndex)
-                dbg = unicode(IMC.currentImageNumber)
+                # dbg = unicode(IMC.currentImageNumber)
                 # Form the complete filename by appending ".png" and save as
                 # self.lastPage for use in forming our caption label.
                 self.lastPage = QString(IMC.currentImageNumber).append(QString(u".png"))
-                dbg = unicode(self.lastPage)
+                # dbg = unicode(self.lastPage)
                 # Form the full path to the image. Try to load it as a QImage.
                 pngName = QString(self.pngPath).append(self.lastPage)
                 self.image = QImage(pngName,'PNG')
-                dbg = unicode(self.image)
-                dbg = self.image.isNull()
+                # dbg = unicode(self.image)
+                # dbg = self.image.isNull()
                 # If that successfully loaded an image, make sure it is one byte/pixel.
                 if not self.image.isNull() \
                    and self.image.format() != QImage.Format_Indexed8 :
