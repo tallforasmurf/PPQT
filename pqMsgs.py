@@ -338,10 +338,10 @@ class lineLabel(QWidget):
         iname= self.image.text()
         mx = IMC.pageTable.size()
         if mx : # there is some page table data
-			for ix in range(mx):
-				if 0 == iname.compare(IMC.pageTable.getScan(ix)) :
-					break;
-			# ix is either the wanted row or it is mx
+            for ix in range(mx):
+                if 0 == iname.compare(IMC.pageTable.getScan(ix)) :
+                    break;
+                # ix is either the wanted row or it is mx
             tc = IMC.pageTable.getCursor(ix)
             self.moveCursor(tc.position())
         else : # this is not a paginated book document
