@@ -1328,11 +1328,10 @@ def optimalWrap(flowText,unit,optimum,maximum,itbosc):
             flowText.append(QChar(u' '))
         flowText.append(IMC.QtLineDelim)
     else :
-        print('splitting',unicode(flowText))#dbg
         # There is a need to split tokens across lines, using gnuWrap.
         W[0] += firstIndentDiff # W[0] could conceivably be 0 or negative - problem?
         C = (N+1)*[0] # the Costs column; C[N] is a sentinel
-        W.append(LMaximum) # ..as is W[N] (recall, tokens are 0..N-1)
+        W.append(maximum*2) # ..as is W[N] (recall, tokens are 0..N-1)
         P = (N+1)*[N] # the next-word link column
         L = (N+1)*[0] # The length-from-here column
         scanPtr = N-1 # start with last word, work backwards
